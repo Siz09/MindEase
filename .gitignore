@@ -9,3 +9,6 @@ out
 .idea
 .vscode/*
 !.vscode/extensions.json
+
+dev-dist/
+dist/

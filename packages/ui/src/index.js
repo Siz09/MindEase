@@ -1,1 +1,1 @@
-export const placeholder = "Hello from @mindease/ui!";
+export const placeholder = 'Hello from @mindease/ui!';
