@@ -1,0 +1,11 @@
+{
+  "name": "@mindease/webapp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo \"scaffold on Day 3\"",
+    "build": "echo \"scaffold on Day 3\"",
+    "preview": "echo \"scaffold on Day 3\""
+  }
+}

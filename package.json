@@ -1,0 +1,22 @@
+{
+    "name": "mindease",
+    "private": true,
+    "version": "0.1.0",
+    "description": "MindEase monorepo",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "engines": {
+        "node": ">=18 <=22"
+    },
+    "scripts": {
+        "clean": "npx rimraf \"**/node_modules\" \"**/dist\"",
+        "lint": "echo \"lint configured in Day 4\" && exit 0",
+        "build": "echo \"build wired later\" && exit 0",
+        "dev": "echo \"dev wired later\" && exit 0"
+    },
+    "devDependencies": {
+        "rimraf": "^6.0.0"
+    }
+}

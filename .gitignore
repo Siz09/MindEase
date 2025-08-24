@@ -1,0 +1,11 @@
+node_modules
+dist
+.build
+.next
+.vite
+out
+.DS_Store
+.env*
+.idea
+.vscode/*
+!.vscode/extensions.json

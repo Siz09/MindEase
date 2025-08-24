@@ -1,0 +1,11 @@
+{
+    "name": "@mindease/marketing",
+    "private": true,
+    "version": "0.1.0",
+    "type": "module",
+    "scripts": {
+        "dev": "echo \"scaffold on Day 2\"",
+        "build": "echo \"scaffold on Day 2\"",
+        "preview": "echo \"scaffold on Day 2\""
+    }
+}
