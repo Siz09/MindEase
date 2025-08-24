@@ -17,6 +17,7 @@
   "ignorePatterns": [
     "**/node_modules/**",
     "**/dist/**",
+    "**/dev-dist/**",
     "**/.vite/**",
     "**/build/**",
     "packages/ui/dist/**"

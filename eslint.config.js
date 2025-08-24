@@ -4,7 +4,14 @@ import react from 'eslint-plugin-react';
 
 export default [
   {
-    ignores: ['**/node_modules/**', '**/dist/**', '**/dev-dist/**'], // ⬅️ skip build artifacts
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**', 
+      '**/dev-dist/**',
+      '**/.vite/**',
+      '**/build/**',
+      '**/coverage/**'
+    ],
   },
   js.configs.recommended,
   {
