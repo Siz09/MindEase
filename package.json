@@ -1,22 +1,41 @@
 {
-    "name": "mindease",
-    "private": true,
-    "version": "0.1.0",
-    "description": "MindEase monorepo",
-    "workspaces": [
-        "apps/*",
-        "packages/*"
-    ],
-    "engines": {
-        "node": ">=18 <=22"
-    },
-    "scripts": {
-        "clean": "npx rimraf \"**/node_modules\" \"**/dist\"",
-        "lint": "echo \"lint configured in Day 4\" && exit 0",
-        "build": "echo \"build wired later\" && exit 0",
-        "dev": "echo \"dev wired later\" && exit 0"
-    },
-    "devDependencies": {
-        "rimraf": "^6.0.0"
-    }
+  "name": "mindease",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "MindEase monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=18 <=22"
+  },
+  "scripts": {
+    "clean": "npx rimraf \"**/node_modules\" \"**/dist\"",
+    "dev": "echo \"dev wired later\" && exit 0",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "build": "npm run -w @mindease/marketing build && npm run -w @mindease/webapp build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.3",
+    "@babel/eslint-parser": "^7.28.0",
+    "@babel/preset-react": "^7.27.1",
+    "@eslint/js": "^9.34.0",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.0"
+  }
 }

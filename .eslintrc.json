@@ -1,0 +1,27 @@
+{
+  "root": true,
+  "env": { "es2022": true, "browser": true, "node": true },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:react-refresh/recommended",
+    "plugin:prettier/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "ecmaFeatures": { "jsx": true }
+  },
+  "settings": { "react": { "version": "detect" } },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.vite/**",
+    "**/build/**",
+    "packages/ui/dist/**"
+  ],
+  "rules": {
+    "react/react-in-jsx-scope": "off"
+  }
+}
