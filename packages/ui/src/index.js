@@ -1,2 +1,1 @@
-// mindease/packages/ui/index.js
-export const testMessage = "✅ UI package linked successfully";
+export const placeholder = "Hello from @mindease/ui!";
