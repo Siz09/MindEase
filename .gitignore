@@ -12,3 +12,4 @@ out
 
 dev-dist/
 dist/
+.env
