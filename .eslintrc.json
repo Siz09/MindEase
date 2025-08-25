@@ -6,7 +6,9 @@
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
     "plugin:react-refresh/recommended",
-    "plugin:prettier/recommended"
+    "plugin:prettier/recommended",
+    "eslint:recommended",
+    "plugin:react/recommended"
   ],
   "parserOptions": {
     "ecmaVersion": "latest",
@@ -23,6 +25,8 @@
     "packages/ui/dist/**"
   ],
   "rules": {
-    "react/react-in-jsx-scope": "off"
+    "react/react-in-jsx-scope": "off",
+    "no-unused-vars": "off",
+    "import/no-unused-modules": "off"
   }
 }
