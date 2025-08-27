@@ -6,9 +6,15 @@ export default defineConfig({
   plugins: [
     react(),
     sentryVitePlugin({
-      org: 'your-org-slug',
+      org: process.env.SENTRY_ORG,
       project: 'mindease-marketing',
-      //   authToken: process.env.SENTRY_AUTH_TOKEN,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
     }),
   ],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+  },
 });
