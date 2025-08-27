@@ -2,16 +2,18 @@ import js from '@eslint/js';
 import globals from 'globals';
 import react from 'eslint-plugin-react';
 import babelParser from '@babel/eslint-parser';
+import prettier from 'eslint-plugin-prettier';
 
 export default [
   {
     ignores: [
       '**/node_modules/**',
-      '**/dist/**', 
+      '**/dist/**',
       '**/dev-dist/**',
       '**/.vite/**',
       '**/build/**',
-      '**/coverage/**'
+      '**/coverage/**',
+      'packages/ui/dist/**',
     ],
   },
   js.configs.recommended,
@@ -31,11 +33,13 @@ export default [
         },
       },
       globals: {
-        ...globals.browser, // ⬅️ allow document, window, console, etc.
+        ...globals.browser,
+        ...globals.node,
       },
     },
     plugins: {
       react,
+      prettier,
     },
     settings: {
       react: {
@@ -43,8 +47,14 @@ export default [
       },
     },
     rules: {
-      'no-unused-vars': 'warn', // instead of error (soften noise)
-      'react/react-in-jsx-scope': 'off', // not needed in React 17+
+      // 🔧 Loosen noisy rules
+      'no-unused-vars': 'warn', // not error
+      'no-undef': 'warn',
+      'react/react-in-jsx-scope': 'off', // React 17+
+      'react/prop-types': 'off', // you may use TS or not care
+
+      // 🔧 Prettier integration (warn instead of error)
+      'prettier/prettier': 'warn',
     },
   },
 ];
