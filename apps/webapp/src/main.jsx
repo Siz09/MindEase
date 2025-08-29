@@ -6,10 +6,6 @@ import './i18n';
 import { registerSW } from 'virtual:pwa-register';
 registerSW({ immediate: true });
 
-// workspace sanity check
-import { placeholder } from '@mindease/ui';
-console.log('UI link:', placeholder); // expect: ui-ready
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />
