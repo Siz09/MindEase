@@ -14,8 +14,9 @@
   "scripts": {
     "clean": "npx rimraf \"**/node_modules\" \"**/dist\"",
     "dev": "echo \"dev wired later\" && exit 0",
-    "lint": "eslint .",
+    "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
+    "lint:verbose": "eslint .",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "build": "npm run -w @mindease/marketing build && npm run -w @mindease/webapp build",

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import * as Sentry from '@sentry/react';
+// REMOVE THIS LINE: import * as Sentry from '@sentry/react';
 
 export default function App() {
   const { t } = useTranslation();
@@ -19,12 +19,6 @@ export default function App() {
         <input placeholder={t('chat.placeholder')} />
         <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
           <button>{t('action.send')}</button>
-          <button
-            style={{ backgroundColor: '#dc2626', color: 'white' }}
-            onClick={() => Sentry.captureException(new Error('Test error from Webapp'))}
-          >
-            Test Sentry
-          </button>
         </div>
       </main>
     </div>
