@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: mindease-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mindease
+    username: mindease
+    password: secret
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+  flyway:
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.mindease: DEBUG
+    org.springframework.security: DEBUG
+
+# Firebase configuration (to be updated with your project details)
+firebase:
+  project-id: your-firebase-project-id
+
+# JWT configuration
+jwt:
+  secret: your-jwt-secret-key-here-make-it-long-and-secure
+  expiration: 86400000
