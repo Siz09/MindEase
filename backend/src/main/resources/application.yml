@@ -26,7 +26,7 @@ logging:
     com.mindease: DEBUG
     org.springframework.security: DEBUG
 
-# Firebase configuration (to be updated with your project details)
+# Firebase configuration
 firebase:
   project-id: your-firebase-project-id
 
