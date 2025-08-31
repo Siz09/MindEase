@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: mindease-db
+    environment:
+      POSTGRES_USER: mindease
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: mindease
+      TZ: UTC  # Set timezone to UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mindease -d mindease"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
