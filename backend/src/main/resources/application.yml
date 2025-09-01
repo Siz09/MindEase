@@ -21,11 +21,6 @@ spring:
 server:
   port: 8080
 
-logging:
-  level:
-    com.mindease: DEBUG
-    org.springframework.security: DEBUG
-
 # Firebase configuration
 firebase:
   project-id: your-firebase-project-id
@@ -34,3 +29,17 @@ firebase:
 jwt:
   secret: your-jwt-secret-key-here-make-it-long-and-secure
   expiration: 86400000
+
+# Retention policy configuration
+retention:
+  policy:
+    chat-sessions-days: 30    # Keep chat sessions for 30 days
+    mood-entries-days: 90     # Keep mood entries for 90 days
+    anonymous-data-days: 7    # Keep anonymous user data for only 7 days
+
+# Logging configuration (all in one section)
+logging:
+  level:
+    com.mindease: DEBUG
+    org.springframework.security: DEBUG
+    com.mindease.service.RetentionPolicyService: INFO
