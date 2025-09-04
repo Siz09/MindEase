@@ -1,3 +1,4 @@
+// backend/src/main/java/com/mindease/model/User.java
 package com.mindease.model;
 
 import jakarta.persistence.*;
@@ -18,6 +19,10 @@ public class User {
   @Column(name = "password_hash")
   private String passwordHash;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private Role role = Role.USER; // Default role
+
   @Column(name = "anonymous_mode", nullable = false)
   private Boolean anonymousMode = false;
 
@@ -27,17 +32,23 @@ public class User {
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 
+  // Firebase UID for Firebase Auth integration
+  @Column(name = "firebase_uid")
+  private String firebaseUid;
+
   // Constructors
   public User() {
     this.createdAt = LocalDateTime.now();
     this.updatedAt = LocalDateTime.now();
   }
 
-  public User(String email, String passwordHash, Boolean anonymousMode) {
+  public User(String email, String passwordHash, Role role, Boolean anonymousMode, String firebaseUid) {
     this();
     this.email = email;
     this.passwordHash = passwordHash;
+    this.role = role;
     this.anonymousMode = anonymousMode;
+    this.firebaseUid = firebaseUid;
   }
 
   // Getters and Setters
@@ -65,6 +76,14 @@ public class User {
     this.passwordHash = passwordHash;
   }
 
+  public Role getRole() {
+    return role;
+  }
+
+  public void setRole(Role role) {
+    this.role = role;
+  }
+
   public Boolean getAnonymousMode() {
     return anonymousMode;
   }
@@ -89,6 +108,14 @@ public class User {
     this.updatedAt = updatedAt;
   }
 
+  public String getFirebaseUid() {
+    return firebaseUid;
+  }
+
+  public void setFirebaseUid(String firebaseUid) {
+    this.firebaseUid = firebaseUid;
+  }
+
   // Pre-update callback
   @PreUpdate
   public void preUpdate() {
@@ -100,9 +127,11 @@ public class User {
     return "User{" +
       "id=" + id +
       ", email='" + email + '\'' +
+      ", role=" + role +
       ", anonymousMode=" + anonymousMode +
       ", createdAt=" + createdAt +
       ", updatedAt=" + updatedAt +
+      ", firebaseUid='" + firebaseUid + '\'' +
       '}';
   }
 }

@@ -1,3 +1,4 @@
+// backend/src/main/java/com/mindease/repository/UserRepository.java
 package com.mindease.repository;
 
 import com.mindease.model.User;
@@ -12,5 +13,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   Optional<User> findByEmail(String email);
 
+  Optional<User> findByFirebaseUid(String firebaseUid);
+
   boolean existsByEmail(String email);
+
+  boolean existsByFirebaseUid(String firebaseUid);
 }
