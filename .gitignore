@@ -13,3 +13,5 @@ out
 dev-dist/
 dist/
 .env
+firebase-service-account.json
+backend/src/main/resources/firebase-service-account.json
