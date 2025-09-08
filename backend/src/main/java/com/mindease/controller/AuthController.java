@@ -4,6 +4,7 @@ package com.mindease.controller;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.mindease.model.Role;
 import com.mindease.model.User;
+import com.mindease.service.CustomUserDetailsService;
 import com.mindease.service.FirebaseService;
 import com.mindease.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import com.mindease.util.JwtUtil;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -25,6 +33,14 @@ public class AuthController {
   @Autowired
   private UserService userService;
 
+  @Autowired
+  private JwtUtil jwtUtil;
+
+  @Autowired
+  private AuthenticationManager authenticationManager;
+
+  @Autowired
+  private CustomUserDetailsService userDetailsService;
   /**
    * Register a new user with Firebase token
    * POST /api/auth/register
@@ -48,8 +64,9 @@ public class AuthController {
         firebaseUid
       );
 
-      // Generate JWT token (stub for now, will implement in Day 5)
-      String jwtToken = generateJwtToken(user);
+      // Generate JWT token
+      UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+      String jwtToken = jwtUtil.generateToken(user);
 
       return ResponseEntity.ok(createAuthResponse(user, jwtToken, "Registration successful"));
 
@@ -74,8 +91,9 @@ public class AuthController {
       User user = userService.findByFirebaseUid(firebaseUid)
         .orElseThrow(() -> new RuntimeException("User not found"));
 
-      // Generate JWT token (stub for now, will implement in Day 5)
-      String jwtToken = generateJwtToken(user);
+      // Generate JWT token
+      UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
+      String jwtToken = jwtUtil.generateToken(user);
 
       return ResponseEntity.ok(createAuthResponse(user, jwtToken, "Login successful"));
 
@@ -91,24 +109,24 @@ public class AuthController {
    * GET /api/auth/me
    */
   @GetMapping("/me")
-  public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authHeader) {
+  public ResponseEntity<?> getCurrentUser() {
     try {
-      // Extract JWT token from header (stub for now, will implement in Day 5)
-      String jwtToken = authHeader.replace("Bearer ", "");
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+      String email = authentication.getName();
 
-      // For now, return a stubbed response
-      // In Day 5, we'll decode the JWT and get the actual user
+      User user = userService.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
       Map<String, Object> response = new HashMap<>();
-      response.put("message", "Current user endpoint - JWT validation will be implemented in Day 5");
       response.put("status", "success");
 
-      Map<String, Object> user = new HashMap<>();
-      user.put("id", UUID.randomUUID().toString());
-      user.put("email", "user@example.com");
-      user.put("role", "USER");
-      user.put("anonymousMode", false);
+      Map<String, Object> userInfo = new HashMap<>();
+      userInfo.put("id", user.getId());
+      userInfo.put("email", user.getEmail());
+      userInfo.put("role", user.getRole());
+      userInfo.put("anonymousMode", user.getAnonymousMode());
 
-      response.put("user", user);
+      response.put("user", userInfo);
 
       return ResponseEntity.ok(response);
 
