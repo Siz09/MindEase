@@ -84,8 +84,11 @@ export default function Register() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">{t('auth.register.title')}</h1>
-        <p className="auth-subtitle">{t('auth.register.subtitle')}</p>
+        <div className="auth-header">
+          <div className="auth-logo"></div>
+          <h1 className="auth-title">{t('auth.register.title')}</h1>
+          <p className="auth-subtitle">{t('auth.register.subtitle')}</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
           {errors.general && (
@@ -175,6 +178,7 @@ export default function Register() {
             className="auth-button"
             disabled={loading}
           >
+            {loading && <span className="loading-spinner"></span>}
             {loading ? t('auth.loading') : t('auth.register.button')}
           </button>
         </form>
