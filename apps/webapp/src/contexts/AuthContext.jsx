@@ -1,5 +1,8 @@
+// apps/webapp/src/contexts/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 const AuthContext = createContext();
 
@@ -48,54 +51,62 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // For now, we'll simulate Firebase token generation
-      // In a real implementation, you would use Firebase Auth SDK
-      const firebaseToken = `firebase-token-${Date.now()}`;
-      
+      // Step 1: Sign in with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Step 2: Get Firebase ID token
+      const firebaseToken = await firebaseUser.getIdToken();
+
+      // Step 3: Login to our backend
       const response = await axios.post('http://localhost:8080/api/auth/login', {
-        firebaseToken
+        firebaseToken,
       });
 
       const { token: jwtToken, user: userData } = response.data;
-      
+
       localStorage.setItem('token', jwtToken);
       setToken(jwtToken);
       setUser(userData);
-      
+
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Login failed'
+        error: error.response?.data?.message || error.message || 'Login failed',
       };
     }
   };
 
   const register = async (email, password, anonymousMode = false) => {
     try {
-      // For now, we'll simulate Firebase token generation
-      // In a real implementation, you would use Firebase Auth SDK
-      const firebaseToken = `firebase-token-${Date.now()}`;
-      
+      // Step 1: Create user in Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Step 2: Get Firebase ID token
+      const firebaseToken = await firebaseUser.getIdToken();
+
+      // Step 3: Register in our backend
       const response = await axios.post('http://localhost:8080/api/auth/register', {
         email,
         firebaseToken,
-        anonymousMode
+        anonymousMode,
       });
 
       const { token: jwtToken, user: userData } = response.data;
-      
+
       localStorage.setItem('token', jwtToken);
       setToken(jwtToken);
       setUser(userData);
-      
+
       return { success: true };
     } catch (error) {
       console.error('Register error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Registration failed'
+        error: error.response?.data?.message || error.message || 'Registration failed',
       };
     }
   };
@@ -105,6 +116,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
+    auth.signOut();
   };
 
   const value = {
@@ -114,12 +126,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

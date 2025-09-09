@@ -28,20 +28,15 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-      // enable CORS with custom configuration
       .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-      // disable CSRF since we're using JWT
       .csrf(csrf -> csrf.disable())
-      // stateless session management
       .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-      // configure authorization rules
       .authorizeHttpRequests(authz -> authz
         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
         .requestMatchers("/api/admin/**").hasRole("ADMIN")
         .requestMatchers("/api/**").authenticated()
         .anyRequest().permitAll()
       )
-      // add JWT filter before UsernamePasswordAuthenticationFilter
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
@@ -60,7 +55,11 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+    configuration.setAllowedOriginPatterns(Arrays.asList(
+      "http://localhost:5173",  // Vite dev server
+      "http://localhost:3000"  // Alternative React port
+//      "https://yourproductiondomain.com"  // Production domain
+    ));
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
     configuration.setExposedHeaders(Arrays.asList("Authorization"));

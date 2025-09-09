@@ -24,11 +24,11 @@ server:
 
 # Firebase configuration
 firebase:
-  project-id: your-firebase-project-id
+  project-id: mentalhealth-99210
 
 # JWT configuration
 jwt:
-  secret: your-jwt-secret-key-here-make-it-long-and-secure
+  secret: ${JWT_SECRET}
   expiration: 86400000
 
 # Retention policy configuration
