@@ -3,5 +3,45 @@
   "nav.home": "गृह",
   "nav.chat": "च्याट",
   "chat.placeholder": "तपाईंको सन्देश टाइप गर्नुहोस्...",
-  "action.send": "पठाउनुहोस्"
+  "action.send": "पठाउनुहोस्",
+  "auth": {
+    "login": {
+      "title": "साइन इन",
+      "subtitle": "MindEase मा फिर्ता स्वागत छ",
+      "button": "साइन इन",
+      "noAccount": "खाता छैन?",
+      "registerLink": "यहाँ साइन अप गर्नुहोस्"
+    },
+    "register": {
+      "title": "खाता सिर्जना गर्नुहोस्",
+      "subtitle": "राम्रो मानसिक स्वास्थ्यको लागि MindEase मा सामेल हुनुहोस्",
+      "button": "खाता सिर्जना गर्नुहोस्",
+      "hasAccount": "पहिले नै खाता छ?",
+      "loginLink": "यहाँ साइन इन गर्नुहोस्"
+    },
+    "fields": {
+      "email": "इमेल ठेगाना",
+      "password": "पासवर्ड",
+      "confirmPassword": "पासवर्ड पुष्टि गर्नुहोस्",
+      "anonymousMode": "गुमनाम मोड सक्षम गर्नुहोस्"
+    },
+    "placeholders": {
+      "email": "आफ्नो इमेल ठेगाना प्रविष्ट गर्नुहोस्",
+      "password": "आफ्नो पासवर्ड प्रविष्ट गर्नुहोस्",
+      "confirmPassword": "आफ्नो पासवर्ड पुष्टि गर्नुहोस्"
+    },
+    "descriptions": {
+      "anonymousMode": "बढी गोपनीयताको लागि तपाईंको डेटा ७ दिन पछि स्वचालित रूपमा मेटिनेछ।"
+    },
+    "errors": {
+      "emailRequired": "इमेल ठेगाना आवश्यक छ",
+      "emailInvalid": "कृपया मान्य इमेल ठेगाना प्रविष्ट गर्नुहोस्",
+      "passwordRequired": "पासवर्ड आवश्यक छ",
+      "passwordTooShort": "पासवर्ड कम्तिमा ६ अक्षरको हुनुपर्छ",
+      "confirmPasswordRequired": "कृपया आफ्नो पासवर्ड पुष्टि गर्नुहोस्",
+      "passwordMismatch": "पासवर्डहरू मेल खाँदैनन्"
+    },
+    "loading": "कृपया पर्खनुहोस्...",
+    "logout": "साइन आउट"
+  }
 }

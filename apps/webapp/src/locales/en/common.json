@@ -3,5 +3,45 @@
   "nav.home": "Home",
   "nav.chat": "Chat",
   "chat.placeholder": "Type your message...",
-  "action.send": "Send"
+  "action.send": "Send",
+  "auth": {
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Welcome back to MindEase",
+      "button": "Sign In",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Sign up here"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join MindEase for better mental wellness",
+      "button": "Create Account",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in here"
+    },
+    "fields": {
+      "email": "Email Address",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "anonymousMode": "Enable Anonymous Mode"
+    },
+    "placeholders": {
+      "email": "Enter your email address",
+      "password": "Enter your password",
+      "confirmPassword": "Confirm your password"
+    },
+    "descriptions": {
+      "anonymousMode": "Your data will be automatically deleted after 7 days for enhanced privacy."
+    },
+    "errors": {
+      "emailRequired": "Email address is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordMismatch": "Passwords do not match"
+    },
+    "loading": "Please wait...",
+    "logout": "Sign Out"
+  }
 }
