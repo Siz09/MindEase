@@ -19,16 +19,22 @@ export default function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              } />
-              <Route path="/chat" element={
-                <ProtectedRoute>
-                  <ChatPage />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <ChatPage />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </main>
         </div>
@@ -53,7 +59,10 @@ function ChatPage() {
   return (
     <div>
       <h2>{t('nav.chat')}</h2>
-      <input placeholder={t('chat.placeholder')} style={{ width: '100%', padding: '12px', marginBottom: '8px' }} />
+      <input
+        placeholder={t('chat.placeholder')}
+        style={{ width: '100%', padding: '12px', marginBottom: '8px' }}
+      />
       <button>{t('action.send')}</button>
     </div>
   );

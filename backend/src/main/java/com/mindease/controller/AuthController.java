@@ -4,9 +4,9 @@ package com.mindease.controller;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.mindease.model.Role;
 import com.mindease.model.User;
-import com.mindease.service.CustomUserDetailsService;
 import com.mindease.service.FirebaseService;
 import com.mindease.service.UserService;
+import com.mindease.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import com.mindease.util.JwtUtil;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -36,15 +29,6 @@ public class AuthController {
   @Autowired
   private JwtUtil jwtUtil;
 
-  @Autowired
-  private AuthenticationManager authenticationManager;
-
-  @Autowired
-  private CustomUserDetailsService userDetailsService;
-  /**
-   * Register a new user with Firebase token
-   * POST /api/auth/register
-   */
   @PostMapping("/register")
   public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
     try {
@@ -65,22 +49,17 @@ public class AuthController {
       );
 
       // Generate JWT token
-      UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
       String jwtToken = jwtUtil.generateToken(user);
 
       return ResponseEntity.ok(createAuthResponse(user, jwtToken, "Registration successful"));
 
     } catch (FirebaseAuthException e) {
-      return ResponseEntity.status(401).body(createErrorResponse("Invalid Firebase token"));
+      return ResponseEntity.status(401).body(createErrorResponse("Invalid Firebase token: " + e.getMessage()));
     } catch (Exception e) {
       return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
     }
   }
 
-  /**
-   * Login user with Firebase token
-   * POST /api/auth/login
-   */
   @PostMapping("/login")
   public ResponseEntity<?> login(@RequestBody LoginRequest request) {
     try {
@@ -89,58 +68,21 @@ public class AuthController {
 
       // Find user by Firebase UID
       User user = userService.findByFirebaseUid(firebaseUid)
-        .orElseThrow(() -> new RuntimeException("User not found"));
+        .orElseThrow(() -> new RuntimeException("User not found. Please register first."));
 
       // Generate JWT token
-      UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
       String jwtToken = jwtUtil.generateToken(user);
 
       return ResponseEntity.ok(createAuthResponse(user, jwtToken, "Login successful"));
 
     } catch (FirebaseAuthException e) {
-      return ResponseEntity.status(401).body(createErrorResponse("Invalid Firebase token"));
-    } catch (Exception e) {
-      return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
-    }
-  }
-
-  /**
-   * Get current user info
-   * GET /api/auth/me
-   */
-  @GetMapping("/me")
-  public ResponseEntity<?> getCurrentUser() {
-    try {
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      String email = authentication.getName();
-
-      User user = userService.findByEmail(email)
-        .orElseThrow(() -> new RuntimeException("User not found"));
-
-      Map<String, Object> response = new HashMap<>();
-      response.put("status", "success");
-
-      Map<String, Object> userInfo = new HashMap<>();
-      userInfo.put("id", user.getId());
-      userInfo.put("email", user.getEmail());
-      userInfo.put("role", user.getRole());
-      userInfo.put("anonymousMode", user.getAnonymousMode());
-
-      response.put("user", userInfo);
-
-      return ResponseEntity.ok(response);
-
+      return ResponseEntity.status(401).body(createErrorResponse("Invalid Firebase token: " + e.getMessage()));
     } catch (Exception e) {
       return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
     }
   }
 
   // Helper methods
-  private String generateJwtToken(User user) {
-    // Stub method - will implement proper JWT generation in Day 5
-    return "jwt-token-stub-" + user.getId().toString();
-  }
-
   private Map<String, Object> createAuthResponse(User user, String token, String message) {
     Map<String, Object> response = new HashMap<>();
     response.put("message", message);
