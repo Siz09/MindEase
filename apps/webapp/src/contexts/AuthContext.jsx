@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
+          // Use the correct endpoint
           const response = await axios.get('http://localhost:8080/api/auth/me');
           setUser(response.data.user);
           setToken(storedToken);
@@ -72,9 +73,22 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
+
+      // Provide more specific error messages
+      let errorMessage = 'Login failed';
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password';
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = 'No account found with this email';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Incorrect password';
+      } else {
+        errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      }
+
       return {
         success: false,
-        error: error.response?.data?.message || error.message || 'Login failed',
+        error: errorMessage,
       };
     }
   };
