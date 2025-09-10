@@ -2,6 +2,8 @@
   "header.title": "MindEase Web",
   "nav.home": "Home",
   "nav.chat": "Chat",
+  "nav.mood": "Mood",
+  "nav.journal": "Journal",
   "chat.placeholder": "Type your message...",
   "action.send": "Send",
   "auth": {

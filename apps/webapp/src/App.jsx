@@ -5,11 +5,36 @@ import Navigation from './components/Navigation';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import MoodPage from './pages/Mood';
+import JournalPage from './pages/Journal';
 import './index.css';
 
-export default function App() {
+// Temporary components for protected routes
+function HomePage() {
   const { t } = useTranslation();
+  return (
+    <div>
+      <h2>Welcome to MindEase</h2>
+      <p>Your mental wellness journey starts here.</p>
+    </div>
+  );
+}
 
+function ChatPage() {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <h2>{t('nav.chat')}</h2>
+      <input
+        placeholder={t('chat.placeholder')}
+        style={{ width: '100%', padding: '12px', marginBottom: '8px' }}
+      />
+      <button>{t('action.send')}</button>
+    </div>
+  );
+}
+
+export default function App() {
   return (
     <AuthProvider>
       <Router>
@@ -35,35 +60,26 @@ export default function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/mood"
+                element={
+                  <ProtectedRoute>
+                    <MoodPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/journal"
+                element={
+                  <ProtectedRoute>
+                    <JournalPage />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </main>
         </div>
       </Router>
     </AuthProvider>
-  );
-}
-
-// Temporary components for protected routes
-function HomePage() {
-  const { t } = useTranslation();
-  return (
-    <div>
-      <h2>Welcome to MindEase</h2>
-      <p>Your mental wellness journey starts here.</p>
-    </div>
-  );
-}
-
-function ChatPage() {
-  const { t } = useTranslation();
-  return (
-    <div>
-      <h2>{t('nav.chat')}</h2>
-      <input
-        placeholder={t('chat.placeholder')}
-        style={{ width: '100%', padding: '12px', marginBottom: '8px' }}
-      />
-      <button>{t('action.send')}</button>
-    </div>
   );
 }

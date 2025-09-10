@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -11,40 +11,81 @@ export default function Navigation() {
     logout();
   };
 
+  // Common link style
+  const linkStyle = {
+    textDecoration: 'none',
+    color: '#0ea5e9',
+    fontSize: '14px',
+  };
+
   return (
-    <header style={{ 
-      display: 'flex', 
-      justifyContent: 'space-between', 
-      alignItems: 'center',
-      padding: '16px 0',
-      borderBottom: '1px solid #e1e5e9',
-      marginBottom: '24px'
-    }}>
+    <header
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '16px 0',
+        borderBottom: '1px solid #e1e5e9',
+        marginBottom: '24px',
+      }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-        <Link to="/" style={{ textDecoration: 'none' }}>
+        <NavLink to="/" style={{ textDecoration: 'none' }}>
           <h1 style={{ margin: 0, color: '#1a1a1a' }}>{t('header.title')}</h1>
-        </Link>
-        
+        </NavLink>
+
         {isAuthenticated && (
           <nav style={{ display: 'flex', gap: '16px' }}>
-            <Link to="/" style={{ textDecoration: 'none', color: '#0ea5e9' }}>
+            <NavLink
+              to="/"
+              style={({ isActive }) => ({
+                ...linkStyle,
+                fontWeight: isActive ? 'bold' : 'normal',
+                textDecoration: isActive ? 'underline' : 'none',
+              })}
+            >
               {t('nav.home')}
-            </Link>
-            <Link to="/chat" style={{ textDecoration: 'none', color: '#0ea5e9' }}>
+            </NavLink>
+            <NavLink
+              to="/chat"
+              style={({ isActive }) => ({
+                ...linkStyle,
+                fontWeight: isActive ? 'bold' : 'normal',
+                textDecoration: isActive ? 'underline' : 'none',
+              })}
+            >
               {t('nav.chat')}
-            </Link>
+            </NavLink>
+            <NavLink
+              to="/mood"
+              style={({ isActive }) => ({
+                ...linkStyle,
+                fontWeight: isActive ? 'bold' : 'normal',
+                textDecoration: isActive ? 'underline' : 'none',
+              })}
+            >
+              {t('nav.mood')}
+            </NavLink>
+            <NavLink
+              to="/journal"
+              style={({ isActive }) => ({
+                ...linkStyle,
+                fontWeight: isActive ? 'bold' : 'normal',
+                textDecoration: isActive ? 'underline' : 'none',
+              })}
+            >
+              {t('nav.journal')}
+            </NavLink>
           </nav>
         )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         <LanguageSwitcher />
-        
+
         {isAuthenticated ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '14px', color: '#666' }}>
-              {user?.email}
-            </span>
+            <span style={{ fontSize: '14px', color: '#666' }}>{user?.email}</span>
             <button
               onClick={handleLogout}
               style={{
@@ -54,7 +95,7 @@ export default function Navigation() {
                 padding: '6px 12px',
                 cursor: 'pointer',
                 fontSize: '14px',
-                color: '#666'
+                color: '#666',
               }}
             >
               {t('auth.logout')}
@@ -62,20 +103,10 @@ export default function Navigation() {
           </div>
         ) : (
           <div style={{ display: 'flex', gap: '8px' }}>
-            <Link
-              to="/login"
-              style={{
-                textDecoration: 'none',
-                color: '#0ea5e9',
-                padding: '6px 12px',
-                border: '1px solid #0ea5e9',
-                borderRadius: '6px',
-                fontSize: '14px'
-              }}
-            >
+            <NavLink to="/login" style={linkStyle}>
               {t('auth.login.title')}
-            </Link>
-            <Link
+            </NavLink>
+            <NavLink
               to="/register"
               style={{
                 textDecoration: 'none',
@@ -83,11 +114,11 @@ export default function Navigation() {
                 backgroundColor: '#0ea5e9',
                 padding: '6px 12px',
                 borderRadius: '6px',
-                fontSize: '14px'
+                fontSize: '14px',
               }}
             >
               {t('auth.register.title')}
-            </Link>
+            </NavLink>
           </div>
         )}
       </div>

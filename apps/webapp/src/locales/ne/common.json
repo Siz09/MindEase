@@ -2,6 +2,8 @@
   "header.title": "MindEase वेब",
   "nav.home": "गृह",
   "nav.chat": "च्याट",
+  "nav.mood": "मूड",
+  "nav.journal": "जर्नल",
   "chat.placeholder": "तपाईंको सन्देश टाइप गर्नुहोस्...",
   "action.send": "पठाउनुहोस्",
   "auth": {
