@@ -1,5 +1,7 @@
-// backend/src/main/java/com/mindease/controller/AuthController.java
 package com.mindease.controller;
+
+// Add this import
+import org.springframework.security.core.Authentication;
 
 import com.google.firebase.auth.FirebaseAuthException;
 import com.mindease.model.Role;
@@ -79,6 +81,34 @@ public class AuthController {
       return ResponseEntity.status(401).body(createErrorResponse("Invalid Firebase token: " + e.getMessage()));
     } catch (Exception e) {
       return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+    }
+  }
+
+  @GetMapping("/me")
+  public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+    try {
+      // Get the username (email) from the authentication object
+      String email = authentication.getName();
+
+      // Find the user by email
+      User user = userService.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("User not found"));
+
+      // Return user information without sensitive data
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", "success");
+
+      Map<String, Object> userInfo = new HashMap<>();
+      userInfo.put("id", user.getId());
+      userInfo.put("email", user.getEmail());
+      userInfo.put("role", user.getRole());
+      userInfo.put("anonymousMode", user.getAnonymousMode());
+
+      response.put("user", userInfo);
+      return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+      return ResponseEntity.status(404).body(createErrorResponse("User not found: " + e.getMessage()));
     }
   }
 
