@@ -8,10 +8,10 @@ export default function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -39,36 +39,34 @@ export default function Login() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setLoading(true);
     const result = await login(formData.email, formData.password);
-    
+
     if (result.success) {
       navigate('/');
-    } else {
-      setErrors({ general: result.error });
     }
-    
+
     setLoading(false);
   };
 
@@ -82,12 +80,6 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {errors.general && (
-            <div className="error-message general-error">
-              {errors.general}
-            </div>
-          )}
-
           <div className="form-group">
             <label htmlFor="email" className="form-label">
               {t('auth.fields.email')}
@@ -102,9 +94,7 @@ export default function Login() {
               placeholder={t('auth.placeholders.email')}
               disabled={loading}
             />
-            {errors.email && (
-              <div className="error-message">{errors.email}</div>
-            )}
+            {errors.email && <div className="error-message">{errors.email}</div>}
           </div>
 
           <div className="form-group">
@@ -121,16 +111,10 @@ export default function Login() {
               placeholder={t('auth.placeholders.password')}
               disabled={loading}
             />
-            {errors.password && (
-              <div className="error-message">{errors.password}</div>
-            )}
+            {errors.password && <div className="error-message">{errors.password}</div>}
           </div>
 
-          <button
-            type="submit"
-            className="auth-button"
-            disabled={loading}
-          >
+          <button type="submit" className="auth-button" disabled={loading}>
             {loading && <span className="loading-spinner"></span>}
             {loading ? t('auth.loading') : t('auth.login.button')}
           </button>
