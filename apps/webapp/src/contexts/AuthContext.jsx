@@ -1,8 +1,8 @@
-// apps/webapp/src/contexts/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
@@ -34,14 +34,15 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          // Use the correct endpoint
           const response = await axios.get('http://localhost:8080/api/auth/me');
           setUser(response.data.user);
           setToken(storedToken);
+          toast.success('Welcome back!');
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
           setToken(null);
+          toast.error('Session expired. Please log in again.');
         }
       }
       setLoading(false);
@@ -52,6 +53,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      // Show loading toast
+      const toastId = toast.loading('Signing in...');
+
       // Step 1: Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
@@ -70,11 +74,18 @@ export const AuthProvider = ({ children }) => {
       setToken(jwtToken);
       setUser(userData);
 
+      // Update toast to success
+      toast.update(toastId, {
+        render: 'Successfully signed in!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
 
-      // Provide more specific error messages
       let errorMessage = 'Login failed';
       if (error.code === 'auth/invalid-credential') {
         errorMessage = 'Invalid email or password';
@@ -86,6 +97,8 @@ export const AuthProvider = ({ children }) => {
         errorMessage = error.response?.data?.message || error.message || 'Login failed';
       }
 
+      toast.error(errorMessage);
+
       return {
         success: false,
         error: errorMessage,
@@ -95,6 +108,9 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (email, password, anonymousMode = false) => {
     try {
+      // Show loading toast
+      const toastId = toast.loading('Creating account...');
+
       // Step 1: Create user in Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
@@ -115,12 +131,32 @@ export const AuthProvider = ({ children }) => {
       setToken(jwtToken);
       setUser(userData);
 
+      // Update toast to success
+      toast.update(toastId, {
+        render: 'Account created successfully!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
       return { success: true };
     } catch (error) {
       console.error('Register error:', error);
+
+      let errorMessage = 'Registration failed';
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'Email already in use';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak';
+      } else {
+        errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+      }
+
+      toast.error(errorMessage);
+
       return {
         success: false,
-        error: error.response?.data?.message || error.message || 'Registration failed',
+        error: errorMessage,
       };
     }
   };
@@ -131,6 +167,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     delete axios.defaults.headers.common['Authorization'];
     auth.signOut();
+    toast.info('You have been logged out');
   };
 
   const value = {

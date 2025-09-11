@@ -8,12 +8,12 @@ export default function Register() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { register } = useAuth();
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
-    anonymousMode: false
+    anonymousMode: false,
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -48,36 +48,34 @@ export default function Register() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: '',
       }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setLoading(true);
     const result = await register(formData.email, formData.password, formData.anonymousMode);
-    
+
     if (result.success) {
       navigate('/');
-    } else {
-      setErrors({ general: result.error });
     }
-    
+
     setLoading(false);
   };
 
@@ -91,12 +89,6 @@ export default function Register() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {errors.general && (
-            <div className="error-message general-error">
-              {errors.general}
-            </div>
-          )}
-
           <div className="form-group">
             <label htmlFor="email" className="form-label">
               {t('auth.fields.email')}
@@ -111,9 +103,7 @@ export default function Register() {
               placeholder={t('auth.placeholders.email')}
               disabled={loading}
             />
-            {errors.email && (
-              <div className="error-message">{errors.email}</div>
-            )}
+            {errors.email && <div className="error-message">{errors.email}</div>}
           </div>
 
           <div className="form-group">
@@ -130,9 +120,7 @@ export default function Register() {
               placeholder={t('auth.placeholders.password')}
               disabled={loading}
             />
-            {errors.password && (
-              <div className="error-message">{errors.password}</div>
-            )}
+            {errors.password && <div className="error-message">{errors.password}</div>}
           </div>
 
           <div className="form-group">
@@ -164,20 +152,12 @@ export default function Register() {
                 className="checkbox-input"
                 disabled={loading}
               />
-              <span className="checkbox-text">
-                {t('auth.fields.anonymousMode')}
-              </span>
+              <span className="checkbox-text">{t('auth.fields.anonymousMode')}</span>
             </label>
-            <p className="checkbox-description">
-              {t('auth.descriptions.anonymousMode')}
-            </p>
+            <p className="checkbox-description">{t('auth.descriptions.anonymousMode')}</p>
           </div>
 
-          <button
-            type="submit"
-            className="auth-button"
-            disabled={loading}
-          >
+          <button type="submit" className="auth-button" disabled={loading}>
             {loading && <span className="loading-spinner"></span>}
             {loading ? t('auth.loading') : t('auth.register.button')}
           </button>
