@@ -1,0 +1,319 @@
+/* Mood Page Styles */
+.mood-page {
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-primary) 100%
+  );
+}
+
+.mood-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--spacing-2xl);
+  align-items: start;
+}
+
+/* Mood Selector */
+.mood-selector-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.mood-selector-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border: 1px solid rgba(21, 128, 61, 0.1);
+}
+
+.mood-options {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.mood-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg) var(--spacing-md);
+  background-color: var(--bg-card);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-align: center;
+}
+
+.mood-option:hover {
+  border-color: var(--mood-color);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.mood-option.selected {
+  border-color: var(--mood-color);
+  background-color: var(--mood-color);
+  color: var(--white);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.mood-emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.mood-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+/* Mood Confirmation */
+.mood-confirmation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(132, 204, 22, 0.1) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--accent-lime);
+}
+
+.confirmation-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.confirmation-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--white);
+}
+
+.confirmation-text h3 {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--primary-green);
+  font-size: var(--font-size-lg);
+}
+
+.confirmation-text p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Mood Insights */
+.mood-insights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.stats-card {
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-green-light) 100%);
+  color: var(--white);
+  border: none;
+}
+
+.stats-card .card-title {
+  color: var(--white);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.stat-item {
+  text-align: center;
+  padding: var(--spacing-md);
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+}
+
+.stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-value.trend-up {
+  color: var(--accent-lime);
+}
+
+.stat-value.trend-down {
+  color: #fbbf24;
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+}
+
+/* Mood History */
+.history-card {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.mood-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.history-item:hover {
+  background-color: var(--bg-secondary);
+  transform: translateX(4px);
+}
+
+.history-mood {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.history-emoji {
+  font-size: 1.25rem;
+}
+
+.history-label {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.history-time {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+/* Wellness Tips */
+.tips-card {
+  grid-column: 1 / -1;
+  margin-top: var(--spacing-lg);
+}
+
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.tip-item {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+}
+
+.tip-item:hover {
+  background-color: var(--bg-secondary);
+  transform: translateY(-2px);
+}
+
+.tip-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tip-content h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--primary-green);
+  font-size: var(--font-size-base);
+}
+
+.tip-content p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .mood-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xl);
+  }
+
+  .mood-insights {
+    grid-template-columns: repeat(2, 1fr);
+    display: grid;
+  }
+}
+
+@media (max-width: 768px) {
+  .mood-options {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  .mood-option {
+    padding: var(--spacing-md) var(--spacing-sm);
+  }
+
+  .mood-emoji {
+    font-size: 2rem;
+  }
+
+  .mood-confirmation {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+
+  .mood-insights {
+    grid-template-columns: 1fr;
+  }
+
+  .tips-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .mood-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stat-item {
+    padding: var(--spacing-sm);
+  }
+
+  .stat-value {
+    font-size: var(--font-size-xl);
+  }
+}
