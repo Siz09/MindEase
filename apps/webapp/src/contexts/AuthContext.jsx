@@ -1,7 +1,11 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth } from '../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInAnonymously,
+} from 'firebase/auth';
 import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
@@ -15,7 +19,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
@@ -35,7 +39,7 @@ export const AuthProvider = ({ children }) => {
       if (storedToken) {
         try {
           const response = await axios.get('http://localhost:8080/api/auth/me');
-          setUser(response.data.user);
+          setCurrentUser(response.data.user);
           setToken(storedToken);
           toast.success('Welcome back!');
         } catch (error) {
@@ -53,17 +57,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Show loading toast
       const toastId = toast.loading('Signing in...');
 
-      // Step 1: Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
 
-      // Step 2: Get Firebase ID token
       const firebaseToken = await firebaseUser.getIdToken();
 
-      // Step 3: Login to our backend
       const response = await axios.post('http://localhost:8080/api/auth/login', {
         firebaseToken,
       });
@@ -72,9 +72,8 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('token', jwtToken);
       setToken(jwtToken);
-      setUser(userData);
+      setCurrentUser(userData);
 
-      // Update toast to success
       toast.update(toastId, {
         render: 'Successfully signed in!',
         type: 'success',
@@ -88,27 +87,64 @@ export const AuthProvider = ({ children }) => {
 
       let errorMessage = 'Login failed';
       if (error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password';
+        errorMessage = 'Invalid email or password.';
       } else if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email';
+        errorMessage = 'No account found with this email.';
       } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password';
-      } else {
-        errorMessage = error.response?.data?.message || error.message || 'Login failed';
+        errorMessage = 'Incorrect password.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       toast.error(errorMessage);
 
-      return {
-        success: false,
-        error: errorMessage,
-      };
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  const loginAnonymously = async () => {
+    try {
+      const toastId = toast.loading('Continuing anonymously...');
+
+      // Sign in anonymously with Firebase
+      const userCredential = await signInAnonymously(auth);
+      const firebaseUser = userCredential.user;
+
+      // Get Firebase ID token
+      const firebaseToken = await firebaseUser.getIdToken();
+
+      // Register anonymously with our backend
+      const response = await axios.post('http://localhost:8080/api/auth/register', {
+        email: `anonymous_${firebaseUser.uid}@mindease.com`,
+        firebaseToken,
+        anonymousMode: true,
+      });
+
+      const { token: jwtToken, user: userData } = response.data;
+
+      localStorage.setItem('token', jwtToken);
+      setToken(jwtToken);
+      setCurrentUser(userData);
+
+      toast.update(toastId, {
+        render: 'Continuing anonymously!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Anonymous login error:', error);
+      toast.error('Failed to continue anonymously. Please try again.');
+      return { success: false, error: error.message };
     }
   };
 
   const register = async (email, password, anonymousMode = false) => {
     try {
-      // Show loading toast
       const toastId = toast.loading('Creating account...');
 
       // Step 1: Create user in Firebase
@@ -129,9 +165,8 @@ export const AuthProvider = ({ children }) => {
 
       localStorage.setItem('token', jwtToken);
       setToken(jwtToken);
-      setUser(userData);
+      setCurrentUser(userData);
 
-      // Update toast to success
       toast.update(toastId, {
         render: 'Account created successfully!',
         type: 'success',
@@ -144,12 +179,20 @@ export const AuthProvider = ({ children }) => {
       console.error('Register error:', error);
 
       let errorMessage = 'Registration failed';
+
+      // Firebase error codes
       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'Email already in use';
+        errorMessage = 'This email is already registered. Please log in instead.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
       } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak';
-      } else {
-        errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+        errorMessage = 'Password should be at least 6 characters.';
+      }
+      // Backend or Axios errors
+      else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       toast.error(errorMessage);
@@ -161,23 +204,52 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = async (updates) => {
+    try {
+      // Use the correct endpoint for anonymous mode
+      if (updates.anonymousMode !== undefined) {
+        const response = await axios.patch(
+          `http://localhost:8080/api/users/${currentUser.id}/anonymous-mode`,
+          { anonymousMode: updates.anonymousMode },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setCurrentUser((prev) => ({ ...prev, ...response.data }));
+        return { success: true };
+      }
+
+      // For other updates, use a different endpoint or handle accordingly
+      return { success: false, error: 'Only anonymous mode updates are supported' };
+    } catch (error) {
+      console.error('Update user error:', error);
+      toast.error('Failed to update user settings');
+      return { success: false, error: error.message };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
-    setUser(null);
+    setCurrentUser(null);
     delete axios.defaults.headers.common['Authorization'];
     auth.signOut();
     toast.info('You have been logged out');
   };
 
   const value = {
-    user,
+    currentUser,
     token,
     loading,
     login,
+    loginAnonymously,
     register,
+    updateUser,
     logout,
-    isAuthenticated: !!user,
+    isAuthenticated: !!currentUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
