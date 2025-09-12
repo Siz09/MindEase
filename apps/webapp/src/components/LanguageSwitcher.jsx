@@ -1,22 +1,28 @@
+'use client';
 import { useTranslation } from 'react-i18next';
+import '../styles/LanguageSwitcher.css';
 
-export default function LanguageSwitcher() {
+const LanguageSwitcher = () => {
   const { i18n } = useTranslation();
-  const current = i18n.resolvedLanguage || 'en';
 
-  const switchTo = (lng) => {
-    i18n.changeLanguage(lng);
-    localStorage.setItem('i18nextLng', lng);
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'en' ? 'ne' : 'en';
+    i18n.changeLanguage(newLang);
   };
 
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
-      <button onClick={() => switchTo('en')} aria-pressed={current.startsWith('en')}>
-        EN
-      </button>
-      <button onClick={() => switchTo('ne')} aria-pressed={current.startsWith('ne')}>
-        ने
-      </button>
-    </div>
+    <button
+      onClick={toggleLanguage}
+      className="language-switcher"
+      aria-label={`Switch to ${i18n.language === 'en' ? 'Nepali' : 'English'}`}
+    >
+      <div className="language-toggle">
+        <span className={`lang-option ${i18n.language === 'en' ? 'active' : ''}`}>EN</span>
+        <span className={`lang-option ${i18n.language === 'ne' ? 'active' : ''}`}>नेपाली</span>
+        <div className={`toggle-slider ${i18n.language === 'ne' ? 'right' : 'left'}`}></div>
+      </div>
+    </button>
   );
-}
+};
+
+export default LanguageSwitcher;

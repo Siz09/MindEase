@@ -1,139 +1,192 @@
-import { NavLink } from 'react-router-dom';
+'use client';
+
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import '../styles/Navigation.css';
 
-export default function Navigation() {
+const Navigation = () => {
   const { t } = useTranslation();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { currentUser, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to log out:', error);
+    }
   };
 
-  // Common link style
-  const linkStyle = {
-    textDecoration: 'none',
-    color: '#0ea5e9',
-    fontSize: '14px',
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const isActive = (path) => {
+    return location.pathname === path;
   };
 
   return (
-    <header
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '16px 0',
-        borderBottom: '1px solid #e1e5e9',
-        marginBottom: '24px',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-        <NavLink to="/" style={{ textDecoration: 'none' }}>
-          <h1 style={{ margin: 0, color: '#1a1a1a' }}>{t('header.title')}</h1>
-        </NavLink>
+    <nav className="navigation">
+      <div className="nav-container">
+        {/* Logo and Brand */}
+        <div className="nav-brand">
+          <Link to="/" className="brand-link">
+            <div className="brand-icon">
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="14" fill="currentColor" opacity="0.1" />
+                <path
+                  d="M12 16c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M8 16c0-4.4 3.6-8 8-8s8 3.6 8 4"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
+              </svg>
+            </div>
+            <span className="brand-text">MindEase</span>
+          </Link>
+        </div>
 
-        {isAuthenticated && (
-          <nav style={{ display: 'flex', gap: '16px' }}>
-            <NavLink
+        {/* Desktop Navigation Links */}
+        {currentUser && (
+          <div className="nav-links desktop-only">
+            <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2L3 9v9h4v-6h6v6h4V9l-7-7z" fill="currentColor" />
+              </svg>
+              {t('navigation.mood')}
+            </Link>
+            <Link to="/journal" className={`nav-link ${isActive('/journal') ? 'active' : ''}`}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M4 3h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
+                <path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" strokeWidth="2" />
+              </svg>
+              {t('navigation.journal')}
+            </Link>
+            <Link to="/settings" className={`nav-link ${isActive('/settings') ? 'active' : ''}`}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" fill="currentColor" />
+                <path
+                  d="M10 1l3 6 6-3-3 6 3 6-6-3-3 6-3-6-6 3 3-6-3-6 6 3 3-6z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+              </svg>
+              {t('navigation.settings')}
+            </Link>
+          </div>
+        )}
+
+        {/* Right Side Actions */}
+        <div className="nav-actions">
+          <LanguageSwitcher />
+
+          {currentUser ? (
+            <div className="user-menu">
+              <div className="user-info desktop-only">
+                <span className="user-email">{currentUser.email}</span>
+              </div>
+              <button onClick={handleLogout} className="btn btn-outline logout-btn">
+                {t('navigation.logout')}
+              </button>
+            </div>
+          ) : (
+            <div className="auth-links">
+              <Link to="/login" className="btn btn-outline">
+                {t('navigation.login')}
+              </Link>
+              <Link to="/register" className="btn btn-primary">
+                {t('navigation.register')}
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile Menu Toggle */}
+          <button
+            className="mobile-menu-toggle mobile-only"
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              {isMenuOpen ? (
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" />
+              ) : (
+                <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {currentUser && (
+        <div className={`mobile-menu ${isMenuOpen ? 'open' : ''}`}>
+          <div className="mobile-menu-content">
+            <Link
               to="/"
-              style={({ isActive }) => ({
-                ...linkStyle,
-                fontWeight: isActive ? 'bold' : 'normal',
-                textDecoration: isActive ? 'underline' : 'none',
-              })}
+              className={`mobile-nav-link ${isActive('/') ? 'active' : ''}`}
+              onClick={() => setIsMenuOpen(false)}
             >
-              {t('nav.home')}
-            </NavLink>
-            <NavLink
-              to="/chat"
-              style={({ isActive }) => ({
-                ...linkStyle,
-                fontWeight: isActive ? 'bold' : 'normal',
-                textDecoration: isActive ? 'underline' : 'none',
-              })}
-            >
-              {t('nav.chat')}
-            </NavLink>
-            <NavLink
-              to="/mood"
-              style={({ isActive }) => ({
-                ...linkStyle,
-                fontWeight: isActive ? 'bold' : 'normal',
-                textDecoration: isActive ? 'underline' : 'none',
-              })}
-            >
-              {t('nav.mood')}
-            </NavLink>
-
-            <NavLink
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2L3 9v9h4v-6h6v6h4V9l-7-7z" fill="currentColor" />
+              </svg>
+              {t('navigation.mood')}
+            </Link>
+            <Link
               to="/journal"
-              style={({ isActive }) => ({
-                ...linkStyle,
-                fontWeight: isActive ? 'bold' : 'normal',
-                textDecoration: isActive ? 'underline' : 'none',
-              })}
+              className={`mobile-nav-link ${isActive('/journal') ? 'active' : ''}`}
+              onClick={() => setIsMenuOpen(false)}
             >
-              {t('nav.journal')}
-            </NavLink>
-
-            <NavLink
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M4 3h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
+                <path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" strokeWidth="2" />
+              </svg>
+              {t('navigation.journal')}
+            </Link>
+            <Link
               to="/settings"
-              style={({ isActive }) => ({
-                ...linkStyle,
-                fontWeight: isActive ? 'bold' : 'normal',
-                textDecoration: isActive ? 'underline' : 'none',
-              })}
+              className={`mobile-nav-link ${isActive('/settings') ? 'active' : ''}`}
+              onClick={() => setIsMenuOpen(false)}
             >
-              {t('settings')}
-            </NavLink>
-          </nav>
-        )}
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <LanguageSwitcher />
-
-        {isAuthenticated ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '14px', color: '#666' }}>{user?.email}</span>
-            <button
-              onClick={handleLogout}
-              style={{
-                background: 'none',
-                border: '1px solid #e1e5e9',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                color: '#666',
-              }}
-            >
-              {t('auth.logout')}
-            </button>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" fill="currentColor" />
+                <path
+                  d="M10 1l3 6 6-3-3 6 3 6-6-3-3 6-3-6-6 3 3-6-3-6 6 3 3-6z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+              </svg>
+              {t('navigation.settings')}
+            </Link>
+            <div className="mobile-user-info">
+              <span className="user-email">{currentUser.email}</span>
+            </div>
           </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <NavLink to="/login" style={linkStyle}>
-              {t('auth.login.title')}
-            </NavLink>
-            <NavLink
-              to="/register"
-              style={{
-                textDecoration: 'none',
-                color: 'white',
-                backgroundColor: '#0ea5e9',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontSize: '14px',
-              }}
-            >
-              {t('auth.register.title')}
-            </NavLink>
-          </div>
-        )}
-      </div>
-    </header>
+        </div>
+      )}
+    </nav>
   );
-}
+};
+
+export default Navigation;

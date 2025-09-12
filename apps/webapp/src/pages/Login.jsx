@@ -1,134 +1,216 @@
+'use client';
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/Auth.css';
 
-export default function Login() {
+const Login = () => {
   const { t } = useTranslation();
+  const { login, loginAnonymously } = useAuth();
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = t('auth.errors.emailRequired');
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = t('auth.errors.emailInvalid');
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = t('auth.errors.passwordRequired');
-    } else if (formData.password.length < 6) {
-      newErrors.password = t('auth.errors.passwordTooShort');
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    setError('');
     setLoading(true);
-    const result = await login(formData.email, formData.password);
 
-    if (result.success) {
+    try {
+      await login(formData.email, formData.password);
       navigate('/');
+    } catch (error) {
+      setError(t('auth.loginError'));
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setLoading(false);
+  const handleAnonymousLogin = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      await loginAnonymously();
+      navigate('/');
+    } catch (error) {
+      setError(t('auth.anonymousError'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <div className="auth-logo"></div>
-          <h1 className="auth-title">{t('auth.login.title')}</h1>
-          <p className="auth-subtitle">{t('auth.login.subtitle')}</p>
-        </div>
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-content">
+          {/* Left Side - Welcome Section */}
+          <div className="auth-welcome">
+            <div className="welcome-content">
+              <div className="welcome-icon">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="35" fill="var(--primary-green)" opacity="0.1" />
+                  <path
+                    d="M30 40c0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 10-10 10-10-4.5-10-10z"
+                    fill="var(--primary-green)"
+                  />
+                  <path
+                    d="M20 40c0-11 9-20 20-20s20 9 20 10"
+                    stroke="var(--primary-green)"
+                    strokeWidth="3"
+                    fill="none"
+                  />
+                </svg>
+              </div>
+              <h1 className="welcome-title">{t('auth.welcomeBack')}</h1>
+              <p className="welcome-subtitle">{t('auth.loginSubtitle')}</p>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">
-              {t('auth.fields.email')}
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`form-input ${errors.email ? 'error' : ''}`}
-              placeholder={t('auth.placeholders.email')}
-              disabled={loading}
-            />
-            {errors.email && <div className="error-message">{errors.email}</div>}
+              <div className="features-list">
+                <div className="feature-item">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      fill="var(--primary-green)"
+                    />
+                  </svg>
+                  <span>{t('auth.feature1')}</span>
+                </div>
+                <div className="feature-item">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      fill="var(--primary-green)"
+                    />
+                  </svg>
+                  <span>{t('auth.feature2')}</span>
+                </div>
+                <div className="feature-item">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      fill="var(--primary-green)"
+                    />
+                  </svg>
+                  <span>{t('auth.feature3')}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">
-              {t('auth.fields.password')}
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`form-input ${errors.password ? 'error' : ''}`}
-              placeholder={t('auth.placeholders.password')}
-              disabled={loading}
-            />
-            {errors.password && <div className="error-message">{errors.password}</div>}
+          {/* Right Side - Login Form */}
+          <div className="auth-form-section">
+            <div className="auth-form-container">
+              <div className="form-header">
+                <h2 className="form-title">{t('auth.signIn')}</h2>
+                <p className="form-subtitle">{t('auth.signInSubtitle')}</p>
+              </div>
+
+              {error && (
+                <div className="error-message">
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2" />
+                    <path d="M10 6v4M10 14h.01" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="auth-form">
+                <div className="form-group">
+                  <label htmlFor="email" className="form-label">
+                    {t('auth.email')}
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder={t('auth.emailPlaceholder')}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="password" className="form-label">
+                    {t('auth.password')}
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder={t('auth.passwordPlaceholder')}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className={`btn btn-primary w-full ${loading ? 'loading' : ''}`}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <div className="spinner"></div>
+                      {t('auth.signingIn')}
+                    </>
+                  ) : (
+                    t('auth.signIn')
+                  )}
+                </button>
+              </form>
+
+              <div className="form-divider">
+                <span>{t('auth.or')}</span>
+              </div>
+
+              <button
+                onClick={handleAnonymousLogin}
+                className={`btn btn-secondary w-full ${loading ? 'loading' : ''}`}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <div className="spinner"></div>
+                    {t('auth.continuingAnonymously')}
+                  </>
+                ) : (
+                  t('auth.continueAnonymously')
+                )}
+              </button>
+
+              <div className="form-footer">
+                <p>
+                  {t('auth.noAccount')}{' '}
+                  <Link to="/register" className="auth-link">
+                    {t('auth.signUp')}
+                  </Link>
+                </p>
+              </div>
+            </div>
           </div>
-
-          <button type="submit" className="auth-button" disabled={loading}>
-            {loading && <span className="loading-spinner"></span>}
-            {loading ? t('auth.loading') : t('auth.login.button')}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          <p>
-            {t('auth.login.noAccount')}{' '}
-            <Link to="/register" className="auth-link">
-              {t('auth.login.registerLink')}
-            </Link>
-          </p>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Login;
