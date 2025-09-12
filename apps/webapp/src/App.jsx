@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import MoodPage from './pages/Mood';
 import JournalPage from './pages/Journal';
 import './index.css';
+import Settings from './pages/Settings';
 
 // Temporary components for protected routes
 function HomePage() {
@@ -75,6 +76,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <JournalPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 }
               />
