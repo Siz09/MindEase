@@ -66,6 +66,7 @@ export default function Navigation() {
             >
               {t('nav.mood')}
             </NavLink>
+
             <NavLink
               to="/journal"
               style={({ isActive }) => ({
@@ -75,6 +76,17 @@ export default function Navigation() {
               })}
             >
               {t('nav.journal')}
+            </NavLink>
+
+            <NavLink
+              to="/settings"
+              style={({ isActive }) => ({
+                ...linkStyle,
+                fontWeight: isActive ? 'bold' : 'normal',
+                textDecoration: isActive ? 'underline' : 'none',
+              })}
+            >
+              {t('settings')}
             </NavLink>
           </nav>
         )}

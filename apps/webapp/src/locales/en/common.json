@@ -4,6 +4,7 @@
   "nav.chat": "Chat",
   "nav.mood": "Mood",
   "nav.journal": "Journal",
+  "settings": "Settings",
   "chat.placeholder": "Type your message...",
   "action.send": "Send",
   "auth": {
@@ -31,6 +32,15 @@
       "email": "Enter your email address",
       "password": "Enter your password",
       "confirmPassword": "Confirm your password"
+    },
+    "settings": {
+      "title": "Settings",
+      "privacy": "Privacy",
+      "account": "Account",
+      "anonymousMode": "Anonymous Mode",
+      "anonymousModeDescription": "Your data will be automatically deleted after 7 days for enhanced privacy.",
+      "email": "Email",
+      "role": "Role"
     },
     "descriptions": {
       "anonymousMode": "Your data will be automatically deleted after 7 days for enhanced privacy."
