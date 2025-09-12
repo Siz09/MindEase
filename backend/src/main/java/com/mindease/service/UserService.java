@@ -126,4 +126,5 @@ public class UserService {
     user.setAnonymousMode(anonymousMode);
     return userRepository.save(user);
   }
+
 }
