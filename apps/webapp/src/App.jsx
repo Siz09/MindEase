@@ -7,6 +7,8 @@ import Mood from './pages/Mood';
 import Journal from './pages/Journal';
 import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import './styles/App.css';
 
 function App() {
@@ -45,6 +47,18 @@ function App() {
               />
             </Routes>
           </main>
+          {/* Make sure ToastContainer is here */}
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
         </div>
       </Router>
     </AuthProvider>
