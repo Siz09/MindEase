@@ -43,8 +43,13 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(formData.email, formData.password);
-      navigate('/');
+      const result = await register(formData.email, formData.password, formData.anonymousMode);
+
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.error);
+      }
     } catch (error) {
       setError(t('auth.registerError'));
     } finally {
