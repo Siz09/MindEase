@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebSocket Test</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h1>WebSocket Test</h1>
+<div id="messages"></div>
+<input type="text" id="messageInput" placeholder="Type a message...">
+<button onclick="sendMessage()">Send</button>
+
+<script>
+  const stompClient = new StompJs.Client({
+    webSocketFactory: () => new SockJS('http://localhost:8080/ws')
+  });
+
+  stompClient.onConnect = (frame) => {
+    console.log('Connected: ' + frame);
+    stompClient.subscribe('/topic/public', (message) => {
+      showMessage(JSON.parse(message.body));
+    });
+
+    // Send a join message
+    const joinMessage = {
+      type: 'JOIN',
+      content: '',
+      sender: 'TestUser'
+    };
+    stompClient.publish({
+      destination: '/app/chat.addUser',
+      body: JSON.stringify(joinMessage)
+    });
+  };
+
+  stompClient.onWebSocketError = (error) => {
+    console.error('Error with websocket', error);
+  };
+
+  stompClient.onStompError = (frame) => {
+    console.error('Broker reported error: ' + frame.headers['message']);
+    console.error('Additional details: ' + frame.body);
+  };
+
+  function connect() {
+    stompClient.activate();
+  }
+
+  function disconnect() {
+    stompClient.deactivate();
+    console.log("Disconnected");
+  }
+
+  function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    const message = {
+      type: 'CHAT',
+      content: messageInput.value,
+      sender: 'TestUser'
+    };
+    stompClient.publish({
+      destination: '/app/chat.send',
+      body: JSON.stringify(message)
+    });
+    messageInput.value = '';
+  }
+
+  function showMessage(message) {
+    const messagesDiv = document.getElementById('messages');
+    const messageElement = document.createElement('div');
+    messageElement.innerHTML = `<strong>${message.sender}:</strong> ${message.content}`;
+    messagesDiv.appendChild(messageElement);
+  }
+
+  // Connect when page loads
+  window.onload = connect;
+</script>
+</body>
+</html>
