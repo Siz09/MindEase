@@ -3,6 +3,7 @@ package com.mindease.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
 
 @Entity
 @Table(name = "chat_sessions")
@@ -24,6 +25,9 @@ public class ChatSession {
 
   @Column(name = "title", length = 255)
   private String title; // Optional title for the chat session
+
+  @OneToMany(mappedBy = "chatSession", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private List<Message> messages;
 
   // Default constructor for JPA
   public ChatSession() {
