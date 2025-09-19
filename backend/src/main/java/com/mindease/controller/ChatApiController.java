@@ -85,7 +85,43 @@ public class ChatApiController {
 
       messagingTemplate.convertAndSend("/topic/" + chatSession.getId(), userMessagePayload);
 
-      // Generate AI response
+      // Prepare response map
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", "success");
+      response.put("message", "Message sent and processed");
+      response.put("userMessage", userMessagePayload);
+
+      // Update the sendMessage method to include crisis response
+      if (isCrisis) {
+        String crisisResponse = "I'm really concerned about what you're sharing. " +
+          "It's important to talk to a mental health professional who can provide proper support. " +
+          "Please consider reaching out to a crisis helpline or mental health service immediately. " +
+          "You can contact the National Suicide Prevention Lifeline at 1-800-273-8255 " +
+          "or text HOME to 741741 to reach the Crisis Text Line. " +
+          "You don't have to go through this alone.";
+
+        // Save the crisis response
+        Message crisisMessage = new Message(chatSession, crisisResponse, false);
+        crisisMessage.setIsCrisisFlagged(true);
+        messageRepository.save(crisisMessage);
+
+        // Broadcast the crisis response via WebSocket
+        Map<String, Object> crisisMessagePayload = new HashMap<>();
+        crisisMessagePayload.put("id", crisisMessage.getId());
+        crisisMessagePayload.put("content", crisisMessage.getContent());
+        crisisMessagePayload.put("isUserMessage", crisisMessage.getIsUserMessage());
+        crisisMessagePayload.put("isCrisisFlagged", crisisMessage.getIsCrisisFlagged());
+        crisisMessagePayload.put("createdAt", crisisMessage.getCreatedAt());
+        crisisMessagePayload.put("isCrisisResponse", true);
+
+        messagingTemplate.convertAndSend("/topic/" + chatSession.getId(), crisisMessagePayload);
+
+        // Add the crisis message to the response
+        response.put("crisisMessage", crisisMessagePayload);
+        response.put("crisisDetected", true);
+      }
+
+      // Generate AI response (still sent even if crisis detected)
       String aiResponse = chatBotService.generateResponse(request.getMessage(), user.getId().toString());
 
       // Save the AI response
@@ -102,10 +138,6 @@ public class ChatApiController {
 
       messagingTemplate.convertAndSend("/topic/" + chatSession.getId(), botMessagePayload);
 
-      Map<String, Object> response = new HashMap<>();
-      response.put("status", "success");
-      response.put("message", "Message sent and processed");
-      response.put("userMessage", userMessagePayload);
       response.put("botMessage", botMessagePayload);
 
       return ResponseEntity.ok(response);
