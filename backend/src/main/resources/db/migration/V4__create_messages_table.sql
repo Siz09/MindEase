@@ -11,3 +11,4 @@ CREATE TABLE IF NOT EXISTS messages (
 -- Create indexes for messages table
 CREATE INDEX IF NOT EXISTS idx_messages_chat_session_id ON messages(chat_session_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+
