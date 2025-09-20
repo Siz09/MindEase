@@ -6,13 +6,12 @@ import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
 import com.theokanning.openai.service.OpenAiService;
 import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
-//@Component // Change from @Service to @Component
+// Remove the @Service annotation
 public class OpenAIChatBotService implements ChatBotService {
 
   @Autowired
