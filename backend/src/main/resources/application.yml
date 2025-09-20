@@ -1,6 +1,8 @@
 spring:
   application:
     name: mindease-backend
+  profiles:
+    active: dev # Set default to development for testing
   datasource:
     url: jdbc:postgresql://localhost:5432/mindease
     username: mindease
@@ -11,7 +13,6 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-#        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: true
   flyway:
@@ -28,27 +29,27 @@ firebase:
 
 # JWT configuration
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:dev-jwt-secret-key-for-development-only-change-in-production}
   expiration: 86400000
 
 # Retention policy configuration
 retention:
   policy:
-    chat-sessions-days: 30    # Keep chat sessions for 30 days
-    mood-entries-days: 90     # Keep mood entries for 90 days
-    anonymous-data-days: 7    # Keep anonymous user data for only 7 days
+    chat-sessions-days: 30
+    mood-entries-days: 90
+    anonymous-data-days: 7
 
-# Logging configuration (all in one section)
+# Logging configuration
 logging:
   level:
     com.mindease: DEBUG
     org.springframework.security: DEBUG
     com.mindease.service.RetentionPolicyService: INFO
 
-# Add these properties to your existing application.yml
+# Chat configuration
 chat:
   openai:
-    api-key: ${OPENAI_API_KEY:}  # Will be set from environment variable
+    api-key: ${OPENAI_API_KEY:dummy-key-for-development}
     model: gpt-3.5-turbo
     temperature: 0.7
     max-tokens: 500
@@ -67,3 +68,25 @@ chat:
       - helpless
       - can't go on
       - better off without me
+
+# Development specific settings
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    hibernate:
+      ddl-auto: update # Use update for development
+    show-sql: true
+
+# Production settings
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false

@@ -16,5 +16,6 @@ public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
   List<MoodEntry> findByUserOrderByCreatedAtDesc(User user);
   Page<MoodEntry> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
   List<MoodEntry> findByUserAndCreatedAtBetweenOrderByCreatedAtDesc(User user, LocalDateTime start, LocalDateTime end);
+  List<MoodEntry> findByUserAndCreatedAtBetween(User user, LocalDateTime start, LocalDateTime end);
   // We'll add more custom methods as needed in future days
 }
