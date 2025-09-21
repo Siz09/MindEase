@@ -57,16 +57,17 @@ const Chat = () => {
           toast.success('Connected to chat');
 
           // Subscribe to the user's personal chat topic
-          client.subscribe(`/topic/${currentUser.id}`, (message) => {
+          client.subscribe(`/topic/user/${currentUser.id}`, (message) => {
             const newMessage = JSON.parse(message.body);
-            setMessages((prev) => [...prev, newMessage]);
+            console.log('Received user message:', newMessage);
+
+            // Only add messages with content
+            if (newMessage.content) {
+              setMessages((prev) => [...prev, newMessage]);
+            }
           });
 
-          // Subscribe to public topic for general messages
-          client.subscribe('/topic/public', (message) => {
-            const newMessage = JSON.parse(message.body);
-            setMessages((prev) => [...prev, newMessage]);
-          });
+          // Removed public topic subscription as it's sending empty messages
         },
         onStompError: (frame) => {
           console.error('STOMP error:', frame);
@@ -101,7 +102,7 @@ const Chat = () => {
     });
 
     setInputValue('');
-    
+
     // Simulate typing indicator
     setTimeout(() => setIsTyping(false), 1500);
   };
@@ -117,6 +118,11 @@ const Chat = () => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Helper to safely get message content
+  const getMessageContent = (message) => {
+    return message.content || message.text || message.message || 'Empty message';
   };
 
   return (
@@ -173,13 +179,22 @@ const Chat = () => {
                   <h3 className="empty-title">{t('chat.emptyTitle')}</h3>
                   <p className="empty-description">{t('chat.emptyDescription')}</p>
                   <div className="suggested-messages">
-                    <button className="suggested-message" onClick={() => setInputValue("I'm feeling anxious today")}>
+                    <button
+                      className="suggested-message"
+                      onClick={() => setInputValue("I'm feeling anxious today")}
+                    >
                       "I'm feeling anxious today"
                     </button>
-                    <button className="suggested-message" onClick={() => setInputValue("Can you help me relax?")}>
+                    <button
+                      className="suggested-message"
+                      onClick={() => setInputValue('Can you help me relax?')}
+                    >
                       "Can you help me relax?"
                     </button>
-                    <button className="suggested-message" onClick={() => setInputValue("I need some motivation")}>
+                    <button
+                      className="suggested-message"
+                      onClick={() => setInputValue('I need some motivation')}
+                    >
                       "I need some motivation"
                     </button>
                   </div>
@@ -207,14 +222,19 @@ const Chat = () => {
                   )}
                   <div className="message-content">
                     <div className="message-bubble">
-                      <div className="message-text">{message.content}</div>
+                      <div className="message-text">{getMessageContent(message)}</div>
                     </div>
                     <div className="message-meta">
                       <span className="message-time">{formatTime(message.createdAt)}</span>
                       {message.isUserMessage && (
                         <span className="message-status">
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M13.5 4.5L6 12l-3.5-3.5" stroke="currentColor" strokeWidth="2" fill="none" />
+                            <path
+                              d="M13.5 4.5L6 12l-3.5-3.5"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="none"
+                            />
                           </svg>
                         </span>
                       )}
