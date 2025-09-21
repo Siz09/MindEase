@@ -21,6 +21,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+// Add these imports at the top
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/chat")
 public class ChatApiController {
@@ -40,17 +44,24 @@ public class ChatApiController {
   @Autowired
   private SimpMessagingTemplate messagingTemplate;
 
+  // Add logger
+  private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
+
   @PostMapping("/send")
   public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
     try {
+      logger.info("Received message request: {}", request.getMessage());
+
       String email = authentication.getName();
       Optional<User> userOptional = userRepository.findByEmail(email);
 
       if (userOptional.isEmpty()) {
+        logger.error("User not found for email: {}", email);
         return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
       }
 
       User user = userOptional.get();
+      logger.info("Processing message for user: {}", user.getId());
 
       // Get or create chat session
       ChatSession chatSession = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
@@ -69,7 +80,8 @@ public class ChatApiController {
       userMessage.setIsCrisisFlagged(isCrisis);
       messageRepository.save(userMessage);
 
-      // Broadcast user message - CHANGED TO USER TOPIC
+      // Add logging before sending user message
+      logger.info("Sending user message to topic: /topic/user/{}", user.getId());
       Map<String, Object> userMessagePayload = new HashMap<>();
       userMessagePayload.put("id", userMessage.getId());
       userMessagePayload.put("content", userMessage.getContent() != null ? userMessage.getContent() : "");
@@ -79,18 +91,11 @@ public class ChatApiController {
       userMessagePayload.put("type", "message");
       userMessagePayload.put("sender", "user");
 
-      messagingTemplate.convertAndSend("/topic/user/" + user.getId(), userMessagePayload); // CHANGED
-
-      Map<String, Object> response = new HashMap<>();
-      response.put("status", "success");
-      response.put("message", "Message sent and processed");
-      response.put("userMessage", userMessagePayload);
+      messagingTemplate.convertAndSend("/topic/user/" + user.getId(), userMessagePayload);
 
       // Crisis response
       if (isCrisis) {
-        String crisisResponse = "I'm concerned about what you're sharing. " +
-          "Please consider contacting a mental health professional or a crisis helpline immediately.";
-
+        String crisisResponse = "I'm concerned about what you're sharing. Please consider contacting a mental health professional or a crisis helpline immediately.";
         Message crisisMessage = new Message(chatSession, crisisResponse, false);
         crisisMessage.setIsCrisisFlagged(true);
         messageRepository.save(crisisMessage);
@@ -105,10 +110,8 @@ public class ChatApiController {
         crisisMessagePayload.put("sender", "bot");
         crisisMessagePayload.put("isCrisisResponse", true);
 
-        messagingTemplate.convertAndSend("/topic/user/" + user.getId(), crisisMessagePayload); // CHANGED
-
-        response.put("crisisMessage", crisisMessagePayload);
-        response.put("crisisDetected", true);
+        logger.info("Sending crisis message to topic: /topic/user/{}", user.getId());
+        messagingTemplate.convertAndSend("/topic/user/" + user.getId(), crisisMessagePayload);
       }
 
       // AI bot response
@@ -125,13 +128,19 @@ public class ChatApiController {
       botMessagePayload.put("type", "message");
       botMessagePayload.put("sender", "bot");
 
-      messagingTemplate.convertAndSend("/topic/user/" + user.getId(), botMessagePayload); // CHANGED
+      logger.info("Sending bot message to topic: /topic/user/{}", user.getId());
+      messagingTemplate.convertAndSend("/topic/user/" + user.getId(), botMessagePayload);
 
+      Map<String, Object> response = new HashMap<>();
+      response.put("status", "success");
+      response.put("message", "Message sent and processed");
+      response.put("userMessage", userMessagePayload);
       response.put("botMessage", botMessagePayload);
 
       return ResponseEntity.ok(response);
 
     } catch (Exception e) {
+      logger.error("Error sending message: {}", e.getMessage(), e);
       return ResponseEntity.badRequest().body(createErrorResponse("Failed to send message: " + e.getMessage()));
     }
   }
@@ -145,10 +154,12 @@ public class ChatApiController {
       Optional<User> userOptional = userRepository.findByEmail(email);
 
       if (userOptional.isEmpty()) {
+        logger.error("User not found for email: {}", email);
         return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
       }
 
       User user = userOptional.get();
+      logger.info("Fetching chat history for user: {}", user.getId());
 
       Optional<ChatSession> chatSessionOptional = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
         .stream()
@@ -173,6 +184,7 @@ public class ChatApiController {
       return ResponseEntity.ok(response);
 
     } catch (Exception e) {
+      logger.error("Failed to fetch chat history: {}", e.getMessage(), e);
       return ResponseEntity.badRequest().body(createErrorResponse("Failed to fetch chat history: " + e.getMessage()));
     }
   }
