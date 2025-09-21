@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -41,7 +40,6 @@ public class ChatApiController {
   @Autowired
   private SimpMessagingTemplate messagingTemplate;
 
-  // POST /api/chat/send - Send a chat message
   @PostMapping("/send")
   public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
     try {
@@ -54,89 +52,80 @@ public class ChatApiController {
 
       User user = userOptional.get();
 
-      // For simplicity, we'll use the first chat session or create a new one if none exists
+      // Get or create chat session
       ChatSession chatSession = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
         .stream()
         .findFirst()
-        .orElseGet(() -> {
-          ChatSession newSession = new ChatSession(user);
-          return chatSessionRepository.save(newSession);
-        });
+        .orElseGet(() -> chatSessionRepository.save(new ChatSession(user)));
 
-      // Update the chat session's updatedAt timestamp
       chatSession.setUpdatedAt(java.time.LocalDateTime.now());
       chatSessionRepository.save(chatSession);
 
-      // Check for crisis keywords
+      // Check for crisis
       boolean isCrisis = chatBotService.isCrisisMessage(request.getMessage());
 
-      // Save the user's message
+      // Save user message
       Message userMessage = new Message(chatSession, request.getMessage(), true);
       userMessage.setIsCrisisFlagged(isCrisis);
       messageRepository.save(userMessage);
 
-      // Broadcast the user's message via WebSocket
+      // Broadcast user message - CHANGED TO USER TOPIC
       Map<String, Object> userMessagePayload = new HashMap<>();
       userMessagePayload.put("id", userMessage.getId());
-      userMessagePayload.put("content", userMessage.getContent());
-      userMessagePayload.put("isUserMessage", userMessage.getIsUserMessage());
-      userMessagePayload.put("isCrisisFlagged", userMessage.getIsCrisisFlagged());
+      userMessagePayload.put("content", userMessage.getContent() != null ? userMessage.getContent() : "");
+      userMessagePayload.put("isUserMessage", true);
+      userMessagePayload.put("isCrisisFlagged", isCrisis);
       userMessagePayload.put("createdAt", userMessage.getCreatedAt());
+      userMessagePayload.put("type", "message");
+      userMessagePayload.put("sender", "user");
 
-      messagingTemplate.convertAndSend("/topic/" + chatSession.getId(), userMessagePayload);
+      messagingTemplate.convertAndSend("/topic/user/" + user.getId(), userMessagePayload); // CHANGED
 
-      // Prepare response map
       Map<String, Object> response = new HashMap<>();
       response.put("status", "success");
       response.put("message", "Message sent and processed");
       response.put("userMessage", userMessagePayload);
 
-      // Update the sendMessage method to include crisis response
+      // Crisis response
       if (isCrisis) {
-        String crisisResponse = "I'm really concerned about what you're sharing. " +
-          "It's important to talk to a mental health professional who can provide proper support. " +
-          "Please consider reaching out to a crisis helpline or mental health service immediately. " +
-          "You can contact the National Suicide Prevention Lifeline at 1-800-273-8255 " +
-          "or text HOME to 741741 to reach the Crisis Text Line. " +
-          "You don't have to go through this alone.";
+        String crisisResponse = "I'm concerned about what you're sharing. " +
+          "Please consider contacting a mental health professional or a crisis helpline immediately.";
 
-        // Save the crisis response
         Message crisisMessage = new Message(chatSession, crisisResponse, false);
         crisisMessage.setIsCrisisFlagged(true);
         messageRepository.save(crisisMessage);
 
-        // Broadcast the crisis response via WebSocket
         Map<String, Object> crisisMessagePayload = new HashMap<>();
         crisisMessagePayload.put("id", crisisMessage.getId());
-        crisisMessagePayload.put("content", crisisMessage.getContent());
-        crisisMessagePayload.put("isUserMessage", crisisMessage.getIsUserMessage());
-        crisisMessagePayload.put("isCrisisFlagged", crisisMessage.getIsCrisisFlagged());
+        crisisMessagePayload.put("content", crisisMessage.getContent() != null ? crisisMessage.getContent() : "");
+        crisisMessagePayload.put("isUserMessage", false);
+        crisisMessagePayload.put("isCrisisFlagged", true);
         crisisMessagePayload.put("createdAt", crisisMessage.getCreatedAt());
+        crisisMessagePayload.put("type", "message");
+        crisisMessagePayload.put("sender", "bot");
         crisisMessagePayload.put("isCrisisResponse", true);
 
-        messagingTemplate.convertAndSend("/topic/" + chatSession.getId(), crisisMessagePayload);
+        messagingTemplate.convertAndSend("/topic/user/" + user.getId(), crisisMessagePayload); // CHANGED
 
-        // Add the crisis message to the response
         response.put("crisisMessage", crisisMessagePayload);
         response.put("crisisDetected", true);
       }
 
-      // Generate AI response (still sent even if crisis detected)
+      // AI bot response
       String aiResponse = chatBotService.generateResponse(request.getMessage(), user.getId().toString());
-
-      // Save the AI response
       Message botMessage = new Message(chatSession, aiResponse, false);
       messageRepository.save(botMessage);
 
-      // Broadcast the AI response via WebSocket
       Map<String, Object> botMessagePayload = new HashMap<>();
       botMessagePayload.put("id", botMessage.getId());
-      botMessagePayload.put("content", botMessage.getContent());
-      botMessagePayload.put("isUserMessage", botMessage.getIsUserMessage());
+      botMessagePayload.put("content", botMessage.getContent() != null ? botMessage.getContent() : "");
+      botMessagePayload.put("isUserMessage", false);
       botMessagePayload.put("isCrisisFlagged", botMessage.getIsCrisisFlagged());
       botMessagePayload.put("createdAt", botMessage.getCreatedAt());
+      botMessagePayload.put("type", "message");
+      botMessagePayload.put("sender", "bot");
 
-      messagingTemplate.convertAndSend("/topic/" + chatSession.getId(), botMessagePayload);
+      messagingTemplate.convertAndSend("/topic/user/" + user.getId(), botMessagePayload); // CHANGED
 
       response.put("botMessage", botMessagePayload);
 
@@ -147,12 +136,10 @@ public class ChatApiController {
     }
   }
 
-  // GET /api/chat/history - Get chat history for the current user's chat session
   @GetMapping("/history")
-  public ResponseEntity<?> getChatHistory(
-    Authentication authentication,
-    @RequestParam(defaultValue = "0") int page,
-    @RequestParam(defaultValue = "20") int size) {
+  public ResponseEntity<?> getChatHistory(Authentication authentication,
+                                          @RequestParam(defaultValue = "0") int page,
+                                          @RequestParam(defaultValue = "20") int size) {
     try {
       String email = authentication.getName();
       Optional<User> userOptional = userRepository.findByEmail(email);
@@ -163,7 +150,6 @@ public class ChatApiController {
 
       User user = userOptional.get();
 
-      // Get the most recent chat session for the user
       Optional<ChatSession> chatSessionOptional = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
         .stream()
         .findFirst();
@@ -208,17 +194,9 @@ public class ChatApiController {
     return response;
   }
 
-  // Request DTO for sending a message
   public static class SendMessageRequest {
     private String message;
-
-    // Getters and setters
-    public String getMessage() {
-      return message;
-    }
-
-    public void setMessage(String message) {
-      this.message = message;
-    }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
   }
 }
