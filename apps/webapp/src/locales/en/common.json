@@ -5,7 +5,8 @@
     "settings": "Settings",
     "login": "Login",
     "register": "Register",
-    "logout": "Logout"
+    "logout": "Logout",
+    "chat": "Chat"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -116,5 +117,16 @@
     "stressResponse": "I hear that you're dealing with stress or anxiety. These feelings are completely normal. Some techniques that might help include deep breathing, mindfulness, or talking through what's causing these feelings. Would you like to try one of these approaches?",
     "sleepResponse": "Sleep is so important for our mental health. If you're having trouble sleeping, it might help to establish a bedtime routine, limit screen time before bed, or practice relaxation techniques. What's been affecting your sleep lately?",
     "defaultResponse": "Thank you for sharing that with me. I'm here to listen and support you. Can you tell me more about what's on your mind?"
+  },
+  "chat": {
+    "title": "AI Chat Support",
+    "subtitle": "Talk with our mental health assistant",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "emptyTitle": "Start a conversation",
+    "emptyDescription": "Send a message to start chatting with our mental health assistant",
+    "inputPlaceholder": "Type your message here...",
+    "crisisWarning": "Crisis detected - please seek professional help",
+    "sendMessage": "Send message"
   }
 }

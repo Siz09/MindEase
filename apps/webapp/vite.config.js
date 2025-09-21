@@ -28,5 +28,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom'],
+    esbuildOptions: {
+      define: {
+        global: 'globalThis', // 👈 inject global polyfill
+      },
+    },
   },
 });

@@ -89,6 +89,16 @@ const Navigation = () => {
               </svg>
               {t('navigation.settings')}
             </Link>
+            <Link to="/chat" className={`nav-link ${isActive('/chat') ? 'active' : ''}`}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M5 8h10M5 12h6m-9-6.5V14a2 2 0 002 2h10a2 2 0 002-2V5.5a2 2 0 00-2-2H4a2 2 0 00-2 2z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+              </svg>
+              {t('navigation.chat')}
+            </Link>
           </div>
         )}
 
@@ -177,7 +187,21 @@ const Navigation = () => {
                   fill="none"
                 />
               </svg>
-              {t('navigation.settings')}
+              {t('settings')}
+            </Link>
+            <Link
+              to="/chat"
+              className={`mobile-nav-link ${isActive('/chat') ? 'active' : ''}`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M5 8h10M5 12h6m-9-6.5V14a2 2 0 002 2h10a2 2 0 002-2V5.5a2 2 0 00-2-2H4a2 2 0 00-2 2z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+              </svg>
+              {t('navigation.chat')}
             </Link>
             <div className="mobile-user-info">
               <span className="user-email">{currentUser.email}</span>
