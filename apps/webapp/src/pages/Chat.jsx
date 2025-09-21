@@ -30,19 +30,26 @@ const Chat = () => {
 
   // Initialize WebSocket connection
   useEffect(() => {
+    console.log('Chat component mounted, connecting to WebSocket...');
+    console.log('Current user:', currentUser);
+    console.log('Token available:', !!token);
+
     if (token && currentUser) {
       connectWebSocket();
     }
 
     return () => {
+      console.log('Chat component unmounting, disconnecting WebSocket...');
       if (stompClient) {
         stompClient.deactivate();
+        console.log('WebSocket client deactivated');
       }
     };
   }, [token, currentUser]);
 
   const connectWebSocket = () => {
     try {
+      console.log('Attempting to connect to WebSocket...');
       const socket = new SockJS('http://localhost:8080/ws');
       const client = new Client({
         webSocketFactory: () => socket,
@@ -53,34 +60,64 @@ const Chat = () => {
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
         onConnect: () => {
+          console.log('WebSocket connected successfully!');
           setIsConnected(true);
           toast.success('Connected to chat');
 
           // Subscribe to the user's personal chat topic
-          client.subscribe(`/topic/user/${currentUser.id}`, (message) => {
-            const newMessage = JSON.parse(message.body);
-            console.log('Received user message:', newMessage);
+          const userTopic = `/topic/user/${currentUser.id}`;
+          console.log(`Subscribing to user topic: ${userTopic}`);
 
-            // Only add messages with content
-            if (newMessage.content) {
-              setMessages((prev) => [...prev, newMessage]);
+          const subscription = client.subscribe(userTopic, (message) => {
+            console.log('Raw message received:', message);
+            console.log('Message body:', message.body);
+
+            try {
+              const newMessage = JSON.parse(message.body);
+              console.log('Parsed message:', newMessage);
+
+              // Only add messages with content
+              if (newMessage.content || newMessage.message || newMessage.text) {
+                // Normalize content for rendering
+                const content = newMessage.content || newMessage.message || newMessage.text;
+                console.log('Adding message to state:', { ...newMessage, content });
+                setMessages((prev) => [...prev, { ...newMessage, content }]);
+              } else {
+                console.warn('Received message with no content:', newMessage);
+              }
+            } catch (e) {
+              console.error('Error parsing message:', e);
+              console.error('Raw message body that failed to parse:', message.body);
             }
           });
 
-          // Removed public topic subscription as it's sending empty messages
+          // Log subscription details
+          console.log('Subscription active:', subscription);
+          console.log('Subscription ID:', subscription.id);
         },
+
         onStompError: (frame) => {
           console.error('STOMP error:', frame);
+          console.error('STOMP error headers:', frame.headers);
+          console.error('STOMP error body:', frame.body);
           toast.error('Chat connection error');
         },
         onDisconnect: () => {
+          console.log('WebSocket disconnected');
           setIsConnected(false);
           toast.info('Disconnected from chat');
+        },
+        onWebSocketClose: (event) => {
+          console.log('WebSocket closed:', event);
+        },
+        onWebSocketError: (event) => {
+          console.error('WebSocket error:', event);
         },
       });
 
       client.activate();
       setStompClient(client);
+      console.log('WebSocket client activated');
     } catch (error) {
       console.error('WebSocket connection error:', error);
       toast.error('Failed to connect to chat');
@@ -88,23 +125,46 @@ const Chat = () => {
   };
 
   const sendMessage = () => {
-    if (!inputValue.trim() || !stompClient || !isConnected) return;
+    if (!inputValue.trim()) {
+      console.warn('Attempted to send empty message');
+      return;
+    }
 
+    if (!stompClient) {
+      console.error('No STOMP client available');
+      return;
+    }
+
+    if (!isConnected) {
+      console.error('WebSocket is not connected');
+      return;
+    }
+
+    console.log('Sending message:', inputValue);
     setIsTyping(true);
 
-    // Send message to the server
-    stompClient.publish({
-      destination: '/app/chat.send',
-      body: JSON.stringify({ message: inputValue }),
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      // Send message to the server
+      stompClient.publish({
+        destination: '/app/chat.send',
+        body: JSON.stringify({ message: inputValue }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log('Message sent to server successfully');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
 
     setInputValue('');
 
     // Simulate typing indicator
-    setTimeout(() => setIsTyping(false), 1500);
+    setTimeout(() => {
+      console.log('Typing indicator timeout reached');
+      setIsTyping(false);
+    }, 1500);
   };
 
   const handleKeyPress = (e) => {
@@ -124,6 +184,11 @@ const Chat = () => {
   const getMessageContent = (message) => {
     return message.content || message.text || message.message || 'Empty message';
   };
+
+  // Log when messages change
+  useEffect(() => {
+    console.log('Messages updated:', messages);
+  }, [messages]);
 
   return (
     <div className="page chat-page">
