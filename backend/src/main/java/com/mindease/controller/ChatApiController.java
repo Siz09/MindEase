@@ -20,13 +20,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
-// Add these imports at the top
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/chat")
+@CrossOrigin(origins = "*")
 public class ChatApiController {
 
   @Autowired
@@ -44,13 +45,14 @@ public class ChatApiController {
   @Autowired
   private SimpMessagingTemplate messagingTemplate;
 
-  // Add logger
   private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
 
   @PostMapping("/send")
   public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
     try {
-      logger.info("Received message request: {}", request.getMessage());
+      logger.info("=== INCOMING MESSAGE REQUEST ===");
+      logger.info("Message: {}", request.getMessage());
+      logger.info("Authentication: {}", authentication.getName());
 
       String email = authentication.getName();
       Optional<User> userOptional = userRepository.findByEmail(email);
@@ -61,86 +63,92 @@ public class ChatApiController {
       }
 
       User user = userOptional.get();
-      logger.info("Processing message for user: {}", user.getId());
+      logger.info("Processing message for user ID: {}", user.getId());
 
       // Get or create chat session
       ChatSession chatSession = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
         .stream()
         .findFirst()
-        .orElseGet(() -> chatSessionRepository.save(new ChatSession(user)));
+        .orElseGet(() -> {
+          logger.info("Creating new chat session for user: {}", user.getId());
+          return chatSessionRepository.save(new ChatSession(user));
+        });
 
       chatSession.setUpdatedAt(java.time.LocalDateTime.now());
       chatSessionRepository.save(chatSession);
 
       // Check for crisis
       boolean isCrisis = chatBotService.isCrisisMessage(request.getMessage());
+      logger.info("Crisis detection result: {}", isCrisis);
 
       // Save user message
       Message userMessage = new Message(chatSession, request.getMessage(), true);
       userMessage.setIsCrisisFlagged(isCrisis);
-      messageRepository.save(userMessage);
+      userMessage = messageRepository.save(userMessage);
+      logger.info("Saved user message with ID: {}", userMessage.getId());
 
-      // Add logging before sending user message
-      logger.info("Sending user message to topic: /topic/user/{}", user.getId());
-      Map<String, Object> userMessagePayload = new HashMap<>();
-      userMessagePayload.put("id", userMessage.getId());
-      userMessagePayload.put("content", userMessage.getContent() != null ? userMessage.getContent() : "");
-      userMessagePayload.put("isUserMessage", true);
-      userMessagePayload.put("isCrisisFlagged", isCrisis);
-      userMessagePayload.put("createdAt", userMessage.getCreatedAt());
-      userMessagePayload.put("type", "message");
-      userMessagePayload.put("sender", "user");
+      // Create user message payload for WebSocket
+      Map<String, Object> userMessagePayload = createMessagePayload(userMessage, true);
 
-      messagingTemplate.convertAndSend("/topic/user/" + user.getId(), userMessagePayload);
+      // Send user message via WebSocket
+      String userTopic = "/topic/user/" + user.getId();
+      logger.info("Sending user message to topic: {}", userTopic);
+      logger.info("User message payload: {}", userMessagePayload);
 
-      // Crisis response
+      messagingTemplate.convertAndSend(userTopic, userMessagePayload);
+
+      // Handle crisis response first if needed
+      Message crisisMessage = null;
       if (isCrisis) {
-        String crisisResponse = "I'm concerned about what you're sharing. Please consider contacting a mental health professional or a crisis helpline immediately.";
-        Message crisisMessage = new Message(chatSession, crisisResponse, false);
+        String crisisResponse = "I'm concerned about what you're sharing. Please consider contacting a mental health professional or a crisis helpline immediately. Your wellbeing matters, and there are people who want to help you.";
+        crisisMessage = new Message(chatSession, crisisResponse, false);
         crisisMessage.setIsCrisisFlagged(true);
-        messageRepository.save(crisisMessage);
+        crisisMessage = messageRepository.save(crisisMessage);
 
-        Map<String, Object> crisisMessagePayload = new HashMap<>();
-        crisisMessagePayload.put("id", crisisMessage.getId());
-        crisisMessagePayload.put("content", crisisMessage.getContent() != null ? crisisMessage.getContent() : "");
-        crisisMessagePayload.put("isUserMessage", false);
-        crisisMessagePayload.put("isCrisisFlagged", true);
-        crisisMessagePayload.put("createdAt", crisisMessage.getCreatedAt());
-        crisisMessagePayload.put("type", "message");
-        crisisMessagePayload.put("sender", "bot");
-        crisisMessagePayload.put("isCrisisResponse", true);
+        Map<String, Object> crisisMessagePayload = createMessagePayload(crisisMessage, false);
 
-        logger.info("Sending crisis message to topic: /topic/user/{}", user.getId());
-        messagingTemplate.convertAndSend("/topic/user/" + user.getId(), crisisMessagePayload);
+        logger.info("Sending crisis message to topic: {}", userTopic);
+        logger.info("Crisis message payload: {}", crisisMessagePayload);
+
+        messagingTemplate.convertAndSend(userTopic, crisisMessagePayload);
       }
 
-      // AI bot response
+      // Generate AI response
+      logger.info("Generating AI response...");
       String aiResponse = chatBotService.generateResponse(request.getMessage(), user.getId().toString());
+      logger.info("Generated AI response: {}", aiResponse);
+
       Message botMessage = new Message(chatSession, aiResponse, false);
-      messageRepository.save(botMessage);
+      botMessage = messageRepository.save(botMessage);
+      logger.info("Saved bot message with ID: {}", botMessage.getId());
 
-      Map<String, Object> botMessagePayload = new HashMap<>();
-      botMessagePayload.put("id", botMessage.getId());
-      botMessagePayload.put("content", botMessage.getContent() != null ? botMessage.getContent() : "");
-      botMessagePayload.put("isUserMessage", false);
-      botMessagePayload.put("isCrisisFlagged", botMessage.getIsCrisisFlagged());
-      botMessagePayload.put("createdAt", botMessage.getCreatedAt());
-      botMessagePayload.put("type", "message");
-      botMessagePayload.put("sender", "bot");
+      // Create bot message payload for WebSocket
+      Map<String, Object> botMessagePayload = createMessagePayload(botMessage, false);
 
-      logger.info("Sending bot message to topic: /topic/user/{}", user.getId());
-      messagingTemplate.convertAndSend("/topic/user/" + user.getId(), botMessagePayload);
+      logger.info("Sending bot message to topic: {}", userTopic);
+      logger.info("Bot message payload: {}", botMessagePayload);
 
+      messagingTemplate.convertAndSend(userTopic, botMessagePayload);
+
+      // Create response
       Map<String, Object> response = new HashMap<>();
       response.put("status", "success");
-      response.put("message", "Message sent and processed");
-      response.put("userMessage", userMessagePayload);
-      response.put("botMessage", botMessagePayload);
+      response.put("message", "Messages sent and processed successfully");
 
+      Map<String, Object> data = new HashMap<>();
+      data.put("userMessage", userMessagePayload);
+      data.put("botMessage", botMessagePayload);
+      if (crisisMessage != null) {
+        data.put("crisisMessage", createMessagePayload(crisisMessage, false));
+      }
+
+      response.put("data", data);
+
+      logger.info("=== MESSAGE PROCESSING COMPLETED SUCCESSFULLY ===");
       return ResponseEntity.ok(response);
 
     } catch (Exception e) {
-      logger.error("Error sending message: {}", e.getMessage(), e);
+      logger.error("=== ERROR PROCESSING MESSAGE ===", e);
       return ResponseEntity.badRequest().body(createErrorResponse("Failed to send message: " + e.getMessage()));
     }
   }
@@ -171,7 +179,7 @@ public class ChatApiController {
 
       ChatSession chatSession = chatSessionOptional.get();
 
-      Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+      Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending()); // Changed to ascending for proper order
       Page<Message> messagesPage = messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, pageable);
 
       Map<String, Object> response = new HashMap<>();
@@ -187,6 +195,20 @@ public class ChatApiController {
       logger.error("Failed to fetch chat history: {}", e.getMessage(), e);
       return ResponseEntity.badRequest().body(createErrorResponse("Failed to fetch chat history: " + e.getMessage()));
     }
+  }
+
+  // Helper method to create consistent message payloads
+  private Map<String, Object> createMessagePayload(Message message, boolean isUserMessage) {
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("id", message.getId().toString());
+    payload.put("content", message.getContent() != null ? message.getContent() : "");
+    payload.put("isUserMessage", isUserMessage);
+    payload.put("isCrisisFlagged", message.getIsCrisisFlagged() != null ? message.getIsCrisisFlagged() : false);
+    payload.put("createdAt", message.getCreatedAt().toString());
+    payload.put("sender", isUserMessage ? "user" : "bot");
+    payload.put("type", "message");
+
+    return payload;
   }
 
   private Map<String, Object> createErrorResponse(String message) {
@@ -208,7 +230,13 @@ public class ChatApiController {
 
   public static class SendMessageRequest {
     private String message;
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
+
+    public String getMessage() {
+      return message;
+    }
+
+    public void setMessage(String message) {
+      this.message = message;
+    }
   }
 }
