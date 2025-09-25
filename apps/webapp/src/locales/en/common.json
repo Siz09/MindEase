@@ -124,6 +124,65 @@
     "emptyDescription": "Send a message to start chatting with our mental health assistant",
     "inputPlaceholder": "Type your message here...",
     "crisisWarning": "Crisis detected - please seek professional help",
-    "sendMessage": "Send message"
+    "sendMessage": "Send message",
+    "typing": "AI is typing...",
+    "connectionError": "Connection error. Please refresh the page.",
+    "messageSent": "Message sent successfully",
+    "messageFailed": "Failed to send message",
+    "reconnecting": "Reconnecting...",
+    "welcomeMessage": "Hello! I'm here to support your mental wellness journey. How can I help you today?",
+    "quickResponses": {
+      "anxiety": "I'm feeling anxious",
+      "motivation": "I need motivation", 
+      "relax": "Help me relax",
+      "grateful": "I'm feeling grateful"
+    },
+    "responses": {
+      "mood": "I understand you're sharing about your mood. It's great that you're being mindful of how you feel. Would you like to explore what might be influencing your mood today?",
+      "journal": "Journaling is a wonderful way to process your thoughts and feelings. Have you considered writing about what's on your mind right now?",
+      "help": "I'm here to support you. Whether you need someone to listen, want to explore your feelings, or need coping strategies, I'm here to help. What would be most helpful for you right now?",
+      "stress": "I hear that you're dealing with stress or anxiety. These feelings are completely normal. Some techniques that might help include deep breathing, mindfulness, or talking through what's causing these feelings. Would you like to try one of these approaches?",
+      "sleep": "Sleep is so important for our mental health. If you're having trouble sleeping, it might help to establish a bedtime routine, limit screen time before bed, or practice relaxation techniques. What's been affecting your sleep lately?",
+      "default": "Thank you for sharing that with me. I'm here to listen and support you. Can you tell me more about what's on your mind?"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences",
+    "account": {
+      "title": "Account Information",
+      "email": "Email",
+      "accountType": "Account Type",
+      "role": "Role",
+      "registered": "Registered",
+      "anonymous": "Anonymous"
+    },
+    "privacy": {
+      "title": "Privacy Settings",
+      "anonymousMode": "Anonymous Mode",
+      "anonymousModeDescription": "When enabled, your data will be automatically deleted after 7 days for enhanced privacy.",
+      "dataRetention": "Data Retention",
+      "dataRetentionDescription": "Your data is kept secure and can be deleted at any time."
+    },
+    "language": {
+      "title": "Language Preferences",
+      "currentLanguage": "Current Language",
+      "english": "English",
+      "nepali": "नेपाली (Nepali)",
+      "changeLanguage": "Change Language"
+    },
+    "actions": {
+      "title": "Account Actions",
+      "logout": "Logout",
+      "deleteAccount": "Delete Account",
+      "exportData": "Export My Data"
+    },
+    "notifications": {
+      "anonymousModeEnabled": "Anonymous mode enabled",
+      "anonymousModeDisabled": "Anonymous mode disabled",
+      "languageChanged": "Language changed successfully",
+      "settingsUpdated": "Settings updated successfully",
+      "updateFailed": "Failed to update settings"
+    }
   }
 }
