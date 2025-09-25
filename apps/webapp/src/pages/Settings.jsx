@@ -7,16 +7,18 @@ import { toast } from 'react-toastify';
 import '../styles/Settings.css';
 
 const Settings = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { currentUser, updateUser, logout } = useAuth();
   const [anonymousMode, setAnonymousMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState('en');
 
   useEffect(() => {
     if (currentUser) {
       setAnonymousMode(currentUser.anonymousMode || false);
     }
-  }, [currentUser]);
+    setCurrentLanguage(i18n.language || 'en');
+  }, [currentUser, i18n.language]);
 
   const handleToggleAnonymousMode = async () => {
     if (!currentUser) return;
@@ -27,16 +29,31 @@ const Settings = () => {
 
       if (result.success) {
         setAnonymousMode(!anonymousMode);
-        toast.success(anonymousMode ? 'Anonymous mode disabled' : 'Anonymous mode enabled');
+        toast.success(
+          anonymousMode 
+            ? t('settings.notifications.anonymousModeDisabled')
+            : t('settings.notifications.anonymousModeEnabled')
+        );
       } else {
-        toast.error('Failed to update anonymous mode');
+        toast.error(t('settings.notifications.updateFailed'));
       }
     } catch (error) {
       console.error('Error updating anonymous mode:', error);
-      toast.error('Failed to update settings. Please try again.');
+      toast.error(t('settings.notifications.updateFailed'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLanguageChange = (newLanguage) => {
+    i18n.changeLanguage(newLanguage);
+    setCurrentLanguage(newLanguage);
+    localStorage.setItem('i18nextLng', newLanguage);
+    toast.success(t('settings.notifications.languageChanged'));
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   if (!currentUser) {
@@ -44,7 +61,7 @@ const Settings = () => {
       <div className="page settings-page">
         <div className="container">
           <div className="page-header">
-            <h1 className="page-title">{t('navigation.settings')}</h1>
+            <h1 className="page-title">{t('settings.title')}</h1>
             <p className="page-subtitle">Please log in to access settings</p>
           </div>
         </div>
@@ -56,38 +73,52 @@ const Settings = () => {
     <div className="page settings-page">
       <div className="container">
         <div className="page-header">
-          <h1 className="page-title">{t('navigation.settings')}</h1>
-          <p className="page-subtitle">Manage your account and preferences</p>
+          <h1 className="page-title">{t('settings.title')}</h1>
+          <p className="page-subtitle">{t('settings.subtitle')}</p>
         </div>
 
         <div className="settings-content">
+          {/* Account Information */}
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Account Information</h2>
+              <h2 className="card-title">{t('settings.account.title')}</h2>
             </div>
 
             <div className="account-info">
-              <p>
-                <strong>Email:</strong> {currentUser.email || 'Anonymous User'}
-              </p>
-              <p>
-                <strong>Account Type:</strong>{' '}
-                {currentUser.anonymousMode ? 'Anonymous' : 'Registered'}
-              </p>
-              <p>
-                <strong>Role:</strong> {currentUser.role || 'USER'}
-              </p>
+              <div className="info-item">
+                <span className="info-label">{t('settings.account.email')}:</span>
+                <span className="info-value">{currentUser.email || 'Anonymous User'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">{t('settings.account.accountType')}:</span>
+                <span className="info-value">
+                  {currentUser.anonymousMode 
+                    ? t('settings.account.anonymous') 
+                    : t('settings.account.registered')
+                  }
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">{t('settings.account.role')}:</span>
+                <span className="info-value">{currentUser.role || 'USER'}</span>
+              </div>
             </div>
           </div>
 
+          {/* Privacy Settings */}
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Privacy Settings</h2>
+              <h2 className="card-title">{t('settings.privacy.title')}</h2>
             </div>
 
             <div className="form-group">
               <label className="form-label toggle-label">
-                <span>Anonymous Mode</span>
+                <div className="toggle-info">
+                  <span className="toggle-title">{t('settings.privacy.anonymousMode')}</span>
+                  <p className="setting-description">
+                    {t('settings.privacy.anonymousModeDescription')}
+                  </p>
+                </div>
                 <div className="toggle-switch">
                   <input
                     type="checkbox"
@@ -98,21 +129,104 @@ const Settings = () => {
                   <span className="toggle-slider"></span>
                 </div>
               </label>
+            </div>
+
+            <div className="privacy-info">
+              <h4>{t('settings.privacy.dataRetention')}</h4>
               <p className="setting-description">
-                When enabled, your data will be automatically deleted after 7 days for enhanced
-                privacy.
+                {t('settings.privacy.dataRetentionDescription')}
               </p>
             </div>
           </div>
 
+          {/* Language Settings */}
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Actions</h2>
+              <h2 className="card-title">{t('settings.language.title')}</h2>
             </div>
 
-            <button onClick={logout} className="btn btn-outline w-full">
-              Logout
-            </button>
+            <div className="language-settings">
+              <div className="current-language">
+                <span className="info-label">{t('settings.language.currentLanguage')}:</span>
+                <span className="info-value">
+                  {currentLanguage === 'en' 
+                    ? t('settings.language.english') 
+                    : t('settings.language.nepali')
+                  }
+                </span>
+              </div>
+
+              <div className="language-options">
+                <button
+                  className={`language-option ${currentLanguage === 'en' ? 'active' : ''}`}
+                  onClick={() => handleLanguageChange('en')}
+                  disabled={currentLanguage === 'en'}
+                >
+                  <span className="language-flag">🇺🇸</span>
+                  <span className="language-name">{t('settings.language.english')}</span>
+                  {currentLanguage === 'en' && (
+                    <span className="current-indicator">✓</span>
+                  )}
+                </button>
+
+                <button
+                  className={`language-option ${currentLanguage === 'ne' ? 'active' : ''}`}
+                  onClick={() => handleLanguageChange('ne')}
+                  disabled={currentLanguage === 'ne'}
+                >
+                  <span className="language-flag">🇳🇵</span>
+                  <span className="language-name">{t('settings.language.nepali')}</span>
+                  {currentLanguage === 'ne' && (
+                    <span className="current-indicator">✓</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Account Actions */}
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">{t('settings.actions.title')}</h2>
+            </div>
+
+            <div className="action-buttons">
+              <button onClick={handleLogout} className="btn btn-outline w-full">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M3 3a2 2 0 012-2h1a1 1 0 000 2H5v12h1a1 1 0 100 2H5a2 2 0 01-2-2V3zM13.293 12.707a1 1 0 010-1.414L15.586 9H8a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414z"
+                    fill="currentColor"
+                  />
+                </svg>
+                {t('settings.actions.logout')}
+              </button>
+
+              <button className="btn btn-secondary w-full" disabled>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"
+                    fill="currentColor"
+                  />
+                  <path
+                    fillRule="evenodd"
+                    d="M4 5a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 2a1 1 0 000 2h6a1 1 0 100-2H7z"
+                    fill="currentColor"
+                  />
+                </svg>
+                {t('settings.actions.exportData')}
+              </button>
+
+              <button className="btn btn-outline danger w-full" disabled>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path
+                    fillRule="evenodd"
+                    d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm5 3a1 1 0 000 2h2a1 1 0 100-2H9z"
+                    fill="currentColor"
+                  />
+                </svg>
+                {t('settings.actions.deleteAccount')}
+              </button>
+            </div>
           </div>
         </div>
       </div>
