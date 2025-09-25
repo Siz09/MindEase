@@ -187,7 +187,7 @@ const Navigation = () => {
                   fill="none"
                 />
               </svg>
-              {t('settings')}
+              {t('navigation.settings')}
             </Link>
             <Link
               to="/chat"

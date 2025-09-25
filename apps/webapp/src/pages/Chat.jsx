@@ -239,21 +239,21 @@ const Chat = () => {
                   <div className="suggested-messages">
                     <button
                       className="suggested-message"
-                      onClick={() => setInputValue("I'm feeling anxious today")}
+                      onClick={() => setInputValue(t('chat.quickResponses.anxiety'))}
                     >
-                      "I'm feeling anxious today"
+                      {t('chat.quickResponses.anxiety')}
                     </button>
                     <button
                       className="suggested-message"
-                      onClick={() => setInputValue('Can you help me relax?')}
+                      onClick={() => setInputValue(t('chat.quickResponses.relax'))}
                     >
-                      "Can you help me relax?"
+                      {t('chat.quickResponses.relax')}
                     </button>
                     <button
                       className="suggested-message"
-                      onClick={() => setInputValue('I need some motivation')}
+                      onClick={() => setInputValue(t('chat.quickResponses.motivation'))}
                     >
-                      "I need some motivation"
+                      {t('chat.quickResponses.motivation')}
                     </button>
                   </div>
                 </div>
@@ -329,6 +329,9 @@ const Chat = () => {
                       <span></span>
                       <span></span>
                     </div>
+                  </div>
+                  <div className="message-meta">
+                    <span className="message-time">{t('chat.typing')}</span>
                   </div>
                 </div>
               </div>
