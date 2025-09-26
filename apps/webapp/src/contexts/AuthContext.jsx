@@ -55,6 +55,61 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  // Configure axios interceptors for global error handling
+  useEffect(() => {
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        console.error('API Error:', error);
+
+        let errorMessage = 'An unexpected error occurred';
+
+        if (error.response) {
+          // Server responded with error status
+          const { status, data } = error.response;
+
+          switch (status) {
+            case 401:
+              errorMessage = data?.message || 'Session expired. Please log in again.';
+              localStorage.removeItem('token');
+              setToken(null);
+              setCurrentUser(null);
+              break;
+            case 403:
+              errorMessage = data?.message || 'Access denied';
+              break;
+            case 404:
+              errorMessage = data?.message || 'Resource not found';
+              break;
+            case 422:
+              errorMessage = data?.message || 'Validation failed';
+              if (data.errors) {
+                errorMessage += ': ' + data.errors.join(', ');
+              }
+              break;
+            case 500:
+              errorMessage = data?.message || 'Server error. Please try again later.';
+              break;
+            default:
+              errorMessage = data?.message || `Error: ${status}`;
+          }
+        } else if (error.request) {
+          // Network error
+          errorMessage = 'Network error. Please check your connection.';
+        } else {
+          // Other error
+          errorMessage = error.message || 'An unexpected error occurred';
+        }
+
+        toast.error(errorMessage);
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(responseInterceptor);
+    };
+  }, []);
   const login = async (email, password) => {
     try {
       const toastId = toast.loading('Signing in...');
