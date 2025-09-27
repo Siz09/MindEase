@@ -1,0 +1,240 @@
+/* Testing Page Styles */
+.testing-page {
+  background: linear-gradient(
+    135deg,
+    var(--bg-primary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-primary) 100%
+  );
+  min-height: 100vh;
+}
+
+.testing-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.tab-list {
+  display: flex;
+  gap: var(--spacing-sm);
+  background-color: var(--bg-card);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.tab-button:hover {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.tab-button.active {
+  background-color: var(--primary-green);
+  color: var(--white);
+}
+
+.tab-icon {
+  font-size: var(--font-size-lg);
+}
+
+.tab-label {
+  font-size: var(--font-size-base);
+}
+
+.tab-content {
+  min-height: 400px;
+}
+
+/* WebSocket Tester Styles */
+.websocket-tester .card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 255, 255, 0.9) 100%);
+  border: 1px solid rgba(21, 128, 61, 0.1);
+}
+
+.test-results {
+  background-color: var(--bg-primary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-md);
+}
+
+.test-results h3 {
+  color: var(--primary-green);
+  margin-bottom: var(--spacing-md);
+}
+
+.performance-metrics {
+  background-color: var(--bg-secondary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--primary-green);
+}
+
+.performance-metrics h3 {
+  color: var(--primary-green);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Performance Test Styles */
+.performance-test .card {
+  text-align: center;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+}
+
+.metric-item {
+  background-color: var(--bg-primary);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  border: 2px solid var(--gray-200);
+  transition: all var(--transition-fast);
+}
+
+.metric-item:hover {
+  border-color: var(--primary-green);
+  transform: translateY(-2px);
+}
+
+.metric-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--primary-green);
+  margin-bottom: var(--spacing-sm);
+}
+
+.metric-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Compatibility Test Styles */
+.compatibility-test .card {
+  text-align: left;
+}
+
+.compatibility-results {
+  margin-top: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.compatibility-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--gray-300);
+}
+
+.feature-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.support-status {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.support-status.supported {
+  color: var(--primary-green);
+}
+
+.support-status.not-supported {
+  color: #dc2626;
+}
+
+.browser-info {
+  margin-top: var(--spacing-xl);
+  padding: var(--spacing-lg);
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.browser-info h4 {
+  color: var(--primary-green);
+  margin-bottom: var(--spacing-md);
+}
+
+.browser-info p {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-xs);
+  word-break: break-all;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .tab-list {
+    flex-direction: column;
+  }
+
+  .tab-button {
+    justify-content: center;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .compatibility-item {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+  }
+}
+
+/* Animation */
+.testing-tabs {
+  animation: slideUp 0.5s ease-out;
+}
+
+.tab-content > * {
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

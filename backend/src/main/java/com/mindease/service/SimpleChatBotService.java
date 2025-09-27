@@ -1,14 +1,18 @@
 package com.mindease.service;
 
+import com.mindease.dto.ChatResponse;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SimpleChatBotService implements ChatBotService {
 
   @Override
-  public String generateResponse(String message, String userId) {
+  public ChatResponse generateResponse(String message, String userId) {
     // Simple echo response for now. Will be replaced with AI integration.
-    return "I received your message: \"" + message + "\". This is a placeholder response.";
+    String content = "I received your message: \"" + message + "\". This is a placeholder response.";
+    boolean isCrisis = isCrisisMessage(message);
+    
+    return new ChatResponse(content, isCrisis, "simple");
   }
 
   @Override

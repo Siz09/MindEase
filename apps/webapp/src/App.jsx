@@ -11,6 +11,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/App.css';
 import Chat from './pages/Chat';
+import Testing from './pages/Testing';
 
 function App() {
   return (
@@ -51,6 +52,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Chat />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/testing"
+                element={
+                  <ProtectedRoute>
+                    <Testing />
                   </ProtectedRoute>
                 }
               />

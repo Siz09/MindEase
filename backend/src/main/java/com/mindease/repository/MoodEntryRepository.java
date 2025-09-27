@@ -10,6 +10,8 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
@@ -17,5 +19,11 @@ public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
   Page<MoodEntry> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
   List<MoodEntry> findByUserAndCreatedAtBetweenOrderByCreatedAtDesc(User user, LocalDateTime start, LocalDateTime end);
   List<MoodEntry> findByUserAndCreatedAtBetween(User user, LocalDateTime start, LocalDateTime end);
-  // We'll add more custom methods as needed in future days
+  
+  // Optimized queries for better performance
+  @Query("SELECT COUNT(m) FROM MoodEntry m WHERE m.user = :user AND m.createdAt >= :startDate")
+  long countByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
+  
+  @Query("SELECT AVG(m.moodValue) FROM MoodEntry m WHERE m.user = :user AND m.createdAt >= :startDate")
+  Double getAverageMoodByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
 }

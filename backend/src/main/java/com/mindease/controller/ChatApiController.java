@@ -7,6 +7,7 @@ import com.mindease.repository.ChatSessionRepository;
 import com.mindease.repository.MessageRepository;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.ChatBotService;
+import com.mindease.dto.ChatResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,9 +26,17 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/chat")
 @CrossOrigin(origins = "*")
+@Tag(name = "Chat", description = "Real-time chat with AI assistant")
+@SecurityRequirement(name = "Bearer Authentication")
 public class ChatApiController {
 
   @Autowired
@@ -47,6 +56,12 @@ public class ChatApiController {
 
   private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
 
+  @Operation(summary = "Send a chat message", description = "Send a message to the AI assistant and receive a response")
+  @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Message sent successfully"),
+    @ApiResponse(responseCode = "400", description = "Invalid request or user not found"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+  })
   @PostMapping("/send")
   public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
     try {
@@ -115,10 +130,10 @@ public class ChatApiController {
 
       // Generate AI response
       logger.info("Generating AI response...");
-      String aiResponse = chatBotService.generateResponse(request.getMessage(), user.getId().toString());
-      logger.info("Generated AI response: {}", aiResponse);
+      ChatResponse aiResponse = chatBotService.generateResponse(request.getMessage(), user.getId().toString());
+      logger.info("Generated AI response: {}", aiResponse.getContent());
 
-      Message botMessage = new Message(chatSession, aiResponse, false);
+      Message botMessage = new Message(chatSession, aiResponse.getContent(), false);
       botMessage = messageRepository.save(botMessage);
       logger.info("Saved bot message with ID: {}", botMessage.getId());
 

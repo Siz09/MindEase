@@ -1,0 +1,301 @@
+# MindEase - Mental Wellness Application
+
+## 🌟 Overview
+
+MindEase is a comprehensive mental wellness application that provides AI-powered chat support, mood tracking, and journaling capabilities. Built with a modern tech stack, it offers real-time communication, multilingual support, and privacy-focused features.
+
+## 🏗️ Architecture
+
+### Frontend (React + Vite)
+- **Marketing Site**: Landing page with i18n support
+- **Web Application**: Full-featured mental wellness dashboard
+- **Shared UI Components**: Reusable component library
+
+### Backend (Spring Boot)
+- **RESTful APIs**: Authentication, mood tracking, chat management
+- **WebSocket Support**: Real-time chat functionality
+- **AI Integration**: Modular chatbot service with OpenAI integration
+- **Database**: PostgreSQL with JPA/Hibernate
+
+## 🚀 Features
+
+### ✅ Completed Features
+
+#### Phase 1: Foundation & Authentication
+- [x] Monorepo setup with workspaces
+- [x] Firebase Authentication integration
+- [x] JWT token management
+- [x] User registration and login
+- [x] Anonymous mode support
+- [x] Responsive navigation
+
+#### Phase 2: Core Infrastructure
+- [x] PostgreSQL database setup
+- [x] User management system
+- [x] Security configuration
+- [x] CORS setup for cross-origin requests
+- [x] Development environment configuration
+
+#### Phase 3: Chat & Mood Core Features
+- [x] Real-time WebSocket chat
+- [x] AI-powered responses (OpenAI integration)
+- [x] Crisis keyword detection
+- [x] Mood tracking with visualization
+- [x] Automatic mood entries
+- [x] Multilingual support (English/Nepali)
+- [x] Chart.js integration for mood trends
+- [x] Comprehensive testing suite
+- [x] API documentation with Swagger/OpenAPI
+- [x] Performance optimization
+- [x] Cross-browser compatibility testing
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React 19** - UI framework
+- **Vite** - Build tool and dev server
+- **React Router** - Client-side routing
+- **i18next** - Internationalization
+- **Chart.js** - Data visualization
+- **SockJS + STOMP** - WebSocket client
+- **Axios** - HTTP client
+- **React Toastify** - Notifications
+
+### Backend
+- **Spring Boot 3.5** - Application framework
+- **Spring Security** - Authentication & authorization
+- **Spring WebSocket** - Real-time communication
+- **JPA/Hibernate** - ORM
+- **PostgreSQL** - Database
+- **Firebase Admin SDK** - Authentication
+- **OpenAI API** - AI chat responses
+- **Flyway** - Database migrations
+- **Swagger/OpenAPI** - API documentation
+
+### DevOps & Tools
+- **Docker** - Containerization
+- **Maven** - Build management
+- **ESLint + Prettier** - Code formatting
+- **Husky** - Git hooks
+- **GitHub Actions** - CI/CD
+
+## 📊 API Documentation
+
+The API is fully documented with Swagger/OpenAPI. Access the documentation at:
+- **Development**: `http://localhost:8080/swagger-ui.html`
+- **API Docs**: `http://localhost:8080/api-docs`
+
+### Key Endpoints
+
+#### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user info
+
+#### Chat
+- `POST /api/chat/send` - Send chat message
+- `GET /api/chat/history` - Get chat history
+- WebSocket: `/ws` - Real-time messaging
+
+#### Mood Tracking
+- `POST /api/mood/add` - Add mood entry
+- `GET /api/mood/history` - Get mood history
+
+#### Health & Monitoring
+- `GET /api/health/status` - Application health check
+- `GET /actuator/health` - Detailed health metrics
+
+## 🔧 Development Setup
+
+### Prerequisites
+- Node.js 20+
+- Java 17+
+- PostgreSQL 15+
+- Docker (optional)
+
+### Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd mindease
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Setup database**
+   ```bash
+   cd backend/docker
+   docker-compose up -d
+   ```
+
+4. **Configure environment**
+   - Copy `.env.example` to `.env`
+   - Add Firebase configuration
+   - Add OpenAI API key (optional)
+
+5. **Start backend**
+   ```bash
+   cd backend
+   ./mvnw spring-boot:run
+   ```
+
+6. **Start frontend**
+   ```bash
+   # Marketing site
+   npm run -w @mindease/marketing dev
+
+   # Web application
+   npm run -w @mindease/webapp dev
+   ```
+
+### Environment Variables
+
+#### Backend (`backend/src/main/resources/application.yml`)
+```yaml
+firebase:
+  project-id: your-firebase-project-id
+
+jwt:
+  secret: your-jwt-secret
+  expiration: 86400000
+
+chat:
+  openai:
+    api-key: your-openai-api-key
+```
+
+#### Frontend (`.env`)
+```env
+VITE_FIREBASE_API_KEY=your-firebase-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
+```
+
+## 🧪 Testing
+
+### Backend Testing
+```bash
+cd backend
+./mvnw test
+```
+
+### Frontend Testing
+```bash
+# Run all tests
+npm test
+
+# Test specific workspace
+npm run -w @mindease/webapp test
+```
+
+### WebSocket Testing
+The application includes a comprehensive WebSocket testing suite accessible at `/testing` route when logged in.
+
+### Manual API Testing
+Use the provided Postman collection or Swagger UI for manual API testing.
+
+## 🚀 Deployment
+
+### Production Build
+```bash
+# Build all applications
+npm run build
+
+# Build specific workspace
+npm run -w @mindease/webapp build
+```
+
+### Docker Deployment
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
+```
+
+## 🔒 Security Features
+
+- **JWT Authentication**: Secure token-based authentication
+- **Firebase Integration**: Robust user management
+- **CORS Configuration**: Secure cross-origin requests
+- **Input Validation**: Comprehensive request validation
+- **Crisis Detection**: Automatic flagging of concerning messages
+- **Anonymous Mode**: Privacy-focused user option
+- **Data Retention**: Configurable data cleanup policies
+
+## 🌍 Internationalization
+
+The application supports multiple languages:
+- **English** (default)
+- **Nepali** (नेपाली)
+
+Language switching is available in the settings page and persists across sessions.
+
+## 📈 Performance Optimizations
+
+- **Database Indexing**: Optimized queries with proper indexes
+- **Caching**: Redis-like caching for frequently accessed data
+- **Connection Pooling**: Efficient database connections
+- **Lazy Loading**: Optimized component loading
+- **Code Splitting**: Reduced bundle sizes
+- **WebSocket Optimization**: Efficient real-time communication
+
+## 🔍 Monitoring & Health Checks
+
+- **Spring Boot Actuator**: Comprehensive health monitoring
+- **Custom Health Indicators**: Database and service health checks
+- **Performance Metrics**: Response time and resource usage tracking
+- **Error Tracking**: Comprehensive error logging and handling
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Style
+- Follow ESLint and Prettier configurations
+- Use conventional commit messages
+- Write comprehensive tests for new features
+- Update documentation for API changes
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the API documentation at `/swagger-ui.html`
+- Review the testing dashboard at `/testing`
+
+## 🎯 Roadmap
+
+### Phase 4: Advanced Features (Planned)
+- [ ] Advanced AI conversation context
+- [ ] Mood prediction algorithms
+- [ ] Social features and community support
+- [ ] Mobile application (React Native)
+- [ ] Advanced analytics and insights
+- [ ] Integration with wearable devices
+- [ ] Therapist portal and professional features
+
+### Phase 5: Scale & Polish (Planned)
+- [ ] Microservices architecture
+- [ ] Advanced caching strategies
+- [ ] CDN integration
+- [ ] Advanced monitoring and alerting
+- [ ] Load testing and optimization
+- [ ] Security audit and penetration testing
+
+---
+
+**MindEase** - Empowering mental wellness through technology 🌱
