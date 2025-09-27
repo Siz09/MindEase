@@ -18,8 +18,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+
 @RestController
 @RequestMapping("/api/mood")
+@Tag(name = "Mood Tracking", description = "Mood tracking and history endpoints")
+@SecurityRequirement(name = "Bearer Authentication")
 public class MoodController {
 
   @Autowired
@@ -29,6 +37,12 @@ public class MoodController {
   private UserRepository userRepository;
 
   // POST /api/mood/add - Add a new mood entry
+  @Operation(summary = "Add a mood entry", description = "Add a new mood entry for the authenticated user")
+  @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Mood entry added successfully"),
+    @ApiResponse(responseCode = "400", description = "Invalid mood value or user not found"),
+    @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+  })
   @PostMapping("/add")
   public ResponseEntity<?> addMoodEntry(@RequestBody MoodEntryRequest request, Authentication authentication) {
     try {

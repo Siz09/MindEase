@@ -17,9 +17,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
+@Tag(name = "Authentication", description = "User authentication and registration endpoints")
 public class AuthController {
 
   @Autowired
@@ -31,6 +39,12 @@ public class AuthController {
   @Autowired
   private JwtUtil jwtUtil;
 
+  @Operation(summary = "Register a new user", description = "Register a new user with Firebase authentication")
+  @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Registration successful"),
+    @ApiResponse(responseCode = "400", description = "Invalid request or user already exists"),
+    @ApiResponse(responseCode = "401", description = "Invalid Firebase token")
+  })
   @PostMapping("/register")
   public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
     try {

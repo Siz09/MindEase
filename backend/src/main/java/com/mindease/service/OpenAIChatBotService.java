@@ -1,6 +1,7 @@
 package com.mindease.service;
 
 import com.mindease.config.ChatConfig;
+import com.mindease.dto.ChatResponse;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
@@ -18,7 +19,7 @@ public class OpenAIChatBotService implements ChatBotService {
   private ChatConfig chatConfig;
 
   @Override
-  public String generateResponse(String message, String userId) {
+  public ChatResponse generateResponse(String message, String userId) {
     try {
       OpenAiService service = new OpenAiService(
         chatConfig.getOpenai().getApiKey(),
@@ -53,11 +54,17 @@ public class OpenAIChatBotService implements ChatBotService {
       ChatMessage responseMessage = service.createChatCompletion(completionRequest)
         .getChoices().get(0).getMessage();
 
-      return responseMessage.getContent().trim();
+      String content = responseMessage.getContent().trim();
+      boolean isCrisis = isCrisisMessage(message);
+      
+      return new ChatResponse(content, isCrisis, "openai");
 
     } catch (Exception e) {
       // Fallback response if OpenAI API fails
-      return "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
+      String fallbackContent = "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
+      boolean isCrisis = isCrisisMessage(message);
+      
+      return new ChatResponse(fallbackContent, isCrisis, "fallback");
     }
   }
 

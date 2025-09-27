@@ -1,6 +1,8 @@
 package com.mindease.service;
 
+import com.mindease.dto.ChatResponse;
+
 public interface ChatBotService {
-  String generateResponse(String message, String userId);
+  ChatResponse generateResponse(String message, String userId);
   boolean isCrisisMessage(String message);
 }
