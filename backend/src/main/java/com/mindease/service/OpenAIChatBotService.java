@@ -56,14 +56,14 @@ public class OpenAIChatBotService implements ChatBotService {
 
       String content = responseMessage.getContent().trim();
       boolean isCrisis = isCrisisMessage(message);
-      
+
       return new ChatResponse(content, isCrisis, "openai");
 
     } catch (Exception e) {
       // Fallback response if OpenAI API fails
       String fallbackContent = "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
       boolean isCrisis = isCrisisMessage(message);
-      
+
       return new ChatResponse(fallbackContent, isCrisis, "fallback");
     }
   }

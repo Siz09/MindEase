@@ -52,10 +52,10 @@ logging:
 # Chat configuration
 chat:
   openai:
-    api-key: ${OPENAI_API_KEY:dummy-key-for-development}
+    api-key: ${OPENAI_API_KEY}
     model: gpt-3.5-turbo
-    temperature: 0.7
-    max-tokens: 500
+    temperature: 0.8
+    max-tokens: 160
   crisis-detection:
     enabled: true
     crisis-keywords:
