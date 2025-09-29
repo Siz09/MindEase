@@ -128,18 +128,32 @@
     </dependency>
 	</dependencies>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
+  <build>
+    <plugins>
+      <!-- Spring Boot plugin -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
           <jvmArguments>
             -Duser.timezone=UTC
           </jvmArguments>
         </configuration>
-			</plugin>
-		</plugins>
-	</build>
+      </plugin>
+
+      <!-- Flyway plugin -->
+      <plugin>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-maven-plugin</artifactId>
+        <version>11.7.2</version>
+        <configuration>
+          <url>jdbc:postgresql://localhost:5432/mindease</url>
+          <user>mindease</user>
+          <password>secret</password>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 
 </project>

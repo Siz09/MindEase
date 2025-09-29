@@ -8,6 +8,9 @@ spring:
     username: mindease
     password: secret
     driver-class-name: org.postgresql.Driver
+    hikari:
+      data-source-properties:
+        ApplicationName: mindease-backend
   jpa:
     hibernate:
       ddl-auto: validate
@@ -52,7 +55,7 @@ logging:
 # Chat configuration
 chat:
   openai:
-    api-key: ${OPENAI_API_KEY}
+    api-key: ${OPENAI_API_KEY:}
     model: gpt-3.5-turbo
     temperature: 0.8
     max-tokens: 160
