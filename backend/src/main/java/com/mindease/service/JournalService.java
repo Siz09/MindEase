@@ -13,34 +13,34 @@ import java.util.UUID;
 @Service
 public class JournalService {
 
-  @Autowired
-  private JournalEntryRepository journalEntryRepository;
+    @Autowired
+    private JournalEntryRepository journalEntryRepository;
 
-  public JournalEntry saveJournalEntry(UUID userId, String content) {
-    JournalEntry entry = new JournalEntry(userId, content);
-    return journalEntryRepository.save(entry);
-  }
+    public JournalEntry saveJournalEntry(UUID userId, String content) {
+        JournalEntry entry = new JournalEntry(userId, content);
+        return journalEntryRepository.save(entry);
+    }
 
-  public JournalEntry saveJournalEntryWithSummary(UUID userId, String content, String aiSummary, String moodInsight) {
-    JournalEntry entry = new JournalEntry(userId, content);
-    entry.setAiSummary(aiSummary);
-    entry.setMoodInsight(moodInsight);
-    return journalEntryRepository.save(entry);
-  }
+    public JournalEntry saveJournalEntryWithSummary(UUID userId, String content, String aiSummary, String moodInsight) {
+        JournalEntry entry = new JournalEntry(userId, content);
+        entry.setAiSummary(aiSummary);
+        entry.setMoodInsight(moodInsight);
+        return journalEntryRepository.save(entry);
+    }
 
-  public Page<JournalEntry> getJournalHistory(UUID userId, Pageable pageable) {
-    return journalEntryRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
-  }
+    public Page<JournalEntry> getJournalHistory(UUID userId, Pageable pageable) {
+        return journalEntryRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    }
 
-  public List<JournalEntry> getRecentJournalEntries(UUID userId) {
-    return journalEntryRepository.findRecentByUserId(userId);
-  }
+    public List<JournalEntry> getRecentJournalEntries(UUID userId) {
+        return journalEntryRepository.findRecentByUserId(userId);
+    }
 
-  public long getJournalEntryCount(UUID userId) {
-    return journalEntryRepository.countByUserId(userId);
-  }
+    public long getJournalEntryCount(UUID userId) {
+        return journalEntryRepository.countByUserId(userId);
+    }
 
-  public List<JournalEntry> getJournalEntriesBefore(UUID userId, LocalDateTime beforeDate, Pageable pageable) {
-    return journalEntryRepository.findByUserIdAndCreatedAtBeforeOrderByCreatedAtDesc(userId, beforeDate, pageable);
-  }
+    public List<JournalEntry> getJournalEntriesBefore(UUID userId, LocalDateTime beforeDate, Pageable pageable) {
+        return journalEntryRepository.findByUserIdAndCreatedAtBeforeOrderByCreatedAtDesc(userId, beforeDate, pageable);
+    }
 }
