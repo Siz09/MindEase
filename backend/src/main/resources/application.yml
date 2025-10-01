@@ -22,6 +22,12 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true
+  task:   # ⬅ merged here instead of separate spring: block
+    execution:
+      pool:
+        core-size: 5
+        max-size: 10
+        queue-capacity: 100
 
 server:
   port: 8080
@@ -76,7 +82,6 @@ chat:
       - better off without me
 
 # Development specific settings
-# Actuator configuration for monitoring
 management:
   endpoints:
     web:
@@ -88,6 +93,15 @@ management:
   info:
     env:
       enabled: true
+
+# OpenAI Configuration
+openai:
+  api:
+    key: ${OPENAI_API_KEY:}  # Set via environment variable
+    timeout: 30
+  model: gpt-3.5-turbo-instruct
+  max-tokens: 150
+  temperature: 0.7
 
 # OpenAPI documentation
 springdoc:
@@ -109,7 +123,6 @@ spring:
       ddl-auto: update # Use update for development
     show-sql: true
 
-# Production settings
 ---
 spring:
   config:
