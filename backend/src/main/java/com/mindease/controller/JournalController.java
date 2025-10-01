@@ -29,7 +29,7 @@ public class JournalController {
   public ResponseEntity<?> addJournalEntry(
     @RequestBody Map<String, String> request,
     Authentication authentication) {
-
+    
     try {
       String content = request.get("content");
       if (content == null || content.trim().isEmpty()) {
@@ -38,19 +38,32 @@ public class JournalController {
 
       // Get user ID from authentication
       UUID userId = getUserIdFromAuthentication(authentication);
-
+      
       JournalEntry savedEntry = journalService.saveJournalEntry(userId, content.trim());
-
+      
       Map<String, Object> response = new HashMap<>();
       response.put("success", true);
       response.put("message", "Journal entry saved successfully");
       response.put("entry", savedEntry);
-
+      response.put("aiProcessing", true);
+      response.put("aiAvailable", journalService.isAIAvailable());
+      
       return ResponseEntity.ok(response);
-
+      
     } catch (Exception e) {
       return ResponseEntity.internalServerError().body("Error saving journal entry: " + e.getMessage());
     }
+  }
+  
+  @GetMapping("/ai-status")
+  public ResponseEntity<?> getAIStatus() {
+    Map<String, Object> response = new HashMap<>();
+    response.put("success", true);
+    response.put("aiAvailable", journalService.isAIAvailable());
+    response.put("message", journalService.isAIAvailable() ? 
+        "AI features are available" : "AI features are not configured");
+    
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping("/history")
