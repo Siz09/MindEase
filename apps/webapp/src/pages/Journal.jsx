@@ -1,273 +1,403 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import ChatBot from '../components/ChatBot';
+import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
+import EmojiPicker from '../components/EmojiPicker';
 import '../styles/Journal.css';
 
 const Journal = () => {
   const { t } = useTranslation();
+  const { token } = useAuth();
+
   const [entries, setEntries] = useState([]);
-  const [currentEntry, setCurrentEntry] = useState('');
-  const [selectedPrompt, setSelectedPrompt] = useState('');
-  const [showChatBot, setShowChatBot] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [newEntry, setNewEntry] = useState('');
+  const [selectedEmoji, setSelectedEmoji] = useState('😊');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [aiStatus, setAiStatus] = useState({ available: false, loading: true });
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  const journalPrompts = [
-    t('journal.prompt1'),
-    t('journal.prompt2'),
-    t('journal.prompt3'),
-    t('journal.prompt4'),
-    t('journal.prompt5'),
-  ];
+  const emojiPickerRef = useRef(null);
+  const textareaRef = useRef(null);
 
-  const selectPrompt = (prompt) => {
-    setSelectedPrompt(prompt);
-    setCurrentEntry(prompt + '\n\n');
-  };
-
+  // Close emoji picker when clicking outside
   useEffect(() => {
-    // Load journal entries from localStorage
-    const savedEntries = localStorage.getItem('journalEntries');
-    if (savedEntries) {
-      setEntries(JSON.parse(savedEntries));
-    }
-  }, []);
-
-  const saveEntry = () => {
-    if (!currentEntry.trim()) return;
-
-    const entry = {
-      id: editingId || Date.now(),
-      content: currentEntry,
-      date: new Date().toISOString(),
-      timestamp: new Date().toLocaleString(),
-      prompt: selectedPrompt,
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
     };
 
-    let updatedEntries;
-    if (isEditing) {
-      updatedEntries = entries.map((e) => (e.id === editingId ? entry : e));
-    } else {
-      updatedEntries = [entry, ...entries];
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fetch journal entries
+  const fetchJournalEntries = useCallback(
+    async (page = 0) => {
+      try {
+        if (!token) {
+          console.error('No authentication token available');
+          return;
+        }
+        const response = await fetch(
+          `http://localhost:8080/api/journal/history?page=${page}&size=10`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) throw new Error('Failed to fetch journal entries');
+
+        const data = await response.json();
+        if (data.success) {
+          setEntries(data.entries);
+          setCurrentPage(data.currentPage);
+          setTotalPages(data.totalPages);
+        }
+      } catch (error) {
+        console.error('Error fetching journal entries:', error);
+        toast.error(t('journal.errors.fetchFailed'));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [token, t]
+  );
+
+  // Check AI status
+  const checkAIStatus = useCallback(async () => {
+    try {
+      if (!token) {
+        console.error('No authentication token available');
+        return;
+      }
+      const response = await fetch('http://localhost:8080/api/journal/ai-status', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAiStatus({ available: data.aiAvailable, loading: false });
+      }
+    } catch (error) {
+      console.error('Error checking AI status:', error);
+      setAiStatus({ available: false, loading: false });
+    }
+  }, [token]);
+
+  // Handle emoji selection
+  const handleEmojiSelect = (emoji) => {
+    setSelectedEmoji(emoji);
+    setShowEmojiPicker(false);
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!newEntry.trim()) {
+      toast.error(t('journal.errors.emptyEntry'));
+      return;
     }
 
-    setEntries(updatedEntries);
-    localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+    setIsSubmitting(true);
 
-    // Reset form
-    setCurrentEntry('');
-    setSelectedPrompt('');
-    setIsEditing(false);
-    setEditingId(null);
+    try {
+      if (!token) {
+        toast.error('Authentication required. Please log in again.');
+        return;
+      }
+      const response = await fetch('http://localhost:8080/api/journal/add', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: `${selectedEmoji} ${newEntry}` }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to save journal entry');
+      }
+
+      toast.success(t('journal.success.saved'));
+      setNewEntry('');
+      setSelectedEmoji('😊');
+
+      // Refresh the entries list after a short delay to allow AI processing
+      setTimeout(() => {
+        fetchJournalEntries(0);
+      }, 2000);
+    } catch (error) {
+      console.error('Error saving journal entry:', error);
+      toast.error(t('journal.errors.saveFailed'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const editEntry = (entry) => {
-    setCurrentEntry(entry.content);
-    setSelectedPrompt(entry.prompt || '');
-    setIsEditing(true);
-    setEditingId(entry.id);
-
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Format date for display
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
   };
 
-  const deleteEntry = (id) => {
-    const updatedEntries = entries.filter((entry) => entry.id !== id);
-    setEntries(updatedEntries);
-    localStorage.setItem('journalEntries', JSON.stringify(updatedEntries));
+  // Extract emoji from entry content
+  const extractEmoji = (content) => {
+    const emojiMatch = content.match(/^(\p{Emoji})\s(.*)/u);
+    return emojiMatch
+      ? { emoji: emojiMatch[1], text: emojiMatch[2] }
+      : { emoji: '📝', text: content };
   };
 
-  const cancelEdit = () => {
-    setCurrentEntry('');
-    setSelectedPrompt('');
-    setIsEditing(false);
-    setEditingId(null);
+  // Load data on component mount
+  useEffect(() => {
+    fetchJournalEntries();
+    checkAIStatus();
+  }, [fetchJournalEntries, checkAIStatus]);
+
+  // Handle pagination
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      fetchJournalEntries(newPage);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="journal-container">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>{t('journal.loading')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="page journal-page">
-      <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">{t('journal.title')}</h1>
-          <p className="page-subtitle">{t('journal.subtitle')}</p>
+    <div className="journal-container">
+      <div className="journal-header">
+        <h1>{t('journal.title')}</h1>
+        <p className="journal-subtitle">{t('journal.subtitle')}</p>
+
+        {/* AI Status Badge */}
+        <div className={`ai-status ${aiStatus.available ? 'available' : 'unavailable'}`}>
+          <span className="ai-dot"></span>
+          {aiStatus.available ? t('journal.aiAvailable') : t('journal.aiUnavailable')}
         </div>
+      </div>
 
-        <div className="journal-content">
-          {/* Writing Section */}
-          <div className="journal-editor-section">
-            <div className="card editor-card">
-              <div className="card-header">
-                <h2 className="card-title">
-                  {isEditing ? t('journal.editEntry') : t('journal.newEntry')}
-                </h2>
-                <p className="card-description">
-                  {isEditing ? t('journal.editDescription') : t('journal.writeDescription')}
-                </p>
-              </div>
+      <div className="journal-layout">
+        {/* Left Column - New Entry Form */}
+        <div className="journal-form-section">
+          <form onSubmit={handleSubmit} className="journal-form">
+            <div className="form-group">
+              <label htmlFor="journal-entry" className="form-label">
+                {t('journal.newEntry')}
+              </label>
 
-              {/* Journal Prompts */}
-              <div className="prompts-section">
-                <h3 className="prompts-title">{t('journal.prompts')}</h3>
-                <div className="prompts-grid">
-                  {journalPrompts.map((prompt, index) => (
-                    <button
-                      key={index}
-                      className={`prompt-btn ${selectedPrompt === prompt ? 'selected' : ''}`}
-                      onClick={() => selectPrompt(prompt)}
-                    >
-                      {prompt}
-                    </button>
-                  ))}
+              {/* Emoji Selection */}
+              <div className="emoji-section">
+                <label className="emoji-label">{t('journal.howAreYouFeeling')}</label>
+                <div className="emoji-selector" ref={emojiPickerRef}>
+                  <button
+                    type="button"
+                    className="emoji-trigger"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  >
+                    <span className="selected-emoji">{selectedEmoji}</span>
+                    <span className="emoji-dropdown-arrow">▼</span>
+                  </button>
+
+                  {showEmojiPicker && (
+                    <div className="emoji-picker-container">
+                      <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Text Editor */}
-              <div className="editor-container">
-                <textarea
-                  value={currentEntry}
-                  onChange={(e) => setCurrentEntry(e.target.value)}
-                  placeholder={t('journal.placeholder')}
-                  className="journal-textarea"
-                  rows="8"
-                />
-                <div className="editor-footer">
-                  <div className="word-count">
-                    {
-                      currentEntry
-                        .trim()
-                        .split(/\s+/)
-                        .filter((word) => word.length > 0).length
-                    }{' '}
-                    {t('journal.words')}
-                  </div>
-                  <div className="editor-actions">
-                    {isEditing && (
-                      <button className="btn btn-outline" onClick={cancelEdit}>
-                        {t('journal.cancel')}
-                      </button>
-                    )}
-                    <button
-                      className="btn btn-primary"
-                      onClick={saveEntry}
-                      disabled={!currentEntry.trim()}
-                    >
-                      {isEditing ? t('journal.updateEntry') : t('journal.saveEntry')}
-                    </button>
-                  </div>
-                </div>
+              <textarea
+                ref={textareaRef}
+                id="journal-entry"
+                value={newEntry}
+                onChange={(e) => setNewEntry(e.target.value)}
+                placeholder={t('journal.placeholder')}
+                className="journal-textarea"
+                rows="6"
+                disabled={isSubmitting}
+              />
+              <div className="character-count">
+                {newEntry.length} {t('journal.characters')}
               </div>
             </div>
-          </div>
 
-          {/* Entries History */}
-          <div className="journal-history-section">
-            {entries.length > 0 ? (
-              <div className="entries-container">
-                <div className="section-header">
-                  <h2 className="section-title">{t('journal.yourEntries')}</h2>
-                  <span className="entries-count">
-                    {entries.length} {t('journal.entries')}
-                  </span>
-                </div>
+            <button
+              type="submit"
+              disabled={isSubmitting || !newEntry.trim()}
+              className={`btn btn-primary submit-btn ${isSubmitting ? 'loading' : ''}`}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="btn-spinner"></div>
+                  {t('journal.saving')}
+                </>
+              ) : (
+                t('journal.saveEntry')
+              )}
+            </button>
 
-                <div className="entries-grid">
-                  {entries.map((entry) => (
-                    <div key={entry.id} className="card entry-card">
-                      <div className="entry-header">
-                        <div className="entry-date">
-                          {new Date(entry.date).toLocaleDateString([], {
-                            weekday: 'short',
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </div>
-                        <div className="entry-actions">
-                          <button
-                            className="action-btn edit-btn"
-                            onClick={() => editEntry(entry)}
-                            aria-label={t('journal.editEntry')}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <path
-                                d="M12.146 1.146a.5.5 0 01.708 0l2 2a.5.5 0 010 .708L6.707 12H4v-2.707l8.146-8.147z"
-                                fill="currentColor"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            className="action-btn delete-btn"
-                            onClick={() => deleteEntry(entry.id)}
-                            aria-label={t('journal.deleteEntry')}
-                          >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <path
-                                d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"
-                                fill="currentColor"
-                              />
-                              <path
-                                fillRule="evenodd"
-                                d="M14.5 3a1 1 0 01-1 1H13v9a2 2 0 01-2 2H5a2 2 0 01-2-2V4h-.5a1 1 0 01-1-1V2a1 1 0 011-1H6a1 1 0 011-1h2a1 1 0 011 1h3.5a1 1 0 011 1v1zM4.118 4L4 4.059V13a1 1 0 001 1h6a1 1 0 001-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
-                                fill="currentColor"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-
-                      {entry.prompt && (
-                        <div className="entry-prompt">
-                          <strong>{t('journal.prompt')}:</strong> {entry.prompt}
-                        </div>
-                      )}
-
-                      <div className="entry-content">
-                        {entry.content.length > 200
-                          ? `${entry.content.substring(0, 200)}...`
-                          : entry.content}
-                      </div>
-
-                      <div className="entry-footer">
-                        <span className="entry-time">{entry.timestamp}</span>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => setShowChatBot(true)}
-                        >
-                          {t('journal.reflect')}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {/* AI Info */}
+            {aiStatus.available && (
+              <div className="ai-info">
+                <p>{t('journal.aiInfo')}</p>
               </div>
-            ) : (
-              <div className="empty-state">
-                <div className="empty-icon">
-                  <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                    <path
-                      d="M16 8h32a4 4 0 014 4v40a4 4 0 01-4 4H16a4 4 0 01-4-4V12a4 4 0 014-4z"
-                      stroke="var(--gray-300)"
-                      strokeWidth="2"
-                      fill="none"
-                    />
-                    <path
-                      d="M24 20h16M24 28h16M24 36h12"
-                      stroke="var(--gray-300)"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </div>
-                <h3 className="empty-title">{t('journal.noEntries')}</h3>
-                <p className="empty-description">{t('journal.noEntriesDescription')}</p>
+            )}
+          </form>
+        </div>
+
+        {/* Right Column - Journal History */}
+        <div className="journal-history-section">
+          <div className="history-header">
+            <h2>{t('journal.history')}</h2>
+            {entries.length > 0 && (
+              <div className="pagination-info">
+                {t('journal.page')} {currentPage + 1} {t('journal.of')} {totalPages}
+                <span className="total-entries">
+                  {' '}
+                  • {entries.length} {t('journal.entries')}
+                </span>
               </div>
             )}
           </div>
-        </div>
 
-        {/* ChatBot Integration */}
-        {showChatBot && <ChatBot />}
+          {entries.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📝</div>
+              <h3>{t('journal.noEntries')}</h3>
+              <p>{t('journal.startWriting')}</p>
+            </div>
+          ) : (
+            <>
+              <div className="entries-list">
+                {entries.map((entry) => {
+                  const { emoji, text } = extractEmoji(entry.content);
+
+                  return (
+                    <div key={entry.id} className="journal-entry-card">
+                      <div className="entry-header">
+                        <div className="entry-meta">
+                          <span className="entry-emoji">{emoji}</span>
+                          <span className="entry-date">{formatDate(entry.createdAt)}</span>
+                        </div>
+                      </div>
+
+                      <div className="entry-content">
+                        <p>{text}</p>
+                      </div>
+
+                      {/* AI Summary Section */}
+                      {entry.aiSummary && (
+                        <div className="ai-summary-section">
+                          <div className="ai-summary-header">
+                            <span className="ai-icon">🤖</span>
+                            <strong>{t('journal.aiSummary')}</strong>
+                          </div>
+                          <div className="ai-summary-content">
+                            <p>{entry.aiSummary}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Mood Insight Section */}
+                      {entry.moodInsight && (
+                        <div className="mood-insight-section">
+                          <div className="mood-insight-header">
+                            <span className="mood-icon">💡</span>
+                            <strong>{t('journal.moodInsight')}</strong>
+                          </div>
+                          <div className="mood-insight-content">
+                            <p>{entry.moodInsight}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AI Processing Indicator */}
+                      {!entry.aiSummary && !entry.moodInsight && (
+                        <div className="ai-processing">
+                          <div className="processing-spinner"></div>
+                          <span>{t('journal.aiProcessing')}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="pagination-controls">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 0}
+                    className="btn btn-outline pagination-btn"
+                  >
+                    {t('journal.previous')}
+                  </button>
+
+                  <span className="pagination-numbers">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i;
+                      } else if (currentPage <= 2) {
+                        pageNum = i;
+                      } else if (currentPage >= totalPages - 3) {
+                        pageNum = totalPages - 5 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`pagination-number ${pageNum === currentPage ? 'active' : ''}`}
+                        >
+                          {pageNum + 1}
+                        </button>
+                      );
+                    })}
+                  </span>
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages - 1}
+                    className="btn btn-outline pagination-btn"
+                  >
+                    {t('journal.next')}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
