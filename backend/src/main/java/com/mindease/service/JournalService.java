@@ -29,7 +29,14 @@ public class JournalService {
 
     @Transactional
     public JournalEntry saveJournalEntry(UUID userId, String content) {
-        JournalEntry entry = new JournalEntry(userId, content);
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("Content cannot be empty");
+        }
+
+        JournalEntry entry = new JournalEntry(userId, content.trim());
         JournalEntry savedEntry = journalEntryRepository.save(entry);
         
         // Generate AI summary asynchronously

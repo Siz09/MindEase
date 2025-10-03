@@ -71,30 +71,37 @@
     "tip3Description": "Maintain social connections for better mental health."
   },
   "journal": {
-    "title": "Personal Journal",
-    "subtitle": "Express your thoughts and feelings in a safe, private space.",
+    "title": "Journal",
+    "subtitle": "Express your thoughts and feelings with emojis. AI will help you gain insights.",
     "newEntry": "New Journal Entry",
-    "editEntry": "Edit Entry",
-    "writeDescription": "Write about your day, thoughts, or feelings.",
-    "editDescription": "Update your journal entry.",
-    "prompts": "Writing Prompts",
-    "prompt1": "What am I grateful for today?",
-    "prompt2": "What challenged me today and how did I handle it?",
-    "prompt3": "What made me smile today?",
-    "prompt4": "What would I like to improve about tomorrow?",
-    "prompt5": "How am I taking care of myself today?",
-    "placeholder": "Start writing your thoughts here...",
-    "words": "words",
+    "howAreYouFeeling": "How are you feeling?",
+    "placeholder": "Write about your day, your feelings, or anything on your mind...",
     "saveEntry": "Save Entry",
-    "updateEntry": "Update Entry",
-    "cancel": "Cancel",
-    "yourEntries": "Your Journal Entries",
-    "entries": "entries",
-    "prompt": "Prompt",
-    "reflect": "Reflect",
-    "deleteEntry": "Delete Entry",
+    "saving": "Saving...",
+    "history": "Journal History",
     "noEntries": "No journal entries yet",
-    "noEntriesDescription": "Start writing your first entry to begin your wellness journey."
+    "startWriting": "Start by writing your first journal entry",
+    "aiSummary": "AI Summary",
+    "moodInsight": "Mood Insight",
+    "aiProcessing": "AI is analyzing your entry...",
+    "aiAvailable": "AI Insights Available",
+    "aiUnavailable": "AI Insights Unavailable",
+    "aiInfo": "AI will automatically analyze your entry and provide insights about your mood and thoughts.",
+    "page": "Page",
+    "of": "of",
+    "entries": "entries",
+    "previous": "Previous",
+    "next": "Next",
+    "characters": "characters",
+    "success": {
+      "saved": "Journal entry saved successfully!"
+    },
+    "errors": {
+      "emptyEntry": "Please write something before saving",
+      "saveFailed": "Failed to save journal entry",
+      "fetchFailed": "Failed to load journal entries"
+    },
+    "loading": "Loading your journal..."
   },
   "chatbot": {
     "name": "MindEase Assistant",
@@ -133,7 +140,7 @@
     "welcomeMessage": "Hello! I'm here to support your mental wellness journey. How can I help you today?",
     "quickResponses": {
       "anxiety": "I'm feeling anxious",
-      "motivation": "I need motivation", 
+      "motivation": "I need motivation",
       "relax": "Help me relax",
       "grateful": "I'm feeling grateful"
     },
