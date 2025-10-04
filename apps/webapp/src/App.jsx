@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Mood from './pages/Mood';
 import Journal from './pages/Journal';
+import Mindfulness from './pages/Mindfulness';
 import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ToastContainer } from 'react-toastify';
@@ -52,6 +53,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Chat />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mindfulness"
+                element={
+                  <ProtectedRoute>
+                    <Mindfulness />
                   </ProtectedRoute>
                 }
               />

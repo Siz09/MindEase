@@ -2,6 +2,7 @@
   "navigation": {
     "mood": "मूड",
     "journal": "डायरी",
+    "mindfulness": "माइन्डफुलनेस",
     "settings": "सेटिङ्गहरू",
     "login": "लगइन",
     "register": "दर्ता",
@@ -167,6 +168,45 @@
       "languageChanged": "भाषा सफलतापूर्वक परिवर्तन गरियो",
       "settingsUpdated": "सेटिङ्गहरू सफलतापूर्वक अपडेट गरियो",
       "updateFailed": "सेटिङ्गहरू अपडेट गर्न असफल"
+    }
+  },
+  "mindfulness": {
+    "title": "माइन्डफुलनेस",
+    "subtitle": "गाइडेड अडियो सेसन र शान्त एनिमेसनहरूको साथ शान्ति र फोकस खोज्नुहोस्",
+    "totalSessions": "कुल सेसनहरू",
+    "audioSessions": "अडियो सेसनहरू",
+    "animationSessions": "एनिमेसन सेसनहरू",
+    "filterByCategory": "श्रेणीले फिल्टर गर्नुहोस्",
+    "filterByType": "प्रकारले फिल्टर गर्नुहोस्",
+    "filterByDifficulty": "कठिनाइले फिल्टर गर्नुहोस्",
+    "allCategories": "सबै श्रेणीहरू",
+    "allTypes": "सबै प्रकारहरू",
+    "allDifficulties": "सबै कठिनाइहरू",
+    "audio": "अडियो",
+    "animation": "एनिमेसन",
+    "beginner": "सुरुआती",
+    "intermediate": "मध्यम",
+    "advanced": "अग्रिम",
+    "clearFilters": "फिल्टर हटाउनुहोस्",
+    "playAudio": "अडियो चलाउनुहोस्",
+    "stopAudio": "अडियो रोक्नुहोस्",
+    "playAnimation": "एनिमेसन चलाउनुहोस्",
+    "stopAnimation": "एनिमेसन रोक्नुहोस्",
+    "minutes": "मिनेट",
+    "audioPlaying": "अडियो सेसन सुरु भयो",
+    "audioPlayingHint": "अडियो चलिरहेको छ... आँखा बन्द गरेर सास लिनुहोस्",
+    "loadingAnimation": "एनिमेसन लोड हुँदैछ...",
+    "noSessionsFound": "कुनै सेसन फेला परेन",
+    "tryChangingFilters": "आफ्नो फिल्टर वा खोज शब्द परिवर्तन गरेर प्रयास गर्नुहोस्",
+    "showAllSessions": "सबै सेसनहरू देखाउनुहोस्",
+    "quickAccess": "द्रुत पहुँच",
+    "beginnerAudio": "सुरुआती अडियो",
+    "beginnerAnimations": "सुरुआती एनिमेसनहरू",
+    "breathingExercises": "सास फेर्ने",
+    "quickSessions": "छिटो सेसनहरू",
+    "loading": "माइन्डफुलनेस सेसनहरू लोड हुँदैछ...",
+    "errors": {
+      "fetchFailed": "माइन्डफुलनेस सेसनहरू लोड गर्न असफल"
     }
   }
 }

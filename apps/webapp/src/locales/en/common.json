@@ -2,6 +2,7 @@
   "navigation": {
     "mood": "Mood",
     "journal": "Journal",
+    "mindfulness": "Mindfulness",
     "settings": "Settings",
     "login": "Login",
     "register": "Register",
@@ -190,6 +191,45 @@
       "languageChanged": "Language changed successfully",
       "settingsUpdated": "Settings updated successfully",
       "updateFailed": "Failed to update settings"
+    }
+  },
+  "mindfulness": {
+    "title": "Mindfulness",
+    "subtitle": "Find peace and focus with guided audio sessions and calming animations",
+    "totalSessions": "Total Sessions",
+    "audioSessions": "Audio Sessions",
+    "animationSessions": "Animation Sessions",
+    "filterByCategory": "Filter by Category",
+    "filterByType": "Filter by Type",
+    "filterByDifficulty": "Filter by Difficulty",
+    "allCategories": "All Categories",
+    "allTypes": "All Types",
+    "allDifficulties": "All Difficulties",
+    "audio": "Audio",
+    "animation": "Animation",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "clearFilters": "Clear Filters",
+    "playAudio": "Play Audio",
+    "stopAudio": "Stop Audio",
+    "playAnimation": "Play Animation",
+    "stopAnimation": "Stop Animation",
+    "minutes": "min",
+    "audioPlaying": "Audio session started",
+    "audioPlayingHint": "Audio is playing... Close your eyes and breathe",
+    "loadingAnimation": "Loading animation...",
+    "noSessionsFound": "No sessions found",
+    "tryChangingFilters": "Try changing your filters or search terms",
+    "showAllSessions": "Show All Sessions",
+    "quickAccess": "Quick Access",
+    "beginnerAudio": "Beginner Audio",
+    "beginnerAnimations": "Beginner Animations",
+    "breathingExercises": "Breathing",
+    "quickSessions": "Quick Sessions",
+    "loading": "Loading mindfulness sessions...",
+    "errors": {
+      "fetchFailed": "Failed to load mindfulness sessions"
     }
   }
 }

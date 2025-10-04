@@ -4,6 +4,7 @@ import com.mindease.dto.JournalRequest;
 import com.mindease.model.JournalEntry;
 import com.mindease.service.CustomUserDetails;
 import com.mindease.service.JournalService;
+import com.mindease.util.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,9 @@ public class JournalController {
 
   @Autowired
   private JournalService journalService;
+
+  @Autowired
+  private AuthUtil authUtil;
 
 
   @PostMapping("/add")
@@ -133,23 +137,6 @@ public class JournalController {
   }
 
   private UUID getUserIdFromAuthentication(Authentication authentication) {
-    if (authentication != null && authentication.isAuthenticated()) {
-      // Get the principal (user details)
-      Object principal = authentication.getPrincipal();
-      
-      // If it's a CustomUserDetails, extract the user ID
-      if (principal instanceof CustomUserDetails) {
-        return ((CustomUserDetails) principal).getId();
-      }
-      
-      // If it's just a username string, we need to look up the user
-      if (principal instanceof String) {
-        String username = (String) principal;
-        // For now, we'll need to look up the user by username/email
-        // This is a temporary fix - you should store user ID in the JWT token
-        throw new RuntimeException("Cannot extract user ID from username: " + username);
-      }
-    }
-    throw new RuntimeException("User not authenticated");
+    return authUtil.getCurrentUserId();
   }
 }
