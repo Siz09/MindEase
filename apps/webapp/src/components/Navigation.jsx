@@ -77,6 +77,21 @@ const Navigation = () => {
               </svg>
               {t('navigation.journal')}
             </Link>
+            <Link
+              to="/mindfulness"
+              className={`nav-link ${isActive('/mindfulness') ? 'active' : ''}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M10 3c-3.9 0-7 3.1-7 7s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
+                <path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="2" fill="none" />
+              </svg>
+              {t('navigation.mindfulness')}
+            </Link>
             <Link to="/settings" className={`nav-link ${isActive('/settings') ? 'active' : ''}`}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" fill="currentColor" />
@@ -172,6 +187,22 @@ const Navigation = () => {
                 <path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" strokeWidth="2" />
               </svg>
               {t('navigation.journal')}
+            </Link>
+            <Link
+              to="/mindfulness"
+              className={`mobile-nav-link ${isActive('/mindfulness') ? 'active' : ''}`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path
+                  d="M10 3c-3.9 0-7 3.1-7 7s3.1 7 7 7 7-3.1 7-7-3.1-7-7-7z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill="none"
+                />
+                <path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="2" fill="none" />
+              </svg>
+              {t('navigation.mindfulness')}
             </Link>
             <Link
               to="/settings"
