@@ -18,6 +18,7 @@ const Journal = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [aiStatus, setAiStatus] = useState({ available: false, loading: true });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   const emojiPickerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -32,6 +33,20 @@ const Journal = () => {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Handle online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // Fetch journal entries
@@ -77,6 +92,13 @@ const Journal = () => {
         console.error('No authentication token available');
         return;
       }
+
+      // If offline, AI is not available
+      if (isOffline) {
+        setAiStatus({ available: false, loading: false });
+        return;
+      }
+
       const response = await fetch('http://localhost:8080/api/journal/ai-status', {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -91,7 +113,7 @@ const Journal = () => {
       console.error('Error checking AI status:', error);
       setAiStatus({ available: false, loading: false });
     }
-  }, [token]);
+  }, [token, isOffline]);
 
   // Handle emoji selection
   const handleEmojiSelect = (emoji) => {
@@ -108,6 +130,12 @@ const Journal = () => {
       return;
     }
 
+    // Check if offline and show warning
+    if (isOffline) {
+      toast.warning(t('offline.journalOffline'));
+      // Still allow saving locally (this would need additional implementation for true offline storage)
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -115,6 +143,12 @@ const Journal = () => {
         toast.error('Authentication required. Please log in again.');
         return;
       }
+
+      // If offline, show warning about AI summaries
+      if (isOffline) {
+        toast.info(t('offline.aiUnavailable'));
+      }
+
       const response = await fetch('http://localhost:8080/api/journal/add', {
         method: 'POST',
         headers: {
@@ -140,7 +174,11 @@ const Journal = () => {
       }, 2000);
     } catch (error) {
       console.error('Error saving journal entry:', error);
-      toast.error(t('journal.errors.saveFailed'));
+      if (isOffline) {
+        toast.error(t('offline.journalOffline'));
+      } else {
+        toast.error(t('journal.errors.saveFailed'));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -171,6 +209,11 @@ const Journal = () => {
     fetchJournalEntries();
     checkAIStatus();
   }, [fetchJournalEntries, checkAIStatus]);
+
+  // Re-check AI status when online status changes
+  useEffect(() => {
+    checkAIStatus();
+  }, [isOffline, checkAIStatus]);
 
   // Handle pagination
   const handlePageChange = (newPage) => {
