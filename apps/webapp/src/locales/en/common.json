@@ -231,5 +231,12 @@
     "errors": {
       "fetchFailed": "Failed to load mindfulness sessions"
     }
+  },
+  "offline": {
+    "banner": {
+      "message": "You're offline — AI summaries are disabled."
+    },
+    "aiUnavailable": "AI summarization is unavailable offline.",
+    "journalOffline": "Journal entries will be saved locally and synced when online."
   }
 }

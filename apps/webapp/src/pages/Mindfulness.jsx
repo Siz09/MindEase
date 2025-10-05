@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,7 +7,7 @@ import '../styles/Mindfulness.css';
 
 const Mindfulness = () => {
   const { t } = useTranslation();
-  const { currentUser, token } = useAuth();
+  const { token } = useAuth();
 
   const [sessions, setSessions] = useState([]);
   const [filteredSessions, setFilteredSessions] = useState([]);
@@ -19,10 +19,18 @@ const Mindfulness = () => {
   const [playingAudio, setPlayingAudio] = useState(null);
   const [currentAnimation, setCurrentAnimation] = useState(null);
   const [animationData, setAnimationData] = useState(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   // Fetch mindfulness sessions
-  const fetchMindfulnessSessions = async () => {
+  const fetchMindfulnessSessions = useCallback(async () => {
     try {
+      // If offline, show cached data or empty state
+      if (isOffline) {
+        console.log('Offline mode: Using cached mindfulness sessions');
+        // The service worker will handle caching, so we can still try to fetch
+        // but show appropriate messaging
+      }
+
       const response = await fetch('http://localhost:8080/api/mindfulness/list', {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -40,11 +48,15 @@ const Mindfulness = () => {
       }
     } catch (error) {
       console.error('Error fetching mindfulness sessions:', error);
-      toast.error(t('mindfulness.errors.fetchFailed'));
+      if (isOffline) {
+        toast.info('Using cached mindfulness sessions. Some features may be limited offline.');
+      } else {
+        toast.error(t('mindfulness.errors.fetchFailed'));
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token, isOffline, t]);
 
   // Fetch animation data
   const fetchAnimationData = async (animationUrl) => {
@@ -139,10 +151,24 @@ const Mindfulness = () => {
     }
   };
 
+  // Handle online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   // Load data on component mount
   useEffect(() => {
     fetchMindfulnessSessions();
-  }, []);
+  }, [fetchMindfulnessSessions]);
 
   if (isLoading) {
     return (
