@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import Lottie from 'lottie-react';
 import '../styles/Mindfulness.css';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
 const Mindfulness = () => {
   const { t } = useTranslation();
@@ -20,20 +22,43 @@ const Mindfulness = () => {
   const [currentAnimation, setCurrentAnimation] = useState(null);
   const [animationData, setAnimationData] = useState(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const audioRef = useRef(null);
 
-  // Fetch mindfulness sessions
-  const fetchMindfulnessSessions = useCallback(async () => {
+  // helper: try reading from cache if available
+  const readFromCache = async (url) => {
+    if (!('caches' in window)) return null;
     try {
-      // If offline, show cached data or empty state
+      const match = await caches.match(url);
+      if (!match) return null;
+      const cached = await match.json();
+      return cached;
+    } catch {
+      return null;
+    }
+  };
+
+  // Fetch mindfulness sessions (with offline cache fallback and resilient shape)
+  const fetchMindfulnessSessions = useCallback(async () => {
+    const url = `${API_BASE}/api/mindfulness/list`;
+    try {
       if (isOffline) {
-        console.log('Offline mode: Using cached mindfulness sessions');
-        // The service worker will handle caching, so we can still try to fetch
-        // but show appropriate messaging
+        const cached = await readFromCache(url);
+        if (cached) {
+          const sessionsPayload = cached.sessions || cached;
+          setSessions(sessionsPayload);
+          setFilteredSessions(sessionsPayload);
+          setCategories(cached.categories || []);
+          setIsLoading(false);
+          toast.info(t('mindfulness.cachedLoaded') || 'Loaded cached sessions (offline).');
+          return;
+        } else {
+          toast.info('Offline — no cached mindfulness sessions available.');
+        }
       }
 
-      const response = await fetch('http://localhost:8080/api/mindfulness/list', {
+      const response = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token ? `Bearer ${token}` : undefined,
           'Content-Type': 'application/json',
         },
       });
@@ -41,33 +66,47 @@ const Mindfulness = () => {
       if (!response.ok) throw new Error('Failed to fetch mindfulness sessions');
 
       const data = await response.json();
-      if (data.success) {
-        setSessions(data.sessions);
-        setFilteredSessions(data.sessions);
-        setCategories(data.categories || []);
-      }
+      const sessionsPayload = data.sessions ?? (data.success ? data.sessions : data);
+      setSessions(sessionsPayload);
+      setFilteredSessions(sessionsPayload);
+      setCategories(data.categories || []);
     } catch (error) {
       console.error('Error fetching mindfulness sessions:', error);
-      if (isOffline) {
-        toast.info('Using cached mindfulness sessions. Some features may be limited offline.');
-      } else {
-        toast.error(t('mindfulness.errors.fetchFailed'));
+      if (!isOffline) {
+        toast.error(t('mindfulness.errors.fetchFailed') || 'Failed to load mindfulness sessions');
       }
     } finally {
       setIsLoading(false);
     }
   }, [token, isOffline, t]);
 
-  // Fetch animation data
+  // Fetch animation data (with offline cache fallback)
   const fetchAnimationData = async (animationUrl) => {
+    const fullUrl = animationUrl.startsWith('http') ? animationUrl : `${API_BASE}${animationUrl}`;
     try {
-      const response = await fetch(`http://localhost:8080${animationUrl}`);
-      if (response.ok) {
-        const data = await response.json();
-        setAnimationData(data);
+      if (isOffline) {
+        const cached = await readFromCache(fullUrl);
+        if (cached) {
+          setAnimationData(cached);
+          return;
+        }
       }
+
+      const response = await fetch(fullUrl, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to load animation');
+
+      const data = await response.json();
+      setAnimationData(data);
     } catch (error) {
       console.error('Error fetching animation data:', error);
+      toast.error(t('mindfulness.errors.animationLoad') || 'Failed to load animation');
+      setAnimationData(null);
     }
   };
 
@@ -90,19 +129,57 @@ const Mindfulness = () => {
     setFilteredSessions(filtered);
   }, [selectedCategory, selectedType, selectedDifficulty, sessions]);
 
-  // Handle audio playback
-  const handleAudioPlay = (sessionId, audioUrl) => {
+  // Handle audio playback with HTMLAudioElement and cache fallback
+  const handleAudioPlay = async (sessionId, audioUrl) => {
+    const fullUrl = audioUrl.startsWith('http') ? audioUrl : `${API_BASE}${audioUrl}`;
+
     if (playingAudio === sessionId) {
-      // Stop audio if same session is clicked again
+      audioRef.current?.pause();
+      audioRef.current = null;
       setPlayingAudio(null);
+      return;
+    }
+
+    // stop any previous audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    if (isOffline) {
+      try {
+        const match = await caches.match(fullUrl);
+        if (!match) {
+          toast.info(t('mindfulness.offlineNoAudio') || 'Audio not available offline.');
+          return;
+        }
+        const blob = await match.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        audioRef.current = new Audio(blobUrl);
+      } catch {
+        toast.info(t('mindfulness.offlineNoAudio') || 'Audio not available offline.');
+        return;
+      }
     } else {
-      // Play new audio
+      audioRef.current = new Audio(fullUrl);
+    }
+
+    audioRef.current.onended = () => setPlayingAudio(null);
+    audioRef.current.onerror = (e) => {
+      console.error('Audio playback error', e);
+      toast.error(t('mindfulness.errors.audioPlay') || 'Playback error');
+      setPlayingAudio(null);
+    };
+
+    try {
+      await audioRef.current.play();
       setPlayingAudio(sessionId);
       setCurrentAnimation(null);
-
-      // In a real app, you would use the Audio API here
-      console.log('Playing audio:', audioUrl);
+      setAnimationData(null);
       toast.info(t('mindfulness.audioPlaying'));
+    } catch (err) {
+      console.error('Play promise failed', err);
+      toast.error(t('mindfulness.errors.audioPlay') || 'Playback error');
     }
   };
 

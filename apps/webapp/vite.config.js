@@ -9,46 +9,56 @@ export default defineConfig({
       registerType: 'autoUpdate',
       devOptions: { enabled: true },
       workbox: {
+        // runtimeCaching rules
         runtimeCaching: [
-          // 🧘 Mindfulness exercises and animations
           {
-            urlPattern: /^https?:\/\/localhost:8080\/api\/mindfulness\/.*$/,
-            handler: 'CacheFirst',
+            // Mindfulness list (metadata) - network first, fallback to cache
+            urlPattern: /\/api\/mindfulness\/list/,
+            handler: 'NetworkFirst',
             options: {
-              cacheName: 'mindfulness-cache',
-              expiration: { maxEntries: 30, maxAgeSeconds: 7 * 24 * 60 * 60 }, // 7 days
+              cacheName: 'mindfulness-api-cache',
+              expiration: { maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 }, // 7 days
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // 📓 Journal history (GET only)
           {
-            urlPattern: /^https?:\/\/localhost:8080\/api\/journal\/history.*$/,
+            // Journal history (user entries) - network first, fallback to cache
+            urlPattern: /\/api\/journal\/history/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'journal-history-cache',
-              networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 20, maxAgeSeconds: 24 * 60 * 60 }, // 24 hours
+              expiration: { maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // 🎵 Audio files and animations
           {
-            urlPattern: /^https?:\/\/localhost:8080\/media\/.*$/,
+            // Lottie animation JSONs served from backend (cache first for faster playback offline)
+            urlPattern: /\/media\/animations\/.*\.json/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'media-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 30 * 24 * 60 * 60 }, // 30 days
+              cacheName: 'animations-cache',
+              expiration: { maxEntries: 30, maxAgeSeconds: 30 * 24 * 60 * 60 }, // 30 days
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // Static assets (JS, CSS, JSON, icons)
           {
-            urlPattern: ({ request }) =>
-              request.destination === 'style' ||
-              request.destination === 'script' ||
-              request.destination === 'image' ||
-              request.url.endsWith('.json'),
+            // Audio files - cache first (so streamed audio can work offline once cached)
+            urlPattern: /\/media\/audio\/.*/,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'static-assets',
-              expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 60 * 60 }, // 30 days
+              cacheName: 'audio-cache',
+              expiration: { maxEntries: 30, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Static assets (icons, fonts) - cache first
+            urlPattern: /\/(icons|assets|static)\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'static-assets-cache',
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 24 * 60 * 60 }, // 60 days
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
         ],
@@ -75,7 +85,7 @@ export default defineConfig({
     include: ['react', 'react-dom'],
     esbuildOptions: {
       define: {
-        global: 'globalThis', // 👈 inject global polyfill
+        global: 'globalThis',
       },
     },
   },
