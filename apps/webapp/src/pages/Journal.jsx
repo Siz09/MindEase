@@ -255,6 +255,12 @@ const Journal = () => {
                 {t('journal.newEntry')}
               </label>
 
+              {isOffline && (
+                <div className="offline-banner">
+                  {t('journal.aiUnavailableOffline') || 'AI summaries are disabled while offline.'}
+                </div>
+              )}
+
               {/* Emoji Selection */}
               <div className="emoji-section">
                 <label className="emoji-label">{t('journal.howAreYouFeeling')}</label>

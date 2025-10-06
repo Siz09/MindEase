@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Navigation from './components/Navigation';
+import ConnectionStatus from './components/ConnectionStatus';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Mood from './pages/Mood';
@@ -20,6 +21,7 @@ function App() {
       <Router>
         <div className="app">
           <Navigation />
+          <ConnectionStatus />
           <main className="main-content">
             <Routes>
               <Route path="/login" element={<Login />} />
