@@ -7,11 +7,13 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 ## 🏗️ Architecture
 
 ### Frontend (React + Vite)
+
 - **Marketing Site**: Landing page with i18n support
 - **Web Application**: Full-featured mental wellness dashboard
 - **Shared UI Components**: Reusable component library
 
 ### Backend (Spring Boot)
+
 - **RESTful APIs**: Authentication, mood tracking, chat management
 - **WebSocket Support**: Real-time chat functionality
 - **AI Integration**: Modular chatbot service with OpenAI integration
@@ -19,9 +21,84 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 
 ## 🚀 Features
 
+### 🧠 Therapeutic Tools (Phase 4)
+
+MindEase now includes two powerful wellbeing modules:
+
+- **CBT Journal**
+  - Write daily reflections.
+  - AI-powered summaries generated via OpenAI.
+  - History stored per user.
+  - Offline-aware (entries queued or disabled when offline).
+
+- **Mindfulness Sessions**
+  - Guided exercises with audio and animations.
+  - Content loaded dynamically from backend.
+  - Works offline for previously cached sessions.
+
+### 🛠️ Backend API Usage
+
+#### 🧠 CBT Journal APIs
+
+**POST /api/journal/add**  
+_Adds new journal entry with AI summary._
+
+Request Body:
+
+```json
+{ "content": "Feeling stressed about exams." }
+```
+
+Response:
+
+```json
+{
+  "id": "uuid",
+  "content": "Feeling stressed about exams.",
+  "ai_summary": "You are experiencing exam stress and need relaxation.",
+  "created_at": "2025-10-07T09:15:00"
+}
+```
+
+**GET /api/journal/history**  
+Returns all entries for logged-in user.
+
+#### 🌿 Mindfulness APIs
+
+**GET /api/mindfulness/list**  
+→ List all sessions
+
+**GET /api/mindfulness/{id}**  
+→ Fetch audio/animation URL
+
+### 💻 Frontend Usage
+
+- Navigate to `/journal` to write and view entries.
+- Navigate to `/mindfulness` to explore guided sessions.
+- Offline Banner appears if connection drops; AI summaries disabled.
+- JWT Auth handled automatically by `api.js` interceptor.
+
+### 🌐 Offline Caching Strategy
+
+MindEase uses **Workbox** for PWA caching:
+
+| Type                       | Cache Policy           | Details                     |
+| -------------------------- | ---------------------- | --------------------------- |
+| **Static Assets**          | Stale-While-Revalidate | CSS, JS, Images             |
+| **Mindfulness Animations** | Cache First            | Stored for offline playback |
+| **Journal History**        | Network First          | Uses cache when offline     |
+| **AI Summaries**           | Disabled Offline       | OfflineBanner informs user  |
+
+To test offline:
+
+1. Load the app online first.
+2. Open DevTools → Network → Offline.
+3. Reload page and verify cached data loads.
+
 ### ✅ Completed Features
 
 #### Phase 1: Foundation & Authentication
+
 - [x] Monorepo setup with workspaces
 - [x] Firebase Authentication integration
 - [x] JWT token management
@@ -30,6 +107,7 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 - [x] Responsive navigation
 
 #### Phase 2: Core Infrastructure
+
 - [x] PostgreSQL database setup
 - [x] User management system
 - [x] Security configuration
@@ -37,6 +115,7 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 - [x] Development environment configuration
 
 #### Phase 3: Chat & Mood Core Features
+
 - [x] Real-time WebSocket chat
 - [x] AI-powered responses (OpenAI integration)
 - [x] Crisis keyword detection
@@ -52,6 +131,7 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - **React 19** - UI framework
 - **Vite** - Build tool and dev server
 - **React Router** - Client-side routing
@@ -62,6 +142,7 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 - **React Toastify** - Notifications
 
 ### Backend
+
 - **Spring Boot 3.5** - Application framework
 - **Spring Security** - Authentication & authorization
 - **Spring WebSocket** - Real-time communication
@@ -73,6 +154,7 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 - **Swagger/OpenAPI** - API documentation
 
 ### DevOps & Tools
+
 - **Docker** - Containerization
 - **Maven** - Build management
 - **ESLint + Prettier** - Code formatting
@@ -82,32 +164,38 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 ## 📊 API Documentation
 
 The API is fully documented with Swagger/OpenAPI. Access the documentation at:
+
 - **Development**: `http://localhost:8080/swagger-ui.html`
 - **API Docs**: `http://localhost:8080/api-docs`
 
 ### Key Endpoints
 
 #### Authentication
+
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - User login
 - `GET /api/auth/me` - Get current user info
 
 #### Chat
+
 - `POST /api/chat/send` - Send chat message
 - `GET /api/chat/history` - Get chat history
 - WebSocket: `/ws` - Real-time messaging
 
 #### Mood Tracking
+
 - `POST /api/mood/add` - Add mood entry
 - `GET /api/mood/history` - Get mood history
 
 #### Health & Monitoring
+
 - `GET /api/health/status` - Application health check
 - `GET /actuator/health` - Detailed health metrics
 
 ## 🔧 Development Setup
 
 ### Prerequisites
+
 - Node.js 20+
 - Java 17+
 - PostgreSQL 15+
@@ -116,17 +204,20 @@ The API is fully documented with Swagger/OpenAPI. Access the documentation at:
 ### Quick Start
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd mindease
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Setup database**
+
    ```bash
    cd backend/docker
    docker-compose up -d
@@ -138,12 +229,14 @@ The API is fully documented with Swagger/OpenAPI. Access the documentation at:
    - Add OpenAI API key (optional)
 
 5. **Start backend**
+
    ```bash
    cd backend
    ./mvnw spring-boot:run
    ```
 
 6. **Start frontend**
+
    ```bash
    # Marketing site
    npm run -w @mindease/marketing dev
@@ -155,6 +248,7 @@ The API is fully documented with Swagger/OpenAPI. Access the documentation at:
 ### Environment Variables
 
 #### Backend (`backend/src/main/resources/application.yml`)
+
 ```yaml
 firebase:
   project-id: your-firebase-project-id
@@ -169,6 +263,7 @@ chat:
 ```
 
 #### Frontend (`.env`)
+
 ```env
 VITE_FIREBASE_API_KEY=your-firebase-api-key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
@@ -181,12 +276,14 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
 ## 🧪 Testing
 
 ### Backend Testing
+
 ```bash
 cd backend
 ./mvnw test
 ```
 
 ### Frontend Testing
+
 ```bash
 # Run all tests
 npm test
@@ -196,14 +293,17 @@ npm run -w @mindease/webapp test
 ```
 
 ### WebSocket Testing
+
 The application includes a comprehensive WebSocket testing suite accessible at `/testing` route when logged in.
 
 ### Manual API Testing
+
 Use the provided Postman collection or Swagger UI for manual API testing.
 
 ## 🚀 Deployment
 
 ### Production Build
+
 ```bash
 # Build all applications
 npm run build
@@ -213,6 +313,7 @@ npm run -w @mindease/webapp build
 ```
 
 ### Docker Deployment
+
 ```bash
 # Build and run with Docker Compose
 docker-compose up --build
@@ -231,6 +332,7 @@ docker-compose up --build
 ## 🌍 Internationalization
 
 The application supports multiple languages:
+
 - **English** (default)
 - **Nepali** (नेपाली)
 
@@ -261,6 +363,7 @@ Language switching is available in the settings page and persists across session
 5. Open a Pull Request
 
 ### Code Style
+
 - Follow ESLint and Prettier configurations
 - Use conventional commit messages
 - Write comprehensive tests for new features
@@ -273,6 +376,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 For support and questions:
+
 - Create an issue in the repository
 - Check the API documentation at `/swagger-ui.html`
 - Review the testing dashboard at `/testing`
@@ -280,6 +384,7 @@ For support and questions:
 ## 🎯 Roadmap
 
 ### Phase 4: Advanced Features (Planned)
+
 - [ ] Advanced AI conversation context
 - [ ] Mood prediction algorithms
 - [ ] Social features and community support
@@ -289,6 +394,7 @@ For support and questions:
 - [ ] Therapist portal and professional features
 
 ### Phase 5: Scale & Polish (Planned)
+
 - [ ] Microservices architecture
 - [ ] Advanced caching strategies
 - [ ] CDN integration
