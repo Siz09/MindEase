@@ -277,7 +277,7 @@ const Mindfulness = () => {
   // 🧩 Load sessions with API integration
   useEffect(() => {
     api
-      .get('/api/mindfulness/list')
+      .get('/mindfulness/list')
       .then((res) => {
         if (res.data && Array.isArray(res.data)) {
           setSessions(res.data);
