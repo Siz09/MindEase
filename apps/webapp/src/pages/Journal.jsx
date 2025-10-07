@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import EmojiPicker from '../components/EmojiPicker';
 import '../styles/Journal.css';
 
@@ -12,13 +13,16 @@ const Journal = () => {
   const [entries, setEntries] = useState([]);
   const [newEntry, setNewEntry] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('😊');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [aiStatus, setAiStatus] = useState({ available: false, loading: true });
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  // 🧩 API integration state
+  const [summary, setSummary] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const emojiPickerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -47,6 +51,18 @@ const Journal = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
+  }, []);
+
+  // 🧩 Load history once on mount with API integration
+  useEffect(() => {
+    api
+      .get('/api/journal/history')
+      .then((res) => {
+        if (res.data && Array.isArray(res.data)) {
+          setEntries(res.data);
+        }
+      })
+      .catch(() => toast.error('Failed to load journal history'));
   }, []);
 
   // Fetch journal entries
@@ -121,66 +137,43 @@ const Journal = () => {
     setShowEmojiPicker(false);
   };
 
-  // Handle form submission
+  // 🧩 Handle form submission with API integration
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!newEntry.trim()) {
-      toast.error(t('journal.errors.emptyEntry'));
+      toast.info('Write something first!');
       return;
     }
 
-    // Check if offline and show warning
-    if (isOffline) {
-      toast.warning(t('offline.journalOffline'));
-      // Still allow saving locally (this would need additional implementation for true offline storage)
+    if (!navigator.onLine) {
+      toast.info('Offline: AI summary disabled.');
+      return;
     }
 
-    setIsSubmitting(true);
+    setLoading(true);
+    setSummary('');
 
     try {
-      if (!token) {
-        toast.error('Authentication required. Please log in again.');
-        return;
-      }
+      const res = await api.post('/api/journal/add', { content: `${selectedEmoji} ${newEntry}` });
+      const data = res.data;
 
-      // If offline, show warning about AI summaries
-      if (isOffline) {
-        toast.info(t('offline.aiUnavailable'));
-      }
-
-      const response = await fetch('http://localhost:8080/api/journal/add', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: `${selectedEmoji} ${newEntry}` }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to save journal entry');
-      }
-
-      toast.success(t('journal.success.saved'));
+      // 🧩 Handle both ai_summary and aiSummary field mapping
+      setSummary(data.ai_summary || data.aiSummary || 'Summary unavailable');
+      toast.success('Journal entry added!');
       setNewEntry('');
       setSelectedEmoji('😊');
 
-      // Refresh the entries list after a short delay to allow AI processing
-      setTimeout(() => {
-        fetchJournalEntries(0);
-      }, 2000);
-    } catch (error) {
-      console.error('Error saving journal entry:', error);
-      if (isOffline) {
-        toast.error(t('offline.journalOffline'));
-      } else {
-        toast.error(t('journal.errors.saveFailed'));
+      // Refresh history
+      const historyRes = await api.get('/api/journal/history');
+      if (historyRes.data && Array.isArray(historyRes.data)) {
+        setEntries(historyRes.data);
       }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error saving journal entry');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -290,7 +283,7 @@ const Journal = () => {
                 placeholder={t('journal.placeholder')}
                 className="journal-textarea"
                 rows="6"
-                disabled={isSubmitting}
+                disabled={loading}
               />
               <div className="character-count">
                 {newEntry.length} {t('journal.characters')}
@@ -299,10 +292,10 @@ const Journal = () => {
 
             <button
               type="submit"
-              disabled={isSubmitting || !newEntry.trim()}
-              className={`btn btn-primary submit-btn ${isSubmitting ? 'loading' : ''}`}
+              disabled={loading || !newEntry.trim()}
+              className={`btn btn-primary submit-btn ${loading ? 'loading' : ''}`}
             >
-              {isSubmitting ? (
+              {loading ? (
                 <>
                   <div className="btn-spinner"></div>
                   {t('journal.saving')}
@@ -319,6 +312,24 @@ const Journal = () => {
               </div>
             )}
           </form>
+
+          {/* 🧩 AI Summary Display */}
+          {summary && (
+            <div className="summary-card">
+              <h3>AI Summary</h3>
+              <p>{summary}</p>
+            </div>
+          )}
+
+          {/* 🧩 Loading Overlay */}
+          {loading && (
+            <div className="loader-overlay">
+              <div className="loading-spinner">
+                <div className="spinner"></div>
+                <p>AI is analyzing your entry...</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column - Journal History */}

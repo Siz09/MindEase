@@ -775,3 +775,21 @@
   transform: translateY(-4px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
+
+/* 🧩 Minimal CSS additions for loading states */
+.loader-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  margin-top: 1rem;
+}
+
+.offline-msg {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 1rem;
+}

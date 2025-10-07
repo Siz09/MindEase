@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
+import { api } from '../utils/api';
 import Lottie from 'lottie-react';
 import '../styles/Mindfulness.css';
 
@@ -23,6 +24,10 @@ const Mindfulness = () => {
   const [animationData, setAnimationData] = useState(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const audioRef = useRef(null);
+
+  // 🧩 API integration state (for future use)
+  // const [selectedSession, setSelectedSession] = useState(null);
+  // const [loading, setLoading] = useState(false);
 
   // helper: try reading from cache if available
   const readFromCache = async (url) => {
@@ -197,6 +202,28 @@ const Mindfulness = () => {
     }
   };
 
+  // 🧩 Handle session selection with API integration (for future use)
+  // const handleSessionSelect = async (session) => {
+  //   setSelectedSession(session);
+  //   setAnimationData(null);
+  //   setLoading(true);
+  //   try {
+  //     const res = await api.get(`/api/mindfulness/${session.id}`);
+  //     if (session.type === "animation") {
+  //       const anim = await fetch(res.data.url).then(r => r.json());
+  //       setAnimationData(anim);
+  //     } else if (session.type === "audio") {
+  //       const audio = new Audio(res.data.url);
+  //       audio.play();
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Could not load session");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   // Format duration
   const formatDuration = (minutes) => {
     return `${minutes} ${t('mindfulness.minutes')}`;
@@ -246,6 +273,19 @@ const Mindfulness = () => {
   useEffect(() => {
     fetchMindfulnessSessions();
   }, [fetchMindfulnessSessions]);
+
+  // 🧩 Load sessions with API integration
+  useEffect(() => {
+    api
+      .get('/api/mindfulness/list')
+      .then((res) => {
+        if (res.data && Array.isArray(res.data)) {
+          setSessions(res.data);
+          setFilteredSessions(res.data);
+        }
+      })
+      .catch(() => toast.error('Failed to load mindfulness sessions'));
+  }, []);
 
   if (isLoading) {
     return (
