@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../utils/api';
+import api from '../utils/api';
 import EmojiPicker from '../components/EmojiPicker';
 import '../styles/Journal.css';
 
