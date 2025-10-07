@@ -56,7 +56,7 @@ const Journal = () => {
   // 🧩 Load history once on mount with API integration
   useEffect(() => {
     api
-      .get('/api/journal/history')
+      .get('/journal/history')
       .then((res) => {
         if (res.data && Array.isArray(res.data)) {
           setEntries(res.data);
@@ -155,7 +155,7 @@ const Journal = () => {
     setSummary('');
 
     try {
-      const res = await api.post('/api/journal/add', { content: `${selectedEmoji} ${newEntry}` });
+      const res = await api.post('/journal/add', { content: `${selectedEmoji} ${newEntry}` });
       const data = res.data;
 
       // 🧩 Handle both ai_summary and aiSummary field mapping
@@ -165,7 +165,7 @@ const Journal = () => {
       setSelectedEmoji('😊');
 
       // Refresh history
-      const historyRes = await api.get('/api/journal/history');
+      const historyRes = await api.get('/journal/history');
       if (historyRes.data && Array.isArray(historyRes.data)) {
         setEntries(historyRes.data);
       }
