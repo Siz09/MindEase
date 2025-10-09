@@ -32,10 +32,11 @@ public class Notification {
   private LocalDateTime createdAt;
 
   @Column(name = "is_sent", nullable = false)
-  private Boolean isSent = false;
+  private boolean isSent = false;
 
   // Constructors
-  public Notification() {}
+  public Notification() {
+  }
 
   public Notification(User user, String type, String message) {
     this.user = user;
@@ -44,29 +45,59 @@ public class Notification {
   }
 
   // Getters & setters
-  public UUID getId() { return id; }
-  public void setId(UUID id) { this.id = id; }
+  public UUID getId() {
+    return id;
+  }
 
-  public User getUser() { return user; }
-  public void setUser(User user) { this.user = user; }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-  public String getType() { return type; }
-  public void setType(String type) { this.type = type; }
+  public User getUser() {
+    return user;
+  }
 
-  public String getMessage() { return message; }
-  public void setMessage(String message) { this.message = message; }
+  public void setUser(User user) {
+    this.user = user;
+  }
 
-  public LocalDateTime getCreatedAt() { return createdAt; }
-  public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+  public String getType() {
+    return type;
+  }
 
-  public Boolean getIsSent() { return isSent; }
-  public void setIsSent(Boolean isSent) { this.isSent = isSent; }
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(LocalDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
+
+  public boolean getIsSent() {
+    return isSent;
+  }
+
+  public void setIsSent(boolean isSent) {
+    this.isSent = isSent;
+  }
 
   @Override
   public String toString() {
     return "Notification{" +
       "id=" + id +
-      ", user=" + (user != null ? user.getEmail() : "null") +
+      ", userId=" + (user != null ? user.getId() : "null") +
       ", type='" + type + '\'' +
       ", isSent=" + isSent +
       ", createdAt=" + createdAt +
