@@ -51,6 +51,9 @@ public class UserActivity {
   }
 
   public void setUser(User user) {
+    if (user == null) {
+      throw new IllegalArgumentException("User cannot be null");
+    }
     this.user = user;
   }
 
@@ -59,6 +62,9 @@ public class UserActivity {
   }
 
   public void setLastActiveAt(LocalDateTime lastActiveAt) {
+    if (lastActiveAt == null) {
+      throw new IllegalArgumentException("LastActiveAt cannot be null");
+    }
     this.lastActiveAt = lastActiveAt;
   }
 
