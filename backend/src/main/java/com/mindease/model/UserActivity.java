@@ -23,28 +23,50 @@ public class UserActivity {
   private LocalDateTime lastActiveAt;
 
   // Constructors
-  public UserActivity() {}
+  public UserActivity() {
+  }
 
   public UserActivity(User user, LocalDateTime lastActiveAt) {
+    if (user == null) {
+      throw new IllegalArgumentException("User cannot be null");
+    }
+    if (lastActiveAt == null) {
+      throw new IllegalArgumentException("LastActiveAt cannot be null");
+    }
     this.user = user;
     this.lastActiveAt = lastActiveAt;
   }
 
   // Getters & setters
-  public UUID getId() { return id; }
-  public void setId(UUID id) { this.id = id; }
+  public UUID getId() {
+    return id;
+  }
 
-  public User getUser() { return user; }
-  public void setUser(User user) { this.user = user; }
+  public void setId(UUID id) {
+    this.id = id;
+  }
 
-  public LocalDateTime getLastActiveAt() { return lastActiveAt; }
-  public void setLastActiveAt(LocalDateTime lastActiveAt) { this.lastActiveAt = lastActiveAt; }
+  public User getUser() {
+    return user;
+  }
+
+  public void setUser(User user) {
+    this.user = user;
+  }
+
+  public LocalDateTime getLastActiveAt() {
+    return lastActiveAt;
+  }
+
+  public void setLastActiveAt(LocalDateTime lastActiveAt) {
+    this.lastActiveAt = lastActiveAt;
+  }
 
   @Override
   public String toString() {
     return "UserActivity{" +
       "id=" + id +
-      ", user=" + (user != null ? user.getEmail() : "null") +
+      ", userId=" + (user != null ? user.getId() : "null") +
       ", lastActiveAt=" + lastActiveAt +
       '}';
   }
