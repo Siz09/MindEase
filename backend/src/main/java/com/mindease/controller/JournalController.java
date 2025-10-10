@@ -52,12 +52,12 @@ public class JournalController {
             // Get user ID from authentication
             UUID userId = getUserIdFromAuthentication(authentication);
 
-            // ✅ Track user activity asynchronously with proper error handling
-            userService.trackUserActivityAsync(userId)
-                    .exceptionally(ex -> {
-                        logger.warn("Failed to track user activity for userId: {}", userId, ex);
-                        return null;
-                    });
+            // ✅ Track user activity asynchronously (fire-and-forget)
+            try {
+                userService.trackUserActivityAsync(userId);
+            } catch (Exception ex) {
+                logger.warn("Failed to track user activity for userId: {}", userId, ex);
+            }
 
             // Save journal entry
             JournalEntry savedEntry = journalService.saveJournalEntry(userId, content);
