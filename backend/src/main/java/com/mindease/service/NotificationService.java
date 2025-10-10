@@ -3,6 +3,8 @@ package com.mindease.service;
 import com.mindease.model.Notification;
 import com.mindease.model.User;
 import com.mindease.repository.NotificationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,8 @@ import java.util.List;
 
 @Service
 public class NotificationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
 
     @Autowired
     private NotificationRepository notificationRepository;
@@ -38,6 +42,7 @@ public class NotificationService {
 
     /**
      * Attempt to send queued notifications if not in user's quiet hours
+     * Emails are sent individually with error handling to avoid transaction issues
      */
     @Transactional
     public void sendQueuedNotifications(User user) {
@@ -45,13 +50,19 @@ public class NotificationService {
             return;
         }
 
-        if (isWithinQuietHours(user)) return;
+        if (isWithinQuietHours(user))
+            return;
 
         List<Notification> pending = notificationRepository.findByUserAndIsSentFalse(user);
         for (Notification n : pending) {
-            emailService.sendEmail(user.getEmail(), "MindEase Notification", n.getMessage());
-            n.setIsSent(true);
-            notificationRepository.save(n);
+            try {
+                emailService.sendEmail(user.getEmail(), "MindEase Notification", n.getMessage());
+                n.setIsSent(true);
+                notificationRepository.save(n);
+            } catch (Exception e) {
+                logger.warn("Failed to send notification to user {}: {}", user.getEmail(), e.getMessage());
+                // Optional: increment retry count or save failure info
+            }
         }
     }
 
@@ -59,7 +70,8 @@ public class NotificationService {
         LocalTime now = LocalTime.now();
         LocalTime start = user.getQuietHoursStart();
         LocalTime end = user.getQuietHoursEnd();
-        if (start == null || end == null) return false;
+        if (start == null || end == null)
+            return false;
         if (start.isBefore(end)) {
             return now.isAfter(start) && now.isBefore(end);
         } else { // wraps around midnight
