@@ -2,12 +2,15 @@ package com.mindease.service;
 
 import com.mindease.model.User;
 import com.mindease.model.Role;
+import com.mindease.model.UserActivity;
 import com.mindease.repository.UserRepository;
+import com.mindease.repository.UserActivityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +22,8 @@ public class UserService {
   private final BCryptPasswordEncoder passwordEncoder;
 
   @Autowired
+  private UserActivityRepository userActivityRepository;
+
   public UserService(UserRepository userRepository) {
     this.userRepository = userRepository;
     this.passwordEncoder = new BCryptPasswordEncoder();
@@ -125,6 +130,27 @@ public class UserService {
 
     user.setAnonymousMode(anonymousMode);
     return userRepository.save(user);
+  }
+
+  /**
+   * Track user activity - updates or creates UserActivity record
+   */
+  @Transactional
+  public void trackUserActivity(User user) {
+    Optional<UserActivity> existing = userActivityRepository.findByUser(user);
+    UserActivity activity = existing.orElse(new UserActivity(user, LocalDateTime.now()));
+    activity.setLastActiveAt(LocalDateTime.now());
+    userActivityRepository.save(activity);
+  }
+
+  /**
+   * Track user activity by user ID
+   */
+  @Transactional
+  public void trackUserActivity(UUID userId) {
+    User user = userRepository.findById(userId)
+      .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+    trackUserActivity(user);
   }
 
 }

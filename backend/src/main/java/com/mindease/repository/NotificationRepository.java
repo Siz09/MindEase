@@ -24,4 +24,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
   // 4️⃣ Count of unsent notifications
   long countByUserAndIsSentFalse(User user);
+
+  // 5️⃣ Check if user has notification containing specific text
+  boolean existsByUserAndMessageContainingIgnoreCase(User user, String text);
 }

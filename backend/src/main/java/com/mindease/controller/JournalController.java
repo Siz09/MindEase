@@ -4,6 +4,7 @@ import com.mindease.dto.JournalRequest;
 import com.mindease.model.JournalEntry;
 import com.mindease.service.CustomUserDetails;
 import com.mindease.service.JournalService;
+import com.mindease.service.UserService;
 import com.mindease.util.AuthUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,9 @@ public class JournalController {
   private JournalService journalService;
 
   @Autowired
+  private UserService userService;
+
+  @Autowired
   private AuthUtil authUtil;
 
 
@@ -44,6 +48,9 @@ public class JournalController {
 
       // Get user ID from authentication
       UUID userId = getUserIdFromAuthentication(authentication);
+      
+      // Track user activity
+      userService.trackUserActivity(userId);
       
       JournalEntry savedEntry = journalService.saveJournalEntry(userId, content);
       
