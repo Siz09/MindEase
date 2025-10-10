@@ -4,6 +4,7 @@ import com.mindease.model.MoodEntry;
 import com.mindease.model.User;
 import com.mindease.repository.MoodEntryRepository;
 import com.mindease.repository.UserRepository;
+import com.mindease.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +37,9 @@ public class MoodController {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private UserService userService;
+
   // POST /api/mood/add - Add a new mood entry
   @Operation(summary = "Add a mood entry", description = "Add a new mood entry for the authenticated user")
   @ApiResponses(value = {
@@ -55,6 +59,9 @@ public class MoodController {
       }
 
       User user = userOptional.get();
+
+      // Track user activity
+      userService.trackUserActivity(user);
 
       // Validate mood value (1-10)
       if (request.getMoodValue() < 1 || request.getMoodValue() > 10) {

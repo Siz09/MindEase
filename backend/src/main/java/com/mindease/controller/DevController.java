@@ -1,6 +1,7 @@
 package com.mindease.controller;
 
 import com.mindease.service.AutoMoodService;
+import com.mindease.service.InactivityDetectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,9 @@ public class DevController {
 
   @Autowired
   private AutoMoodService autoMoodService;
+
+  @Autowired
+  private InactivityDetectionService inactivityDetectionService;
 
   @GetMapping("/profile")
   public Map<String, String> getActiveProfile() {
@@ -38,6 +42,20 @@ public class DevController {
       return ResponseEntity.ok("Auto mood task triggered manually");
     } catch (Exception e) {
       return ResponseEntity.badRequest().body(createErrorResponse("Failed to trigger auto mood: " + e.getMessage()));
+    }
+  }
+
+  @PostMapping("/trigger-inactivity-detection")
+  public ResponseEntity<?> triggerInactivityDetection() {
+    if (!isDevelopmentMode()) {
+      return ResponseEntity.badRequest().body(createErrorResponse("This endpoint is only available in development mode"));
+    }
+
+    try {
+      inactivityDetectionService.manualTrigger();
+      return ResponseEntity.ok("Inactivity detection task triggered manually");
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(createErrorResponse("Failed to trigger inactivity detection: " + e.getMessage()));
     }
   }
 

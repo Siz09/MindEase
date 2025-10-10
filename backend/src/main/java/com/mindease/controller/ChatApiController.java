@@ -7,6 +7,7 @@ import com.mindease.repository.ChatSessionRepository;
 import com.mindease.repository.MessageRepository;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.ChatBotService;
+import com.mindease.service.UserService;
 import com.mindease.dto.ChatResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -52,6 +53,9 @@ public class ChatApiController {
   private ChatBotService chatBotService;
 
   @Autowired
+  private UserService userService;
+
+  @Autowired
   private SimpMessagingTemplate messagingTemplate;
 
   private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
@@ -79,6 +83,9 @@ public class ChatApiController {
 
       User user = userOptional.get();
       logger.info("Processing message for user ID: {}", user.getId());
+
+      // Track user activity
+      userService.trackUserActivity(user);
 
       // Get or create chat session
       ChatSession chatSession = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
