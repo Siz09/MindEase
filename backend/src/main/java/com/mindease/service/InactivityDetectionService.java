@@ -46,34 +46,30 @@ public class InactivityDetectionService {
      * Runs hourly to detect inactive users and create gentle notifications.
      */
     @Scheduled(cron = "0 0 * * * *")
-    @Transactional
     public void detectInactiveUsers() {
         logger.info("🕒 Running Inactivity Detection Job...");
 
         LocalDateTime threshold = LocalDateTime.now().minusDays(3);
-        List<UserActivity> inactiveUsers = userActivityRepository.findByLastActiveAtBefore(threshold);
-
-        if (inactiveUsers.isEmpty()) {
-            logger.info("No inactive users found. Exiting job.");
-            return;
-        }
-
-        // ✅ Preload IDs of users who already received inactivity notifications to avoid
-        // N+1 queries
-        Set<UUID> notifiedUserIds = notificationRepository
-                .findAll()
-                .stream()
-                .filter(n -> {
-                    String message = n.getMessage();
-                    return message != null && message.toLowerCase().contains("haven't been active");
-                })
-                .map(Notification::getUser)
-                .filter(user -> user != null)
-                .map(User::getId)
-                .collect(Collectors.toSet());
         int notificationsCreated = 0;
 
-        for (UserActivity ua : inactiveUsers) {
+        // ✅ Preload users who already received the inactivity reminder recently
+        Set<UUID> notifiedUserIds = notificationRepository.findUserIdsWithNotificationType(
+                "INACTIVITY_REMINDER",
+                LocalDateTime.now().minusDays(3)
+        );
+
+        // ✅ Process in pages to avoid memory pressure
+        int pageSize = 100;
+        int page = 0;
+        org.springframework.data.domain.Page<UserActivity> inactivePage;
+
+        do {
+            inactivePage = userActivityRepository.findByLastActiveAtBefore(
+                threshold,
+                org.springframework.data.domain.PageRequest.of(page++, pageSize)
+            );
+
+            for (UserActivity ua : inactivePage.getContent()) {
             User user = ua.getUser();
 
             // ✅ Null check — skip if activity not linked to a valid user
@@ -104,13 +100,14 @@ public class InactivityDetectionService {
             String message = "Hey there! We've noticed you haven't been active lately. How are you feeling today? 💚";
 
             try {
-                notificationService.createNotification(user, "IN_APP", message);
+                notificationService.createNotification(user, "INACTIVITY_REMINDER", message);
                 notificationsCreated++;
                 logger.info("Created inactivity notification for user: {}", user.getEmail());
             } catch (Exception e) {
                 logger.error("Failed to create notification for user: {}", user.getEmail(), e);
             }
-        }
+            }
+        } while (inactivePage.hasNext());
 
         logger.info("✅ Inactivity Detection Job completed. Notifications created: {}", notificationsCreated);
     }
@@ -131,11 +128,11 @@ public class InactivityDetectionService {
         LocalTime quietEnd = LocalTime.of(quietHoursEnd, 0);
 
         if (quietStart.isBefore(quietEnd)) {
-            // Quiet hours within same day
-            return now.isAfter(quietStart) && now.isBefore(quietEnd);
+            // Quiet hours within same day: [quietStart, quietEnd)
+            return now.compareTo(quietStart) >= 0 && now.compareTo(quietEnd) < 0;
         } else {
-            // Quiet hours cross midnight
-            return now.isAfter(quietStart) || now.isBefore(quietEnd);
+            // Quiet hours cross midnight: [quietStart, 24:00) or [00:00, quietEnd)
+            return now.compareTo(quietStart) >= 0 || now.compareTo(quietEnd) < 0;
         }
     }
 }

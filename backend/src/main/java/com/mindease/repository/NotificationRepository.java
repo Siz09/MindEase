@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,4 +32,8 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     // 5️⃣ Check if user has notification containing specific text
     boolean existsByUserAndMessageContainingIgnoreCase(User user, String text);
+
+  // 6️⃣ Efficient lookup of users who already received a specific notification type since a timestamp
+  @Query("SELECT DISTINCT n.user.id FROM Notification n WHERE n.type = :type AND n.createdAt > :since")
+  java.util.Set<java.util.UUID> findUserIdsWithNotificationType(@Param("type") String type, @Param("since") java.time.LocalDateTime since);
 }
