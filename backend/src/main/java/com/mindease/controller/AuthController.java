@@ -64,8 +64,8 @@ public class AuthController {
         firebaseUid
       );
 
-      // Track user activity on registration
-      userService.trackUserActivity(user);
+      // Track user activity on registration (async - fire-and-forget)
+      userService.trackUserActivityAsync(user);
 
       // Generate JWT token
       String jwtToken = jwtUtil.generateToken(user);
@@ -89,8 +89,8 @@ public class AuthController {
       User user = userService.findByFirebaseUid(firebaseUid)
         .orElseThrow(() -> new RuntimeException("User not found. Please register first."));
 
-      // Track user activity on login
-      userService.trackUserActivity(user);
+      // Track user activity on login (async - fire-and-forget)
+      userService.trackUserActivityAsync(user);
 
       // Generate JWT token
       String jwtToken = jwtUtil.generateToken(user);

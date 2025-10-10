@@ -11,6 +11,10 @@ This guide explains how to test the inactivity detection system implemented in P
 - **Location**: `com.mindease.service.NotificationService`
 - **Purpose**: Creates and manages notifications for users
 - **Key Method**: `createNotification(User user, String type, String message)`
+- **Features**:
+  - Null parameter validation with fail-fast approach
+  - Throws `IllegalArgumentException` for invalid input
+  - Prevents runtime `NullPointerExceptions`
 
 ### 2. InactivityDetectionService
 
@@ -23,6 +27,13 @@ This guide explains how to test the inactivity detection system implemented in P
 ### 3. User Activity Tracking
 
 - **Location**: `com.mindease.service.UserService.trackUserActivity()`
+- **Features**:
+  - **Asynchronous Processing**: Non-blocking activity tracking using `@Async`
+  - Null safety validation
+  - Race condition mitigation with retry logic
+  - Comprehensive error handling and logging
+  - Database-level unique constraint enforcement
+  - Fire-and-forget approach - failures don't affect user operations
 - **Triggered on**:
   - User login/registration
   - Chat message sending
@@ -124,10 +135,23 @@ ORDER BY ua.last_active_at ASC;
 
 ## Configuration
 
+### Async Configuration
+
+- **Enabled**: `@EnableAsync` in main application class
+- **Purpose**: Non-blocking activity tracking for better performance
+- **Methods**: `trackUserActivityAsync()` - fire-and-forget approach
+- **Benefits**: Login/registration responses not delayed by DB writes
+
+### Database Constraints
+
+- **Unique Constraint**: `user_activity.user_id` has a unique constraint (V9 migration)
+- **Purpose**: Prevents duplicate activity records and race conditions
+- **Migration**: `V9__add_unique_constraint_user_activity.sql`
+
 ### Inactivity Threshold
 
 - **Current**: 3 days
-- **Location**: `InactivityDetectionService.INACTIVITY_DAYS`
+- **Location**: `InactivityDetectionService` (hardcoded in `detectInactiveUsers()`)
 - **Change**: Modify the constant value
 
 ### Quiet Hours
@@ -159,6 +183,11 @@ ORDER BY ua.last_active_at ASC;
 3. **Scheduled job not running**
    - Verify `@EnableScheduling` is present in main application class
    - Check application logs for scheduling errors
+
+4. **IllegalArgumentException: "User, type, and message must not be null"**
+   - This indicates null parameters were passed to `createNotification()`
+   - Check that user, type, and message are all non-null before calling
+   - This is a fail-fast validation to prevent runtime errors
 
 ### Debug Mode
 
