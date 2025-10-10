@@ -22,128 +22,131 @@ import java.util.UUID;
 @RequestMapping("/api/journal")
 public class JournalController {
 
-  @Autowired
-  private JournalService journalService;
+    @Autowired
+    private JournalService journalService;
 
-  @Autowired
-  private UserService userService;
+    @Autowired
+    private UserService userService;
 
-  @Autowired
-  private AuthUtil authUtil;
+    @Autowired
+    private AuthUtil authUtil;
 
+    @PostMapping("/add")
+    public ResponseEntity<Map<String, Object>> addJournalEntry(
+            @RequestBody JournalRequest request,
+            Authentication authentication) {
 
-  @PostMapping("/add")
-  public ResponseEntity<Map<String, Object>> addJournalEntry(
-    @RequestBody JournalRequest request,
-    Authentication authentication) {
-    
-    Map<String, Object> response = new HashMap<>();
-    try {
-      String content = request.getContent();
-      if (content == null || content.trim().isEmpty()) {
-        response.put("success", false);
-        response.put("message", "Journal content cannot be empty");
-        return ResponseEntity.badRequest().body(response);
-      }
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String content = request.getContent();
+            if (content == null || content.trim().isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Journal content cannot be empty");
+                return ResponseEntity.badRequest().body(response);
+            }
 
-      // Get user ID from authentication
-      UUID userId = getUserIdFromAuthentication(authentication);
-      
-      // Track user activity (async - fire-and-forget)
-      userService.trackUserActivityAsync(userId);
-      
-      JournalEntry savedEntry = journalService.saveJournalEntry(userId, content);
-      
-      response.put("success", true);
-      response.put("message", "Journal entry saved successfully");
-      response.put("entry", savedEntry);
-      response.put("aiProcessing", true);
-      response.put("aiAvailable", journalService.isAIAvailable());
+            // Get user ID from authentication
+            UUID userId = getUserIdFromAuthentication(authentication);
 
-      return ResponseEntity.ok(response);
-      
-    } catch (Exception e) {
-      response.put("success", false);
-      response.put("message", "Error saving journal entry");
-      response.put("details", e.getMessage());
-      return ResponseEntity.internalServerError().body(response);
+            // Track user activity (async - fire-and-forget)
+            userService.trackUserActivityAsync(userId)
+                    .exceptionally(ex -> {
+                        log.error("Failed to track user activity for userId: {}", userId, ex);
+                        return null;
+                    });
+
+            JournalEntry savedEntry = journalService.saveJournalEntry(userId, content);
+
+            response.put("success", true);
+            response.put("message", "Journal entry saved successfully");
+            response.put("entry", savedEntry);
+            response.put("aiProcessing", true);
+            response.put("aiAvailable", journalService.isAIAvailable());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Error saving journal entry");
+            response.put("details", e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
-  }
-  
-  @GetMapping("/ai-status")
-  public ResponseEntity<?> getAIStatus() {
-    Map<String, Object> response = new HashMap<>();
-    response.put("success", true);
-    response.put("aiAvailable", journalService.isAIAvailable());
-    response.put("message", journalService.isAIAvailable() ? 
-        "AI features are available" : "AI features are not configured");
-    
-    return ResponseEntity.ok(response);
-  }
 
-  @GetMapping("/history")
-  public ResponseEntity<?> getJournalHistory(
-    Authentication authentication,
-    @RequestParam(defaultValue = "0") int page,
-    @RequestParam(defaultValue = "20") int size) {
+    @GetMapping("/ai-status")
+    public ResponseEntity<?> getAIStatus() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("aiAvailable", journalService.isAIAvailable());
+        response.put("message",
+                journalService.isAIAvailable() ? "AI features are available" : "AI features are not configured");
 
-    try {
-      UUID userId = getUserIdFromAuthentication(authentication);
-
-      Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-      Page<JournalEntry> journalPage = journalService.getJournalHistory(userId, pageable);
-
-      Map<String, Object> response = new HashMap<>();
-      response.put("success", true);
-      response.put("entries", journalPage.getContent());
-      response.put("currentPage", journalPage.getNumber());
-      response.put("totalItems", journalPage.getTotalElements());
-      response.put("totalPages", journalPage.getTotalPages());
-      response.put("hasNext", journalPage.hasNext());
-      response.put("hasPrevious", journalPage.hasPrevious());
-
-      return ResponseEntity.ok(response);
-
-    } catch (Exception e) {
-      return ResponseEntity.internalServerError().body("Error retrieving journal history: " + e.getMessage());
+        return ResponseEntity.ok(response);
     }
-  }
 
-  @GetMapping("/recent")
-  public ResponseEntity<?> getRecentJournalEntries(Authentication authentication) {
-    try {
-      UUID userId = getUserIdFromAuthentication(authentication);
-      var recentEntries = journalService.getRecentJournalEntries(userId);
+    @GetMapping("/history")
+    public ResponseEntity<?> getJournalHistory(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
-      Map<String, Object> response = new HashMap<>();
-      response.put("success", true);
-      response.put("entries", recentEntries);
+        try {
+            UUID userId = getUserIdFromAuthentication(authentication);
 
-      return ResponseEntity.ok(response);
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<JournalEntry> journalPage = journalService.getJournalHistory(userId, pageable);
 
-    } catch (Exception e) {
-      return ResponseEntity.internalServerError().body("Error retrieving recent entries: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("entries", journalPage.getContent());
+            response.put("currentPage", journalPage.getNumber());
+            response.put("totalItems", journalPage.getTotalElements());
+            response.put("totalPages", journalPage.getTotalPages());
+            response.put("hasNext", journalPage.hasNext());
+            response.put("hasPrevious", journalPage.hasPrevious());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error retrieving journal history: " + e.getMessage());
+        }
     }
-  }
 
-  @GetMapping("/count")
-  public ResponseEntity<?> getJournalEntryCount(Authentication authentication) {
-    try {
-      UUID userId = getUserIdFromAuthentication(authentication);
-      long count = journalService.getJournalEntryCount(userId);
+    @GetMapping("/recent")
+    public ResponseEntity<?> getRecentJournalEntries(Authentication authentication) {
+        try {
+            UUID userId = getUserIdFromAuthentication(authentication);
+            var recentEntries = journalService.getRecentJournalEntries(userId);
 
-      Map<String, Object> response = new HashMap<>();
-      response.put("success", true);
-      response.put("count", count);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("entries", recentEntries);
 
-      return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
 
-    } catch (Exception e) {
-      return ResponseEntity.internalServerError().body("Error retrieving journal count: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error retrieving recent entries: " + e.getMessage());
+        }
     }
-  }
 
-  private UUID getUserIdFromAuthentication(Authentication authentication) {
-    return authUtil.getCurrentUserId();
-  }
+    @GetMapping("/count")
+    public ResponseEntity<?> getJournalEntryCount(Authentication authentication) {
+        try {
+            UUID userId = getUserIdFromAuthentication(authentication);
+            long count = journalService.getJournalEntryCount(userId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("count", count);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error retrieving journal count: " + e.getMessage());
+        }
+    }
+
+    private UUID getUserIdFromAuthentication(Authentication authentication) {
+        return authUtil.getCurrentUserId();
+    }
 }
