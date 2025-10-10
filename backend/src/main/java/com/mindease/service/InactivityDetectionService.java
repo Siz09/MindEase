@@ -127,7 +127,10 @@ public class InactivityDetectionService {
         LocalTime quietStart = LocalTime.of(quietHoursStart, 0);
         LocalTime quietEnd = LocalTime.of(quietHoursEnd, 0);
 
-        if (quietStart.isBefore(quietEnd)) {
+        if (quietStart.equals(quietEnd)) {
+            // Quiet hours disabled
+            return false;
+        } else if (quietStart.isBefore(quietEnd)) {
             // Quiet hours within same day: [quietStart, quietEnd)
             return now.compareTo(quietStart) >= 0 && now.compareTo(quietEnd) < 0;
         } else {
