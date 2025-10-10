@@ -1,6 +1,7 @@
 package com.mindease.controller;
 
 import com.mindease.model.User;
+import com.mindease.dto.QuietHoursRequest;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,13 @@ public class UserController {
     } catch (RuntimeException e) {
       return ResponseEntity.status(404).body(e.getMessage());
     }
+  }
+
+  @PatchMapping("/quiet-hours")
+  public ResponseEntity<User> updateQuietHours(@RequestBody QuietHoursRequest request, Authentication authentication) {
+    String email = authentication.getName();
+    User updated = userService.updateQuietHours(email, request);
+    return ResponseEntity.ok(updated);
   }
 
 }

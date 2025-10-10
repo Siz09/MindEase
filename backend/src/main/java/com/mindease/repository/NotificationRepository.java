@@ -22,6 +22,9 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
   // 3️⃣ Hard-limit retrieval of unsent notifications (e.g., batch sending)
   List<Notification> findTop100ByUserAndIsSentFalseOrderByCreatedAtAsc(User user);
 
+  // 3b️⃣ Retrieve all unsent notifications (use with caution)
+  List<Notification> findByUserAndIsSentFalse(User user);
+
   // 4️⃣ Count of unsent notifications
   long countByUserAndIsSentFalse(User user);
 
