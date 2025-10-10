@@ -6,6 +6,8 @@ import com.mindease.service.CustomUserDetails;
 import com.mindease.service.JournalService;
 import com.mindease.service.UserService;
 import com.mindease.util.AuthUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/journal")
 public class JournalController {
+    private static final Logger logger = LoggerFactory.getLogger(JournalController.class);
 
     @Autowired
     private JournalService journalService;
@@ -49,11 +52,7 @@ public class JournalController {
             UUID userId = getUserIdFromAuthentication(authentication);
 
             // Track user activity (async - fire-and-forget)
-            userService.trackUserActivityAsync(userId)
-                    .exceptionally(ex -> {
-                        log.error("Failed to track user activity for userId: {}", userId, ex);
-                        return null;
-                    });
+            userService.trackUserActivityAsync(userId);
 
             JournalEntry savedEntry = journalService.saveJournalEntry(userId, content);
 

@@ -116,6 +116,13 @@ public class InactivityDetectionService {
     }
 
     /**
+     * Manual trigger for development/testing endpoints
+     */
+    public void manualTrigger() {
+        detectInactiveUsers();
+    }
+
+    /**
      * Determines if current time is within quiet hours.
      */
     private boolean isWithinQuietHours(User user) {

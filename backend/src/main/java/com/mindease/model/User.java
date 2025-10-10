@@ -3,6 +3,7 @@ package com.mindease.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
@@ -35,6 +36,12 @@ public class User {
   // Firebase UID for Firebase Auth integration
   @Column(name = "firebase_uid")
   private String firebaseUid;
+
+  @Column(name = "quiet_hours_start")
+  private LocalTime quietHoursStart;
+
+  @Column(name = "quiet_hours_end")
+  private LocalTime quietHoursEnd;
 
   // Constructors
   public User() {
@@ -114,6 +121,22 @@ public class User {
 
   public void setFirebaseUid(String firebaseUid) {
     this.firebaseUid = firebaseUid;
+  }
+
+  public LocalTime getQuietHoursStart() {
+    return quietHoursStart;
+  }
+
+  public void setQuietHoursStart(LocalTime quietHoursStart) {
+    this.quietHoursStart = quietHoursStart;
+  }
+
+  public LocalTime getQuietHoursEnd() {
+    return quietHoursEnd;
+  }
+
+  public void setQuietHoursEnd(LocalTime quietHoursEnd) {
+    this.quietHoursEnd = quietHoursEnd;
   }
 
   // Pre-update callback

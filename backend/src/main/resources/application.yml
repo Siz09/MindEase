@@ -29,6 +29,18 @@ spring:
         max-size: 10
         queue-capacity: 100
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 server:
   port: 8080
 
