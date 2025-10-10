@@ -63,10 +63,14 @@ public class InactivityDetectionService {
         Set<UUID> notifiedUserIds = notificationRepository
                 .findAll()
                 .stream()
-                .filter(n -> n.getMessage().toLowerCase().contains("haven't been active"))
-                .map(n -> n.getUser().getId())
+                .filter(n -> {
+                    String message = n.getMessage();
+                    return message != null && message.toLowerCase().contains("haven't been active");
+                })
+                .map(Notification::getUser)
+                .filter(user -> user != null)
+                .map(User::getId)
                 .collect(Collectors.toSet());
-
         int notificationsCreated = 0;
 
         for (UserActivity ua : inactiveUsers) {
