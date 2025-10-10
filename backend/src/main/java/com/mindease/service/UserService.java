@@ -140,6 +140,13 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if (request.getQuietHoursStart() == null || request.getQuietHoursEnd() == null) {
+            throw new IllegalArgumentException("Quiet hours start and end times must not be null");
+        }
+        if (request.getQuietHoursStart().equals(request.getQuietHoursEnd())) {
+            throw new IllegalArgumentException("Quiet hours start and end times must not be equal");
+        }
+
         user.setQuietHoursStart(request.getQuietHoursStart());
         user.setQuietHoursEnd(request.getQuietHoursEnd());
         return userRepository.save(user);
