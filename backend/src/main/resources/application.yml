@@ -22,7 +22,7 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true
-  task:   # ⬅ merged here instead of separate spring: block
+  task: # ⬅ merged here instead of separate spring: block
     execution:
       pool:
         core-size: 5
@@ -40,6 +40,11 @@ firebase:
 jwt:
   secret: ${JWT_SECRET:dev-jwt-secret-key-for-development-only-change-in-production}
   expiration: 86400000
+
+inactivity:
+  quiet-hours:
+    start: 22 # 10 PM
+    end: 8 # 8 AM
 
 # Retention policy configuration
 retention:
@@ -97,7 +102,7 @@ management:
 # OpenAI Configuration
 openai:
   api:
-    key: ${OPENAI_API_KEY:}  # Set via environment variable
+    key: ${OPENAI_API_KEY:} # Set via environment variable
     timeout: 30
   model: gpt-3.5-turbo-instruct
   max-tokens: 150
@@ -122,7 +127,6 @@ spring:
     hibernate:
       ddl-auto: update # Use update for development
     show-sql: true
-
 ---
 spring:
   config:

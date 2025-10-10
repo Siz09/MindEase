@@ -49,8 +49,8 @@ public class JournalController {
       // Get user ID from authentication
       UUID userId = getUserIdFromAuthentication(authentication);
       
-      // Track user activity
-      userService.trackUserActivity(userId);
+      // Track user activity (async - fire-and-forget)
+      userService.trackUserActivityAsync(userId);
       
       JournalEntry savedEntry = journalService.saveJournalEntry(userId, content);
       

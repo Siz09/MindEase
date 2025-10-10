@@ -84,8 +84,8 @@ public class ChatApiController {
       User user = userOptional.get();
       logger.info("Processing message for user ID: {}", user.getId());
 
-      // Track user activity
-      userService.trackUserActivity(user);
+      // Track user activity (async - fire-and-forget)
+      userService.trackUserActivityAsync(user);
 
       // Get or create chat session
       ChatSession chatSession = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)

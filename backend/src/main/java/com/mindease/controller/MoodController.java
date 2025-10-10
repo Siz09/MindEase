@@ -60,8 +60,8 @@ public class MoodController {
 
       User user = userOptional.get();
 
-      // Track user activity
-      userService.trackUserActivity(user);
+      // Track user activity (async - fire-and-forget)
+      userService.trackUserActivityAsync(user);
 
       // Validate mood value (1-10)
       if (request.getMoodValue() < 1 || request.getMoodValue() > 10) {

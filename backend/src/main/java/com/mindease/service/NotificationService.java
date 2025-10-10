@@ -15,6 +15,10 @@ public class NotificationService {
 
     @Transactional
     public void createNotification(User user, String type, String message) {
+        if (user == null || type == null || message == null) {
+            throw new IllegalArgumentException("User, type, and message must not be null");
+        }
+
         Notification notification = new Notification(user, type, message);
         notificationRepository.save(notification);
     }
