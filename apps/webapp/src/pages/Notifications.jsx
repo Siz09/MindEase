@@ -15,6 +15,12 @@ export default function Notifications() {
   // Filter notifications to show only IN_APP type
   const inAppNotifications = notifications.filter((n) => n.type === 'IN_APP');
 
+  // Calculate paginated notifications
+  const paginatedNotifications = inAppNotifications.slice(
+    currentPage * pageSize,
+    (currentPage + 1) * pageSize
+  );
+
   const handleMarkAsRead = async (notificationId) => {
     try {
       await markAsRead(notificationId);
@@ -36,8 +42,13 @@ export default function Notifications() {
   };
 
   const handleRefresh = async () => {
-    await refresh();
-    toast.info(t('notifications.refreshSuccess'));
+    try {
+      await refresh();
+      toast.info(t('notifications.refreshSuccess'));
+    } catch (err) {
+      console.error('Failed to refresh notifications:', err);
+      toast.error(t('notifications.refreshError'));
+    }
   };
 
   const formatDate = (dateString) => {
@@ -153,7 +164,7 @@ export default function Notifications() {
 
         {/* Notifications List */}
         <div className="notifications-content">
-          {inAppNotifications.length === 0 ? (
+          {paginatedNotifications.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">
                 <svg
@@ -173,7 +184,7 @@ export default function Notifications() {
             </div>
           ) : (
             <div className="notifications-list">
-              {inAppNotifications.map((notification) => (
+              {paginatedNotifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={`notification-item ${!notification.isSent ? 'unread' : 'read'}`}
@@ -212,7 +223,7 @@ export default function Notifications() {
         </div>
 
         {/* Pagination (if needed in the future) */}
-        {inAppNotifications.length >= pageSize && (
+        {inAppNotifications.length > pageSize && (
           <div className="pagination-container">
             <button
               className="btn btn-outline"
@@ -224,7 +235,7 @@ export default function Notifications() {
             <span className="page-info">Page {currentPage + 1}</span>
             <button
               className="btn btn-outline"
-              disabled={inAppNotifications.length < pageSize}
+              disabled={(currentPage + 1) * pageSize >= inAppNotifications.length}
               onClick={() => setCurrentPage(currentPage + 1)}
             >
               Next

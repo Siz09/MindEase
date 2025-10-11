@@ -242,6 +242,7 @@
     "allCaughtUp": "You're all caught up! We'll notify you when there's something new.",
     "loading": "Loading notifications...",
     "refreshSuccess": "Notifications refreshed",
+    "refreshError": "Failed to refresh notifications",
     "markReadSuccess": "Notification marked as read",
     "markAllReadSuccess": "All notifications marked as read",
     "markReadError": "Failed to mark notification as read",

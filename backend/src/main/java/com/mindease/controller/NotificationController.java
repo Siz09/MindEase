@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -50,8 +51,9 @@ public class NotificationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         
+        String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
-            User user = userService.findByEmail(authentication.getName())
+            User user = userService.findByEmail(principalEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
             Pageable pageable = PageRequest.of(page, size);
@@ -69,8 +71,9 @@ public class NotificationController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            logger.error("Failed to fetch notifications for user: {}", authentication.getName(), e);
-            return ResponseEntity.badRequest().body(createErrorResponse("Failed to fetch notifications"));
+            logger.error("Failed to fetch notifications for user: {}", principalEmail, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(createErrorResponse("Failed to fetch notifications"));
         }
     }
 
@@ -81,8 +84,9 @@ public class NotificationController {
     })
     @GetMapping("/unread-count")
     public ResponseEntity<?> getUnreadCount(Authentication authentication) {
+        String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
-            User user = userService.findByEmail(authentication.getName())
+            User user = userService.findByEmail(principalEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
             long unreadCount = notificationRepository.countByUserAndIsSentFalse(user);
@@ -93,8 +97,9 @@ public class NotificationController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            logger.error("Failed to get unread count for user: {}", authentication.getName(), e);
-            return ResponseEntity.badRequest().body(createErrorResponse("Failed to get unread count"));
+            logger.error("Failed to get unread count for user: {}", principalEmail, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(createErrorResponse("Failed to get unread count"));
         }
     }
 
@@ -109,8 +114,9 @@ public class NotificationController {
             @PathVariable UUID notificationId,
             Authentication authentication) {
         
+        String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
-            User user = userService.findByEmail(authentication.getName())
+            User user = userService.findByEmail(principalEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
             Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
@@ -123,7 +129,7 @@ public class NotificationController {
             
             // Verify the notification belongs to the authenticated user
             if (!notification.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(403).build();
+                return ResponseEntity.notFound().build();
             }
 
             notification.setIsSent(true);
@@ -133,7 +139,8 @@ public class NotificationController {
 
         } catch (Exception e) {
             logger.error("Failed to mark notification as read: {}", notificationId, e);
-            return ResponseEntity.badRequest().body(createErrorResponse("Failed to mark notification as read"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(createErrorResponse("Failed to mark notification as read"));
         }
     }
 
@@ -144,8 +151,9 @@ public class NotificationController {
     })
     @PatchMapping("/mark-all-read")
     public ResponseEntity<?> markAllAsRead(Authentication authentication) {
+        String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
-            User user = userService.findByEmail(authentication.getName())
+            User user = userService.findByEmail(principalEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Get all unread notifications for the user
@@ -165,8 +173,9 @@ public class NotificationController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            logger.error("Failed to mark all notifications as read for user: {}", authentication.getName(), e);
-            return ResponseEntity.badRequest().body(createErrorResponse("Failed to mark all notifications as read"));
+            logger.error("Failed to mark all notifications as read for user: {}", principalEmail, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(createErrorResponse("Failed to mark all notifications as read"));
         }
     }
 
@@ -181,8 +190,9 @@ public class NotificationController {
             @PathVariable UUID notificationId,
             Authentication authentication) {
         
+        String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
-            User user = userService.findByEmail(authentication.getName())
+            User user = userService.findByEmail(principalEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
             Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
@@ -195,7 +205,7 @@ public class NotificationController {
             
             // Verify the notification belongs to the authenticated user
             if (!notification.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(403).build();
+                return ResponseEntity.notFound().build();
             }
 
             notificationRepository.delete(notification);
@@ -204,7 +214,8 @@ public class NotificationController {
 
         } catch (Exception e) {
             logger.error("Failed to delete notification: {}", notificationId, e);
-            return ResponseEntity.badRequest().body(createErrorResponse("Failed to delete notification"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(createErrorResponse("Failed to delete notification"));
         }
     }
 
