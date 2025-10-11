@@ -32,7 +32,7 @@ public class Notification {
   private LocalDateTime createdAt;
 
   @Column(name = "is_sent", nullable = false)
-  private boolean isSent = false;
+  private boolean isSent = false; // Note: This field tracks read/unread status, not delivery status
 
   // Constructors
   public Notification() {

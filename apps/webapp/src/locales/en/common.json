@@ -247,7 +247,19 @@
     "markAllReadSuccess": "All notifications marked as read",
     "markReadError": "Failed to mark notification as read",
     "markAllReadError": "Failed to mark all notifications as read",
-    "fetchError": "Failed to load notifications"
+    "fetchError": "Failed to load notifications",
+    "time": {
+      "minutesAgo": "{{count}} minute ago",
+      "minutesAgo_other": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hour ago",
+      "hoursAgo_other": "{{count}} hours ago",
+      "yesterday": "Yesterday"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageInfo": "Page {{page}}"
+    }
   },
   "offline": {
     "banner": {
