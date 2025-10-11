@@ -8,6 +8,7 @@ export default function NotificationBell() {
   const navigate = useNavigate();
   const { notifications, unreadCount, getNewNotifications } = useNotifications();
   const [previousNotificationCount, setPreviousNotificationCount] = useState(0);
+  const [displayedIds, setDisplayedIds] = useState(new Set());
 
   // Show toast for new notifications
   useEffect(() => {
@@ -16,8 +17,14 @@ export default function NotificationBell() {
 
       // Only show toast for new notifications, not on initial load
       if (previousNotificationCount > 0 && newNotifications.length > 0) {
+        const newDisplayedIds = new Set(displayedIds);
+
         newNotifications.forEach((notification) => {
-          if (notification.type === 'IN_APP' && !notification.isSent) {
+          if (
+            notification.type === 'IN_APP' &&
+            !notification.isSent &&
+            !displayedIds.has(notification.id)
+          ) {
             toast.info(notification.message, {
               position: 'top-right',
               autoClose: 5000,
@@ -26,13 +33,16 @@ export default function NotificationBell() {
               pauseOnHover: true,
               draggable: true,
             });
+            newDisplayedIds.add(notification.id);
           }
         });
+
+        setDisplayedIds(newDisplayedIds);
       }
 
       setPreviousNotificationCount(notifications.length);
     }
-  }, [notifications, getNewNotifications, previousNotificationCount]);
+  }, [notifications, getNewNotifications, previousNotificationCount, displayedIds]);
 
   const handleBellClick = () => {
     navigate('/notifications');

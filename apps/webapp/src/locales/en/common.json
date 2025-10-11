@@ -234,7 +234,8 @@
   },
   "notifications": {
     "title": "Notifications",
-    "unreadCount": "unread",
+    "unreadCount": "{{count}} unread",
+    "unreadCount_zero": "No unread notifications",
     "markAllRead": "Mark All Read",
     "refresh": "Refresh",
     "markAsRead": "Mark as Read",

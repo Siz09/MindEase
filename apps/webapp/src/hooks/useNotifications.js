@@ -31,7 +31,11 @@ export default function useNotifications(pollInterval = 15000) {
       setError(err.message);
 
       // If the endpoint doesn't exist yet or backend is not running, use mock data for development
-      if (err.response?.status === 404 || err.code === 'ERR_NETWORK') {
+      if (
+        err.response?.status === 404 ||
+        err.response?.status === 500 ||
+        err.code === 'ERR_NETWORK'
+      ) {
         const mockNotifications = [
           {
             id: '1',
@@ -67,7 +71,11 @@ export default function useNotifications(pollInterval = 15000) {
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
       // If backend is not available, update local state
-      if (err.response?.status === 500 || err.code === 'ERR_NETWORK') {
+      if (
+        err.response?.status === 404 ||
+        err.response?.status === 500 ||
+        err.code === 'ERR_NETWORK'
+      ) {
         setNotifications((prev) =>
           prev.map((notif) => (notif.id === notificationId ? { ...notif, isSent: true } : notif))
         );
@@ -84,7 +92,11 @@ export default function useNotifications(pollInterval = 15000) {
     } catch (err) {
       console.error('Failed to mark all notifications as read:', err);
       // If backend is not available, update local state
-      if (err.response?.status === 500 || err.code === 'ERR_NETWORK') {
+      if (
+        err.response?.status === 404 ||
+        err.response?.status === 500 ||
+        err.code === 'ERR_NETWORK'
+      ) {
         setNotifications((prev) => prev.map((notif) => ({ ...notif, isSent: true })));
         setUnreadCount(0);
       }
