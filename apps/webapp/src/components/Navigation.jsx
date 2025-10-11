@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import OfflineBanner from './OfflineBanner';
+import NotificationBell from './NotificationBell';
 import '../styles/Navigation.css';
 
 const Navigation = () => {
@@ -125,14 +126,17 @@ const Navigation = () => {
             <LanguageSwitcher />
 
             {currentUser ? (
-              <div className="user-menu">
-                <div className="user-info desktop-only">
-                  <span className="user-email">{currentUser.email}</span>
+              <>
+                <NotificationBell />
+                <div className="user-menu">
+                  <div className="user-info desktop-only">
+                    <span className="user-email">{currentUser.email}</span>
+                  </div>
+                  <button onClick={handleLogout} className="btn btn-outline logout-btn">
+                    {t('navigation.logout')}
+                  </button>
                 </div>
-                <button onClick={handleLogout} className="btn btn-outline logout-btn">
-                  {t('navigation.logout')}
-                </button>
-              </div>
+              </>
             ) : (
               <div className="auth-links">
                 <Link to="/login" className="btn btn-outline">

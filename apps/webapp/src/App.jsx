@@ -14,6 +14,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './styles/App.css';
 import Chat from './pages/Chat';
 import Testing from './pages/Testing';
+import Notifications from './pages/Notifications';
 
 function App() {
   return (
@@ -71,6 +72,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Testing />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <Notifications />
                   </ProtectedRoute>
                 }
               />
