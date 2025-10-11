@@ -39,7 +39,11 @@ export default function NotificationBell() {
   };
 
   return (
-    <div className="notification-bell" onClick={handleBellClick} title="Notifications">
+    <button
+      className="notification-bell"
+      onClick={handleBellClick}
+      aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+    >
       <div className="bell-icon">
         <svg
           width="22"
@@ -48,6 +52,7 @@ export default function NotificationBell() {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
+          aria-hidden="true"
         >
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
           <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -55,10 +60,10 @@ export default function NotificationBell() {
       </div>
 
       {unreadCount > 0 && (
-        <div className="notification-badge">
+        <div className="notification-badge" aria-hidden="true">
           <span className="badge-count">{unreadCount > 99 ? '99+' : unreadCount}</span>
         </div>
       )}
-    </div>
+    </button>
   );
 }

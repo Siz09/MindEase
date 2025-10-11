@@ -8,6 +8,10 @@
   align-items: center;
   justify-content: center;
   margin-right: 8px;
+  /* Remove default button styling */
+  border: none;
+  background: none;
+  outline: none;
 }
 
 .notification-bell:hover {
@@ -91,4 +95,9 @@
 
 .notification-bell:focus:not(:focus-visible) {
   outline: none;
+}
+
+.notification-bell:focus-visible {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
 }

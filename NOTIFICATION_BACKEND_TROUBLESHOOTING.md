@@ -50,20 +50,18 @@ docker-compose logs postgres
 
 ### Solution B: Repair Flyway (If you want to keep existing data)
 
-```bash
-# Connect to database and repair Flyway schema history
-psql -h localhost -p 5432 -U mindease -d mindease
+````bash
+# Repair Flyway schema history from the project root (keeps data intact)
+./mvnw -pl backend flyway:repair
 
-# In psql, run:
-DELETE FROM flyway_schema_history WHERE version = '5';
-```
+# If you must delete a specific row, first inspect flyway_schema_history to confirm the exact version before running any DELETE statement.
 
 ## Step 4: Start Backend
 
 ```bash
 cd backend
 ./mvnw spring-boot:run
-```
+````
 
 ## Step 5: Verify Backend is Running
 
