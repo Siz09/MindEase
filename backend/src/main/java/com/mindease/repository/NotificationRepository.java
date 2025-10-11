@@ -35,13 +35,16 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     // 5️⃣ Check if user has notification containing specific text
     boolean existsByUserAndMessageContainingIgnoreCase(User user, String text);
 
-  // 6️⃣ Efficient lookup of users who already received a specific notification type since a timestamp
-  @Query("SELECT DISTINCT n.user.id FROM Notification n WHERE n.type = :type AND n.createdAt > :since")
-  java.util.Set<java.util.UUID> findUserIdsWithNotificationType(@Param("type") String type, @Param("since") java.time.LocalDateTime since);
+    // 6️⃣ Efficient lookup of users who already received a specific notification
+    // type since a timestamp
+    @Query("SELECT DISTINCT n.user.id FROM Notification n WHERE n.type = :type AND n.createdAt > :since")
+    java.util.Set<java.util.UUID> findUserIdsWithNotificationType(@Param("type") String type,
+            @Param("since") java.time.LocalDateTime since);
 
-  // 7️⃣ Bulk update to mark all notifications as read for a user (performance optimized)
-  @Modifying
-  @Transactional
-  @Query("UPDATE Notification n SET n.isSent = true WHERE n.user = :user AND n.isSent = false")
-  int markAllAsReadForUser(@Param("user") User user);
+    // 7️⃣ Bulk update to mark all notifications as sent for a user (performance
+    // optimized)
+    @Modifying
+    @Transactional
+    @Query("UPDATE Notification n SET n.isSent = true WHERE n.user = :user AND n.isSent = false")
+    int markAllAsSentForUser(@Param("user") User user);
 }
