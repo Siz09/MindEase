@@ -27,7 +27,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/notifications")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "https://mindease.app", "https://app.mindease.app"})
 @Tag(name = "Notifications", description = "User notification management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
 public class NotificationController {
@@ -156,19 +156,12 @@ public class NotificationController {
             User user = userService.findByEmail(principalEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Get all unread notifications for the user
-            var unreadNotifications = notificationRepository.findByUserAndIsSentFalse(user);
-            
-            // Mark all as read
-            for (Notification notification : unreadNotifications) {
-                notification.setIsSent(true);
-            }
-            
-            notificationRepository.saveAll(unreadNotifications);
+            // Bulk update to mark all notifications as read (performance optimized)
+            int count = notificationRepository.markAllAsReadForUser(user);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "All notifications marked as read");
-            response.put("count", unreadNotifications.size());
+            response.put("count", count);
 
             return ResponseEntity.ok(response);
 

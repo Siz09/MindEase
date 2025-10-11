@@ -58,12 +58,12 @@ export default function Notifications() {
 
     if (diffInHours < 1) {
       const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-      return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
+      return t('notifications.time.minutesAgo', { count: diffInMinutes });
     } else if (diffInHours < 24) {
       const diffInHoursRounded = Math.floor(diffInHours);
-      return `${diffInHoursRounded} hour${diffInHoursRounded !== 1 ? 's' : ''} ago`;
+      return t('notifications.time.hoursAgo', { count: diffInHoursRounded });
     } else if (diffInHours < 48) {
-      return 'Yesterday';
+      return t('notifications.time.yesterday');
     } else {
       return date.toLocaleDateString();
     }
@@ -230,15 +230,17 @@ export default function Notifications() {
               disabled={currentPage === 0}
               onClick={() => setCurrentPage(currentPage - 1)}
             >
-              Previous
+              {t('notifications.pagination.previous')}
             </button>
-            <span className="page-info">Page {currentPage + 1}</span>
+            <span className="page-info">
+              {t('notifications.pagination.pageInfo', { page: currentPage + 1 })}
+            </span>
             <button
               className="btn btn-outline"
               disabled={(currentPage + 1) * pageSize >= inAppNotifications.length}
               onClick={() => setCurrentPage(currentPage + 1)}
             >
-              Next
+              {t('notifications.pagination.next')}
             </button>
           </div>
         )}

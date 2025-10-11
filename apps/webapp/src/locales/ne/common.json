@@ -212,9 +212,9 @@
   "notifications": {
     "title": "सूचनाहरू",
     "unreadCount": "नपढिएका",
-    "markAllRead": "सबै पढ्नुहोस्",
+    "markAllRead": "सबैलाई पढेको रूपमा चिन्हित गर्नुहोस्",
     "refresh": "ताजा पार्नुहोस्",
-    "markAsRead": "पढ्नुहोस्",
+    "markAsRead": "पढेको रूपमा चिन्हित गर्नुहोस्",
     "noNotifications": "अहिलेसम्म कुनै सूचनाहरू छैनन्",
     "allCaughtUp": "तपाईं सबै कुरामा अपडेट हुनुहुन्छ! नयाँ कुरा आएमा हामी तपाईंलाई सूचित गर्नेछौं।",
     "loading": "सूचनाहरू लोड गर्दै...",
@@ -224,7 +224,19 @@
     "markAllReadSuccess": "सबै सूचनाहरू पढिएको रूपमा चिन्हित गरियो",
     "markReadError": "सूचना पढिएको रूपमा चिन्हित गर्न असफल",
     "markAllReadError": "सबै सूचनाहरू पढिएको रूपमा चिन्हित गर्न असफल",
-    "fetchError": "सूचनाहरू लोड गर्न असफल"
+    "fetchError": "सूचनाहरू लोड गर्न असफल",
+    "time": {
+      "minutesAgo": "{{count}} मिनेट अगाडि",
+      "minutesAgo_other": "{{count}} मिनेटहरू अगाडि",
+      "hoursAgo": "{{count}} घण्टा अगाडि",
+      "hoursAgo_other": "{{count}} घण्टाहरू अगाडि",
+      "yesterday": "हिजो"
+    },
+    "pagination": {
+      "previous": "अघिल्लो",
+      "next": "अर्को",
+      "pageInfo": "पृष्ठ {{page}}"
+    }
   },
   "offline": {
     "banner": {

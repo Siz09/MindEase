@@ -18,14 +18,14 @@ export default function useNotifications(pollInterval = 15000) {
       const response = await api.get('/notifications/list?page=0&size=10');
 
       const notificationData = response.data?.content || response.data || [];
-      setNotifications(notificationData);
+      setNotifications((prev) => {
+        previousNotificationsRef.current = prev;
+        return notificationData;
+      });
 
       // Count unread notifications (assuming isSent=false means unread for in-app notifications)
       const unread = notificationData.filter((n) => !n.isSent && n.type === 'IN_APP').length;
       setUnreadCount(unread);
-
-      // Store previous notifications to detect new ones
-      previousNotificationsRef.current = notificationData;
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
       setError(err.message);
@@ -48,9 +48,11 @@ export default function useNotifications(pollInterval = 15000) {
             isSent: true,
           },
         ];
-        setNotifications(mockNotifications);
+        setNotifications((prev) => {
+          previousNotificationsRef.current = prev;
+          return mockNotifications;
+        });
         setUnreadCount(1);
-        previousNotificationsRef.current = mockNotifications;
       }
     } finally {
       setLoading(false);
