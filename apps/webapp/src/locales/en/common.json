@@ -202,6 +202,7 @@
       "success": "Quiet hours updated successfully!",
       "error": "Failed to update quiet hours",
       "validationError": "Start and end times cannot be the same!",
+      "emptyTimeError": "Please select both start and end times!",
       "currentSettings": "Current Settings",
       "startTimeLabel": "Start Time",
       "endTimeLabel": "End Time"
