@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
+import api from '../utils/api';
 import '../styles/Settings.css';
 
 const Settings = () => {
@@ -12,10 +13,20 @@ const Settings = () => {
   const [anonymousMode, setAnonymousMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [quietStart, setQuietStart] = useState('22:00');
+  const [quietEnd, setQuietEnd] = useState('07:00');
+  const [quietHoursLoading, setQuietHoursLoading] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
       setAnonymousMode(currentUser.anonymousMode || false);
+      // Load quiet hours from user data
+      if (currentUser.quietHoursStart) {
+        setQuietStart(currentUser.quietHoursStart.slice(0, 5)); // Extract HH:MM from HH:MM:SS
+      }
+      if (currentUser.quietHoursEnd) {
+        setQuietEnd(currentUser.quietHoursEnd.slice(0, 5)); // Extract HH:MM from HH:MM:SS
+      }
     }
     setCurrentLanguage(i18n.language || 'en');
   }, [currentUser, i18n.language]);
@@ -30,7 +41,7 @@ const Settings = () => {
       if (result.success) {
         setAnonymousMode(!anonymousMode);
         toast.success(
-          anonymousMode 
+          anonymousMode
             ? t('settings.notifications.anonymousModeDisabled')
             : t('settings.notifications.anonymousModeEnabled')
         );
@@ -54,6 +65,30 @@ const Settings = () => {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleSaveQuietHours = async () => {
+    if (!currentUser) return;
+
+    // Validation: end time must be after start time
+    if (quietEnd <= quietStart) {
+      toast.error(t('settings.quietHours.validationError'));
+      return;
+    }
+
+    try {
+      setQuietHoursLoading(true);
+      await api.patch('/users/quiet-hours', {
+        quietHoursStart: quietStart,
+        quietHoursEnd: quietEnd,
+      });
+      toast.success(t('settings.quietHours.success'));
+    } catch (error) {
+      console.error('Failed to update quiet hours:', error);
+      toast.error(t('settings.quietHours.error'));
+    } finally {
+      setQuietHoursLoading(false);
+    }
   };
 
   if (!currentUser) {
@@ -92,10 +127,9 @@ const Settings = () => {
               <div className="info-item">
                 <span className="info-label">{t('settings.account.accountType')}:</span>
                 <span className="info-value">
-                  {currentUser.anonymousMode 
-                    ? t('settings.account.anonymous') 
-                    : t('settings.account.registered')
-                  }
+                  {currentUser.anonymousMode
+                    ? t('settings.account.anonymous')
+                    : t('settings.account.registered')}
                 </span>
               </div>
               <div className="info-item">
@@ -149,10 +183,9 @@ const Settings = () => {
               <div className="current-language">
                 <span className="info-label">{t('settings.language.currentLanguage')}:</span>
                 <span className="info-value">
-                  {currentLanguage === 'en' 
-                    ? t('settings.language.english') 
-                    : t('settings.language.nepali')
-                  }
+                  {currentLanguage === 'en'
+                    ? t('settings.language.english')
+                    : t('settings.language.nepali')}
                 </span>
               </div>
 
@@ -164,9 +197,7 @@ const Settings = () => {
                 >
                   <span className="language-flag">🇺🇸</span>
                   <span className="language-name">{t('settings.language.english')}</span>
-                  {currentLanguage === 'en' && (
-                    <span className="current-indicator">✓</span>
-                  )}
+                  {currentLanguage === 'en' && <span className="current-indicator">✓</span>}
                 </button>
 
                 <button
@@ -176,9 +207,70 @@ const Settings = () => {
                 >
                   <span className="language-flag">🇳🇵</span>
                   <span className="language-name">{t('settings.language.nepali')}</span>
-                  {currentLanguage === 'ne' && (
-                    <span className="current-indicator">✓</span>
-                  )}
+                  {currentLanguage === 'ne' && <span className="current-indicator">✓</span>}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quiet Hours Settings */}
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">{t('settings.quietHours.title')}</h2>
+            </div>
+
+            <div className="form-group">
+              <p className="setting-description">{t('settings.quietHours.description')}</p>
+            </div>
+
+            <div className="quiet-hours-settings">
+              <div className="quiet-hours-current">
+                <h4>{t('settings.quietHours.currentSettings')}</h4>
+                <div className="quiet-hours-display">
+                  <div className="quiet-hours-time">
+                    <span className="quiet-hours-label">
+                      {t('settings.quietHours.startTimeLabel')}:
+                    </span>
+                    <span className="quiet-hours-value">{quietStart}</span>
+                  </div>
+                  <div className="quiet-hours-time">
+                    <span className="quiet-hours-label">
+                      {t('settings.quietHours.endTimeLabel')}:
+                    </span>
+                    <span className="quiet-hours-value">{quietEnd}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="quiet-hours-controls">
+                <div className="form-group">
+                  <label className="form-label">{t('settings.quietHours.startTime')}</label>
+                  <input
+                    type="time"
+                    className="form-input"
+                    value={quietStart}
+                    onChange={(e) => setQuietStart(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">{t('settings.quietHours.endTime')}</label>
+                  <input
+                    type="time"
+                    className="form-input"
+                    value={quietEnd}
+                    onChange={(e) => setQuietEnd(e.target.value)}
+                  />
+                </div>
+
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSaveQuietHours}
+                  disabled={quietHoursLoading}
+                >
+                  {quietHoursLoading
+                    ? t('settings.quietHours.saving')
+                    : t('settings.quietHours.save')}
                 </button>
               </div>
             </div>
@@ -203,10 +295,7 @@ const Settings = () => {
 
               <button className="btn btn-secondary w-full" disabled>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"
-                    fill="currentColor"
-                  />
+                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" fill="currentColor" />
                   <path
                     fillRule="evenodd"
                     d="M4 5a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 2a1 1 0 000 2h6a1 1 0 100-2H7z"
