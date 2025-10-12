@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import api from '../utils/api';
 import '../styles/Settings.css';
 
 const Settings = () => {
@@ -72,14 +71,14 @@ const Settings = () => {
 
     // Guard against empty time values
     if (!quietStart || !quietEnd) {
-      toast.error(t('settings.quietHours.emptyTimeError'));
+      toast.error(t('settings.notifications.quietHours.emptyTimeError'));
       return;
     }
 
     // Validation: For midnight-spanning ranges, end time can be before start time
     // Only reject if both times are identical
     if (quietEnd === quietStart) {
-      toast.error(t('settings.quietHours.validationError'));
+      toast.error(t('settings.notifications.quietHours.validationError'));
       return;
     }
 
@@ -89,19 +88,19 @@ const Settings = () => {
       const startTimeWithSeconds = `${quietStart}:00`;
       const endTimeWithSeconds = `${quietEnd}:00`;
 
-      await api.patch('/users/quiet-hours', {
+      const result = await updateUser({
         quietHoursStart: startTimeWithSeconds,
         quietHoursEnd: endTimeWithSeconds,
       });
-      // Update the context with new quiet hours (same format as API)
-      await updateUser({
-        quietHoursStart: startTimeWithSeconds,
-        quietHoursEnd: endTimeWithSeconds,
-      });
-      toast.success(t('settings.quietHours.success'));
+
+      if (result.success) {
+        toast.success(t('settings.notifications.quietHours.success'));
+      } else {
+        toast.error(t('settings.notifications.quietHours.error'));
+      }
     } catch (error) {
       console.error('Failed to update quiet hours:', error);
-      toast.error(t('settings.quietHours.error'));
+      toast.error(t('settings.notifications.quietHours.error'));
     } finally {
       setQuietHoursLoading(false);
     }
@@ -232,26 +231,28 @@ const Settings = () => {
           {/* Quiet Hours Settings */}
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">{t('settings.quietHours.title')}</h2>
+              <h2 className="card-title">{t('settings.notifications.quietHours.title')}</h2>
             </div>
 
             <div className="form-group">
-              <p className="setting-description">{t('settings.quietHours.description')}</p>
+              <p className="setting-description">
+                {t('settings.notifications.quietHours.description')}
+              </p>
             </div>
 
             <div className="quiet-hours-settings">
               <div className="quiet-hours-current">
-                <h4>{t('settings.quietHours.currentSettings')}</h4>
+                <h4>{t('settings.notifications.quietHours.currentSettings')}</h4>
                 <div className="quiet-hours-display">
                   <div className="quiet-hours-time">
                     <span className="quiet-hours-label">
-                      {t('settings.quietHours.startTimeLabel')}:
+                      {t('settings.notifications.quietHours.startTimeLabel')}:
                     </span>
                     <span className="quiet-hours-value">{quietStart}</span>
                   </div>
                   <div className="quiet-hours-time">
                     <span className="quiet-hours-label">
-                      {t('settings.quietHours.endTimeLabel')}:
+                      {t('settings.notifications.quietHours.endTimeLabel')}:
                     </span>
                     <span className="quiet-hours-value">{quietEnd}</span>
                   </div>
@@ -260,7 +261,9 @@ const Settings = () => {
 
               <div className="quiet-hours-controls">
                 <div className="form-group">
-                  <label className="form-label">{t('settings.quietHours.startTime')}</label>
+                  <label className="form-label">
+                    {t('settings.notifications.quietHours.startTime')}
+                  </label>
                   <input
                     type="time"
                     className="form-input"
@@ -270,7 +273,9 @@ const Settings = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">{t('settings.quietHours.endTime')}</label>
+                  <label className="form-label">
+                    {t('settings.notifications.quietHours.endTime')}
+                  </label>
                   <input
                     type="time"
                     className="form-input"
@@ -285,8 +290,8 @@ const Settings = () => {
                   disabled={quietHoursLoading}
                 >
                   {quietHoursLoading
-                    ? t('settings.quietHours.saving')
-                    : t('settings.quietHours.save')}
+                    ? t('settings.notifications.quietHours.saving')
+                    : t('settings.notifications.quietHours.save')}
                 </button>
               </div>
             </div>
