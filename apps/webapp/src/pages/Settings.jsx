@@ -70,8 +70,9 @@ const Settings = () => {
   const handleSaveQuietHours = async () => {
     if (!currentUser) return;
 
-    // Validation: end time must be after start time
-    if (quietEnd <= quietStart) {
+    // Validation: For midnight-spanning ranges, end time can be before start time
+    // Only reject if both times are identical
+    if (quietEnd === quietStart) {
       toast.error(t('settings.quietHours.validationError'));
       return;
     }
@@ -81,6 +82,11 @@ const Settings = () => {
       await api.patch('/users/quiet-hours', {
         quietHoursStart: quietStart,
         quietHoursEnd: quietEnd,
+      });
+      // Update the context with new quiet hours
+      await updateUser({
+        quietHoursStart: `${quietStart}:00`,
+        quietHoursEnd: `${quietEnd}:00`,
       });
       toast.success(t('settings.quietHours.success'));
     } catch (error) {
