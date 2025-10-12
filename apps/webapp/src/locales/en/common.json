@@ -201,7 +201,7 @@
       "saving": "Saving...",
       "success": "Quiet hours updated successfully!",
       "error": "Failed to update quiet hours",
-      "validationError": "End time must be after start time!",
+      "validationError": "Start and end times cannot be the same!",
       "currentSettings": "Current Settings",
       "startTimeLabel": "Start Time",
       "endTimeLabel": "End Time"
