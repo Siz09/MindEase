@@ -191,6 +191,20 @@
       "languageChanged": "Language changed successfully",
       "settingsUpdated": "Settings updated successfully",
       "updateFailed": "Failed to update settings"
+    },
+    "quietHours": {
+      "title": "Quiet Hours",
+      "description": "Choose when you don't want to receive notifications or emails",
+      "startTime": "Start Quiet Hours",
+      "endTime": "End Quiet Hours",
+      "save": "Save Quiet Hours",
+      "saving": "Saving...",
+      "success": "Quiet hours updated successfully!",
+      "error": "Failed to update quiet hours",
+      "validationError": "End time must be after start time!",
+      "currentSettings": "Current Settings",
+      "startTimeLabel": "Start Time",
+      "endTimeLabel": "End Time"
     }
   },
   "mindfulness": {
