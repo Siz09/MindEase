@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import api from '../utils/api';
+import api, { getNotifications, markNotificationRead } from '../utils/api';
 
 export default function useNotifications(pollInterval = 15000) {
   const [notifications, setNotifications] = useState([]);
@@ -13,9 +13,7 @@ export default function useNotifications(pollInterval = 15000) {
       setLoading(true);
       setError(null);
 
-      // For now, we'll use a mock endpoint until the backend is ready
-      // TODO: Replace with actual endpoint when NotificationController is implemented
-      const response = await api.get('/notifications/list?page=0&size=10');
+      const response = await getNotifications(0, 10);
 
       const notificationData = response.data?.content || response.data || [];
       setNotifications((prev) => {
@@ -61,7 +59,7 @@ export default function useNotifications(pollInterval = 15000) {
 
   const markAsRead = async (notificationId) => {
     try {
-      await api.patch(`/notifications/${notificationId}/mark-read`);
+      await markNotificationRead(notificationId);
       // Refresh notifications after marking as read
       await fetchNotifications();
     } catch (err) {

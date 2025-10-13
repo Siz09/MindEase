@@ -40,40 +40,34 @@ public class NotificationController {
     @Autowired
     private UserService userService;
 
-    @Operation(summary = "Get user notifications", description = "Get paginated list of notifications for the authenticated user")
+    @Operation(summary = "List notifications (paginated)", description = "Get paginated list of notifications for the authenticated user")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Notifications retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
     @GetMapping("/list")
-    public ResponseEntity<?> getNotifications(
+    public ResponseEntity<?> list(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        
+            @RequestParam(defaultValue = "10") int size) {
+
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
-            User user = userService.findByEmail(principalEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            Optional<User> userOpt = userService.findByEmail(principalEmail);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found"));
+            }
 
             Pageable pageable = PageRequest.of(page, size);
-            Page<Notification> notifications = notificationRepository.findByUserOrderByCreatedAtDesc(user, pageable);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("content", notifications.getContent());
-            response.put("totalElements", notifications.getTotalElements());
-            response.put("totalPages", notifications.getTotalPages());
-            response.put("currentPage", notifications.getNumber());
-            response.put("size", notifications.getSize());
-            response.put("first", notifications.isFirst());
-            response.put("last", notifications.isLast());
-
-            return ResponseEntity.ok(response);
+            Page<Notification> pageData = notificationRepository
+                    .findByUserOrderByCreatedAtDesc(userOpt.get(), pageable);
+            return ResponseEntity.ok(pageData);
 
         } catch (Exception e) {
             logger.error("Failed to fetch notifications for user: {}", principalEmail, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(createErrorResponse("Failed to fetch notifications"));
+                    .body(createErrorResponse("Failed to fetch notifications"));
         }
     }
 
@@ -103,44 +97,40 @@ public class NotificationController {
         }
     }
 
-    @Operation(summary = "Mark notification as read", description = "Mark a specific notification as read")
+    @Operation(summary = "Mark a notification as read/sent", description = "Mark a specific notification as read")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Notification marked as read successfully"),
         @ApiResponse(responseCode = "404", description = "Notification not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
-    @PatchMapping("/{notificationId}/mark-read")
-    public ResponseEntity<?> markAsRead(
-            @PathVariable UUID notificationId,
-            Authentication authentication) {
-        
+    @PatchMapping("/mark-read/{id}")
+    public ResponseEntity<?> markRead(
+            Authentication authentication,
+            @PathVariable UUID id) {
+
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
-            User user = userService.findByEmail(principalEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-            Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
-            
-            if (notificationOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
+            Optional<User> userOpt = userService.findByEmail(principalEmail);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "User not found"));
             }
 
-            Notification notification = notificationOpt.get();
-            
-            // Verify the notification belongs to the authenticated user
-            if (!notification.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.notFound().build();
+            Optional<Notification> nOpt = notificationRepository.findById(id);
+            if (nOpt.isEmpty() || !nOpt.get().getUser().getId().equals(userOpt.get().getId())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Notification not found"));
             }
 
-            notification.setIsSent(true);
-            notificationRepository.save(notification);
-
-            return ResponseEntity.ok(createSuccessResponse("Notification marked as read"));
+            Notification n = nOpt.get();
+            n.setIsSent(true);
+            notificationRepository.save(n);
+            return ResponseEntity.ok(Map.of("status", "ok"));
 
         } catch (Exception e) {
-            logger.error("Failed to mark notification as read: {}", notificationId, e);
+            logger.error("Failed to mark notification as read: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(createErrorResponse("Failed to mark notification as read"));
+                    .body(createErrorResponse("Failed to mark notification as read"));
         }
     }
 
@@ -157,7 +147,7 @@ public class NotificationController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Bulk update to mark all notifications as read (performance optimized)
-            int count = notificationRepository.markAllAsReadForUser(user);
+            int count = notificationRepository.markAllAsSentForUser(user);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "All notifications marked as read");
