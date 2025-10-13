@@ -30,7 +30,7 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     List<Notification> findByUserAndIsSentFalse(User user);
 
     // 4️⃣ Count of unsent notifications
-    long countByUserAndIsSentFalse(User user);
+    long countByUserAndIsReadFalse(User user);
 
     // 5️⃣ Check if user has notification containing specific text
     boolean existsByUserAndMessageContainingIgnoreCase(User user, String text);
@@ -45,6 +45,6 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     // optimized)
     @Modifying
     @Transactional
-    @Query("UPDATE Notification n SET n.isSent = true WHERE n.user = :user AND n.isSent = false")
-    int markAllAsSentForUser(@Param("user") User user);
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.user = :user AND n.isRead = false")
+    int markAllAsReadForUser(@Param("user") User user);
 }

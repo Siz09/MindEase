@@ -22,7 +22,7 @@ export default function NotificationBell() {
         newNotifications.forEach((notification) => {
           if (
             notification.type === 'IN_APP' &&
-            !notification.isSent &&
+            !notification.isRead &&
             !displayedIds.has(notification.id)
           ) {
             toast.info(notification.message, {
