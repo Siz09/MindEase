@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { patchQuietHours } from '../utils/api';
 import { toast } from 'react-toastify';
 import '../styles/Settings.css';
 
@@ -88,16 +89,11 @@ const Settings = () => {
       const startTimeWithSeconds = `${quietStart}:00`;
       const endTimeWithSeconds = `${quietEnd}:00`;
 
-      const result = await updateUser({
+      await patchQuietHours({
         quietHoursStart: startTimeWithSeconds,
         quietHoursEnd: endTimeWithSeconds,
       });
-
-      if (result.success) {
-        toast.success(t('settings.notifications.quietHours.success'));
-      } else {
-        toast.error(t('settings.notifications.quietHours.error'));
-      }
+      toast.success(t('settings.notifications.quietHours.success'));
     } catch (error) {
       console.error('Failed to update quiet hours:', error);
       toast.error(t('settings.notifications.quietHours.error'));

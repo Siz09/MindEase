@@ -5,8 +5,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.MailException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.annotation.Recover;
+
+import jakarta.mail.MessagingException;
 
 @Service
 public class EmailService {
@@ -21,6 +26,7 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
+    @Retryable(maxAttempts = 3, include = { MailException.class, MessagingException.class })
     @Async
     public void sendEmail(String to, String subject, String text) {
         try {
@@ -48,7 +54,12 @@ public class EmailService {
 
         } catch (Exception e) {
             logger.error("Failed to send email to: {}. Subject: {}", to, subject, e);
-            // Optional: implement retry or alert mechanism here
         }
+    }
+
+    @Recover
+    public void onEmailFail(Exception e, String to, String subject, String text) {
+        logger.error("Email permanently failed for {} with subject '{}': {}", to, subject, e.getMessage(), e);
+        // Optionally persist a failed status for operational visibility
     }
 }
