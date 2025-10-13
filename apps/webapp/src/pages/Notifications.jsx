@@ -187,7 +187,7 @@ export default function Notifications() {
               {paginatedNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`notification-item ${!notification.isSent ? 'unread' : 'read'}`}
+                  className={`notification-item ${!notification.isRead ? 'unread' : 'read'}`}
                 >
                   <div className="notification-content">
                     <div className="notification-header">
@@ -200,12 +200,12 @@ export default function Notifications() {
                           {formatDate(notification.createdAt)}
                         </span>
                       </div>
-                      {!notification.isSent && <div className="unread-indicator"></div>}
+                      {!notification.isRead && <div className="unread-indicator"></div>}
                     </div>
 
                     <div className="notification-message">{notification.message}</div>
 
-                    {!notification.isSent && (
+                    {!notification.isRead && (
                       <div className="notification-actions">
                         <button
                           className="btn btn-sm btn-outline mark-read-btn"

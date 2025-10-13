@@ -83,7 +83,7 @@ public class NotificationController {
             User user = userService.findByEmail(principalEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-            long unreadCount = notificationRepository.countByUserAndIsSentFalse(user);
+            long unreadCount = notificationRepository.countByUserAndIsReadFalse(user);
 
             Map<String, Object> response = new HashMap<>();
             response.put("unreadCount", unreadCount);
@@ -97,7 +97,7 @@ public class NotificationController {
         }
     }
 
-    @Operation(summary = "Mark a notification as read/sent", description = "Mark a specific notification as read")
+    @Operation(summary = "Mark a notification as read", description = "Mark a specific notification as read")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Notification marked as read successfully"),
         @ApiResponse(responseCode = "404", description = "Notification not found"),
@@ -123,7 +123,7 @@ public class NotificationController {
             }
 
             Notification n = nOpt.get();
-            n.setIsSent(true);
+            n.setIsRead(true);
             notificationRepository.save(n);
             return ResponseEntity.ok(Map.of("status", "ok"));
 
@@ -147,7 +147,7 @@ public class NotificationController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Bulk update to mark all notifications as read (performance optimized)
-            int count = notificationRepository.markAllAsSentForUser(user);
+            int count = notificationRepository.markAllAsReadForUser(user);
 
             Map<String, Object> response = new HashMap<>();
             response.put("message", "All notifications marked as read");

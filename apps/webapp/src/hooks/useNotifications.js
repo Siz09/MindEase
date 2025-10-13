@@ -21,8 +21,8 @@ export default function useNotifications(pollInterval = 15000) {
         return notificationData;
       });
 
-      // Count unread notifications (assuming isSent=false means unread for in-app notifications)
-      const unread = notificationData.filter((n) => !n.isSent && n.type === 'IN_APP').length;
+      // Count unread notifications using isRead=false for in-app notifications
+      const unread = notificationData.filter((n) => !n.isRead && n.type === 'IN_APP').length;
       setUnreadCount(unread);
     } catch (err) {
       console.error('Failed to fetch notifications:', err);
@@ -36,14 +36,14 @@ export default function useNotifications(pollInterval = 15000) {
             type: 'IN_APP',
             message: 'Welcome to MindEase! Start tracking your mood today.',
             createdAt: new Date().toISOString(),
-            isSent: false,
+            isRead: false,
           },
           {
             id: '2',
             type: 'IN_APP',
             message: 'Remember to track your mood daily for better insights.',
             createdAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-            isSent: true,
+            isRead: true,
           },
         ];
         setNotifications((prev) => {
@@ -71,7 +71,7 @@ export default function useNotifications(pollInterval = 15000) {
         err.code === 'ERR_NETWORK'
       ) {
         setNotifications((prev) =>
-          prev.map((notif) => (notif.id === notificationId ? { ...notif, isSent: true } : notif))
+          prev.map((notif) => (notif.id === notificationId ? { ...notif, isRead: true } : notif))
         );
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
@@ -91,7 +91,7 @@ export default function useNotifications(pollInterval = 15000) {
         err.response?.status === 500 ||
         err.code === 'ERR_NETWORK'
       ) {
-        setNotifications((prev) => prev.map((notif) => ({ ...notif, isSent: true })));
+        setNotifications((prev) => prev.map((notif) => ({ ...notif, isRead: true })));
         setUnreadCount(0);
       }
     }
