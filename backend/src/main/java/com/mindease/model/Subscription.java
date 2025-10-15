@@ -16,23 +16,29 @@ public class Subscription {
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @Column(name = "stripe_subscription_id")
+  @Column(name = "stripe_subscription_id", unique = true, nullable = false, length = 255)
   private String stripeSubscriptionId;
 
-  @Column(name = "plan_type")
-  private String planType;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "plan_type", nullable = false, length = 50)
+  private PlanType planType;
 
-  @Column(name = "status")
-  private String status;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false, length = 50)
+  private SubscriptionStatus status;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
+  @Column(name = "updated_at", nullable = false)
+  private LocalDateTime updatedAt;
+
   public Subscription() {
     this.createdAt = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
   }
 
-  public Subscription(User user, String stripeSubscriptionId, String planType, String status) {
+  public Subscription(User user, String stripeSubscriptionId, PlanType planType, SubscriptionStatus status) {
     this();
     this.user = user;
     this.stripeSubscriptionId = stripeSubscriptionId;
@@ -64,19 +70,19 @@ public class Subscription {
     this.stripeSubscriptionId = stripeSubscriptionId;
   }
 
-  public String getPlanType() {
+  public PlanType getPlanType() {
     return planType;
   }
 
-  public void setPlanType(String planType) {
+  public void setPlanType(PlanType planType) {
     this.planType = planType;
   }
 
-  public String getStatus() {
+  public SubscriptionStatus getStatus() {
     return status;
   }
 
-  public void setStatus(String status) {
+  public void setStatus(SubscriptionStatus status) {
     this.status = status;
   }
 
@@ -84,8 +90,16 @@ public class Subscription {
     return createdAt;
   }
 
-  public void setCreatedAt(LocalDateTime createdAt) {
-    this.createdAt = createdAt;
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  @PreUpdate
+  public void preUpdate() {
+    this.updatedAt = LocalDateTime.now();
   }
 }
-
