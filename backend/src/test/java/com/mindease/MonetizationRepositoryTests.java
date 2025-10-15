@@ -4,12 +4,13 @@ import com.mindease.model.FeatureFlag;
 import com.mindease.model.Subscription;
 import com.mindease.model.Role;
 import com.mindease.model.User;
+import com.mindease.model.PlanType;
+import com.mindease.model.SubscriptionStatus;
 import com.mindease.repository.FeatureFlagRepository;
 import com.mindease.repository.SubscriptionRepository;
 import com.mindease.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.List;
@@ -18,7 +19,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class MonetizationRepositoryTests {
 
   @Autowired
@@ -48,7 +48,7 @@ class MonetizationRepositoryTests {
     assertThat(fetchedFlag.get().getEnabledForPremium()).isTrue();
 
     // Create a subscription
-    Subscription sub = new Subscription(user, "sub_123", "PRO", "ACTIVE");
+    Subscription sub = new Subscription(user, "sub_123", PlanType.PREMIUM, SubscriptionStatus.ACTIVE);
     sub = subscriptionRepository.save(sub);
 
     List<Subscription> byUser = subscriptionRepository.findByUser(user);
@@ -56,4 +56,3 @@ class MonetizationRepositoryTests {
     assertThat(byUser.get(0).getStripeSubscriptionId()).isEqualTo("sub_123");
   }
 }
-

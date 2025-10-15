@@ -12,20 +12,24 @@ public class FeatureFlag {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "feature_name", unique = true)
+  @Column(name = "feature_name", unique = true, nullable = false)
   private String featureName;
 
-  @Column(name = "enabled_for_premium")
-  private Boolean enabledForPremium;
+  @Column(name = "enabled_for_premium", nullable = false)
+  private boolean enabledForPremium = false;
 
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
+  @Column(name = "updated_at", nullable = false)
+  private LocalDateTime updatedAt;
+
   public FeatureFlag() {
     this.createdAt = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
   }
 
-  public FeatureFlag(String featureName, Boolean enabledForPremium) {
+  public FeatureFlag(String featureName, boolean enabledForPremium) {
     this();
     this.featureName = featureName;
     this.enabledForPremium = enabledForPremium;
@@ -47,11 +51,11 @@ public class FeatureFlag {
     this.featureName = featureName;
   }
 
-  public Boolean getEnabledForPremium() {
+  public boolean getEnabledForPremium() {
     return enabledForPremium;
   }
 
-  public void setEnabledForPremium(Boolean enabledForPremium) {
+  public void setEnabledForPremium(boolean enabledForPremium) {
     this.enabledForPremium = enabledForPremium;
   }
 
@@ -62,5 +66,17 @@ public class FeatureFlag {
   public void setCreatedAt(LocalDateTime createdAt) {
     this.createdAt = createdAt;
   }
-}
 
+  public LocalDateTime getUpdatedAt() {
+    return updatedAt;
+  }
+
+  public void setUpdatedAt(LocalDateTime updatedAt) {
+    this.updatedAt = updatedAt;
+  }
+
+  @PreUpdate
+  public void preUpdate() {
+    this.updatedAt = LocalDateTime.now();
+  }
+}
