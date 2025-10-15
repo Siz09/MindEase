@@ -3,6 +3,8 @@ package com.mindease.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "subscription")
@@ -27,15 +29,15 @@ public class Subscription {
   @Column(name = "status", nullable = false, length = 50)
   private SubscriptionStatus status;
 
+  @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
+  @UpdateTimestamp
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 
   public Subscription() {
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
   }
 
   public Subscription(User user, String stripeSubscriptionId, PlanType planType, SubscriptionStatus status) {
@@ -96,10 +98,5 @@ public class Subscription {
 
   public void setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
-  }
-
-  @PreUpdate
-  public void preUpdate() {
-    this.updatedAt = LocalDateTime.now();
   }
 }

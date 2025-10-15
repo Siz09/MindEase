@@ -31,7 +31,7 @@ class MonetizationRepositoryTests {
   private FeatureFlagRepository featureFlagRepository;
 
   @Test
-  void subscription_and_feature_flag_crud_sanity() {
+  void subscription_and_feature_flag_create_read_sanity() {
     // Create a user
     User user = new User();
     user.setEmail("test-user@example.com");
@@ -45,7 +45,7 @@ class MonetizationRepositoryTests {
 
     Optional<FeatureFlag> fetchedFlag = featureFlagRepository.findByFeatureName("beta-chat");
     assertThat(fetchedFlag).isPresent();
-    assertThat(fetchedFlag.get().getEnabledForPremium()).isTrue();
+    assertThat(fetchedFlag.get().isEnabledForPremium()).isTrue();
 
     // Create a subscription
     Subscription sub = new Subscription(user, "sub_123", PlanType.PREMIUM, SubscriptionStatus.ACTIVE);

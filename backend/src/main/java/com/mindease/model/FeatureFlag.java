@@ -25,8 +25,7 @@ public class FeatureFlag {
   private LocalDateTime updatedAt;
 
   public FeatureFlag() {
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
+    // JPA lifecycle callbacks will handle timestamp initialization
   }
 
   public FeatureFlag(String featureName, boolean enabledForPremium) {
@@ -51,7 +50,7 @@ public class FeatureFlag {
     this.featureName = featureName;
   }
 
-  public boolean getEnabledForPremium() {
+  public boolean isEnabledForPremium() {
     return enabledForPremium;
   }
 
@@ -63,7 +62,7 @@ public class FeatureFlag {
     return createdAt;
   }
 
-  public void setCreatedAt(LocalDateTime createdAt) {
+  protected void setCreatedAt(LocalDateTime createdAt) {
     this.createdAt = createdAt;
   }
 
@@ -73,6 +72,12 @@ public class FeatureFlag {
 
   public void setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
+  }
+
+  @PrePersist
+  public void prePersist() {
+    this.createdAt = LocalDateTime.now();
+    this.updatedAt = LocalDateTime.now();
   }
 
   @PreUpdate
