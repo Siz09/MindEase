@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -64,5 +65,13 @@ public class SubscriptionController {
     logger.info("Created Stripe Checkout Session {} for user ID {} with plan {}", sessionId, userId, planType);
 
     return ResponseEntity.ok(new SubscriptionCreateResponse(sessionId, publishableKey));
+  }
+
+  @PreAuthorize("isAuthenticated()")
+  @GetMapping("/status")
+  public ResponseEntity<Map<String, String>> status() {
+    UUID userId = CurrentUserId.get();
+    String status = subscriptionService.findLatestStatusForUser(userId);
+    return ResponseEntity.ok(Map.of("status", status));
   }
 }
