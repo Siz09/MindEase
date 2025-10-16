@@ -5,6 +5,8 @@ import com.mindease.model.StripeEvent;
 import com.mindease.repository.StripeEventRepository;
 import com.mindease.service.SubscriptionService;
 import com.stripe.exception.SignatureVerificationException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Invoice;
@@ -24,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/subscription")
 public class StripeWebhookController {
   private static final Logger log = LoggerFactory.getLogger(StripeWebhookController.class);
+  private static final ObjectMapper OM = new ObjectMapper();
 
   private final SubscriptionService subscriptionService;
   private final StripeEventRepository stripeEventRepository;
@@ -70,19 +73,19 @@ public class StripeWebhookController {
           }
         }
         case "invoice.payment_succeeded" -> {
-          var maybeObj = dataObjectDeserializer.getObject();
-          if (maybeObj.isPresent()) {
-            Invoice invoice = (Invoice) maybeObj.get();
-            subscriptionService.updateStatusByStripeSubId(
-                invoice.getSubscription(), SubscriptionStatus.ACTIVE);
+          String subId = extractSubscriptionIdFromRaw(event);
+          if (subId != null) {
+            subscriptionService.updateStatusByStripeSubId(subId, SubscriptionStatus.ACTIVE);
+          } else {
+            log.info("invoice.payment_succeeded without subscription id; skipping");
           }
         }
         case "invoice.payment_failed" -> {
-          var maybeObj = dataObjectDeserializer.getObject();
-          if (maybeObj.isPresent()) {
-            Invoice invoice = (Invoice) maybeObj.get();
-            subscriptionService.updateStatusByStripeSubId(
-                invoice.getSubscription(), SubscriptionStatus.PAST_DUE);
+          String subId = extractSubscriptionIdFromRaw(event);
+          if (subId != null) {
+            subscriptionService.updateStatusByStripeSubId(subId, SubscriptionStatus.PAST_DUE);
+          } else {
+            log.info("invoice.payment_failed without subscription id; skipping");
           }
         }
         case "customer.subscription.updated" -> {
@@ -120,5 +123,21 @@ public class StripeWebhookController {
       case "canceled", "incomplete_expired" -> SubscriptionStatus.CANCELED;
       default -> SubscriptionStatus.INCOMPLETE;
     };
+  }
+
+  /** Extracts subscription id from the raw invoice payload, or null. */
+  private String extractSubscriptionIdFromRaw(Event event) {
+    try {
+      String raw = event.getDataObjectDeserializer().getRawJson();
+      if (raw == null) return null;
+      JsonNode node = OM.readTree(raw);
+      JsonNode subNode = node.path("subscription");
+      if (!subNode.isMissingNode() && !subNode.isNull()) {
+        return subNode.asText();
+      }
+    } catch (Exception e) {
+      log.warn("Failed to parse subscription id from event raw JSON id={}, type={}", event.getId(), event.getType(), e);
+    }
+    return null;
   }
 }
