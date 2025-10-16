@@ -1,6 +1,6 @@
 package com.mindease.controller;
 
-import com.mindease.config.StripeConfig;
+import com.mindease.subscription.StripeConfig;
 import com.mindease.model.PlanType;
 import com.mindease.model.Subscription;
 import com.mindease.model.SubscriptionStatus;
@@ -51,17 +51,17 @@ public class SubscriptionController {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
-    @Value("${stripe.success-url:http://localhost:5173/success}")
+    @Value("${stripe.checkout.success-url:http://localhost:5173/subscription/success?session_id={CHECKOUT_SESSION_ID}}")
     private String successUrl;
 
-    @Value("${stripe.cancel-url:http://localhost:5173/cancel}")
+    @Value("${stripe.checkout.cancel-url:http://localhost:5173/subscription/cancel}")
     private String cancelUrl;
 
-    @Value("${stripe.price.premium:}")
-    private String premiumPriceId;
+    @Value("${stripe.price.monthly:}")
+    private String monthlyPriceId;
 
-    @Value("${stripe.price.enterprise:}")
-    private String enterprisePriceId;
+    @Value("${stripe.price.annual:}")
+    private String annualPriceId;
 
     @Operation(summary = "Create a subscription", description = "Creates a new Stripe checkout session for subscription")
     @ApiResponses(value = {
@@ -177,7 +177,7 @@ public class SubscriptionController {
             SessionCreateParams.Builder paramsBuilder = SessionCreateParams.builder()
                 .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
                 .setCustomerEmail(userEmail)
-                .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
+                .setSuccessUrl(successUrl)
                 .setCancelUrl(cancelUrl)
                 .putMetadata("user_id", user.getId().toString())
                 .putMetadata("plan_type", planType.toString());
@@ -241,9 +241,9 @@ public class SubscriptionController {
     private String getPriceIdForPlan(PlanType planType) {
         switch (planType) {
             case PREMIUM:
-                return (premiumPriceId == null || premiumPriceId.isEmpty()) ? null : premiumPriceId;
+                return (monthlyPriceId == null || monthlyPriceId.isEmpty()) ? null : monthlyPriceId;
             case ENTERPRISE:
-                return (enterprisePriceId == null || enterprisePriceId.isEmpty()) ? null : enterprisePriceId;
+                return (annualPriceId == null || annualPriceId.isEmpty()) ? null : annualPriceId;
             default:
                 return null;
         }

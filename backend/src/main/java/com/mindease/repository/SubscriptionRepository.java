@@ -3,7 +3,11 @@ package com.mindease.repository;
 import com.mindease.model.Subscription;
 import com.mindease.model.User;
 import com.mindease.model.SubscriptionStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -23,4 +27,9 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
   boolean existsByUser_IdAndStatusIn(UUID userId, Collection<SubscriptionStatus> statuses);
   Optional<Subscription> findFirstByUser_IdAndStatusInOrderByCreatedAtDesc(UUID userId, Collection<SubscriptionStatus> statuses);
   Optional<Subscription> findByUser_IdAndStatus(UUID userId, SubscriptionStatus status);
+
+  // Pessimistic lock for webhook processing to avoid concurrent updates
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT s FROM Subscription s WHERE s.checkoutSessionId = :sessionId")
+  Optional<Subscription> findByCheckoutSessionIdForUpdate(@Param("sessionId") String sessionId);
 }
