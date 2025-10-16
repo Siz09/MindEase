@@ -175,11 +175,14 @@ class SubscriptionControllerUnitTest {
         
         for (String alias : aliases) {
             request.setPlanType(alias);
-            
-            // This should not throw an exception for valid aliases
-            assertDoesNotThrow(() -> {
-                subscriptionController.createSubscription(request, authentication, null);
-            });
+
+            // Act
+            var response = subscriptionController.createSubscription(request, authentication, null);
+
+            // Assert - aliases should be accepted (not return 400 for invalid plan)
+            assertNotNull(response);
+            assertNotEquals(400, response.getStatusCode().value(),
+                "Alias " + alias + " should be recognized as valid");
         }
     }
 }

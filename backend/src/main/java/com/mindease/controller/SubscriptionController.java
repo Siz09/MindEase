@@ -33,7 +33,7 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/subscription")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${cors.allowed-origins:http://localhost:5173}")
 @Tag(name = "Subscription", description = "Subscription management with Stripe integration")
 @SecurityRequirement(name = "Bearer Authentication")
 public class SubscriptionController {
@@ -54,6 +54,12 @@ public class SubscriptionController {
 
     @Value("${stripe.cancel-url:http://localhost:5173/cancel}")
     private String cancelUrl;
+
+    @Value("${stripe.price.premium:}")
+    private String premiumPriceId;
+
+    @Value("${stripe.price.enterprise:}")
+    private String enterprisePriceId;
 
     @Operation(summary = "Create a subscription", description = "Creates a new Stripe checkout session for subscription")
     @ApiResponses(value = {
@@ -164,13 +170,14 @@ public class SubscriptionController {
 
             Session session = Session.create(paramsBuilder.build());
 
-            // Create subscription record with pending status
+            // Create subscription record with pending status. We'll fill Stripe subscription ID via webhook.
             Subscription subscription = new Subscription(
                 user,
-                session.getId(), // Use session ID temporarily
+                null,
                 planType,
                 SubscriptionStatus.INCOMPLETE
             );
+            subscription.setCheckoutSessionId(session.getId());
 
             subscriptionRepository.save(subscription);
 
@@ -200,16 +207,14 @@ public class SubscriptionController {
     }
 
     /**
-     * Get Stripe price ID for the given plan type.
-     * In a real application, these would be configured in your Stripe dashboard.
+     * Get Stripe price ID for the given plan type from configuration.
      */
     private String getPriceIdForPlan(PlanType planType) {
-        // These are example price IDs - replace with your actual Stripe price IDs
         switch (planType) {
             case PREMIUM:
-                return "price_premium_monthly"; // Replace with actual Stripe price ID
+                return premiumPriceId;
             case ENTERPRISE:
-                return "price_enterprise_monthly"; // Replace with actual Stripe price ID
+                return enterprisePriceId;
             default:
                 return null;
         }

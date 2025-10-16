@@ -29,26 +29,22 @@ public class StripeConfig {
     public void initialize() {
         if (secretKey != null && !secretKey.isEmpty()) {
             Stripe.apiKey = secretKey;
-            logger.info("Stripe configured with secret key (length: {})", secretKey.length());
+            logger.info("Stripe secret key configured successfully");
         } else {
             logger.warn("Stripe secret key not configured. Stripe functionality will be disabled.");
         }
 
         if (publishableKey != null && !publishableKey.isEmpty()) {
-            logger.info("Stripe publishable key configured (length: {})", publishableKey.length());
+            logger.info("Stripe publishable key configured successfully");
         } else {
             logger.warn("Stripe publishable key not configured.");
         }
 
         if (webhookSecret != null && !webhookSecret.isEmpty()) {
-            logger.info("Stripe webhook secret configured (length: {})", webhookSecret.length());
+            logger.info("Stripe webhook secret configured successfully");
         } else {
             logger.warn("Stripe webhook secret not configured.");
         }
-    }
-
-    public String getSecretKey() {
-        return secretKey;
     }
 
     public String getPublishableKey() {
@@ -61,6 +57,7 @@ public class StripeConfig {
 
     public boolean isConfigured() {
         return secretKey != null && !secretKey.isEmpty() && 
-               publishableKey != null && !publishableKey.isEmpty();
+               publishableKey != null && !publishableKey.isEmpty() &&
+               webhookSecret != null && !webhookSecret.isEmpty();
     }
 }
