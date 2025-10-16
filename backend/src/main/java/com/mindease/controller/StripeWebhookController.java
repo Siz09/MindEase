@@ -11,13 +11,13 @@ import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -27,11 +27,13 @@ public class StripeWebhookController {
 
     private static final Logger logger = LoggerFactory.getLogger(StripeWebhookController.class);
 
-    @Autowired
-    private StripeConfig stripeConfig;
+    private final StripeConfig stripeConfig;
+    private final SubscriptionRepository subscriptionRepository;
 
-    @Autowired
-    private SubscriptionRepository subscriptionRepository;
+    public StripeWebhookController(StripeConfig stripeConfig, SubscriptionRepository subscriptionRepository) {
+        this.stripeConfig = stripeConfig;
+        this.subscriptionRepository = subscriptionRepository;
+    }
 
     @PostMapping("/webhook")
     public ResponseEntity<String> handleStripeWebhook(
@@ -62,7 +64,9 @@ public class StripeWebhookController {
 
         switch (event.getType()) {
             case "checkout.session.completed":
-                handleCheckoutSessionCompleted(event);
+                if (!handleCheckoutSessionCompleted(event)) {
+                    return ResponseEntity.status(500).body("Processing failed");
+                }
                 break;
             default:
                 logger.debug("Unhandled Stripe event type: {}", event.getType());
@@ -72,18 +76,19 @@ public class StripeWebhookController {
         return ResponseEntity.ok("received");
     }
 
-    private void handleCheckoutSessionCompleted(Event event) {
+    @Transactional
+    private boolean handleCheckoutSessionCompleted(Event event) {
         EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
 
         if (!deserializer.getObject().isPresent()) {
             logger.warn("Stripe event missing data object for type: {}", event.getType());
-            return;
+            return true; // validation issue, no retry
         }
 
         Object stripeObject = deserializer.getObject().get();
         if (!(stripeObject instanceof Session)) {
             logger.warn("Expected Checkout Session object but got: {}", stripeObject.getClass().getName());
-            return;
+            return true; // validation issue, no retry
         }
 
         Session session = (Session) stripeObject;
@@ -92,20 +97,31 @@ public class StripeWebhookController {
 
         if (subscriptionId == null || subscriptionId.isEmpty()) {
             logger.warn("Checkout session completed without subscription id. session={}", sessionId);
-            return;
+            return true; // validation issue, no retry
         }
 
         Optional<Subscription> subOpt = subscriptionRepository.findByCheckoutSessionId(sessionId);
         if (subOpt.isEmpty()) {
             logger.warn("No local subscription found for session id: {}", sessionId);
-            return;
+            return true; // nothing to update, don't retry
         }
 
         Subscription subscription = subOpt.get();
-        subscription.setStripeSubscriptionId(subscriptionId);
-        subscription.setStatus(SubscriptionStatus.ACTIVE);
-        subscriptionRepository.save(subscription);
+        // Idempotency: skip if already processed
+        if (subscriptionId.equals(subscription.getStripeSubscriptionId())
+                && subscription.getStatus() == SubscriptionStatus.ACTIVE) {
+            logger.info("Subscription {} already activated, skipping duplicate webhook", subscriptionId);
+            return true;
+        }
+        try {
+            subscription.setStripeSubscriptionId(subscriptionId);
+            subscription.setStatus(SubscriptionStatus.ACTIVE);
+            subscriptionRepository.save(subscription);
+        } catch (Exception e) {
+            logger.error("Failed to persist subscription update for session {}: {}", sessionId, e.getMessage(), e);
+            return false; // transient failure, let Stripe retry
+        }
         logger.info("Subscription {} activated for session {}", subscriptionId, sessionId);
+        return true;
     }
 }
-

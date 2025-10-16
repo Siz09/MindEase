@@ -2,9 +2,11 @@ package com.mindease.repository;
 
 import com.mindease.model.Subscription;
 import com.mindease.model.User;
+import com.mindease.model.SubscriptionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,4 +17,10 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
   List<Subscription> findByUser_Id(UUID userId);
   Optional<Subscription> findByStripeSubscriptionId(String stripeSubscriptionId);
   Optional<Subscription> findByCheckoutSessionId(String checkoutSessionId);
+  Optional<Subscription> findByUserAndStatus(User user, SubscriptionStatus status);
+
+  // Idempotency helpers
+  boolean existsByUser_IdAndStatusIn(UUID userId, Collection<SubscriptionStatus> statuses);
+  Optional<Subscription> findFirstByUser_IdAndStatusInOrderByCreatedAtDesc(UUID userId, Collection<SubscriptionStatus> statuses);
+  Optional<Subscription> findByUser_IdAndStatus(UUID userId, SubscriptionStatus status);
 }
