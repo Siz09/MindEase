@@ -120,6 +120,14 @@ openai:
   max-tokens: 150
   temperature: 0.7
 
+# Stripe Configuration
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:} # Set via environment variable
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:} # Set via environment variable
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:} # Set via environment variable
+  success-url: ${STRIPE_SUCCESS_URL:http://localhost:5173/success}
+  cancel-url: ${STRIPE_CANCEL_URL:http://localhost:5173/cancel}
+
 # OpenAPI documentation
 springdoc:
   api-docs:
