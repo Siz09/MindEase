@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,11 +72,15 @@ public class SubscriptionController {
     })
     @PostMapping("/create")
     public ResponseEntity<?> createSubscription(
-            @RequestBody CreateSubscriptionRequest request,
+            @RequestBody @Valid CreateSubscriptionRequest request,
             Authentication authentication,
             HttpServletRequest httpRequest) {
 
         try {
+            if (request.getPlanType() == null || request.getPlanType().trim().isEmpty()) {
+                return ResponseEntity.status(400)
+                    .body(createErrorResponse("Plan type is required"));
+            }
             // Check if Stripe is configured
             if (!stripeConfig.isConfigured()) {
                 logger.error("Stripe is not configured properly");
@@ -87,7 +93,7 @@ public class SubscriptionController {
             Optional<User> userOpt = userRepository.findByEmail(userEmail);
             
             if (userOpt.isEmpty()) {
-                logger.warn("User not found for email: {}", userEmail);
+                logger.warn("User not found for authenticated principal");
                 return ResponseEntity.status(400)
                     .body(createErrorResponse("User not found"));
             }
@@ -118,9 +124,32 @@ public class SubscriptionController {
                     break;
             }
 
+            // Idempotency: for paid plans, avoid spinning multiple checkout sessions
+            if (planType != PlanType.FREE) {
+                var activeish = java.util.Arrays.asList(
+                    SubscriptionStatus.INCOMPLETE,
+                    SubscriptionStatus.ACTIVE,
+                    SubscriptionStatus.PAST_DUE
+                );
+                boolean alreadyHas = subscriptionRepository.existsByUser_IdAndStatusIn(user.getId(), activeish);
+                if (alreadyHas) {
+                    logger.info("User {} already has an active-ish subscription; skipping new Checkout Session", user.getId());
+                    return ResponseEntity.status(409).body(createErrorResponse("Subscription already in progress or active"));
+                }
+            }
+
             // Skip Stripe for FREE plan
             if (planType == PlanType.FREE) {
-                logger.info("Creating free subscription for user: {}", userEmail);
+                logger.info("Creating free subscription for user ID: {}", user.getId());
+
+                // Check for existing active subscription
+                Optional<Subscription> existingSubscription = subscriptionRepository
+                    .findByUserAndStatus(user, SubscriptionStatus.ACTIVE);
+
+                if (existingSubscription.isPresent()) {
+                    return ResponseEntity.status(400)
+                        .body(createErrorResponse("User already has an active subscription"));
+                }
                 
                 // Create a local subscription record for free plan
                 Subscription freeSubscription = new Subscription(
@@ -181,8 +210,8 @@ public class SubscriptionController {
 
             subscriptionRepository.save(subscription);
 
-            logger.info("Created Stripe checkout session {} for user {} with plan {}", 
-                session.getId(), userEmail, planType);
+            logger.info("Created Stripe checkout session {} for user ID {} with plan {}", 
+                session.getId(), user.getId(), planType);
 
             Map<String, Object> response = new HashMap<>();
             response.put("checkoutSessionId", session.getId());
@@ -212,9 +241,9 @@ public class SubscriptionController {
     private String getPriceIdForPlan(PlanType planType) {
         switch (planType) {
             case PREMIUM:
-                return premiumPriceId;
+                return (premiumPriceId == null || premiumPriceId.isEmpty()) ? null : premiumPriceId;
             case ENTERPRISE:
-                return enterprisePriceId;
+                return (enterprisePriceId == null || enterprisePriceId.isEmpty()) ? null : enterprisePriceId;
             default:
                 return null;
         }
@@ -239,6 +268,7 @@ public class SubscriptionController {
      * Request DTO for creating subscriptions
      */
     public static class CreateSubscriptionRequest {
+        @NotBlank
         private String planType;
 
         public String getPlanType() {

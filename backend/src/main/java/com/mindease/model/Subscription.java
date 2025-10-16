@@ -21,7 +21,7 @@ public class Subscription {
   @Column(name = "stripe_subscription_id", unique = true, nullable = true, length = 255)
   private String stripeSubscriptionId;
 
-  @Column(name = "checkout_session_id", unique = true, length = 255)
+  @Column(name = "checkout_session_id", unique = true, nullable = true, length = 255)
   private String checkoutSessionId;
 
   @Enumerated(EnumType.STRING)

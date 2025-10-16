@@ -1,16 +1,14 @@
 package com.mindease.config;
 
 import com.stripe.Stripe;
+import com.stripe.StripeClient;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Configuration class for Stripe integration.
- * Sets up Stripe API keys from environment variables.
- */
 @Configuration
 public class StripeConfig {
 
@@ -22,13 +20,19 @@ public class StripeConfig {
     @Value("${stripe.publishable-key:}")
     private String publishableKey;
 
-    @Value("${stripe.webhook-secret:}")
+    // Support both nested (stripe.webhook.secret) and legacy dashed (stripe.webhook-secret) properties
+    @Value("${stripe.webhook.secret:${stripe.webhook-secret:}}")
     private String webhookSecret;
+
+    @Bean
+    public StripeClient stripeClient() {
+        return new StripeClient(secretKey);
+    }
 
     @PostConstruct
     public void initialize() {
         if (secretKey != null && !secretKey.isEmpty()) {
-            Stripe.apiKey = secretKey;
+            Stripe.apiKey = secretKey; // For code paths relying on static apiKey
             logger.info("Stripe secret key configured successfully");
         } else {
             logger.warn("Stripe secret key not configured. Stripe functionality will be disabled.");
@@ -56,8 +60,8 @@ public class StripeConfig {
     }
 
     public boolean isConfigured() {
-        return secretKey != null && !secretKey.isEmpty() && 
-               publishableKey != null && !publishableKey.isEmpty() &&
-               webhookSecret != null && !webhookSecret.isEmpty();
+        return secretKey != null && !secretKey.isEmpty()
+                && publishableKey != null && !publishableKey.isEmpty()
+                && webhookSecret != null && !webhookSecret.isEmpty();
     }
 }
