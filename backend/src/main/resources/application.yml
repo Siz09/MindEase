@@ -122,17 +122,19 @@ openai:
 
 # Stripe Configuration
 stripe:
-  secret-key: ${STRIPE_SECRET_KEY:} # Set via environment variable
-  publishable-key: ${STRIPE_PUBLISHABLE_KEY:} # Set via environment variable
-  webhook-secret: ${STRIPE_WEBHOOK_SECRET:} # Set via environment variable
-  success-url: ${STRIPE_SUCCESS_URL:http://localhost:5173/success}
-  cancel-url: ${STRIPE_CANCEL_URL:http://localhost:5173/cancel}
+  checkout:
+    success-url: ${STRIPE_SUCCESS_URL:http://localhost:5173/subscription/success?session_id={CHECKOUT_SESSION_ID}}
+    cancel-url: ${STRIPE_CANCEL_URL:http://localhost:5173/subscription/cancel}
   price:
-    premium: ${STRIPE_PRICE_PREMIUM:price_1234567890}
-    enterprise: ${STRIPE_PRICE_ENTERPRISE:price_0987654321}
+    monthly: ${STRIPE_PRICE_ID_MONTHLY:}
+    annual: ${STRIPE_PRICE_ID_ANNUAL:}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+  allowed-headers: ${CORS_ALLOWED_HEADERS:Authorization,Content-Type}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+  max-age: 3600
 
 # OpenAPI documentation
 springdoc:
@@ -153,6 +155,11 @@ spring:
     hibernate:
       ddl-auto: update # Use update for development
     show-sql: true
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:sk_test_xxx}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_xxx}
+  webhook:
+    secret: ${STRIPE_WEBHOOK_SECRET:whsec_xxx}
 ---
 spring:
   config:
@@ -162,3 +169,11 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY}
+  webhook:
+    secret: ${STRIPE_WEBHOOK_SECRET}
+  price:
+    monthly: ${STRIPE_PRICE_ID_MONTHLY}
+    annual: ${STRIPE_PRICE_ID_ANNUAL}

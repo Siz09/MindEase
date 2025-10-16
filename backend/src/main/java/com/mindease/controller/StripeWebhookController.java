@@ -11,6 +11,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -100,28 +101,32 @@ public class StripeWebhookController {
             return true; // validation issue, no retry
         }
 
-        Optional<Subscription> subOpt = subscriptionRepository.findByCheckoutSessionId(sessionId);
-        if (subOpt.isEmpty()) {
-            logger.warn("No local subscription found for session id: {}", sessionId);
-            return true; // nothing to update, don't retry
-        }
-
-        Subscription subscription = subOpt.get();
-        // Idempotency: skip if already processed
-        if (subscriptionId.equals(subscription.getStripeSubscriptionId())
-                && subscription.getStatus() == SubscriptionStatus.ACTIVE) {
-            logger.info("Subscription {} already activated, skipping duplicate webhook", subscriptionId);
-            return true;
-        }
         try {
+            Optional<Subscription> subOpt = subscriptionRepository.findByCheckoutSessionIdForUpdate(sessionId);
+            if (subOpt.isEmpty()) {
+                logger.warn("No local subscription found for session id: {}", sessionId);
+                return true; // nothing to update, don't retry
+            }
+
+            Subscription subscription = subOpt.get();
+            // Idempotency: skip if already processed
+            if (subscriptionId.equals(subscription.getStripeSubscriptionId())
+                    && subscription.getStatus() == SubscriptionStatus.ACTIVE) {
+                logger.info("Subscription {} already activated, skipping duplicate webhook", subscriptionId);
+                return true;
+            }
+
             subscription.setStripeSubscriptionId(subscriptionId);
             subscription.setStatus(SubscriptionStatus.ACTIVE);
             subscriptionRepository.save(subscription);
-        } catch (Exception e) {
-            logger.error("Failed to persist subscription update for session {}: {}", sessionId, e.getMessage(), e);
+            logger.info("Subscription {} activated for session {}", subscriptionId, sessionId);
+            return true;
+        } catch (DataAccessException dae) {
+            logger.error("Database error updating subscription from webhook: {}", dae.getMessage(), dae);
             return false; // transient failure, let Stripe retry
+        } catch (Exception e) {
+            logger.error("Non-recoverable error in webhook processing: {}", e.getMessage(), e);
+            return true; // don't retry
         }
-        logger.info("Subscription {} activated for session {}", subscriptionId, sessionId);
-        return true;
     }
 }
