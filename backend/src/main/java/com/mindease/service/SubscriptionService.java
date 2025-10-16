@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -54,12 +55,22 @@ public class SubscriptionService {
         return subscriptionRepository.existsByUser_IdAndStatusIn(userId, statuses);
     }
 
+    @Transactional
     public String createCheckoutSession(UUID userId, PlanType planType) throws StripeException {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
             throw new IllegalArgumentException("User not found: " + userId);
         }
         User user = userOpt.get();
+
+        // Idempotency: return existing INCOMPLETE subscription's checkout session if present
+        Optional<Subscription> existing = subscriptionRepository
+                .findByUser_IdAndStatus(userId, SubscriptionStatus.INCOMPLETE);
+        if (existing.isPresent()) {
+            String existingSessionId = existing.get().getCheckoutSessionId();
+            logger.info("Reusing existing INCOMPLETE checkout session {} for user {} with plan {}", existingSessionId, userId, planType);
+            return existingSessionId;
+        }
 
         String priceId = getPriceIdForPlan(planType);
         if (priceId == null || priceId.isEmpty()) {
@@ -84,7 +95,14 @@ public class SubscriptionService {
                 planType,
                 SubscriptionStatus.INCOMPLETE);
         subscription.setCheckoutSessionId(session.getId());
-        subscriptionRepository.save(subscription);
+        try {
+            subscriptionRepository.save(subscription);
+        } catch (Exception e) {
+            logger.error("Failed to save subscription after creating Stripe session: {}", session.getId(), e);
+            throw e;
+        }
+
+        logger.info("Created checkout session {} for user {} with plan {}", session.getId(), userId, planType);
 
         return session.getId();
     }
