@@ -1,7 +1,13 @@
 #!/bin/bash
 
-# Test script for the subscription endpoint
-# Make sure to replace YOUR_JWT_TOKEN with a real JWT token
+# Test script for the subscription endpoint  
+# Usage: JWT_TOKEN=your_token_here ./test-subscription-endpoint.sh
+
+if [ -z "$JWT_TOKEN" ]; then
+  echo "Error: JWT_TOKEN environment variable is not set"
+  echo "Usage: JWT_TOKEN=your_token_here ./test-subscription-endpoint.sh"
+  exit 1
+fi
 
 echo "Testing Subscription Endpoint..."
 echo "================================"
@@ -10,28 +16,28 @@ echo "================================"
 echo "1. Testing FREE plan..."
 curl -X POST http://localhost:8080/api/subscription/create \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -d '{"planType":"FREE"}' \
   -w "\nHTTP Status: %{http_code}\n\n"
 
 echo "2. Testing MONTHLY plan (alias for PREMIUM)..."
 curl -X POST http://localhost:8080/api/subscription/create \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -d '{"planType":"monthly"}' \
   -w "\nHTTP Status: %{http_code}\n\n"
 
 echo "3. Testing PREMIUM plan..."
 curl -X POST http://localhost:8080/api/subscription/create \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -d '{"planType":"PREMIUM"}' \
   -w "\nHTTP Status: %{http_code}\n\n"
 
 echo "4. Testing invalid plan type..."
 curl -X POST http://localhost:8080/api/subscription/create \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -d '{"planType":"INVALID"}' \
   -w "\nHTTP Status: %{http_code}\n\n"
 

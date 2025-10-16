@@ -18,8 +18,11 @@ public class Subscription {
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @Column(name = "stripe_subscription_id", unique = true, nullable = false, length = 255)
+  @Column(name = "stripe_subscription_id", unique = true, nullable = true, length = 255)
   private String stripeSubscriptionId;
+
+  @Column(name = "checkout_session_id", unique = true, length = 255)
+  private String checkoutSessionId;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "plan_type", nullable = false, length = 50)
@@ -70,6 +73,14 @@ public class Subscription {
 
   public void setStripeSubscriptionId(String stripeSubscriptionId) {
     this.stripeSubscriptionId = stripeSubscriptionId;
+  }
+
+  public String getCheckoutSessionId() {
+    return checkoutSessionId;
+  }
+
+  public void setCheckoutSessionId(String checkoutSessionId) {
+    this.checkoutSessionId = checkoutSessionId;
   }
 
   public PlanType getPlanType() {
