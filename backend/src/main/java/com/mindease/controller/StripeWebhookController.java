@@ -1,132 +1,124 @@
 package com.mindease.controller;
 
-import com.mindease.config.StripeConfig;
-import com.mindease.model.Subscription;
 import com.mindease.model.SubscriptionStatus;
-import com.mindease.repository.SubscriptionRepository;
+import com.mindease.model.StripeEvent;
+import com.mindease.repository.StripeEventRepository;
+import com.mindease.service.SubscriptionService;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.model.Invoice;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataAccessException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/stripe")
+@RequestMapping("/api/subscription")
 public class StripeWebhookController {
+  private static final Logger log = LoggerFactory.getLogger(StripeWebhookController.class);
 
-    private static final Logger logger = LoggerFactory.getLogger(StripeWebhookController.class);
+  private final SubscriptionService subscriptionService;
+  private final StripeEventRepository stripeEventRepository;
 
-    private final StripeConfig stripeConfig;
-    private final SubscriptionRepository subscriptionRepository;
+  @Value("${stripe.webhook.secret:}")
+  private String webhookSecret;
 
-    public StripeWebhookController(StripeConfig stripeConfig, SubscriptionRepository subscriptionRepository) {
-        this.stripeConfig = stripeConfig;
-        this.subscriptionRepository = subscriptionRepository;
+  public StripeWebhookController(SubscriptionService subscriptionService,
+                                 StripeEventRepository stripeEventRepository) {
+    this.subscriptionService = subscriptionService;
+    this.stripeEventRepository = stripeEventRepository;
+  }
+
+  @PostMapping("/webhook")
+  public ResponseEntity<String> handle(@RequestBody String payload,
+                                       @RequestHeader("Stripe-Signature") String sigHeader) {
+    final Event event;
+    try {
+      event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
+    } catch (SignatureVerificationException e) {
+      log.warn("Invalid Stripe signature: {}", e.getMessage());
+      return ResponseEntity.badRequest().body("invalid signature");
     }
 
-    @PostMapping("/webhook")
-    public ResponseEntity<String> handleStripeWebhook(
-            @RequestHeader(name = "Stripe-Signature", required = false) String sigHeader,
-            @RequestBody String payload) {
-
-        String endpointSecret = stripeConfig.getWebhookSecret();
-        if (endpointSecret == null || endpointSecret.isEmpty()) {
-            logger.error("Stripe webhook secret is not configured");
-            return ResponseEntity.status(500).body("Webhook not configured");
-        }
-
-        if (sigHeader == null || sigHeader.isEmpty()) {
-            logger.warn("Missing Stripe-Signature header");
-            return ResponseEntity.badRequest().body("Missing signature");
-        }
-
-        final Event event;
-        try {
-            event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
-        } catch (SignatureVerificationException e) {
-            logger.warn("Invalid Stripe signature: {}", e.getMessage());
-            return ResponseEntity.badRequest().body("Invalid signature");
-        } catch (Exception e) {
-            logger.error("Error parsing Stripe event: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Invalid payload");
-        }
-
-        switch (event.getType()) {
-            case "checkout.session.completed":
-                if (!handleCheckoutSessionCompleted(event)) {
-                    return ResponseEntity.status(500).body("Processing failed");
-                }
-                break;
-            default:
-                logger.debug("Unhandled Stripe event type: {}", event.getType());
-                break;
-        }
-
-        return ResponseEntity.ok("received");
+    final String eventId = event.getId();
+    if (stripeEventRepository.existsById(eventId)) {
+      log.info("Ignoring already-processed Stripe event id={}", eventId);
+      return ResponseEntity.ok("duplicate");
     }
 
-    @Transactional
-    private boolean handleCheckoutSessionCompleted(Event event) {
-        EventDataObjectDeserializer deserializer = event.getDataObjectDeserializer();
+    String type = event.getType();
+    log.info("Stripe webhook received: id={}, type={}", eventId, type);
 
-        if (!deserializer.getObject().isPresent()) {
-            logger.warn("Stripe event missing data object for type: {}", event.getType());
-            return true; // validation issue, no retry
+    EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
+
+    try {
+      switch (type) {
+        case "checkout.session.completed" -> {
+          var maybeObj = dataObjectDeserializer.getObject();
+          if (maybeObj.isPresent()) {
+            Session session = (Session) maybeObj.get();
+            String stripeSubId = session.getSubscription() != null ? session.getSubscription().toString() : null;
+            subscriptionService.handleCheckoutCompleted(session.getId(), stripeSubId);
+          }
         }
-
-        Object stripeObject = deserializer.getObject().get();
-        if (!(stripeObject instanceof Session)) {
-            logger.warn("Expected Checkout Session object but got: {}", stripeObject.getClass().getName());
-            return true; // validation issue, no retry
+        case "invoice.payment_succeeded" -> {
+          var maybeObj = dataObjectDeserializer.getObject();
+          if (maybeObj.isPresent()) {
+            Invoice invoice = (Invoice) maybeObj.get();
+            subscriptionService.updateStatusByStripeSubId(
+                invoice.getSubscription(), SubscriptionStatus.ACTIVE);
+          }
         }
-
-        Session session = (Session) stripeObject;
-        String sessionId = session.getId();
-        String subscriptionId = session.getSubscription();
-
-        if (subscriptionId == null || subscriptionId.isEmpty()) {
-            logger.warn("Checkout session completed without subscription id. session={}", sessionId);
-            return true; // validation issue, no retry
+        case "invoice.payment_failed" -> {
+          var maybeObj = dataObjectDeserializer.getObject();
+          if (maybeObj.isPresent()) {
+            Invoice invoice = (Invoice) maybeObj.get();
+            subscriptionService.updateStatusByStripeSubId(
+                invoice.getSubscription(), SubscriptionStatus.PAST_DUE);
+          }
         }
-
-        try {
-            Optional<Subscription> subOpt = subscriptionRepository.findByCheckoutSessionIdForUpdate(sessionId);
-            if (subOpt.isEmpty()) {
-                logger.warn("No local subscription found for session id: {}", sessionId);
-                return true; // nothing to update, don't retry
-            }
-
-            Subscription subscription = subOpt.get();
-            // Idempotency: skip if already processed
-            if (subscriptionId.equals(subscription.getStripeSubscriptionId())
-                    && subscription.getStatus() == SubscriptionStatus.ACTIVE) {
-                logger.info("Subscription {} already activated, skipping duplicate webhook", subscriptionId);
-                return true;
-            }
-
-            subscription.setStripeSubscriptionId(subscriptionId);
-            subscription.setStatus(SubscriptionStatus.ACTIVE);
-            subscriptionRepository.save(subscription);
-            logger.info("Subscription {} activated for session {}", subscriptionId, sessionId);
-            return true;
-        } catch (DataAccessException dae) {
-            logger.error("Database error updating subscription from webhook: {}", dae.getMessage(), dae);
-            return false; // transient failure, let Stripe retry
-        } catch (Exception e) {
-            logger.error("Non-recoverable error in webhook processing: {}", e.getMessage(), e);
-            return true; // don't retry
+        case "customer.subscription.updated" -> {
+          var maybeObj = dataObjectDeserializer.getObject();
+          if (maybeObj.isPresent()) {
+            com.stripe.model.Subscription sub = (com.stripe.model.Subscription) maybeObj.get();
+            SubscriptionStatus mapped = mapStripeStatus(sub.getStatus());
+            subscriptionService.updateStatusByStripeSubId(sub.getId(), mapped);
+          }
         }
+        case "customer.subscription.deleted" -> {
+          var maybeObj = dataObjectDeserializer.getObject();
+          if (maybeObj.isPresent()) {
+            com.stripe.model.Subscription sub = (com.stripe.model.Subscription) maybeObj.get();
+            subscriptionService.updateStatusByStripeSubId(sub.getId(), SubscriptionStatus.CANCELED);
+          }
+        }
+        default -> {
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Failed handling Stripe event id={}, type={}", eventId, type, ex);
+      return ResponseEntity.internalServerError().body("error");
     }
+
+    stripeEventRepository.save(new StripeEvent(eventId));
+    return ResponseEntity.ok("ok");
+  }
+
+  private SubscriptionStatus mapStripeStatus(String stripeStatus) {
+    if (stripeStatus == null) return SubscriptionStatus.INCOMPLETE;
+    return switch (stripeStatus) {
+      case "active", "trialing" -> SubscriptionStatus.ACTIVE;
+      case "past_due", "unpaid" -> SubscriptionStatus.PAST_DUE;
+      case "canceled", "incomplete_expired" -> SubscriptionStatus.CANCELED;
+      default -> SubscriptionStatus.INCOMPLETE;
+    };
+  }
 }

@@ -32,6 +32,10 @@ public class Subscription {
   @Column(name = "status", nullable = false, length = 50)
   private SubscriptionStatus status;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "billing_period")
+  private BillingPeriod billingPeriod;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
@@ -97,6 +101,14 @@ public class Subscription {
 
   public void setStatus(SubscriptionStatus status) {
     this.status = status;
+  }
+
+  public BillingPeriod getBillingPeriod() {
+    return billingPeriod;
+  }
+
+  public void setBillingPeriod(BillingPeriod billingPeriod) {
+    this.billingPeriod = billingPeriod;
   }
 
   public LocalDateTime getCreatedAt() {

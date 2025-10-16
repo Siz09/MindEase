@@ -128,6 +128,12 @@ stripe:
   price:
     monthly: ${STRIPE_PRICE_ID_MONTHLY:}
     annual: ${STRIPE_PRICE_ID_ANNUAL:}
+    premium:
+      monthly: ${STRIPE_PRICE_PREMIUM_MONTHLY:}
+      annual: ${STRIPE_PRICE_PREMIUM_ANNUAL:}
+    enterprise:
+      monthly: ${STRIPE_PRICE_ENTERPRISE_MONTHLY:}
+      annual: ${STRIPE_PRICE_ENTERPRISE_ANNUAL:}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
@@ -177,3 +183,9 @@ stripe:
   price:
     monthly: ${STRIPE_PRICE_ID_MONTHLY}
     annual: ${STRIPE_PRICE_ID_ANNUAL}
+    premium:
+      monthly: ${STRIPE_PRICE_PREMIUM_MONTHLY}
+      annual: ${STRIPE_PRICE_PREMIUM_ANNUAL}
+    enterprise:
+      monthly: ${STRIPE_PRICE_ENTERPRISE_MONTHLY}
+      annual: ${STRIPE_PRICE_ENTERPRISE_ANNUAL}

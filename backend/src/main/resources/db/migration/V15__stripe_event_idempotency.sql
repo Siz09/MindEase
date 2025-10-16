@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS stripe_events (
+  id TEXT PRIMARY KEY,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
