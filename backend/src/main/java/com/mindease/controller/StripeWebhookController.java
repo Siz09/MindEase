@@ -66,10 +66,14 @@ public class StripeWebhookController {
         log.info("Stripe webhook received: id={}, type={}", eventId, type);
 
         // Idempotency: try to insert a row for this event id; if none inserted, it’s a duplicate
-        int inserted = stripeEventRepository.insertIgnore(eventId);
+        int inserted = stripeEventRepository.insertIfNotExists(eventId, "PROCESSING");
         if (inserted == 0) {
-            log.info("Ignoring already-processed Stripe event id={}", eventId);
-            return ResponseEntity.ok("duplicate");
+            String status = stripeEventRepository.getStatus(eventId);
+            if ("COMPLETED".equals(status)) {
+                log.info("Ignoring already-processed Stripe event id={}", eventId);
+                return ResponseEntity.ok("duplicate");
+            }
+            log.info("Re-processing Stripe event id={} with existing status={}", eventId, status);
         }
 
         try {
@@ -135,9 +139,11 @@ public class StripeWebhookController {
             }
         } catch (Exception ex) {
             log.error("Failed handling Stripe event id={}, type={}", eventId, type, ex);
+            try { stripeEventRepository.updateStatus(eventId, "FAILED"); } catch (Exception ignore) {}
             return ResponseEntity.internalServerError().body("error");
         }
 
+        try { stripeEventRepository.updateStatus(eventId, "COMPLETED"); } catch (Exception ignore) {}
         return ResponseEntity.ok("ok");
     }
 
