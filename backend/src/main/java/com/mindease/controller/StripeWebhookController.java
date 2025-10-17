@@ -36,7 +36,7 @@ public class StripeWebhookController {
     private String webhookSecret;
 
     public StripeWebhookController(SubscriptionService subscriptionService,
-                                   StripeEventRepository stripeEventRepository) {
+            StripeEventRepository stripeEventRepository) {
         this.subscriptionService = subscriptionService;
         this.stripeEventRepository = stripeEventRepository;
     }
@@ -50,7 +50,7 @@ public class StripeWebhookController {
 
     @PostMapping("/webhook")
     public ResponseEntity<String> handle(@RequestBody String payload,
-                                         @RequestHeader("Stripe-Signature") String sigHeader) {
+            @RequestHeader("Stripe-Signature") String sigHeader) {
         // SECURITY-REVIEW: verify Stripe signature to prevent spoofed events
         final Event event;
         try {
@@ -65,7 +65,8 @@ public class StripeWebhookController {
         final EventDataObjectDeserializer des = event.getDataObjectDeserializer();
         log.info("Stripe webhook received: id={}, type={}", eventId, type);
 
-        // Idempotency: try to insert a row for this event id; if none inserted, it’s a duplicate
+        // Idempotency: try to insert a row for this event id; if none inserted, it’s a
+        // duplicate
         int inserted = stripeEventRepository.insertIfNotExists(eventId, "PROCESSING");
         if (inserted == 0) {
             String status = stripeEventRepository.getStatus(eventId);
@@ -81,9 +82,20 @@ public class StripeWebhookController {
                 case "checkout.session.completed" -> {
                     // Expand data.object as Session, or fall back to raw JSON
                     if (des.getObject().isPresent()) {
-                        Session session = (Session) des.getObject().get();
-                        String stripeSubId = session.getSubscription() != null ? session.getSubscription().toString() : null;
-                        subscriptionService.handleCheckoutCompleted(session.getId(), stripeSubId);
+                        Session session = (Session) des.getObject()
+                                .orElseThrow(() -> new IllegalStateException("Missing deserialized Session"));
+
+                        String subscriptionId;
+                        Subscription expanded = session.getSubscriptionObject();
+                        if (expanded != null) {
+                            // Expanded case
+                            subscriptionId = expanded.getId();
+                        } else {
+                            // Non-expanded case (already a String like "sub_...")
+                            subscriptionId = session.getSubscription();
+                        }
+
+                        subscriptionService.handleCheckoutCompleted(session.getId(), subscriptionId);
                     } else {
                         JsonNode node = OM.readTree(des.getRawJson());
                         String sessionId = text(node, "id");
@@ -114,7 +126,8 @@ public class StripeWebhookController {
                     }
                 }
 
-                // OPTIONAL: invoice signals (safe via raw JSON; OK to keep if you want immediate past_due/active flips)
+                // OPTIONAL: invoice signals (safe via raw JSON; OK to keep if you want
+                // immediate past_due/active flips)
                 case "invoice.payment_succeeded" -> {
                     String subId = extractSubscriptionIdFromRaw(des.getRawJson());
                     if (subId != null) {
@@ -139,33 +152,47 @@ public class StripeWebhookController {
             }
         } catch (Exception ex) {
             log.error("Failed handling Stripe event id={}, type={}", eventId, type, ex);
-            try { stripeEventRepository.updateStatus(eventId, "FAILED"); } catch (Exception ignore) {}
+            try {
+                stripeEventRepository.updateStatus(eventId, "FAILED");
+            } catch (Exception ignore) {
+            }
             return ResponseEntity.internalServerError().body("error");
         }
 
-        try { stripeEventRepository.updateStatus(eventId, "COMPLETED"); } catch (Exception ignore) {}
+        try {
+            stripeEventRepository.updateStatus(eventId, "COMPLETED");
+        } catch (Exception ignore) {
+        }
         return ResponseEntity.ok("ok");
     }
 
     private static String text(JsonNode node, String field) {
-        if (node == null) return null;
+        if (node == null)
+            return null;
         JsonNode n = node.path(field);
         return (!n.isMissingNode() && !n.isNull()) ? n.asText() : null;
     }
 
-    /** Extract "subscription" string from invoice/raw event data.object JSON, or null if absent. */
+    /**
+     * Extract "subscription" string from invoice/raw event data.object JSON, or
+     * null if absent.
+     */
     private static String extractSubscriptionIdFromRaw(String rawJson) {
         try {
-            if (rawJson == null) return null;
+            if (rawJson == null)
+                return null;
             JsonNode node = OM.readTree(rawJson);
             JsonNode subNode = node.path("subscription");
-            if (!subNode.isMissingNode() && !subNode.isNull()) return subNode.asText();
-        } catch (Exception ignored) {}
+            if (!subNode.isMissingNode() && !subNode.isNull())
+                return subNode.asText();
+        } catch (Exception ignored) {
+        }
         return null;
     }
 
     private static SubscriptionStatus mapStripeStatus(String stripeStatus) {
-        if (stripeStatus == null) return SubscriptionStatus.INCOMPLETE;
+        if (stripeStatus == null)
+            return SubscriptionStatus.INCOMPLETE;
         return switch (stripeStatus) {
             case "active", "trialing" -> SubscriptionStatus.ACTIVE;
             case "past_due", "unpaid" -> SubscriptionStatus.PAST_DUE;
