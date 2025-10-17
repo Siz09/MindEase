@@ -2,7 +2,6 @@ package com.mindease.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mindease.model.StripeEvent;
 import com.mindease.model.SubscriptionStatus;
 import com.mindease.repository.StripeEventRepository;
 import com.mindease.service.SubscriptionService;
@@ -12,6 +11,7 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +41,13 @@ public class StripeWebhookController {
         this.stripeEventRepository = stripeEventRepository;
     }
 
+    @PostConstruct
+    public void validateConfig() {
+        if (webhookSecret == null || webhookSecret.isBlank()) {
+            throw new IllegalStateException("stripe.webhook.secret must be configured");
+        }
+    }
+
     @PostMapping("/webhook")
     public ResponseEntity<String> handle(@RequestBody String payload,
                                          @RequestHeader("Stripe-Signature") String sigHeader) {
@@ -53,15 +60,17 @@ public class StripeWebhookController {
             return ResponseEntity.badRequest().body("invalid signature");
         }
 
+        final String type = event.getType();
         final String eventId = event.getId();
-        if (stripeEventRepository.existsById(eventId)) {
+        final EventDataObjectDeserializer des = event.getDataObjectDeserializer();
+        log.info("Stripe webhook received: id={}, type={}", eventId, type);
+
+        // Idempotency: try to insert a row for this event id; if none inserted, it’s a duplicate
+        int inserted = stripeEventRepository.insertIgnore(eventId);
+        if (inserted == 0) {
             log.info("Ignoring already-processed Stripe event id={}", eventId);
             return ResponseEntity.ok("duplicate");
         }
-
-        final String type = event.getType();
-        final EventDataObjectDeserializer des = event.getDataObjectDeserializer();
-        log.info("Stripe webhook received: id={}, type={}", eventId, type);
 
         try {
             switch (type) {
@@ -129,8 +138,6 @@ public class StripeWebhookController {
             return ResponseEntity.internalServerError().body("error");
         }
 
-        // mark event processed for idempotency
-        stripeEventRepository.save(new StripeEvent(eventId));
         return ResponseEntity.ok("ok");
     }
 
