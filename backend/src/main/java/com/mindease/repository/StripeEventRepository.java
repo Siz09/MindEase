@@ -27,4 +27,8 @@ public interface StripeEventRepository extends JpaRepository<StripeEvent, String
     @Transactional
     @Query(value = "UPDATE stripe_events SET status = :status, updated_at = NOW() WHERE id = :id", nativeQuery = true)
     int updateStatus(@Param("id") String id, @Param("status") String status);
+
+    // 🔒 Block and lock the row for this event until tx ends
+    @Query(value = "SELECT * FROM stripe_events WHERE id = :id FOR UPDATE", nativeQuery = true)
+    StripeEvent lockByIdForUpdate(@Param("id") String id);
 }
