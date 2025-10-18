@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import com.mindease.security.RequiresPremium;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,6 +67,7 @@ public class ChatApiController {
     @ApiResponse(responseCode = "400", description = "Invalid request or user not found"),
     @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
   })
+  @RequiresPremium
   @PostMapping("/send")
   public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
     try {
