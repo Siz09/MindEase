@@ -3,6 +3,10 @@ spring:
     name: mindease-backend
   profiles:
     active: dev # Set default to development for testing
+  cache:
+    type: caffeine
+    caffeine:
+      spec: expireAfterWrite=5m,maximumSize=5000
   datasource:
     url: jdbc:postgresql://localhost:5432/mindease
     username: mindease

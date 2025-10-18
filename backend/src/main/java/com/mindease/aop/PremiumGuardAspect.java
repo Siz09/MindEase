@@ -28,6 +28,10 @@ public class PremiumGuardAspect {
   @Around("@within(com.mindease.security.RequiresPremium) || @annotation(com.mindease.security.RequiresPremium)")
   public Object requirePremium(ProceedingJoinPoint pjp) throws Throwable {
     UUID userId = CurrentUserId.get();
+    if (userId == null) {
+      log.warn("Premium gate blocked: no authenticated user");
+      throw new PremiumRequiredException();
+    }
     boolean ok = premiumAccessService.isPremium(userId);
     if (!ok) {
       log.info("Premium gate blocked: userId={}", userId);
@@ -36,4 +40,3 @@ public class PremiumGuardAspect {
     return pjp.proceed();
   }
 }
-

@@ -1,5 +1,6 @@
 package com.mindease.service;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -15,12 +16,18 @@ public class PremiumAccessService {
   }
 
   /**
-   * Cached "is premium?" check; cached to reduce DB hits on hot endpoints.
+   * Cached "is premium?" check; TTL configured via Caffeine spec in application.yml.
    */
   @Cacheable(value = "subscription_status", key = "#userId")
   public boolean isPremium(UUID userId) {
+    if (userId == null) return false;
     String status = subscriptionService.findLatestStatusForUser(userId);
-    return "active".equals(status);
+    return "active".equalsIgnoreCase(status);
+  }
+
+  /** Evict cached premium status for a user after subscription status changes. */
+  @CacheEvict(value = "subscription_status", key = "#userId")
+  public void evict(UUID userId) {
+    // no-op: annotation triggers eviction
   }
 }
-

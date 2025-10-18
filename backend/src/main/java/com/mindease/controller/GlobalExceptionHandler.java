@@ -22,9 +22,13 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(PremiumRequiredException.class)
   public ResponseEntity<Map<String, Object>> handlePremiumRequired(PremiumRequiredException ex) {
+    logger.warn("Premium feature access attempted: {}", ex.getMessage());
+
     Map<String, Object> body = new HashMap<>();
-    body.put("error", "premium_required");
+    body.put("status", "error");
+    body.put("errorCode", "premium_required");
     body.put("message", ex.getMessage());
+    body.put("timestamp", System.currentTimeMillis());
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
   }
 
