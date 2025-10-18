@@ -15,8 +15,6 @@ import com.stripe.param.checkout.SessionCreateParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +29,7 @@ public class SubscriptionService {
 
   private final SubscriptionRepository subscriptionRepository;
   private final UserRepository userRepository;
-  private final CacheManager cacheManager;
+  private final PremiumAccessService premiumAccessService;
 
   @SuppressWarnings("unused")
   private final StripeClient stripeClient;
@@ -63,11 +61,11 @@ public class SubscriptionService {
   public SubscriptionService(SubscriptionRepository subscriptionRepository,
                              UserRepository userRepository,
                              StripeClient stripeClient,
-                             CacheManager cacheManager) {
+                             PremiumAccessService premiumAccessService) {
     this.subscriptionRepository = subscriptionRepository;
     this.userRepository = userRepository;
     this.stripeClient = stripeClient;
-    this.cacheManager = cacheManager;
+    this.premiumAccessService = premiumAccessService;
   }
 
   public boolean hasActiveLikeSubscription(UUID userId, Collection<SubscriptionStatus> statuses) {
@@ -161,7 +159,7 @@ public class SubscriptionService {
           sub.setStatus(SubscriptionStatus.ACTIVE);
           subscriptionRepository.save(sub);
           // Evict cached premium status for this user
-          evictPremiumCache(sub.getUser().getId());
+          premiumAccessService.evict(sub.getUser().getId());
           logger.info("Subscription activated via checkout completion: user={}, old={}, new={}, stripeSub={}",
               sub.getUser().getId(), old, sub.getStatus(), stripeSubscriptionId);
         });
@@ -176,7 +174,7 @@ public class SubscriptionService {
             sub.setStatus(newStatus);
             subscriptionRepository.save(sub);
             // Evict cached premium status for this user
-            evictPremiumCache(sub.getUser().getId());
+            premiumAccessService.evict(sub.getUser().getId());
             logger.info("Subscription status updated: user={}, stripeSub={}, {} -> {}",
                 sub.getUser().getId(), stripeSubscriptionId, old, newStatus);
           }
@@ -192,16 +190,5 @@ public class SubscriptionService {
           default -> "inactive";
         })
         .orElse("inactive");
-  }
-
-  private void evictPremiumCache(UUID userId) {
-    try {
-      Cache cache = cacheManager.getCache("subscription_status");
-      if (cache != null) {
-        cache.evict(userId);
-      }
-    } catch (Exception ignore) {
-      // no-op: cache eviction failure shouldn't disrupt webhook handling
-    }
   }
 }
