@@ -16,7 +16,8 @@ public class CacheConfig {
       "moodStats",
       "moodDistribution", 
       "chatSession",
-      "recentMessages"
+      "recentMessages",
+      "subscription_status"
     );
     cacheManager.setAllowNullValues(false);
     return cacheManager;

@@ -1,8 +1,10 @@
 package com.mindease.controller;
 
 import com.google.firebase.auth.FirebaseAuthException;
+import com.mindease.exception.PremiumRequiredException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -17,6 +19,14 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+  @ExceptionHandler(PremiumRequiredException.class)
+  public ResponseEntity<Map<String, Object>> handlePremiumRequired(PremiumRequiredException ex) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("error", "premium_required");
+    body.put("message", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+  }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
