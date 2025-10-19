@@ -1,0 +1,52 @@
+.subscription-page {
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+.plans-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.plan-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem;
+}
+.plan-card .price {
+  font-size: 1.25rem;
+  margin: 0.5rem 0 1rem;
+}
+.btn-primary {
+  background: #111827;
+  color: #fff;
+  border: 0;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-primary[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.status-pill {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+  background: #f3f4f6;
+}
+.status-active {
+  background: #dcfce7;
+}
+.status-inactive,
+.status-canceled {
+  background: #fee2e2;
+}
+.status-past_due {
+  background: #fef3c7;
+}
+.note {
+  color: #6b7280;
+  margin-top: 1rem;
+}
