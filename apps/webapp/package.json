@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "@mindease/ui": "*",
-    "@stripe/stripe-js": "^3.4.1",
     "@stomp/stompjs": "^7.2.0",
+    "@stripe/stripe-js": "^3.5.0",
     "axios": "^1.11.0",
     "chart.js": "^4.5.0",
     "firebase": "^12.2.1",
