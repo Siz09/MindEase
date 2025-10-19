@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { toast } from 'react-toastify';
 import { apiGet, apiPost } from '../lib/api';
@@ -11,7 +11,7 @@ function PlanCard({ title, priceText, onSelect, loading }) {
       <h3>{title}</h3>
       <p className="price">{priceText}</p>
       <button disabled={loading} onClick={onSelect} className="btn-primary">
-        {loading ? 'Processing…' : 'Subscribe'}
+        {loading ? 'Processing...' : 'Subscribe'}
       </button>
     </div>
   );
@@ -22,20 +22,21 @@ export default function Subscription() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('loading');
 
-  async function refreshStatus() {
+  const refreshStatus = useCallback(async () => {
     try {
       const data = await apiGet('/api/subscription/status', token);
       const s = typeof data === 'string' ? data : (data?.status ?? 'inactive');
       setStatus(s);
-    } catch {
+    } catch (e) {
+      console.error('Failed to fetch subscription status:', e);
+      toast.error('Unable to load subscription status');
       setStatus('inactive');
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     refreshStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [refreshStatus]);
 
   async function startCheckout(planType) {
     setLoading(true);
@@ -70,21 +71,20 @@ export default function Subscription() {
         <h2>Choose a plan</h2>
         <div className="plans-grid">
           <PlanCard
-            title="Premium — Monthly"
-            priceText="$ / month"
+            title="Premium - Monthly"
+            priceText="$29 / month"
             loading={loading}
             onSelect={() => startCheckout('PREMIUM')}
           />
           <PlanCard
-            title="Enterprise — Annual"
-            priceText="$ / year"
+            title="Enterprise - Annual"
+            priceText="$299 / year"
             loading={loading}
             onSelect={() => startCheckout('ENTERPRISE')}
           />
         </div>
         <p className="note">
-          You’ll be redirected to Stripe Checkout. After success you’ll land back at this page
-          (success/cancel URLs are already configured in backend).
+          You'll be redirected to Stripe Checkout. After success you'll land back at this page.
         </p>
       </section>
     </div>
