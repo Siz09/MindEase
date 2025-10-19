@@ -15,6 +15,9 @@ import './styles/App.css';
 import Chat from './pages/Chat';
 import Testing from './pages/Testing';
 import Notifications from './pages/Notifications';
+import Subscription from './pages/Subscription';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
+import SubscriptionCancel from './pages/SubscriptionCancel';
 
 function App() {
   return (
@@ -83,6 +86,16 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/subscription"
+                element={
+                  <ProtectedRoute>
+                    <Subscription />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+              <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
             </Routes>
           </main>
           {/* Make sure ToastContainer is here */}
