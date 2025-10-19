@@ -19,12 +19,13 @@ export async function apiPost(path, body = {}, token) {
     });
 
     if (!res.ok) {
+      let errorText;
       try {
-        const errorText = await res.text();
-        throw new Error(`API error (${res.status}): ${errorText}`);
+        errorText = await res.text();
       } catch (err) {
-        throw new Error(`API error (${res.status}): ${err.message}`);
+        errorText = err.message;
       }
+      throw new Error(`API error (${res.status}): ${errorText}`);
     }
 
     try {
@@ -60,12 +61,13 @@ export async function apiGet(path, token) {
     });
 
     if (!res.ok) {
+      let errorText;
       try {
-        const errorText = await res.text();
-        throw new Error(`API error (${res.status}): ${errorText}`);
+        errorText = await res.text();
       } catch (err) {
-        throw new Error(`API error (${res.status}): ${err.message}`);
+        errorText = err.message;
       }
+      throw new Error(`API error (${res.status}): ${errorText}`);
     }
 
     try {

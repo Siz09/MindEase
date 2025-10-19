@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import { toast } from 'react-toastify';
 import { apiGet, apiPost } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,18 +37,34 @@ export default function Subscription() {
     refreshStatus();
   }, [refreshStatus]);
 
+  // Configure trusted domains for redirects
+  const TRUSTED_DOMAINS = ['checkout.stripe.com', 'localhost', '127.0.0.1', 'yourdomain.com'];
+
+  function safeRedirect(urlString) {
+    try {
+      const url = new URL(urlString);
+      const host = url.hostname;
+      const ok = TRUSTED_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
+      if (!ok) throw new Error('Untrusted redirect URL');
+      window.location.assign(url.toString());
+    } catch (err) {
+      console.error('Invalid or untrusted checkout URL:', err);
+      toast.error('Invalid checkout URL received');
+    }
+  }
+
   async function startCheckout(planType) {
     setLoading(true);
     try {
       const resp = await apiPost('/api/subscription/create', { planType }, token);
       const payload = resp?.data ?? resp;
 
-      if (payload.checkoutSessionId && payload.publishableKey) {
-        const stripe = await loadStripe(payload.publishableKey);
-        const { error } = await stripe.redirectToCheckout({ sessionId: payload.checkoutSessionId });
-        if (error) throw error;
+      // Preferred: server returns a session URL
+      if (payload.sessionUrl) {
+        safeRedirect(payload.sessionUrl);
       } else if (payload.checkoutUrl) {
-        window.location.href = payload.checkoutUrl;
+        // Backward compatible name
+        safeRedirect(payload.checkoutUrl);
       } else {
         toast.success(payload?.message ?? 'Subscription updated');
         refreshStatus();
