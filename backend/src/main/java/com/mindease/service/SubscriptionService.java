@@ -12,181 +12,216 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.checkout.SessionCreateParams;
+import com.stripe.param.checkout.SessionExpireParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import jakarta.annotation.PostConstruct;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class SubscriptionService {
-  private static final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SubscriptionService.class);
 
-  private final SubscriptionRepository subscriptionRepository;
-  private final UserRepository userRepository;
-  private final CacheManager cacheManager;
+    private final SubscriptionRepository subscriptionRepository;
+    private final UserRepository userRepository;
+    private final CacheManager cacheManager;
+    private final StripeClient stripeClient;
 
-  @SuppressWarnings("unused")
-  private final StripeClient stripeClient;
+    @Value("${stripe.checkout.success-url:http://localhost:5173/subscription/success?session_id={CHECKOUT_SESSION_ID}}")
+    private String successUrl;
 
-  @Value("${stripe.checkout.success-url:http://localhost:5173/subscription/success?session_id={CHECKOUT_SESSION_ID}}")
-  private String successUrl;
+    @Value("${stripe.checkout.cancel-url:http://localhost:5173/subscription/cancel}")
+    private String cancelUrl;
 
-  @Value("${stripe.checkout.cancel-url:http://localhost:5173/subscription/cancel}")
-  private String cancelUrl;
+    @Value("${stripe.price.monthly:}")
+    private String monthlyPriceId;
 
-  @Value("${stripe.price.monthly:}")
-  private String monthlyPriceId;
+    @Value("${stripe.price.annual:}")
+    private String annualPriceId;
 
-  @Value("${stripe.price.annual:}")
-  private String annualPriceId;
-
-  // In simplified two-price mode, only generic monthly/annual are used.
-
-  public SubscriptionService(SubscriptionRepository subscriptionRepository,
-                             UserRepository userRepository,
-                             StripeClient stripeClient,
-                             CacheManager cacheManager) {
-    this.subscriptionRepository = subscriptionRepository;
-    this.userRepository = userRepository;
-    this.stripeClient = stripeClient;
-    this.cacheManager = cacheManager;
-  }
-
-  public boolean hasActiveLikeSubscription(UUID userId, Collection<SubscriptionStatus> statuses) {
-    return subscriptionRepository.existsByUser_IdAndStatusIn(userId, statuses);
-  }
-
-  @Transactional
-  public String createCheckoutSession(UUID userId, PlanType planType) throws StripeException {
-    BillingPeriod inferred = (planType == PlanType.ENTERPRISE) ? BillingPeriod.ANNUAL : BillingPeriod.MONTHLY;
-    return createCheckoutSession(userId, planType, inferred);
-  }
-
-  @Transactional
-  public String createCheckoutSession(UUID userId, PlanType tier, BillingPeriod billing) throws StripeException {
-    Optional<User> userOpt = userRepository.findById(userId);
-    if (userOpt.isEmpty()) {
-      throw new IllegalArgumentException("User not found: " + userId);
-    }
-    User user = userOpt.get();
-
-    Optional<Subscription> existing = subscriptionRepository
-        .findByUser_IdAndStatus(userId, SubscriptionStatus.INCOMPLETE);
-    if (existing.isPresent() && existing.get().getCheckoutSessionId() != null) {
-      String sid = existing.get().getCheckoutSessionId();
-      logger.info("Reusing existing INCOMPLETE checkout session {} for user {}", sid, userId);
-      return sid;
+    public SubscriptionService(SubscriptionRepository subscriptionRepository,
+            UserRepository userRepository,
+            StripeClient stripeClient,
+            CacheManager cacheManager) {
+        this.subscriptionRepository = Objects.requireNonNull(subscriptionRepository, "subscriptionRepository");
+        this.userRepository = Objects.requireNonNull(userRepository, "userRepository");
+        this.stripeClient = Objects.requireNonNull(stripeClient, "stripeClient");
+        this.cacheManager = Objects.requireNonNull(cacheManager, "cacheManager");
     }
 
-    String priceId = selectPriceId(tier, billing);
-    requireValidPriceId(priceId, tier, billing);
-
-    SessionCreateParams params = SessionCreateParams.builder()
-        .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
-        .setCustomerEmail(user.getEmail())
-        .setSuccessUrl(successUrl)
-        .setCancelUrl(cancelUrl)
-        .putMetadata("user_id", user.getId().toString())
-        .putMetadata("plan_type", tier.toString())
-        .putMetadata("billing_period", billing.toString())
-        .addLineItem(SessionCreateParams.LineItem.builder().setPrice(priceId).setQuantity(1L).build())
-        .build();
-
-    String idemKey = "checkout:" + userId + ":" + (Instant.now().getEpochSecond() / 10);
-    RequestOptions requestOptions = RequestOptions.builder().setIdempotencyKey(idemKey).build();
-
-    Session session = Session.create(params, requestOptions);
-
-    Subscription subscription = new Subscription(
-        user,
-        null,
-        tier,
-        SubscriptionStatus.INCOMPLETE);
-    subscription.setCheckoutSessionId(session.getId());
-    subscription.setBillingPeriod(billing);
-
-    try {
-      subscriptionRepository.save(subscription);
-    } catch (Exception e) {
-      logger.error("Failed to save subscription after creating Stripe session: {}", session.getId(), e);
-      throw e;
+    @PostConstruct
+    void validateStripeConfig() {
+        if (!isPriceIdValid(monthlyPriceId)) {
+            throw new IllegalStateException("Invalid or missing stripe.price.monthly (must start with 'price_').");
+        }
+        if (!isPriceIdValid(annualPriceId)) {
+            throw new IllegalStateException("Invalid or missing stripe.price.annual (must start with 'price_').");
+        }
+        if (successUrl == null || successUrl.isBlank()) {
+            throw new IllegalStateException("stripe.checkout.success-url must be configured.");
+        }
+        if (cancelUrl == null || cancelUrl.isBlank()) {
+            throw new IllegalStateException("stripe.checkout.cancel-url must be configured.");
+        }
     }
 
-    logger.info("Created checkout session {} for user {} with tier {} and billing {}", session.getId(), userId, tier, billing);
-    return session.getId();
-  }
-
-  private String selectPriceId(PlanType tier, BillingPeriod billing) {
-    // Ignore tier; use generic monthly/annual price IDs.
-    return billing == BillingPeriod.ANNUAL ? coalesce(annualPriceId, annualPriceId) : coalesce(monthlyPriceId, monthlyPriceId);
-  }
-
-  private String coalesce(String a, String b) {
-    return (a != null && !a.isEmpty()) ? a : (b != null && !b.isEmpty() ? b : null);
-  }
-
-  private void requireValidPriceId(String priceId, PlanType tier, BillingPeriod billing) {
-    if (priceId == null || priceId.isBlank()) {
-      throw new IllegalArgumentException("Stripe priceId not configured for tier=" + tier + ", billing=" + billing);
+    private static boolean isPriceIdValid(String priceId) {
+        return priceId != null && !priceId.isBlank() && priceId.startsWith("price_");
     }
-    if (!priceId.startsWith("price_")) {
-      throw new IllegalArgumentException("Invalid Stripe priceId for tier=" + tier + ", billing=" + billing +
-          ": expected an ID starting with 'price_' but got '" + priceId + "'.");
+
+    public boolean hasActiveLikeSubscription(UUID userId, Collection<SubscriptionStatus> statuses) {
+        return subscriptionRepository.existsByUser_IdAndStatusIn(userId, statuses);
     }
-  }
 
-  @Transactional
-  public void handleCheckoutCompleted(String checkoutSessionId, String stripeSubscriptionId) {
-    subscriptionRepository.findByCheckoutSessionId(checkoutSessionId)
-        .ifPresent(sub -> {
-          String old = sub.getStatus().name();
-          sub.setStripeSubscriptionId(stripeSubscriptionId);
-          sub.setStatus(SubscriptionStatus.ACTIVE);
-          subscriptionRepository.save(sub);
-          // Evict cached premium status for this user
-          var cache = cacheManager.getCache("subscription_status");
-          if (cache != null) {
-            cache.evict(sub.getUser().getId());
-          }
-          logger.info("Subscription activated via checkout completion: user={}, old={}, new={}, stripeSub={}",
-              sub.getUser().getId(), old, sub.getStatus(), stripeSubscriptionId);
-        });
-  }
+    @Transactional
+    public String createCheckoutSession(UUID userId, PlanType planType) throws StripeException {
+        BillingPeriod inferred = (planType == PlanType.ENTERPRISE) ? BillingPeriod.ANNUAL : BillingPeriod.MONTHLY;
+        return createCheckoutSession(userId, planType, inferred);
+    }
 
-  @Transactional
-  public void updateStatusByStripeSubId(String stripeSubscriptionId, SubscriptionStatus newStatus) {
-    subscriptionRepository.findByStripeSubscriptionId(stripeSubscriptionId)
-        .ifPresent(sub -> {
-          SubscriptionStatus old = sub.getStatus();
-          if (old != newStatus) {
-            sub.setStatus(newStatus);
-            subscriptionRepository.save(sub);
-            // Evict cached premium status for this user
-            var cache = cacheManager.getCache("subscription_status");
-            if (cache != null) {
-              cache.evict(sub.getUser().getId());
+    @Transactional
+    public String createCheckoutSession(UUID userId, PlanType tier, BillingPeriod billing) throws StripeException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new IllegalStateException("User " + userId + " has no email; required for Stripe Checkout.");
+        }
+
+        // Pessimistic lock to prevent duplicate INCOMPLETE sessions under concurrency
+        Optional<Subscription> existing = subscriptionRepository
+                .findByUser_IdAndStatusForUpdate(userId, SubscriptionStatus.INCOMPLETE);
+        if (existing.isPresent() && existing.get().getCheckoutSessionId() != null) {
+            String sid = existing.get().getCheckoutSessionId();
+            logger.info("Reusing existing INCOMPLETE checkout session {} for user {}", sid, userId);
+            return sid;
+        }
+
+        String priceId = selectPriceId(tier, billing);
+        requireValidPriceId(priceId, tier, billing);
+
+        SessionCreateParams params = SessionCreateParams.builder()
+                .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .setCustomerEmail(user.getEmail())
+                .setSuccessUrl(successUrl)
+                .setCancelUrl(cancelUrl)
+                .putMetadata("user_id", user.getId().toString())
+                .putMetadata("plan_type", tier.toString())
+                .putMetadata("billing_period", billing.toString())
+                .addLineItem(SessionCreateParams.LineItem.builder()
+                        .setPrice(priceId)
+                        .setQuantity(1L)
+                        .build())
+                .build();
+
+        // Precise idempotency key to avoid parameter-mismatch collisions
+        String idemKey = "checkout:" + userId + ":" + tier + ":" + billing + ":" + UUID.randomUUID();
+        RequestOptions requestOptions = RequestOptions.builder().setIdempotencyKey(idemKey).build();
+
+        // Use instance-based Stripe client (modern SDK)
+        Session session = stripeClient.v1().checkout().sessions().create(params, requestOptions);
+
+        Subscription subscription = new Subscription(
+                user,
+                null,
+                tier,
+                SubscriptionStatus.INCOMPLETE);
+        subscription.setCheckoutSessionId(session.getId());
+        subscription.setBillingPeriod(billing);
+
+        try {
+            subscriptionRepository.save(subscription);
+        } catch (Exception e) {
+            logger.error("DB save failed after creating Stripe session {} — attempting to expire it", session.getId(),
+                    e);
+            // Compensate: expire the orphaned Checkout Session to avoid dangling sessions
+            try {
+                stripeClient.v1().checkout().sessions().expire(
+                        session.getId(),
+                        SessionExpireParams.builder().build(),
+                        null /* RequestOptions, if you want to pass a separate one */
+                );
+                logger.warn("Expired orphaned Stripe Checkout Session {}", session.getId());
+            } catch (Exception expireEx) {
+                logger.error("Failed to expire orphaned Stripe Checkout Session {}", session.getId(), expireEx);
             }
-            logger.info("Subscription status updated: user={}, stripeSub={}, {} -> {}",
-                sub.getUser().getId(), stripeSubscriptionId, old, newStatus);
-          }
-        });
-  }
+            throw e;
+        }
 
-  public String findLatestStatusForUser(UUID userId) {
-    return subscriptionRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)
-        .map(s -> switch (s.getStatus()) {
-          case ACTIVE -> "active";
-          case PAST_DUE -> "past_due";
-          case CANCELED -> "canceled";
-          default -> "inactive";
-        })
-        .orElse("inactive");
-  }
+        logger.info("Created checkout session {} for user {} with tier {} and billing {}",
+                session.getId(), userId, tier, billing);
+        return session.getId();
+    }
+
+    private String selectPriceId(PlanType tier, BillingPeriod billing) {
+        return billing == BillingPeriod.ANNUAL ? annualPriceId : monthlyPriceId;
+    }
+
+    private void requireValidPriceId(String priceId, PlanType tier, BillingPeriod billing) {
+        if (priceId == null || priceId.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Stripe priceId not configured for tier=" + tier + ", billing=" + billing);
+        }
+        if (!priceId.startsWith("price_")) {
+            throw new IllegalArgumentException(
+                    "Invalid Stripe priceId for tier=" + tier + ", billing=" + billing +
+                            ": expected an ID starting with 'price_' but got '" + priceId + "'.");
+        }
+    }
+
+    @Transactional
+    public void handleCheckoutCompleted(String checkoutSessionId, String stripeSubscriptionId) {
+        subscriptionRepository.findByCheckoutSessionId(checkoutSessionId)
+                .ifPresent(sub -> {
+                    SubscriptionStatus old = sub.getStatus();
+                    sub.setStripeSubscriptionId(stripeSubscriptionId);
+                    sub.setStatus(SubscriptionStatus.ACTIVE);
+                    subscriptionRepository.save(sub);
+                    Cache cache = cacheManager.getCache("subscription_status");
+                    if (cache != null) {
+                        cache.evictIfPresent(sub.getUser().getId());
+                    }
+                    logger.info(
+                            "Subscription activated via checkout completion: user={}, oldStatus={}, newStatus={}, stripeSub={}",
+                            sub.getUser().getId(), old, sub.getStatus(), stripeSubscriptionId);
+                });
+    }
+
+    @Transactional
+    public void updateStatusByStripeSubId(String stripeSubscriptionId, SubscriptionStatus newStatus) {
+        subscriptionRepository.findByStripeSubscriptionId(stripeSubscriptionId)
+                .ifPresent(sub -> {
+                    SubscriptionStatus old = sub.getStatus();
+                    if (old != newStatus) {
+                        sub.setStatus(newStatus);
+                        subscriptionRepository.save(sub);
+                        Cache cache = cacheManager.getCache("subscription_status");
+                        if (cache != null) {
+                            cache.evictIfPresent(sub.getUser().getId());
+                        }
+                        logger.info("Subscription status updated: user={}, stripeSub={}, {} -> {}",
+                                sub.getUser().getId(), stripeSubscriptionId, old, newStatus);
+                    }
+                });
+    }
+
+    public String findLatestStatusForUser(UUID userId) {
+        return subscriptionRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)
+                .map(s -> switch (s.getStatus()) {
+                    case ACTIVE -> "active";
+                    case PAST_DUE -> "past_due";
+                    case CANCELED -> "canceled";
+                    default -> "inactive";
+                })
+                .orElse("inactive");
+    }
 }
