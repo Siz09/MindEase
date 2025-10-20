@@ -1,31 +1,42 @@
 package com.mindease.dto;
 
-// planType is optional in simplified two-price mode
+import jakarta.validation.constraints.Pattern;
 
+/**
+ * DTO for subscription creation.
+ *
+ * planType is optional in simplified two-price mode.
+ * billingPeriod is optional but, if present, must match allowed values.
+ */
 public class SubscriptionCreateRequest {
-  private String planType;
-  // Optional; defaults are applied server-side when absent
-  private String billingPeriod;
 
-  public SubscriptionCreateRequest() {}
+    // Optional; defaults are applied server-side when absent
+    private String planType;
 
-  public SubscriptionCreateRequest(String planType) {
-    this.planType = planType;
-  }
+    // Optional; defaults are applied server-side when absent
+    @Pattern(regexp = "MONTHLY|YEARLY|QUARTERLY", message = "Invalid billing period")
+    private String billingPeriod;
 
-  public String getPlanType() {
-    return planType;
-  }
+    public SubscriptionCreateRequest() {
+    }
 
-  public void setPlanType(String planType) {
-    this.planType = planType;
-  }
+    public SubscriptionCreateRequest(String planType) {
+        this.planType = planType;
+    }
 
-  public String getBillingPeriod() {
-    return billingPeriod;
-  }
+    public String getPlanType() {
+        return planType;
+    }
 
-  public void setBillingPeriod(String billingPeriod) {
-    this.billingPeriod = billingPeriod;
-  }
+    public void setPlanType(String planType) {
+        this.planType = planType;
+    }
+
+    public String getBillingPeriod() {
+        return billingPeriod;
+    }
+
+    public void setBillingPeriod(String billingPeriod) {
+        this.billingPeriod = billingPeriod;
+    }
 }

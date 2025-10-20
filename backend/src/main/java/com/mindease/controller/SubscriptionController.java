@@ -26,59 +26,70 @@ import java.util.UUID;
 @CrossOrigin(origins = "${cors.allowed-origins:http://localhost:5173}")
 public class SubscriptionController {
 
-  private static final Logger logger = LoggerFactory.getLogger(SubscriptionController.class);
+    private static final Logger logger = LoggerFactory.getLogger(SubscriptionController.class);
 
-  private final SubscriptionService subscriptionService;
+    private final SubscriptionService subscriptionService;
 
-  @Value("${stripe.publishable-key}")
-  private String publishableKey;
+    @Value("${stripe.publishable-key}")
+    private String publishableKey;
 
-  public SubscriptionController(SubscriptionService subscriptionService) {
-    this.subscriptionService = subscriptionService;
-  }
-
-  @PreAuthorize("isAuthenticated()")
-  @PostMapping("/create")
-  public ResponseEntity<SubscriptionCreateResponse> create(@RequestBody SubscriptionCreateRequest body) throws StripeException {
-
-    // Simplified two-price mode: always treat as PREMIUM tier.
-    PlanType planType = PlanType.PREMIUM;
-
-    UUID userId = CurrentUserId.get();
-
-    boolean hasActiveish = subscriptionService.hasActiveLikeSubscription(
-        userId, List.of(SubscriptionStatus.INCOMPLETE, SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE));
-
-    if (hasActiveish) {
-      logger.info("User {} already has an active-ish subscription; skipping new Checkout Session", userId);
-      return ResponseEntity.status(409).build();
+    public SubscriptionController(SubscriptionService subscriptionService) {
+        this.subscriptionService = subscriptionService;
     }
 
-    // Determine billing period: prefer request, fallback to sensible default
-    BillingPeriod billing = null;
-    String periodRaw = body.getBillingPeriod();
-    if (periodRaw != null && !periodRaw.isBlank()) {
-      String p = periodRaw.toLowerCase(Locale.ROOT);
-      billing = switch (p) {
-        case "monthly", "month", "mo" -> BillingPeriod.MONTHLY;
-        case "annual", "yearly", "year", "yr" -> BillingPeriod.ANNUAL;
-        default -> BillingPeriod.valueOf(periodRaw.toUpperCase(Locale.ROOT));
-      };
-    } else {
-      billing = (planType == PlanType.ENTERPRISE) ? BillingPeriod.ANNUAL : BillingPeriod.MONTHLY;
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/create")
+    public ResponseEntity<?> create(@RequestBody @Valid SubscriptionCreateRequest body) throws StripeException {
+
+        // Simplified two-price mode: always treat as PREMIUM tier.
+        PlanType planType = PlanType.PREMIUM;
+
+        UUID userId = CurrentUserId.get();
+
+        boolean hasActiveish = subscriptionService.hasActiveLikeSubscription(
+                userId, List.of(SubscriptionStatus.INCOMPLETE, SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE));
+
+        if (hasActiveish) {
+            logger.info("User {} already has an active-ish subscription; skipping new Checkout Session", userId);
+            return ResponseEntity.status(409).body(Map.of(
+                    "error", "subscription_exists",
+                    "message", "You already have a subscription in progress or active."));
+        }
+
+        // Determine billing period: prefer request; default to MONTHLY for PREMIUM when
+        // missing
+        BillingPeriod billing;
+        String periodRaw = body.getBillingPeriod();
+        if (periodRaw != null && !periodRaw.isBlank()) {
+            String p = periodRaw.toLowerCase(Locale.ROOT).trim();
+            try {
+                billing = switch (p) {
+                    case "monthly", "month", "mo" -> BillingPeriod.MONTHLY;
+                    case "annual", "yearly", "year", "yr" -> BillingPeriod.ANNUAL;
+                    default -> BillingPeriod.valueOf(periodRaw.toUpperCase(Locale.ROOT));
+                };
+            } catch (IllegalArgumentException e) {
+                logger.warn("Invalid billing period '{}' provided by user {}", periodRaw, userId);
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "invalid_billing_period",
+                        "message", "Allowed values: monthly|month|mo or annual|yearly|year|yr."));
+            }
+        } else {
+            // Default to MONTHLY for PREMIUM tier
+            billing = BillingPeriod.MONTHLY;
+        }
+
+        String sessionId = subscriptionService.createCheckoutSession(userId, planType, billing);
+        logger.info("Created Stripe Checkout Session {} for user ID {} with plan {}", sessionId, userId, planType);
+
+        return ResponseEntity.ok(new SubscriptionCreateResponse(sessionId, publishableKey));
     }
 
-    String sessionId = subscriptionService.createCheckoutSession(userId, planType, billing);
-    logger.info("Created Stripe Checkout Session {} for user ID {} with plan {}", sessionId, userId, planType);
-
-    return ResponseEntity.ok(new SubscriptionCreateResponse(sessionId, publishableKey));
-  }
-
-  @PreAuthorize("isAuthenticated()")
-  @GetMapping("/status")
-  public ResponseEntity<Map<String, String>> status() {
-    UUID userId = CurrentUserId.get();
-    String status = subscriptionService.findLatestStatusForUser(userId);
-    return ResponseEntity.ok(Map.of("status", status));
-  }
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/status")
+    public ResponseEntity<Map<String, String>> status() {
+        UUID userId = CurrentUserId.get();
+        String status = subscriptionService.findLatestStatusForUser(userId);
+        return ResponseEntity.ok(Map.of("status", status));
+    }
 }

@@ -179,5 +179,9 @@ stripe:
   webhook:
     secret: ${STRIPE_WEBHOOK_SECRET}
   price:
-    monthly: ${STRIPE_PRICE_ID_MONTHLY}
-    annual: ${STRIPE_PRICE_ID_ANNUAL}
+    premium:
+      monthly: ${STRIPE_PRICE_ID_MONTHLY:}
+      annual: ${STRIPE_PRICE_ID_ANNUAL:}
+      enterprise:
+        monthly: ${STRIPE_PRICE_ID_MONTHLY:}
+        annual: ${STRIPE_PRICE_ID_ANNUAL:}
