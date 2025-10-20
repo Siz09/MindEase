@@ -95,9 +95,11 @@ export default function Subscription() {
       const ok = TRUSTED_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`));
       if (!ok) throw new Error('Untrusted redirect URL');
       window.location.assign(url.toString());
+      return true;
     } catch (err) {
       console.error('Invalid or untrusted checkout URL:', err);
       toast.error('Invalid checkout URL received');
+      return false;
     }
   }
 
@@ -114,6 +116,7 @@ export default function Subscription() {
         const stripe = await loadStripe(payload.publishableKey);
         const { error } = await stripe.redirectToCheckout({ sessionId: payload.sessionId });
         if (error) {
+          sessionStorage.removeItem('justReturnedFromCheckout');
           console.error('Stripe redirect error:', error);
           toast.error(error.message || 'Stripe redirect failed');
         }
@@ -123,12 +126,16 @@ export default function Subscription() {
       // Fallbacks: direct URL provided by backend (older flows)
       if (payload?.sessionUrl) {
         sessionStorage.setItem('justReturnedFromCheckout', '1');
-        safeRedirect(payload.sessionUrl);
+        if (!safeRedirect(payload.sessionUrl)) {
+          sessionStorage.removeItem('justReturnedFromCheckout');
+        }
         return;
       }
       if (payload?.checkoutUrl) {
         sessionStorage.setItem('justReturnedFromCheckout', '1');
-        safeRedirect(payload.checkoutUrl);
+        if (!safeRedirect(payload.checkoutUrl)) {
+          sessionStorage.removeItem('justReturnedFromCheckout');
+        }
         return;
       }
 
