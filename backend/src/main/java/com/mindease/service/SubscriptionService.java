@@ -47,17 +47,7 @@ public class SubscriptionService {
   @Value("${stripe.price.annual:}")
   private String annualPriceId;
 
-  @Value("${stripe.price.premium.monthly:}")
-  private String premiumMonthlyPriceId;
-
-  @Value("${stripe.price.premium.annual:}")
-  private String premiumAnnualPriceId;
-
-  @Value("${stripe.price.enterprise.monthly:}")
-  private String enterpriseMonthlyPriceId;
-
-  @Value("${stripe.price.enterprise.annual:}")
-  private String enterpriseAnnualPriceId;
+  // In simplified two-price mode, only generic monthly/annual are used.
 
   public SubscriptionService(SubscriptionRepository subscriptionRepository,
                              UserRepository userRepository,
@@ -96,9 +86,7 @@ public class SubscriptionService {
     }
 
     String priceId = selectPriceId(tier, billing);
-    if (priceId == null || priceId.isEmpty()) {
-      throw new IllegalStateException("Plan pricing not configured for tier=" + tier + ", billing=" + billing);
-    }
+    requireValidPriceId(priceId, tier, billing);
 
     SessionCreateParams params = SessionCreateParams.builder()
         .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
@@ -136,19 +124,22 @@ public class SubscriptionService {
   }
 
   private String selectPriceId(PlanType tier, BillingPeriod billing) {
-    if (tier == PlanType.PREMIUM) {
-      if (billing == BillingPeriod.ANNUAL) return coalesce(premiumAnnualPriceId, annualPriceId);
-      return coalesce(premiumMonthlyPriceId, monthlyPriceId);
-    }
-    if (tier == PlanType.ENTERPRISE) {
-      if (billing == BillingPeriod.ANNUAL) return coalesce(enterpriseAnnualPriceId, annualPriceId);
-      return coalesce(enterpriseMonthlyPriceId, monthlyPriceId);
-    }
-    return null;
+    // Ignore tier; use generic monthly/annual price IDs.
+    return billing == BillingPeriod.ANNUAL ? coalesce(annualPriceId, annualPriceId) : coalesce(monthlyPriceId, monthlyPriceId);
   }
 
   private String coalesce(String a, String b) {
     return (a != null && !a.isEmpty()) ? a : (b != null && !b.isEmpty() ? b : null);
+  }
+
+  private void requireValidPriceId(String priceId, PlanType tier, BillingPeriod billing) {
+    if (priceId == null || priceId.isBlank()) {
+      throw new IllegalArgumentException("Stripe priceId not configured for tier=" + tier + ", billing=" + billing);
+    }
+    if (!priceId.startsWith("price_")) {
+      throw new IllegalArgumentException("Invalid Stripe priceId for tier=" + tier + ", billing=" + billing +
+          ": expected an ID starting with 'price_' but got '" + priceId + "'.");
+    }
   }
 
   @Transactional

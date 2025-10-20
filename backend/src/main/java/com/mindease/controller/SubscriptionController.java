@@ -1,6 +1,7 @@
 package com.mindease.controller;
 
 import com.mindease.model.PlanType;
+import com.mindease.model.BillingPeriod;
 import com.mindease.model.SubscriptionStatus;
 import com.mindease.dto.SubscriptionCreateRequest;
 import com.mindease.dto.SubscriptionCreateResponse;
@@ -38,18 +39,10 @@ public class SubscriptionController {
 
   @PreAuthorize("isAuthenticated()")
   @PostMapping("/create")
-  public ResponseEntity<SubscriptionCreateResponse> create(@RequestBody @Valid SubscriptionCreateRequest body)
-      throws StripeException {
+  public ResponseEntity<SubscriptionCreateResponse> create(@RequestBody SubscriptionCreateRequest body) throws StripeException {
 
-    String plan = body.getPlanType().toLowerCase(Locale.ROOT);
-    // Map common plan aliases to existing PlanType values
-    PlanType planType = switch (plan) {
-      case "monthly" -> PlanType.PREMIUM;
-      case "annual", "yearly" -> PlanType.ENTERPRISE;
-      case "premium" -> PlanType.PREMIUM;
-      case "enterprise" -> PlanType.ENTERPRISE;
-      default -> throw new IllegalArgumentException("Invalid planType: " + plan);
-    };
+    // Simplified two-price mode: always treat as PREMIUM tier.
+    PlanType planType = PlanType.PREMIUM;
 
     UUID userId = CurrentUserId.get();
 
@@ -61,7 +54,21 @@ public class SubscriptionController {
       return ResponseEntity.status(409).build();
     }
 
-    String sessionId = subscriptionService.createCheckoutSession(userId, planType);
+    // Determine billing period: prefer request, fallback to sensible default
+    BillingPeriod billing = null;
+    String periodRaw = body.getBillingPeriod();
+    if (periodRaw != null && !periodRaw.isBlank()) {
+      String p = periodRaw.toLowerCase(Locale.ROOT);
+      billing = switch (p) {
+        case "monthly", "month", "mo" -> BillingPeriod.MONTHLY;
+        case "annual", "yearly", "year", "yr" -> BillingPeriod.ANNUAL;
+        default -> BillingPeriod.valueOf(periodRaw.toUpperCase(Locale.ROOT));
+      };
+    } else {
+      billing = (planType == PlanType.ENTERPRISE) ? BillingPeriod.ANNUAL : BillingPeriod.MONTHLY;
+    }
+
+    String sessionId = subscriptionService.createCheckoutSession(userId, planType, billing);
     logger.info("Created Stripe Checkout Session {} for user ID {} with plan {}", sessionId, userId, planType);
 
     return ResponseEntity.ok(new SubscriptionCreateResponse(sessionId, publishableKey));

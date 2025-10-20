@@ -103,10 +103,10 @@ export default function Subscription() {
     }
   }
 
-  async function startCheckout(planType) {
+  async function startCheckout(billingPeriod) {
     setLoading(true);
     try {
-      const resp = await apiPost('/api/subscription/create', { planType }, token);
+      const resp = await apiPost('/api/subscription/create', { billingPeriod }, token);
       const payload = resp?.data ?? resp;
 
       // New flow: Stripe Checkout sessionId + publishableKey
@@ -162,13 +162,13 @@ export default function Subscription() {
             title="Premium - Monthly"
             priceText="$29 / month"
             loading={loading}
-            onSelect={() => startCheckout('PREMIUM')}
+            onSelect={() => startCheckout('MONTHLY')}
           />
           <PlanCard
-            title="Enterprise - Annual"
+            title="Premium - Annual"
             priceText="$299 / year"
             loading={loading}
-            onSelect={() => startCheckout('ENTERPRISE')}
+            onSelect={() => startCheckout('ANNUAL')}
           />
         </div>
         <p className="note">
