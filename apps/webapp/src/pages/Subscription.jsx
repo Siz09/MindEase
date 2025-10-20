@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { apiGet, apiPost } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/Subscription.css';
+import { loadStripe } from '@stripe/stripe-js';
+import useInterval from '../hooks/useInterval';
 
 function PlanCard({ title, priceText, onSelect, loading }) {
   return (
@@ -20,6 +22,9 @@ export default function Subscription() {
   const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('loading');
+  const prevStatusRef = useRef('loading');
+  const hydratedRef = useRef(false);
+  const [intensePolling, setIntensePolling] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -35,7 +40,50 @@ export default function Subscription() {
 
   useEffect(() => {
     refreshStatus();
+    // If returning from checkout, enable short, intense polling window
+    const justReturned = sessionStorage.getItem('justReturnedFromCheckout');
+    if (justReturned) {
+      setIntensePolling(true);
+      sessionStorage.removeItem('justReturnedFromCheckout');
+    }
   }, [refreshStatus]);
+
+  // Track previous status to fire transition toasts once
+  useEffect(() => {
+    if (!hydratedRef.current) {
+      // Skip toasts on initial hydration
+      hydratedRef.current = true;
+      prevStatusRef.current = status;
+      return;
+    }
+
+    const prev = prevStatusRef.current;
+    if (prev !== status) {
+      if (status === 'active') {
+        toast.success('Subscription activated');
+        if (intensePolling) setIntensePolling(false);
+      } else if (status === 'canceled') {
+        toast.info('Subscription canceled');
+      } else if (status === 'past_due') {
+        toast.error('Payment failed');
+      }
+      prevStatusRef.current = status;
+    }
+  }, [status, intensePolling]);
+
+  // Background polling: short interval during return-from-checkout
+  // and slower interval otherwise, via reusable hook.
+  const delay = intensePolling ? 1500 : 15000;
+  useInterval(() => {
+    refreshStatus().catch(() => {});
+  }, delay);
+
+  // Auto-disable intense polling after 45s
+  useEffect(() => {
+    if (!intensePolling) return;
+    const t = setTimeout(() => setIntensePolling(false), 45000);
+    return () => clearTimeout(t);
+  }, [intensePolling]);
 
   // Configure trusted domains for redirects
   const TRUSTED_DOMAINS = ['checkout.stripe.com', 'localhost', '127.0.0.1', 'yourdomain.com'];
@@ -59,16 +107,34 @@ export default function Subscription() {
       const resp = await apiPost('/api/subscription/create', { planType }, token);
       const payload = resp?.data ?? resp;
 
-      // Preferred: server returns a session URL
-      if (payload.sessionUrl) {
-        safeRedirect(payload.sessionUrl);
-      } else if (payload.checkoutUrl) {
-        // Backward compatible name
-        safeRedirect(payload.checkoutUrl);
-      } else {
-        toast.success(payload?.message ?? 'Subscription updated');
-        refreshStatus();
+      // New flow: Stripe Checkout sessionId + publishableKey
+      if (payload?.sessionId && payload?.publishableKey) {
+        // Mark that we're heading to checkout — used for post-return polling
+        sessionStorage.setItem('justReturnedFromCheckout', '1');
+        const stripe = await loadStripe(payload.publishableKey);
+        const { error } = await stripe.redirectToCheckout({ sessionId: payload.sessionId });
+        if (error) {
+          console.error('Stripe redirect error:', error);
+          toast.error(error.message || 'Stripe redirect failed');
+        }
+        return; // browser will navigate away on success
       }
+
+      // Fallbacks: direct URL provided by backend (older flows)
+      if (payload?.sessionUrl) {
+        sessionStorage.setItem('justReturnedFromCheckout', '1');
+        safeRedirect(payload.sessionUrl);
+        return;
+      }
+      if (payload?.checkoutUrl) {
+        sessionStorage.setItem('justReturnedFromCheckout', '1');
+        safeRedirect(payload.checkoutUrl);
+        return;
+      }
+
+      // No redirect – treat as immediate status change
+      toast.success(payload?.message ?? 'Subscription updated');
+      refreshStatus();
     } catch (e) {
       console.error(e);
       toast.error('Unable to start checkout');
