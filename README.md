@@ -300,6 +300,29 @@ The application includes a comprehensive WebSocket testing suite accessible at `
 
 Use the provided Postman collection or Swagger UI for manual API testing.
 
+**Monetization (Stripe) — Setup & Runbook**
+
+- Env (backend):
+  - `STRIPE_SECRET_KEY=sk_test_...`
+  - `STRIPE_PUBLISHABLE_KEY=pk_test_...`
+  - `STRIPE_WEBHOOK_SECRET=whsec_...`
+  - `STRIPE_PRICE_ID_MONTHLY=price_20usd_month`
+  - `STRIPE_PRICE_ID_ANNUAL=price_200usd_year`
+  - `STRIPE_SUCCESS_URL=http://localhost:5173/subscription/success`
+  - `STRIPE_CANCEL_URL=http://localhost:5173/subscription/cancel`
+
+- Return-from-Checkout flow (Day-7 UX):
+  - Backend `POST /api/subscription/create` returns `{ sessionId, publishableKey }`.
+  - Frontend calls `stripe.redirectToCheckout({ sessionId })` and sets a short polling window.
+  - After webhook lands and status becomes `active`, UI flips without reload and shows a toast.
+
+- Stripe Test Runbook:
+  - Create test subscription → verify row in DB and status becomes `active`.
+  - Cancel in Stripe → webhook flips status to `canceled` → UI shows toast and premium features gate again.
+  - Gated API returns 403 when inactive, 200 when active (PremiumGuardAspect + GlobalExceptionHandler).
+
+See `docs/e2e-monetization.md` for the Day‑7 end‑to‑end details (polling + toasts).
+
 ## 🚀 Deployment
 
 ### Production Build

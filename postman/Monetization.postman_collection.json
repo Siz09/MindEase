@@ -1,0 +1,109 @@
+{
+  "info": {
+    "name": "MindEase Monetization",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Stripe monetization flows: create session, status, webhook, and gated API checks."
+  },
+  "item": [
+    {
+      "name": "Create Subscription (Monthly)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/subscription/create",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "subscription", "create"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"billingPeriod\": \"MONTHLY\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Create Subscription (Annual)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/subscription/create",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "subscription", "create"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"billingPeriod\": \"ANNUAL\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Subscription Status",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "http://localhost:8080/api/subscription/status",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "subscription", "status"]
+        }
+      }
+    },
+    {
+      "name": "Webhook (sample payload)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Stripe-Signature", "value": "<use stripe cli to sign>" }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/subscription/webhook",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "subscription", "webhook"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"evt_test\",\n  \"type\": \"checkout.session.completed\",\n  \"data\": {\n    \"object\": { \"id\": \"cs_test_123\", \"subscription\": \"sub_test_123\" }\n  }\n}"
+        },
+        "description": "Note: This endpoint verifies Stripe signatures. Use Stripe CLI or Dashboard to send real signed events."
+      }
+    },
+    {
+      "name": "Gated API: Chat Send (expect 403 when inactive)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/chat/send",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "chat", "send"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Hello\"\n}"
+        }
+      }
+    }
+  ],
+  "variable": [{ "key": "token", "value": "<JWT>" }]
+}
