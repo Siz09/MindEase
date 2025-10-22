@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     action_type VARCHAR(100) NOT NULL,
     details TEXT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -16,8 +16,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_user_action_time
 
 CREATE TABLE IF NOT EXISTS crisis_flags (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    chat_id UUID NOT NULL,
-    user_id UUID NOT NULL,
+    chat_id UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     keyword_detected VARCHAR(200) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -35,4 +35,3 @@ CREATE TABLE IF NOT EXISTS admin_settings (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT uk_admin_settings_feature_name UNIQUE (feature_name)
 );
-
