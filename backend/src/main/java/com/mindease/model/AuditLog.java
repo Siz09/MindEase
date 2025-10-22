@@ -11,7 +11,7 @@ import java.util.UUID;
 public class AuditLog {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
@@ -40,6 +40,4 @@ public class AuditLog {
     public String getDetails() { return details; }
     public void setDetails(String details) { this.details = details; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }
-

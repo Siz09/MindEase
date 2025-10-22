@@ -12,7 +12,7 @@ import java.util.UUID;
 public class CrisisFlag {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "chat_id", nullable = false)
@@ -41,6 +41,4 @@ public class CrisisFlag {
     public String getKeywordDetected() { return keywordDetected; }
     public void setKeywordDetected(String keywordDetected) { this.keywordDetected = keywordDetected; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }
-

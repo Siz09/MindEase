@@ -11,7 +11,7 @@ import java.util.UUID;
 public class AdminSettings {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "feature_name", nullable = false, length = 120)
@@ -35,6 +35,6 @@ public class AdminSettings {
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    // Package-private for tests only
+    void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }
-
