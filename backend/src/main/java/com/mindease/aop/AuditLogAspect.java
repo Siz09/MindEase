@@ -3,7 +3,7 @@ package com.mindease.aop;
 import com.mindease.aop.annotations.*;
 import com.mindease.security.CurrentUserId;
 import com.mindease.service.AuditService;
-import org.aspectj.lang.JoinPoint;
+
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.core.annotation.Order;
@@ -33,9 +33,11 @@ public class AuditLogAspect {
     }
 
     // ---- Annotation-based pointcuts ----
-    // Login logs via the returning advice below (parsing response body) to avoid double-logging.
+    // Login logs via the returning advice below (parsing response body) to avoid
+    // double-logging.
 
-    // As we cannot read the return value from JoinPoint, add a separate advice with returning param
+    // As we cannot read the return value from JoinPoint, add a separate advice with
+    // returning param
     @AfterReturning(pointcut = "@annotation(com.mindease.aop.annotations.AuditLogin)", returning = "ret")
     public void afterLoginAnnotatedReturning(Object ret) {
         try {
@@ -48,7 +50,10 @@ public class AuditLogAspect {
                         if (id instanceof UUID uid) {
                             auditService.login(uid);
                         } else if (id instanceof String s) {
-                            try { auditService.login(UUID.fromString(s)); } catch (Exception ignored) {}
+                            try {
+                                auditService.login(UUID.fromString(s));
+                            } catch (Exception ignored) {
+                            }
                         }
                     }
                 }
@@ -61,18 +66,21 @@ public class AuditLogAspect {
     @AfterReturning("@annotation(com.mindease.aop.annotations.AuditChatSent)")
     public void afterChatSentAnnotated() {
         UUID uid = tryGetCurrentUserId();
-        if (uid != null) auditService.chatSent(uid);
+        if (uid != null)
+            auditService.chatSent(uid);
     }
 
     @AfterReturning("@annotation(com.mindease.aop.annotations.AuditMoodAdded)")
     public void afterMoodAddedAnnotated() {
         UUID uid = tryGetCurrentUserId();
-        if (uid != null) auditService.moodAdded(uid);
+        if (uid != null)
+            auditService.moodAdded(uid);
     }
 
     @AfterReturning("@annotation(com.mindease.aop.annotations.AuditJournalAdded)")
     public void afterJournalAddedAnnotated() {
         UUID uid = tryGetCurrentUserId();
-        if (uid != null) auditService.journalAdded(uid);
+        if (uid != null)
+            auditService.journalAdded(uid);
     }
 }

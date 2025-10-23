@@ -48,4 +48,15 @@ class AdminAuditControllerTest {
         mvc.perform(get("/api/admin/audit-logs").accept(MediaType.APPLICATION_JSON))
            .andExpect(status().isForbidden());
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void bubblesUpServerError() throws Exception {
+        var pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Mockito.when(repo.findByFilters(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(pageable)))
+               .thenThrow(new RuntimeException("boom"));
+
+        mvc.perform(get("/api/admin/audit-logs").accept(MediaType.APPLICATION_JSON))
+           .andExpect(status().is5xxServerError());
+    }
 }

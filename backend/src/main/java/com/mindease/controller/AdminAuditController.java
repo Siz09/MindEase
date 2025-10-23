@@ -46,7 +46,7 @@ public class AdminAuditController {
         } catch (Exception e) {
             log.error("Audit list failed (userId={}, actionType={}, from={}, to={}, page={}, size={})",
                     userId, actionType, from, to, page, pageSize, e);
-            return Page.empty(pageable);
+            throw e;
         }
     }
 

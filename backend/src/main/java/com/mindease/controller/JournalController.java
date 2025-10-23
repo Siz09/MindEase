@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.mindease.aop.annotations.AuditJournalAdded;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -160,4 +161,3 @@ public class JournalController {
         return authUtil.getCurrentUserId();
     }
 }
-import com.mindease.aop.annotations.AuditJournalAdded;
