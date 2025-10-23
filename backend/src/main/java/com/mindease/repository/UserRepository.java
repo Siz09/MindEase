@@ -7,6 +7,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
+import com.mindease.model.Role;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
@@ -18,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   boolean existsByEmail(String email);
 
   boolean existsByFirebaseUid(String firebaseUid);
+
+  List<User> findByRole(Role role);
 }

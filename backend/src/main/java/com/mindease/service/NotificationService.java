@@ -2,7 +2,9 @@ package com.mindease.service;
 
 import com.mindease.model.Notification;
 import com.mindease.model.User;
+import com.mindease.model.Role;
 import com.mindease.repository.NotificationRepository;
+import com.mindease.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,9 @@ public class NotificationService {
 
     @Autowired(required = false)
     private EmailService emailService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Transactional
     public void createNotification(User user, String type, String message) {
@@ -76,6 +81,40 @@ public class NotificationService {
             return now.isAfter(start) && now.isBefore(end);
         } else { // wraps around midnight
             return now.isAfter(start) || now.isBefore(end);
+        }
+    }
+
+    // --- Admin helpers ---
+    public void notifyAdmins(String title, String body) {
+        try {
+            var admins = userRepository.findByRole(Role.ADMIN);
+            String message = (title != null && !title.isBlank() ? (title + ": ") : "") + (body == null ? "" : body);
+            for (User admin : admins) {
+                try {
+                    createNotification(admin, "IN_APP", message);
+                } catch (Exception e) {
+                    logger.warn("Failed creating admin notification for {}: {}", admin.getEmail(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("notifyAdmins failed: {}", e.getMessage(), e);
+        }
+    }
+
+    public void emailAdmins(String subject, String body, EmailService overrideEmailService) {
+        EmailService es = overrideEmailService != null ? overrideEmailService : this.emailService;
+        if (es == null) return;
+        try {
+            var admins = userRepository.findByRole(Role.ADMIN);
+            for (User admin : admins) {
+                try {
+                    es.sendEmail(admin.getEmail(), subject != null ? subject : "MindEase Alert", body != null ? body : "");
+                } catch (Exception e) {
+                    logger.warn("Failed emailing admin {}: {}", admin.getEmail(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("emailAdmins failed: {}", e.getMessage(), e);
         }
     }
 }
