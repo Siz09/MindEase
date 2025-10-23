@@ -74,6 +74,7 @@ public class CrisisFlaggingService {
                 flag.setChatId(chatId);
                 flag.setUserId(userId);
                 flag.setKeywordDetected(keyword);
+                risk.ifPresent(flag::setRiskScore);
                 flagRepo.save(flag);
             } catch (DataIntegrityViolationException e) {
                 // Already flagged by a concurrent request; preserve idempotency

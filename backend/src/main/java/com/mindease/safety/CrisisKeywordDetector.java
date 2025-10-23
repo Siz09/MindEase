@@ -11,7 +11,7 @@ public class CrisisKeywordDetector {
     // Extend this with your Phase 3 keywords (kept small here as example).
     // We avoid capturing the raw sentence in logs to reduce PII exposure.
     private static final Pattern SENSITIVE = Pattern.compile(
-        "\\b(suicid(e|al)|self[\\s-]?harm|kill(ing)?[\\s-]?(my)?self|end(ing)?[\\s-]?(my)?life|want[\\s-]?to[\\s-]?die)\\b",
+        "\\b(suicid(e|al)|self[\\s-]?harm|kill(ing)?[\\s-]?(my[\\s-]?)?self|end(ing)?[\\s-]?(my[\\s-]?)?life|want[\\s-]?to[\\s-]?die)\\b",
         Pattern.CASE_INSENSITIVE
     );
 
