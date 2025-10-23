@@ -53,6 +53,7 @@ class CrisisFlaggingServiceTest {
         ArgumentCaptor<CrisisFlag> cap = ArgumentCaptor.forClass(CrisisFlag.class);
         verify(flagRepo, atLeastOnce()).save(cap.capture());
         assertThat(cap.getValue().getKeywordDetected()).isIn("suicide", "want-to-die");
+        assertThat(cap.getValue().getRiskScore()).isEqualTo(0.92);
 
         verify(notificationService, atLeastOnce()).notifyAdmins(anyString(), contains("risk"));
         verify(notificationService, atLeastOnce()).emailAdmins(anyString(), contains(userId.toString()));

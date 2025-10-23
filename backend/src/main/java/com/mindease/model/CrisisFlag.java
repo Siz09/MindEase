@@ -24,6 +24,9 @@ public class CrisisFlag {
     @Column(name = "keyword_detected", nullable = false, length = 200)
     private String keywordDetected;
 
+    @Column(name = "risk_score")
+    private Double riskScore;
+
     @Column(name = "created_at", nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime createdAt;
 
@@ -40,5 +43,7 @@ public class CrisisFlag {
     public void setUserId(UUID userId) { this.userId = userId; }
     public String getKeywordDetected() { return keywordDetected; }
     public void setKeywordDetected(String keywordDetected) { this.keywordDetected = keywordDetected; }
+    public Double getRiskScore() { return riskScore; }
+    public void setRiskScore(Double riskScore) { this.riskScore = riskScore; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
 }
