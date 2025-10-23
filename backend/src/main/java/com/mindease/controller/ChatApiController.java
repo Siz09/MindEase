@@ -8,6 +8,7 @@ import com.mindease.repository.MessageRepository;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.ChatBotService;
 import com.mindease.service.UserService;
+import com.mindease.service.CrisisFlaggingService;
 import com.mindease.dto.ChatResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -59,6 +60,9 @@ public class ChatApiController {
 
   @Autowired
   private SimpMessagingTemplate messagingTemplate;
+
+  @Autowired
+  private CrisisFlaggingService crisisFlaggingService;
 
   private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
 
@@ -112,6 +116,13 @@ public class ChatApiController {
       userMessage.setIsCrisisFlagged(isCrisis);
       userMessage = messageRepository.save(userMessage);
       logger.info("Saved user message with ID: {}", userMessage.getId());
+
+      // Fire-and-forget crisis evaluation + alerts (async, idempotent)
+      try {
+        crisisFlaggingService.evaluateAndFlag(chatSession.getId(), user.getId(), request.getMessage());
+      } catch (Exception ex) {
+        logger.warn("Crisis flagging dispatch failed: {}", ex.getMessage());
+      }
 
       // Create user message payload for WebSocket
       Map<String, Object> userMessagePayload = createMessagePayload(userMessage, true);
@@ -266,4 +277,3 @@ public class ChatApiController {
     }
   }
 }
-

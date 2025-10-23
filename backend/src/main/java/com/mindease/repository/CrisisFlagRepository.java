@@ -10,5 +10,5 @@ import java.util.UUID;
 public interface CrisisFlagRepository extends JpaRepository<CrisisFlag, UUID> {
     List<CrisisFlag> findByUserIdOrderByCreatedAtDesc(UUID userId);
     Optional<CrisisFlag> findTop1ByUserIdOrderByCreatedAtDesc(UUID userId);
+    boolean existsByChatIdAndKeywordDetectedIgnoreCase(UUID chatId, String keywordDetected);
 }
-
