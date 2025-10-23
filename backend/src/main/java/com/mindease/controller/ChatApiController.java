@@ -69,6 +69,7 @@ public class ChatApiController {
   })
   @RequiresPremium
   @PostMapping("/send")
+  @AuditChatSent
   public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
     try {
       logger.info("=== INCOMING MESSAGE REQUEST ===");
@@ -264,3 +265,4 @@ public class ChatApiController {
     }
   }
 }
+import com.mindease.aop.annotations.AuditChatSent;

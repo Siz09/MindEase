@@ -1,21 +1,21 @@
 package com.mindease.aop;
 
+import com.mindease.aop.annotations.*;
 import com.mindease.security.CurrentUserId;
 import com.mindease.service.AuditService;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Captures key user actions and writes audit logs asynchronously.
- * Avoids logging request/response bodies to prevent sensitive data leakage.
- */
 @Aspect
 @Component
+@Order(50)
 public class AuditLogAspect {
 
     private final AuditService auditService;
@@ -32,11 +32,12 @@ public class AuditLogAspect {
         }
     }
 
-    // ---- LOGIN ----
-    // For login, SecurityContext may not yet be populated. We attempt to extract the user id
-    // from the returned body which (in this app) includes user.id in the response map.
-    @AfterReturning(pointcut = "execution(* com.mindease.controller.AuthController.login(..))", returning = "ret")
-    public void afterLogin(Object ret) {
+    // ---- Annotation-based pointcuts ----
+    // Login logs via the returning advice below (parsing response body) to avoid double-logging.
+
+    // As we cannot read the return value from JoinPoint, add a separate advice with returning param
+    @AfterReturning(pointcut = "@annotation(com.mindease.aop.annotations.AuditLogin)", returning = "ret")
+    public void afterLoginAnnotatedReturning(Object ret) {
         try {
             if (ret instanceof ResponseEntity<?> resp) {
                 Object body = resp.getBody();
@@ -53,29 +54,25 @@ public class AuditLogAspect {
                 }
             }
         } catch (Exception ignored) {
-            // do not interfere with login flow
+            // never impact login flow
         }
     }
 
-    // ---- CHAT SENT ----
-    @AfterReturning("execution(* com.mindease.controller.ChatApiController.send*(..))")
-    public void afterChatSent() {
+    @AfterReturning("@annotation(com.mindease.aop.annotations.AuditChatSent)")
+    public void afterChatSentAnnotated() {
         UUID uid = tryGetCurrentUserId();
         if (uid != null) auditService.chatSent(uid);
     }
 
-    // ---- MOOD ADDED ----
-    @AfterReturning("execution(* com.mindease.controller.MoodController.add*(..))")
-    public void afterMoodAdded() {
+    @AfterReturning("@annotation(com.mindease.aop.annotations.AuditMoodAdded)")
+    public void afterMoodAddedAnnotated() {
         UUID uid = tryGetCurrentUserId();
         if (uid != null) auditService.moodAdded(uid);
     }
 
-    // ---- JOURNAL ENTRY ----
-    @AfterReturning("execution(* com.mindease.controller.JournalController.add*(..))")
-    public void afterJournalAdded() {
+    @AfterReturning("@annotation(com.mindease.aop.annotations.AuditJournalAdded)")
+    public void afterJournalAddedAnnotated() {
         UUID uid = tryGetCurrentUserId();
         if (uid != null) auditService.journalAdded(uid);
     }
 }
-

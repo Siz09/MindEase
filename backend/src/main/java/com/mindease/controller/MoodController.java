@@ -48,6 +48,7 @@ public class MoodController {
     @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
   })
   @PostMapping("/add")
+  @AuditMoodAdded
   public ResponseEntity<?> addMoodEntry(@RequestBody MoodEntryRequest request, Authentication authentication) {
     try {
       // Get the authenticated user's email
@@ -150,3 +151,4 @@ public class MoodController {
     }
   }
 }
+import com.mindease.aop.annotations.AuditMoodAdded;
