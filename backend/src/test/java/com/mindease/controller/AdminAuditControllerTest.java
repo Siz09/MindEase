@@ -1,0 +1,52 @@
+package com.mindease.controller;
+
+import com.mindease.config.MethodSecurityConfig;
+import com.mindease.model.AuditLog;
+import com.mindease.repository.AuditLogRepository;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(controllers = AdminAuditController.class)
+@Import(MethodSecurityConfig.class)
+class AdminAuditControllerTest {
+
+    @Autowired
+    MockMvc mvc;
+
+    @MockBean
+    AuditLogRepository repo;
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void adminCanList() throws Exception {
+        var pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
+        var page = new PageImpl<>(List.of(new AuditLog()), pageable, 1);
+        Mockito.when(repo.findAllByOrderByCreatedAtDesc(pageable)).thenReturn(page);
+
+        mvc.perform(get("/api/admin/audit-logs").accept(MediaType.APPLICATION_JSON))
+           .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser // not admin
+    void nonAdminForbidden() throws Exception {
+        mvc.perform(get("/api/admin/audit-logs").accept(MediaType.APPLICATION_JSON))
+           .andExpect(status().isForbidden());
+    }
+}
+
