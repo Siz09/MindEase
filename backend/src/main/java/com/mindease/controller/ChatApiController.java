@@ -19,6 +19,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.mindease.security.RequiresPremium;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.mindease.aop.annotations.AuditChatSent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -265,4 +266,4 @@ public class ChatApiController {
     }
   }
 }
-import com.mindease.aop.annotations.AuditChatSent;
+\
