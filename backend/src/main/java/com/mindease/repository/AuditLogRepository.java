@@ -10,7 +10,14 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
+    Page<AuditLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
     Page<AuditLog> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+
     Slice<AuditLog> findByUserIdAndActionTypeAndCreatedAtBetweenOrderByCreatedAtDesc(
         UUID userId, String actionType, OffsetDateTime from, OffsetDateTime to, Pageable pageable);
+
+    Page<AuditLog> findByActionTypeOrderByCreatedAtDesc(String actionType, Pageable pageable);
+
+    Page<AuditLog> findByCreatedAtBetweenOrderByCreatedAtDesc(OffsetDateTime from, OffsetDateTime to, Pageable pageable);
 }
