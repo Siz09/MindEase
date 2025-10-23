@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -35,8 +35,8 @@ class AdminAuditControllerTest {
     @WithMockUser(roles = "ADMIN")
     void adminCanList() throws Exception {
         var pageable = PageRequest.of(0, 50, Sort.by(Sort.Direction.DESC, "createdAt"));
-        var page = new PageImpl<>(List.of(new AuditLog()), pageable, 1);
-        Mockito.when(repo.findAllByOrderByCreatedAtDesc(pageable)).thenReturn(page);
+        var slice = new SliceImpl<>(List.of(new AuditLog()), pageable, false);
+        Mockito.when(repo.findByFilters(null, null, null, null, pageable)).thenReturn(slice);
 
         mvc.perform(get("/api/admin/audit-logs").accept(MediaType.APPLICATION_JSON))
            .andExpect(status().isOk());
@@ -49,4 +49,3 @@ class AdminAuditControllerTest {
            .andExpect(status().isForbidden());
     }
 }
-

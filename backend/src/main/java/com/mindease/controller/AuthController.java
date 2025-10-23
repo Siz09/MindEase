@@ -3,6 +3,7 @@ package com.mindease.controller;
 // Add this import
 import org.springframework.security.core.Authentication;
 
+import com.mindease.aop.annotations.AuditLogin;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.mindease.model.Role;
 import com.mindease.model.User;
@@ -80,6 +81,7 @@ public class AuthController {
   }
 
   @PostMapping("/login")
+  @AuditLogin
   public ResponseEntity<?> login(@RequestBody LoginRequest request) {
     try {
       // Verify Firebase token

@@ -36,6 +36,7 @@ public class JournalController {
     private AuthUtil authUtil;
 
     @PostMapping("/add")
+    @AuditJournalAdded
     public ResponseEntity<Map<String, Object>> addJournalEntry(
             @RequestBody JournalRequest request,
             Authentication authentication) {
@@ -159,3 +160,4 @@ public class JournalController {
         return authUtil.getCurrentUserId();
     }
 }
+import com.mindease.aop.annotations.AuditJournalAdded;
