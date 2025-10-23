@@ -9,6 +9,7 @@ import com.mindease.safety.RiskScorer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -54,7 +55,7 @@ class CrisisFlaggingServiceTest {
         assertThat(cap.getValue().getKeywordDetected()).isIn("suicide", "want-to-die");
 
         verify(notificationService, atLeastOnce()).notifyAdmins(anyString(), contains("risk"));
-        verify(notificationService, atLeastOnce()).emailAdmins(anyString(), contains(userId.toString()), any());
+        verify(notificationService, atLeastOnce()).emailAdmins(anyString(), contains(userId.toString()));
     }
 
     @Test
@@ -63,5 +64,21 @@ class CrisisFlaggingServiceTest {
         verify(flagRepo, never()).save(any());
         verify(notificationService, never()).notifyAdmins(any(), any());
     }
-}
 
+    @Test
+    void duplicateFlagIsIgnored() {
+        UUID chatId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        // First save ok, second throws unique violation
+        when(flagRepo.save(any(CrisisFlag.class)))
+                .thenReturn(new CrisisFlag())
+                .thenThrow(new DataIntegrityViolationException("dup"));
+
+        service.evaluateAndFlag(chatId, userId, "self-harm");
+        service.evaluateAndFlag(chatId, userId, "self harm");
+
+        verify(flagRepo, times(2)).save(any(CrisisFlag.class));
+        verify(notificationService, atLeastOnce()).notifyAdmins(anyString(), anyString());
+    }
+}
