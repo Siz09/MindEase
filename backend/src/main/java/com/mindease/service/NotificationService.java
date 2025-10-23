@@ -18,6 +18,8 @@ import java.util.List;
 public class NotificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
+    private static final String NOTIFICATION_TYPE_IN_APP = "IN_APP";
+    private static final String DEFAULT_ADMIN_EMAIL_SUBJECT = "MindEase Alert";
 
     @Autowired
     private NotificationRepository notificationRepository;
@@ -91,7 +93,7 @@ public class NotificationService {
             String message = (title != null && !title.isBlank() ? (title + ": ") : "") + (body == null ? "" : body);
             for (User admin : admins) {
                 try {
-                    createNotification(admin, "IN_APP", message);
+                    createNotification(admin, NOTIFICATION_TYPE_IN_APP, message);
                 } catch (Exception e) {
                     logger.warn("Failed creating admin notification for {}: {}", admin.getEmail(), e.getMessage());
                 }
@@ -101,14 +103,13 @@ public class NotificationService {
         }
     }
 
-    public void emailAdmins(String subject, String body, EmailService overrideEmailService) {
-        EmailService es = overrideEmailService != null ? overrideEmailService : this.emailService;
-        if (es == null) return;
+    public void emailAdmins(String subject, String body) {
+        if (emailService == null) return;
         try {
             var admins = userRepository.findByRole(Role.ADMIN);
             for (User admin : admins) {
                 try {
-                    es.sendEmail(admin.getEmail(), subject != null ? subject : "MindEase Alert", body != null ? body : "");
+                    emailService.sendEmail(admin.getEmail(), subject != null ? subject : DEFAULT_ADMIN_EMAIL_SUBJECT, body != null ? body : "");
                 } catch (Exception e) {
                     logger.warn("Failed emailing admin {}: {}", admin.getEmail(), e.getMessage());
                 }

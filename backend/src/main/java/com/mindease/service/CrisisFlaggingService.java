@@ -8,6 +8,7 @@ import com.mindease.safety.CrisisKeywordDetector;
 import com.mindease.safety.RiskScorer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +53,12 @@ public class CrisisFlaggingService {
     @Async
     @Transactional
     public void evaluateAndFlag(UUID chatId, UUID userId, String messageText) {
+        // Basic parameter validation to avoid NPE chains
+        if (chatId == null || userId == null || messageText == null) {
+            log.warn("Crisis evaluation skipped due to null parameter(s): chatId={}, userId={}, textNull={}",
+                    chatId, userId, messageText == null);
+            return;
+        }
         if (!alertsEnabled()) return;
 
         try {
@@ -61,15 +68,18 @@ public class CrisisFlaggingService {
             // Optional ML scorer
             Optional<Double> risk = riskScorer.score(messageText);
 
-            // Idempotency: avoid duplicate flags per (chat, keyword)
-            boolean exists = flagRepo.existsByChatIdAndKeywordDetectedIgnoreCase(chatId, keyword);
-            if (exists) return;
-
-            CrisisFlag flag = new CrisisFlag();
-            flag.setChatId(chatId);
-            flag.setUserId(userId);
-            flag.setKeywordDetected(keyword);
-            flagRepo.save(flag);
+            // Idempotency via DB unique constraint, handle race safely
+            try {
+                CrisisFlag flag = new CrisisFlag();
+                flag.setChatId(chatId);
+                flag.setUserId(userId);
+                flag.setKeywordDetected(keyword);
+                flagRepo.save(flag);
+            } catch (DataIntegrityViolationException e) {
+                // Already flagged by a concurrent request; preserve idempotency
+                log.debug("Duplicate crisis flag ignored for chatId={}, keyword={}", chatId, keyword);
+                return;
+            }
 
             // Notify ADMIN users in-app
             String title = "Crisis alert";
@@ -79,7 +89,7 @@ public class CrisisFlaggingService {
 
             // Optional email (best-effort)
             try {
-                notificationService.emailAdmins(title, "User " + userId + " flagged: " + keyword, emailService);
+                notificationService.emailAdmins(title, "User " + userId + " flagged: " + keyword);
             } catch (Exception mailEx) {
                 log.warn("Failed sending crisis alert email for userId={}, chatId={}", userId, chatId, mailEx);
             }
@@ -88,4 +98,3 @@ public class CrisisFlaggingService {
         }
     }
 }
-
