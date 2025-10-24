@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @RestController
@@ -28,12 +29,24 @@ public class AdminAnalyticsController {
         this.analytics = analytics;
     }
 
+    private static final long MAX_RANGE_DAYS = 365;
+
     private static OffsetDateTime defaultFrom() {
-        return OffsetDateTime.now(ZoneOffset.UTC).minusDays(14).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        return OffsetDateTime.now(ZoneOffset.UTC).minusDays(14).truncatedTo(ChronoUnit.DAYS);
     }
 
     private static OffsetDateTime defaultTo() {
         return OffsetDateTime.now(ZoneOffset.UTC);
+    }
+
+    private static void validateDateRange(OffsetDateTime from, OffsetDateTime to) {
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("'from' must not be after 'to'");
+        }
+        long daysBetween = ChronoUnit.DAYS.between(from.toLocalDate(), to.toLocalDate());
+        if (daysBetween > MAX_RANGE_DAYS) {
+            throw new IllegalArgumentException("Date range must not exceed " + MAX_RANGE_DAYS + " days");
+        }
     }
 
     @GetMapping("/active-users")
@@ -45,6 +58,7 @@ public class AdminAnalyticsController {
     ) {
         var f = from != null ? from : defaultFrom();
         var t = to != null ? to : defaultTo();
+        validateDateRange(f, t);
         return analytics.dailyActiveUsers(f, t);
     }
 
@@ -57,6 +71,7 @@ public class AdminAnalyticsController {
     ) {
         var f = from != null ? from : defaultFrom();
         var t = to != null ? to : defaultTo();
+        validateDateRange(f, t);
         return analytics.dailyAiUsage(f, t);
     }
 
@@ -69,7 +84,7 @@ public class AdminAnalyticsController {
     ) {
         var f = from != null ? from : defaultFrom();
         var t = to != null ? to : defaultTo();
+        validateDateRange(f, t);
         return analytics.moodCorrelation(f, t);
     }
 }
-

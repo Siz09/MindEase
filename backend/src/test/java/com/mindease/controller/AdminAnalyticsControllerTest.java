@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(controllers = AdminAnalyticsController.class)
 @Import(MethodSecurityConfig.class)
@@ -35,9 +36,12 @@ class AdminAnalyticsControllerTest {
     @WithMockUser(roles = "ADMIN")
     void activeUsersOk() throws Exception {
         Mockito.when(analytics.dailyActiveUsers(Mockito.any(), Mockito.any()))
-                .thenReturn(List.of(new ActiveUsersPoint(LocalDate.now(), 5)));
+                .thenReturn(List.of(new ActiveUsersPoint(LocalDate.of(2025,1,1), 5)));
         mvc.perform(get("/api/admin/active-users").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].day").value("2025-01-01"))
+                .andExpect(jsonPath("$[0].activeUsers").value(5));
+        Mockito.verify(analytics).dailyActiveUsers(Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -51,18 +55,24 @@ class AdminAnalyticsControllerTest {
     @WithMockUser(roles = "ADMIN")
     void aiUsageOk() throws Exception {
         Mockito.when(analytics.dailyAiUsage(Mockito.any(), Mockito.any()))
-                .thenReturn(List.of(new AiUsagePoint(LocalDate.now(), 12)));
+                .thenReturn(List.of(new AiUsagePoint(LocalDate.of(2025,1,2), 12)));
         mvc.perform(get("/api/admin/ai-usage").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].day").value("2025-01-02"))
+                .andExpect(jsonPath("$[0].calls").value(12));
+        Mockito.verify(analytics).dailyAiUsage(Mockito.any(), Mockito.any());
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void moodCorrelationOk() throws Exception {
         Mockito.when(analytics.moodCorrelation(Mockito.any(), Mockito.any()))
-                .thenReturn(List.of(new MoodCorrelationPoint(LocalDate.now(), 3.7, 20)));
+                .thenReturn(List.of(new MoodCorrelationPoint(LocalDate.of(2025,1,3), 3.7, 20)));
         mvc.perform(get("/api/admin/mood-correlation").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].day").value("2025-01-03"))
+                .andExpect(jsonPath("$[0].avgMood").value(3.7))
+                .andExpect(jsonPath("$[0].chatCount").value(20));
+        Mockito.verify(analytics).moodCorrelation(Mockito.any(), Mockito.any());
     }
 }
-
