@@ -18,10 +18,20 @@ public class AnalyticsRepository {
     @PersistenceContext
     private EntityManager em;
 
+    private static void validateRange(OffsetDateTime from, OffsetDateTime to) {
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("Date range parameters cannot be null");
+        }
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("'from' must be before or equal to 'to'");
+        }
+    }
+
     /**
      * Daily active users (distinct users per day) in [from, to].
      */
     public List<ActiveUsersPoint> dailyActiveUsers(OffsetDateTime from, OffsetDateTime to) {
+        validateRange(from, to);
         var sql = """
             SELECT DATE(a.created_at) AS day, COUNT(DISTINCT a.user_id) AS active_users
             FROM audit_logs a
@@ -43,11 +53,12 @@ public class AnalyticsRepository {
      * AI usage per day by counting chat send actions from audit logs.
      */
     public List<AiUsagePoint> dailyAiUsage(OffsetDateTime from, OffsetDateTime to) {
+        validateRange(from, to);
         var sql = """
             SELECT DATE(a.created_at) AS day, COUNT(*) AS calls
             FROM audit_logs a
             WHERE a.created_at BETWEEN :from AND :to
-              AND a.action_type IN ('CHAT_SENT')
+              AND a.action_type = 'CHAT_SENT'
             GROUP BY day
             ORDER BY day
         """;
@@ -67,6 +78,7 @@ public class AnalyticsRepository {
      * - chat count per day (from audit_logs)
      */
     public List<MoodCorrelationPoint> moodCorrelation(OffsetDateTime from, OffsetDateTime to) {
+        validateRange(from, to);
         var sql = """
             WITH moods AS (
                 SELECT DATE(m.created_at) AS day, AVG(m.mood_value)::float8 AS avg_mood
@@ -78,11 +90,11 @@ public class AnalyticsRepository {
                 SELECT DATE(a.created_at) AS day, COUNT(*) AS chat_count
                 FROM audit_logs a
                 WHERE a.created_at BETWEEN :from AND :to
-                  AND a.action_type IN ('CHAT_SENT')
+                  AND a.action_type = 'CHAT_SENT'
                 GROUP BY day
             )
             SELECT d.day,
-                   COALESCE(m.avg_mood, NULL) AS avg_mood,
+                   m.avg_mood,
                    COALESCE(c.chat_count, 0) AS chat_count
             FROM (
                 SELECT generate_series(DATE(:from), DATE(:to), '1 day') AS day
@@ -104,4 +116,3 @@ public class AnalyticsRepository {
                 .toList();
     }
 }
-
