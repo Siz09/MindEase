@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const pct = (n) => `${Math.round((n || 0) * 100)}%`;
-const safe = (v) => v ?? '—';
+const safe = (v) => v ?? '-';
+const formatDate = (dateStr) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  return isNaN(date.getTime()) ? null : date.toLocaleString();
+};
 
 export default function CrisisFlags() {
   const [rows, setRows] = useState([]);
@@ -41,7 +46,7 @@ export default function CrisisFlags() {
   if (loading) {
     return (
       <div className="panel">
-        <div className="panel-body">Loading…</div>
+        <div className="panel-body">Loading...</div>
       </div>
     );
   }
@@ -72,7 +77,7 @@ export default function CrisisFlags() {
               <td>{safe(f.chatId)}</td>
               <td>{safe(f.keyword || f.keywordDetected)}</td>
               <td>{pct(f.risk || f.riskScore)}</td>
-              <td>{safe(new Date(f.createdAt).toLocaleString())}</td>
+              <td>{safe(formatDate(f.createdAt))}</td>
             </tr>
           ))}
         </tbody>
