@@ -136,7 +136,7 @@ export const AuthProvider = ({ children }) => {
         autoClose: 3000,
       });
 
-      return { success: true };
+      return { success: true, user: userData, token: jwtToken };
     } catch (error) {
       console.error('Login error:', error);
 
@@ -190,7 +190,7 @@ export const AuthProvider = ({ children }) => {
         autoClose: 3000,
       });
 
-      return { success: true };
+      return { success: true, user: userData, token: jwtToken };
     } catch (error) {
       console.error('Anonymous login error:', error);
       toast.error('Failed to continue anonymously. Please try again.');
