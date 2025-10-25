@@ -2,6 +2,14 @@
 
 import { useMemo, useState } from 'react';
 
+// Redact email rendering for privacy (PII)
+const redactEmail = (email) => {
+  if (!email || typeof email !== 'string' || !email.includes('@')) return 'user';
+  const [local, domain] = email.split('@');
+  const visible = local.slice(0, 2);
+  return `${visible}${'*'.repeat(Math.max(local.length - 2, 0))}@${domain}`;
+};
+
 const DATA = [
   {
     id: '1',
@@ -51,20 +59,39 @@ export default function AuditLogs() {
   return (
     <div>
       <div className="filters">
+        <label htmlFor="email-filter">Email</label>
         <input
+          id="email-filter"
           placeholder="Email"
           value={f.email}
           onChange={(e) => setF({ ...f, email: e.target.value })}
         />
-        <select value={f.action} onChange={(e) => setF({ ...f, action: e.target.value })}>
+        <label htmlFor="action-filter">Action</label>
+        <select
+          id="action-filter"
+          value={f.action}
+          onChange={(e) => setF({ ...f, action: e.target.value })}
+        >
           <option value="">All actions</option>
           <option value="LOGIN">LOGIN</option>
           <option value="CHAT_SENT">CHAT_SENT</option>
           <option value="MOOD_ADDED">MOOD_ADDED</option>
           <option value="JOURNAL_ADDED">JOURNAL_ADDED</option>
         </select>
-        <input type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
-        <input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
+        <label htmlFor="from-filter">From</label>
+        <input
+          id="from-filter"
+          type="date"
+          value={f.from}
+          onChange={(e) => setF({ ...f, from: e.target.value })}
+        />
+        <label htmlFor="to-filter">To</label>
+        <input
+          id="to-filter"
+          type="date"
+          value={f.to}
+          onChange={(e) => setF({ ...f, to: e.target.value })}
+        />
         <button
           className="admin-btn"
           onClick={() => setF({ email: '', action: '', from: '', to: '' })}
@@ -86,7 +113,7 @@ export default function AuditLogs() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td>{r.user}</td>
+                <td title={r.user}>{redactEmail(r.user)}</td>
                 <td>{r.action}</td>
                 <td title={r.details}>{r.details}</td>
                 <td>{new Date(r.createdAt).toLocaleString()}</td>

@@ -39,6 +39,8 @@ const Login = () => {
         } else {
           navigate('/');
         }
+      } else {
+        setError(result?.error || result?.message || t('auth.loginError'));
       }
     } catch (error) {
       setError(t('auth.loginError'));

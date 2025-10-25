@@ -1,9 +1,11 @@
 :root {
   --bg: #f7f7f8;
   --panel: #fff;
-  --b: #e9e9ee;
+  --border: #e9e9ee;
   --text: #1e1e24;
   --muted: #666;
+  --table-header-bg: #fafafa;
+  --table-row-border: #eee;
 }
 
 .admin-shell {
@@ -49,7 +51,7 @@
 }
 .admin-topbar {
   background: var(--panel);
-  border-bottom: 1px solid var(--b);
+  border-bottom: 1px solid var(--border);
   padding: 10px 14px;
   display: flex;
   justify-content: space-between;
@@ -68,7 +70,7 @@
   font-size: 14px;
 }
 .admin-btn {
-  border: 1px solid var(--b);
+  border: 1px solid var(--border);
   background: var(--panel);
   padding: 6px 10px;
   border-radius: 6px;
@@ -91,13 +93,13 @@
 
 .panel {
   background: var(--panel);
-  border: 1px solid var(--b);
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
 }
 .panel-head {
   padding: 10px 12px;
-  border-bottom: 1px solid var(--b);
+  border-bottom: 1px solid var(--border);
   font-weight: 600;
 }
 .panel-body {
@@ -110,7 +112,7 @@
 
 .table-wrap {
   background: var(--panel);
-  border: 1px solid var(--b);
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: auto;
 }
@@ -122,11 +124,11 @@
 .table td {
   text-align: left;
   padding: 10px 12px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--table-row-border);
   font-size: 14px;
 }
 .table th {
-  background: #fafafa;
+  background: var(--table-header-bg);
   position: sticky;
   top: 0;
 }
@@ -139,7 +141,7 @@
 }
 .filters input,
 .filters select {
-  border: 1px solid var(--b);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 6px 8px;
   font-size: 14px;

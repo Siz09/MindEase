@@ -1,25 +1,58 @@
 'use client';
 
-const FLAGS = [
-  {
-    id: 'c1',
-    user: 'anon-4832',
-    chatId: 'c-1001',
-    keyword: 'self-harm',
-    risk: 0.92,
-    createdAt: '2025-10-24T08:55:00Z',
-  },
-  {
-    id: 'c2',
-    user: 'bob@example.com',
-    chatId: 'c-1002',
-    keyword: 'suicide',
-    risk: 0.87,
-    createdAt: '2025-10-24T13:30:00Z',
-  },
-];
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const pct = (n) => `${Math.round((n || 0) * 100)}%`;
+const safe = (v) => v ?? '—';
 
 export default function CrisisFlags() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const { data } = await axios.get('/api/admin/crisis-flags');
+        if (!mounted) return;
+        setRows(Array.isArray(data) ? data : data?.items || []);
+      } catch (e) {
+        if (!mounted) return;
+        setError('Failed to load crisis flags');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <div className="panel">
+        <div className="panel-body">{error}</div>
+      </div>
+    );
+  }
+  if (loading) {
+    return (
+      <div className="panel">
+        <div className="panel-body">Loading…</div>
+      </div>
+    );
+  }
+  if (!rows.length) {
+    return (
+      <div className="panel">
+        <div className="panel-body">No crisis flags found.</div>
+      </div>
+    );
+  }
+
   return (
     <div className="table-wrap">
       <table className="table">
@@ -33,13 +66,13 @@ export default function CrisisFlags() {
           </tr>
         </thead>
         <tbody>
-          {FLAGS.map((f) => (
+          {rows.map((f) => (
             <tr key={f.id}>
-              <td>{f.user}</td>
-              <td>{f.chatId}</td>
-              <td>{f.keyword}</td>
-              <td>{Math.round(f.risk * 100)}%</td>
-              <td>{new Date(f.createdAt).toLocaleString()}</td>
+              <td>{safe(f.userAlias || f.user || 'user')}</td>
+              <td>{safe(f.chatId)}</td>
+              <td>{safe(f.keyword || f.keywordDetected)}</td>
+              <td>{pct(f.risk || f.riskScore)}</td>
+              <td>{safe(new Date(f.createdAt).toLocaleString())}</td>
             </tr>
           ))}
         </tbody>
