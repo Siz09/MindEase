@@ -11,6 +11,7 @@ export default function AuditLogs() {
 
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
     const load = async () => {
       try {
         setLoading(true);
@@ -20,11 +21,15 @@ export default function AuditLogs() {
         if (f.action) params.action = f.action;
         if (f.from) params.from = f.from;
         if (f.to) params.to = f.to;
-        const { data } = await axios.get('/api/admin/audit-logs', { params });
+        const { data } = await axios.get('/api/admin/audit-logs', {
+          params,
+          signal: controller.signal,
+        });
         if (!mounted) return;
         const items = Array.isArray(data) ? data : data?.items || [];
         setRows(items);
       } catch (e) {
+        if (axios.isCancel?.(e) || e?.code === 'ERR_CANCELED') return;
         if (!mounted) return;
         setError('Failed to load audit logs');
       } finally {
@@ -34,6 +39,7 @@ export default function AuditLogs() {
     load();
     return () => {
       mounted = false;
+      controller.abort();
     };
   }, [f.email, f.action, f.from, f.to]);
 
