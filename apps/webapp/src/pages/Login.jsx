@@ -31,8 +31,15 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(formData.email, formData.password);
-      navigate('/');
+      const result = await login(formData.email, formData.password);
+      if (result?.success) {
+        const role = result.user?.role || result.user?.authority;
+        if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }
     } catch (error) {
       setError(t('auth.loginError'));
     } finally {

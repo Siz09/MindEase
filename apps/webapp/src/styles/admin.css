@@ -1,0 +1,155 @@
+:root {
+  --bg: #f7f7f8;
+  --panel: #fff;
+  --b: #e9e9ee;
+  --text: #1e1e24;
+  --muted: #666;
+}
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.admin-sidebar {
+  background: #12131a;
+  color: #e9e9f4;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+.admin-brand {
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.admin-nav {
+  display: block;
+  color: #cfd1e6;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin: 4px 0;
+}
+.admin-nav.active,
+.admin-nav:hover {
+  background: #1e2130;
+  color: #fff;
+}
+.admin-hint {
+  margin-top: auto;
+  font-size: 12px;
+  color: #9aa;
+  opacity: 0.7;
+}
+
+.admin-main {
+  display: flex;
+  flex-direction: column;
+}
+.admin-topbar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--b);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.admin-breadcrumb {
+  font-weight: 600;
+}
+.admin-topbar-right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.admin-user {
+  color: var(--muted);
+  font-size: 14px;
+}
+.admin-btn {
+  border: 1px solid var(--b);
+  background: var(--panel);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.admin-btn:hover {
+  background: #f2f2f7;
+}
+
+.admin-content {
+  padding: 16px;
+  display: grid;
+  gap: 16px;
+}
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--b);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.panel-head {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--b);
+  font-weight: 600;
+}
+.panel-body {
+  padding: 10px 12px;
+}
+.panel-body canvas {
+  width: 100%;
+  height: 280px;
+}
+
+.table-wrap {
+  background: var(--panel);
+  border: 1px solid var(--b);
+  border-radius: 12px;
+  overflow: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+.table th {
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.filters input,
+.filters select {
+  border: 1px solid var(--b);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 14px;
+}
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.switch input {
+  margin-right: 8px;
+}
