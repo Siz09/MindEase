@@ -2,12 +2,30 @@
 
 import { useMemo, useState } from 'react';
 
-// Redact email rendering for privacy (PII)
+// Display-only redaction; real PII protection must happen server-side.
 const redactEmail = (email) => {
-  if (!email || typeof email !== 'string' || !email.includes('@')) return 'user';
-  const [local, domain] = email.split('@');
-  const visible = local.slice(0, 2);
-  return `${visible}${'*'.repeat(Math.max(local.length - 2, 0))}@${domain}`;
+  if (!email || typeof email !== 'string') return 'user';
+  const at = email.indexOf('@');
+  if (at <= 0) return 'user';
+  const local = email.slice(0, at);
+  const domain = email.slice(at + 1);
+
+  const localVisible = local.slice(0, 2);
+  const localMaskLen = Math.max(local.length - localVisible.length, 1);
+
+  const parts = domain.split('.');
+  if (parts.length >= 2) {
+    const tld = parts.pop();
+    const domName = parts.join('.');
+    const domVisible = domName ? domName[0] : '';
+    const domMaskLen = Math.max((domName?.length || 0) - (domVisible ? 1 : 0), 1);
+    const maskedDomain = `${domVisible}${'*'.repeat(domMaskLen)}.${tld}`;
+    return `${localVisible}${'*'.repeat(localMaskLen)}@${maskedDomain}`;
+  }
+
+  const domVisible = domain[0] || '';
+  const domMaskLen = Math.max(domain.length - (domVisible ? 1 : 0), 1);
+  return `${localVisible}${'*'.repeat(localMaskLen)}@${domVisible}${'*'.repeat(domMaskLen)}`;
 };
 
 const DATA = [
@@ -113,7 +131,7 @@ export default function AuditLogs() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td title={r.user}>{redactEmail(r.user)}</td>
+                <td>{redactEmail(r.user)}</td>
                 <td>{r.action}</td>
                 <td title={r.details}>{r.details}</td>
                 <td>{new Date(r.createdAt).toLocaleString()}</td>
