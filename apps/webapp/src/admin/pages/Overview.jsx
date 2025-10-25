@@ -60,7 +60,7 @@ export default function Overview() {
   const activeRef = useRef(null);
   const aiRef = useRef(null);
   const moodRef = useRef(null);
-  const charts = useRef?.({}) || { current: {} };
+  const charts = useRef({});
 
   useEffect(() => {
     charts.current.active?.destroy?.();

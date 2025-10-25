@@ -4,14 +4,15 @@ import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminTopbar({ pathname }) {
   const { currentUser, logout } = useAuth();
+  const p = pathname ?? '';
   const label =
-    pathname === '/admin'
+    p === '/admin'
       ? 'Overview'
-      : pathname.includes('audit-logs')
+      : p.includes('audit-logs')
         ? 'Audit Logs'
-        : pathname.includes('crisis-flags')
+        : p.includes('crisis-flags')
           ? 'Crisis Flags'
-          : pathname.includes('settings')
+          : p.includes('settings')
             ? 'Settings'
             : 'Admin';
 
