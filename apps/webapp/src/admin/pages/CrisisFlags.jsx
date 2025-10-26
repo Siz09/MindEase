@@ -20,8 +20,14 @@ export default function CrisisFlags() {
     const params = new URLSearchParams();
     params.set('page', page);
     params.set('size', size);
-    if (from) params.set('from', new Date(from).toISOString());
-    if (to) params.set('to', new Date(to).toISOString());
+    if (from) {
+      const d = new Date(from);
+      if (!isNaN(d.getTime())) params.set('from', d.toISOString());
+    }
+    if (to) {
+      const d = new Date(to);
+      if (!isNaN(d.getTime())) params.set('to', d.toISOString());
+    }
     return params.toString();
   };
 
@@ -31,8 +37,10 @@ export default function CrisisFlags() {
       const { data } = await api.get(`/admin/crisis-flags?${query()}`);
       setRows(data.content || []);
       setTotalPages(data.totalPages ?? (data.last ? page + 1 : page + 2));
-    } catch {
-      // keep silent; page may not exist yet
+    } catch (err) {
+      if (!(err && err.response && err.response.status === 404)) {
+        console.error('Failed to load crisis flags:', err);
+      }
     } finally {
       setLoading(false);
     }
@@ -75,7 +83,11 @@ export default function CrisisFlags() {
       es.onmessage = (ev) => {
         try {
           const flag = JSON.parse(ev.data);
-          setRows((prev) => [flag, ...prev].slice(0, size));
+          if (page === 0 && !from && !to) {
+            setRows((prev) => [flag, ...prev].slice(0, size));
+          } else {
+            load();
+          }
         } catch {
           return;
         }
@@ -95,7 +107,7 @@ export default function CrisisFlags() {
         esRef.current.close();
       }
     };
-  }, [size, load]);
+  }, [size, page, from, to, load]);
 
   function exportCSV() {
     toCSV(rows, 'crisis-flags.csv', [
