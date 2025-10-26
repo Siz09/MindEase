@@ -167,6 +167,11 @@ export default function Overview() {
 
   return (
     <div className="grid">
+      {loading && !error && active.length === 0 && ai.length === 0 && mood.length === 0 && (
+        <div className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div className="panel-body">Loading...</div>
+        </div>
+      )}
       {!!error && (
         <div className="panel" style={{ gridColumn: '1 / -1' }}>
           <div className="panel-body">{error}</div>

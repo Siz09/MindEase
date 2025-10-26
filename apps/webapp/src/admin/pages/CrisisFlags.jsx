@@ -15,6 +15,8 @@ export default function CrisisFlags() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const esRef = useRef(null);
+  const inFlightRef = useRef(false);
+  const debounceRef = useRef(null);
 
   const query = () => {
     const params = new URLSearchParams();
@@ -32,6 +34,8 @@ export default function CrisisFlags() {
   };
 
   const load = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setLoading(true);
     try {
       const { data } = await api.get(`/admin/crisis-flags?${query()}`);
@@ -43,6 +47,7 @@ export default function CrisisFlags() {
       }
     } finally {
       setLoading(false);
+      inFlightRef.current = false;
     }
   }, [page, size, from, to]);
 
@@ -86,7 +91,13 @@ export default function CrisisFlags() {
           if (page === 0 && !from && !to) {
             setRows((prev) => [flag, ...prev].slice(0, size));
           } else {
-            load();
+            // Debounce reloads to avoid spamming requests when many events arrive
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(() => {
+              if (!inFlightRef.current) {
+                load();
+              }
+            }, 500);
           }
         } catch {
           return;
