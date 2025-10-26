@@ -30,11 +30,49 @@ export default function AuditLogs() {
     return params.toString();
   }, [page, size, f]);
 
+  // For privacy, avoid including email in URL during fallback GET
+  const qsNoEmail = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('page', page);
+    params.set('size', size);
+    if (f.action) params.set('actionType', f.action);
+    if (f.from) {
+      const fromDate = new Date(f.from);
+      if (!isNaN(fromDate.getTime())) params.set('from', fromDate.toISOString());
+    }
+    if (f.to) {
+      const toDate = new Date(f.to);
+      if (!isNaN(toDate.getTime())) params.set('to', toDate.toISOString());
+    }
+    return params.toString();
+  }, [page, size, f.action, f.from, f.to]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const { data } = await api.get(`/admin/audit-logs?${qs}`);
+      let data;
+      if (f.email) {
+        const body = {
+          page,
+          size,
+          email: f.email,
+          actionType: f.action || undefined,
+          from: f.from && !isNaN(new Date(f.from)) ? new Date(f.from).toISOString() : undefined,
+          to: f.to && !isNaN(new Date(f.to)) ? new Date(f.to).toISOString() : undefined,
+        };
+        try {
+          ({ data } = await api.post('/admin/audit-logs/search', body));
+        } catch (err) {
+          if (err?.response?.status === 404 || err?.response?.status === 405) {
+            ({ data } = await api.get(`/admin/audit-logs?${qsNoEmail}`));
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        ({ data } = await api.get(`/admin/audit-logs?${qs}`));
+      }
       setRows(data.content || []);
       setTotalPages(data.totalPages ?? (data.last ? page + 1 : page + 2));
     } catch {
@@ -42,7 +80,7 @@ export default function AuditLogs() {
     } finally {
       setLoading(false);
     }
-  }, [qs, page]);
+  }, [qs, qsNoEmail, page, size, f.email, f.action, f.from, f.to]);
 
   useEffect(() => {
     load().catch(() => {});
