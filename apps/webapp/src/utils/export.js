@@ -1,17 +1,22 @@
 // apps/webapp/src/utils/export.js
 export function toCSV(rows, filename, columns) {
   // columns: array of { key, title }
-  const header = columns.map((c) => c.title).join(',');
+  const escapeCSVField = (field) => {
+    const str = String(field ?? '');
+    if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
+  const header = columns.map((c) => escapeCSVField(c.title)).join(',');
   const csvRows = rows.map((row) =>
     columns
       .map((c) => {
         let v = row?.[c.key];
         if (v == null) return '';
         if (v instanceof Date) v = v.toISOString();
-        if (typeof v === 'string') {
-          return '"' + v.replace(/"/g, '""') + '"';
-        }
-        return String(v);
+        return escapeCSVField(v);
       })
       .join(',')
   );

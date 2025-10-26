@@ -17,9 +17,16 @@ export default function AuditLogs() {
     const params = new URLSearchParams();
     params.set('page', page);
     params.set('size', size);
+    if (f.email) params.set('email', f.email);
     if (f.action) params.set('actionType', f.action);
-    if (f.from) params.set('from', new Date(f.from).toISOString());
-    if (f.to) params.set('to', new Date(f.to).toISOString());
+    if (f.from) {
+      const fromDate = new Date(f.from);
+      if (!isNaN(fromDate.getTime())) params.set('from', fromDate.toISOString());
+    }
+    if (f.to) {
+      const toDate = new Date(f.to);
+      if (!isNaN(toDate.getTime())) params.set('to', toDate.toISOString());
+    }
     return params.toString();
   }, [page, size, f]);
 
