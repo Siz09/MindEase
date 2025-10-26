@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Chart,
   LineController,
@@ -13,6 +13,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import api from '../../utils/api';
 
 Chart.register(
   LineController,
@@ -28,96 +29,102 @@ Chart.register(
 
 const fmt = (d) => new Date(d).toLocaleDateString();
 
-const ACTIVE = [
-  { day: '2025-10-18', users: 42 },
-  { day: '2025-10-19', users: 51 },
-  { day: '2025-10-20', users: 37 },
-  { day: '2025-10-21', users: 63 },
-  { day: '2025-10-22', users: 59 },
-  { day: '2025-10-23', users: 71 },
-  { day: '2025-10-24', users: 68 },
-];
-const AI = [
-  { day: '2025-10-18', calls: 120 },
-  { day: '2025-10-19', calls: 132 },
-  { day: '2025-10-20', calls: 101 },
-  { day: '2025-10-21', calls: 166 },
-  { day: '2025-10-22', calls: 155 },
-  { day: '2025-10-23', calls: 190 },
-  { day: '2025-10-24', calls: 174 },
-];
-const MOOD = [
-  { day: '2025-10-18', avgMood: 3.7, sessions: 20 },
-  { day: '2025-10-19', avgMood: 3.9, sessions: 24 },
-  { day: '2025-10-20', avgMood: 3.5, sessions: 18 },
-  { day: '2025-10-21', avgMood: 4.1, sessions: 27 },
-  { day: '2025-10-22', avgMood: 4.0, sessions: 25 },
-  { day: '2025-10-23', avgMood: 3.8, sessions: 29 },
-  { day: '2025-10-24', avgMood: 4.2, sessions: 31 },
-];
-
 export default function Overview() {
+  const [active, setActive] = useState([]);
+  const [ai, setAi] = useState([]);
+  const [mood, setMood] = useState([]);
+
   const activeRef = useRef(null);
   const aiRef = useRef(null);
   const moodRef = useRef(null);
   const charts = useRef({});
 
+  async function loadAll() {
+    const [a, u, m] = await Promise.all([
+      api.get('/admin/active-users'),
+      api.get('/admin/ai-usage'),
+      api.get('/admin/mood-correlation'),
+    ]);
+    setActive(a.data || []);
+    setAi(u.data || []);
+    setMood(m.data || []);
+  }
+
   useEffect(() => {
-    charts.current.active?.destroy?.();
-    charts.current.active = new Chart(activeRef.current, {
-      type: 'line',
-      data: {
-        labels: ACTIVE.map((x) => fmt(x.day)),
-        datasets: [{ label: 'Daily Active Users', data: ACTIVE.map((x) => x.users) }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } },
-      },
-    });
+    let mounted = true;
+    loadAll().catch(() => undefined);
+    const id = setInterval(() => mounted && loadAll().catch(() => undefined), 60000);
+    return () => {
+      mounted = false;
+      clearInterval(id);
+      Object.values(charts.current).forEach((c) => c?.destroy?.());
+    };
+  }, []);
 
-    charts.current.ai?.destroy?.();
-    charts.current.ai = new Chart(aiRef.current, {
-      type: 'bar',
-      data: {
-        labels: AI.map((x) => fmt(x.day)),
-        datasets: [{ label: 'AI Calls', data: AI.map((x) => x.calls) }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } },
-      },
-    });
-
-    charts.current.mood?.destroy?.();
-    charts.current.mood = new Chart(moodRef.current, {
-      type: 'line',
-      data: {
-        labels: MOOD.map((x) => fmt(x.day)),
-        datasets: [
-          { label: 'Avg Mood (1–5)', data: MOOD.map((x) => x.avgMood), yAxisID: 'y1' },
-          { label: 'Sessions', data: MOOD.map((x) => x.sessions), yAxisID: 'y2' },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y1: { type: 'linear', position: 'left', suggestedMin: 1, suggestedMax: 5 },
-          y2: {
-            type: 'linear',
-            position: 'right',
-            beginAtZero: true,
-            grid: { drawOnChartArea: false },
+  useEffect(() => {
+    if (activeRef.current) {
+      charts.current.active?.destroy?.();
+      charts.current.active = new Chart(activeRef.current, {
+        type: 'line',
+        data: {
+          labels: active.map((x) => fmt(x.day)),
+          datasets: [
+            { label: 'Daily Active Users', data: active.map((x) => x.activeUsers ?? x.count ?? 0) },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } },
+        },
+      });
+    }
+    if (aiRef.current) {
+      charts.current.ai?.destroy?.();
+      charts.current.ai = new Chart(aiRef.current, {
+        type: 'bar',
+        data: {
+          labels: ai.map((x) => fmt(x.day)),
+          datasets: [{ label: 'AI Calls', data: ai.map((x) => x.calls ?? 0) }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } },
+        },
+      });
+    }
+    if (moodRef.current) {
+      charts.current.mood?.destroy?.();
+      charts.current.mood = new Chart(moodRef.current, {
+        type: 'line',
+        data: {
+          labels: mood.map((x) => fmt(x.day)),
+          datasets: [
+            { label: 'Avg Mood (1–5)', data: mood.map((x) => x.avgMood ?? null), yAxisID: 'y1' },
+            {
+              label: 'Sessions',
+              data: mood.map((x) => x.chatCount ?? x.sessionCount ?? 0),
+              yAxisID: 'y2',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y1: { type: 'linear', position: 'left', suggestedMin: 1, suggestedMax: 5 },
+            y2: {
+              type: 'linear',
+              position: 'right',
+              beginAtZero: true,
+              grid: { drawOnChartArea: false },
+            },
           },
         },
-      },
-    });
-
-    return () => Object.values(charts.current).forEach((c) => c?.destroy?.());
-  }, []);
+      });
+    }
+  }, [active, ai, mood]);
 
   return (
     <div className="grid">

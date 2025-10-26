@@ -1,10 +1,14 @@
 import axios from 'axios';
 
+// Derive base URL from env, defaulting to local dev
+const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
+
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: `${base}/api`,
+  timeout: 20000,
 });
 
-// Add JWT token automatically
+// Attach backend JWT from localStorage (set by AuthContext)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
