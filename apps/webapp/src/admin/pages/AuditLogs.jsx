@@ -12,6 +12,7 @@ export default function AuditLogs() {
   const [f, setF] = useState({ email: '', action: '', from: '', to: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   const qs = useMemo(() => {
     const params = new URLSearchParams();
@@ -63,8 +64,13 @@ export default function AuditLogs() {
         };
         try {
           ({ data } = await api.post('/admin/audit-logs/search', body));
+          setNotice('');
         } catch (err) {
           if (err?.response?.status === 404 || err?.response?.status === 405) {
+            // Inform user that email filter could not be applied to avoid leaking PII in URL
+            setNotice(
+              'Email filter could not be applied (server does not support POST search). Showing results without email filter.'
+            );
             ({ data } = await api.get(`/admin/audit-logs?${qsNoEmail}`));
           } else {
             throw err;
@@ -72,6 +78,7 @@ export default function AuditLogs() {
         }
       } else {
         ({ data } = await api.get(`/admin/audit-logs?${qs}`));
+        setNotice('');
       }
       setRows(data.content || []);
       setTotalPages(data.totalPages ?? (data.last ? page + 1 : page + 2));
@@ -80,7 +87,7 @@ export default function AuditLogs() {
     } finally {
       setLoading(false);
     }
-  }, [qs, qsNoEmail, page, size, f.email, f.action, f.from, f.to]);
+  }, [qs, qsNoEmail]);
 
   useEffect(() => {
     load().catch(() => {});
@@ -137,6 +144,12 @@ export default function AuditLogs() {
           Export CSV
         </button>
       </div>
+
+      {notice && !loading && !error && (
+        <div className="hint" style={{ marginBottom: '8px' }}>
+          {notice}
+        </div>
+      )}
 
       <div className="table-wrap">
         <table className="table">
