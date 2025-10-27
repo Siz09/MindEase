@@ -161,6 +161,24 @@ To test offline:
 - **Husky** - Git hooks
 - **GitHub Actions** - CI/CD
 
+## Phase 7 – Admin & Safety (Deliverables)
+
+- Admin Dashboard (separate UI shell under `/admin`)
+  - Charts: Active Users, AI Usage, Mood Correlation
+  - Tables: Audit Logs (filters, pagination), Crisis Flags (real-time, export)
+- Role-based access (frontend guard + backend `@PreAuthorize("hasRole('ADMIN')")`)
+- Audit Logging with AOP and immutable timestamps
+- Crisis Flagging (keyword detector + risk score + idempotency via DB unique)
+- Analytics Endpoints (active users, AI usage, mood correlation)
+- Real-time crisis updates (SSE or polling fallback)
+- Documentation:
+  - `apps/webapp/ADMIN_DASHBOARD_TESTING.md`
+  - Updated README
+- Verified via:
+  - Browser end-to-end
+  - Postman (RBAC, filters/pagination)
+  - Automated tests (backend + Cypress)
+
 ## 📊 API Documentation
 
 The API is fully documented with Swagger/OpenAPI. Access the documentation at:

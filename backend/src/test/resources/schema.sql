@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS crisis_flags (
   chat_id UUID NOT NULL,
   user_id UUID NOT NULL,
   keyword_detected VARCHAR(200) NOT NULL,
+  risk_score DOUBLE PRECISION,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
