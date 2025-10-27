@@ -127,3 +127,13 @@ ORDER BY d.day;
 - Firebase `auth/invalid-credential` → wrong API key, unauthorized domain, or missing user.
 
 > Rotate or remove the demo admin before any production deployment.
+
+## Backend Notes
+
+- Crisis Flags date filters
+  - Supports partial ranges: providing only `from` means [from, now], only `to` means [epoch, to].
+  - If both `from` and `to` are provided and `from > to`, the API returns `400 Bad Request` with message `from must be before or equal to to`.
+
+- SSE limits and behavior
+  - `/api/admin/crisis-flags/stream` caps concurrent connections (HTTP 429 if limit reached).
+  - A connection is only registered after an initial `open` event is delivered; failed opens are closed and not retained.

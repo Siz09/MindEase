@@ -48,6 +48,9 @@ public class AdminCrisisController {
     ) {
         int pageSize = Math.max(1, Math.min(size, 200));
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        if (from != null && to != null && from.isAfter(to)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from must be before or equal to to");
+        }
         if (from == null && to == null) {
             return repo.findAllByOrderByCreatedAtDesc(pageable);
         }
@@ -63,12 +66,14 @@ public class AdminCrisisController {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Maximum SSE connections reached");
         }
         SseEmitter emitter = new SseEmitter(0L); // no timeout; client controls
-        emitters.add(emitter);
         emitter.onCompletion(() -> emitters.remove(emitter));
         emitter.onTimeout(() -> emitters.remove(emitter));
         try {
             emitter.send(SseEmitter.event().name("open").data("ok"));
-        } catch (IOException ignored) {}
+            emitters.add(emitter);
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+        }
         return emitter;
     }
 
