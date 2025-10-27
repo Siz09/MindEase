@@ -8,6 +8,7 @@ import com.mindease.safety.CrisisKeywordDetector;
 import com.mindease.safety.RiskScorer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -27,19 +28,22 @@ public class CrisisFlaggingService {
     private final AdminSettingsRepository settingsRepo;
     private final NotificationService notificationService;
     private final EmailService emailService;
+    private final ApplicationEventPublisher events;
 
     public CrisisFlaggingService(CrisisKeywordDetector detector,
                                  RiskScorer riskScorer,
                                  CrisisFlagRepository flagRepo,
                                  AdminSettingsRepository settingsRepo,
                                  NotificationService notificationService,
-                                 EmailService emailService) {
+                                 EmailService emailService,
+                                 ApplicationEventPublisher events) {
         this.detector = detector;
         this.riskScorer = riskScorer;
         this.flagRepo = flagRepo;
         this.settingsRepo = settingsRepo;
         this.notificationService = notificationService;
         this.emailService = emailService;
+        this.events = events;
     }
 
     private boolean alertsEnabled() {
@@ -75,7 +79,13 @@ public class CrisisFlaggingService {
                 flag.setUserId(userId);
                 flag.setKeywordDetected(keyword);
                 risk.ifPresent(flag::setRiskScore);
-                flagRepo.save(flag);
+                CrisisFlag saved = flagRepo.save(flag);
+                try {
+                    // publish event for SSE consumers
+                    events.publishEvent(new com.mindease.events.CrisisFlagCreatedEvent(saved));
+                } catch (Exception pubEx) {
+                    log.debug("CrisisFlag event publish failed: {}", pubEx.getMessage());
+                }
             } catch (DataIntegrityViolationException e) {
                 // Already flagged by a concurrent request; preserve idempotency
                 log.debug("Duplicate crisis flag ignored for chatId={}, keyword={}", chatId, keyword);
