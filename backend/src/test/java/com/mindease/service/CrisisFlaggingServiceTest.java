@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -34,13 +35,14 @@ class CrisisFlaggingServiceTest {
 
         CrisisKeywordDetector detector = new CrisisKeywordDetector();
         RiskScorer scorer = text -> Optional.of(0.92);
+        ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
         when(settingsRepo.findByFeatureName("CRISIS_ALERTS_ENABLED"))
                 .thenReturn(Optional.of(new AdminSettings(){
                     { setFeatureName("CRISIS_ALERTS_ENABLED"); setEnabled(true); }
                 }));
         when(flagRepo.existsByChatIdAndKeywordDetectedIgnoreCase(any(), any())).thenReturn(false);
 
-        service = new CrisisFlaggingService(detector, scorer, flagRepo, settingsRepo, notificationService, emailService);
+        service = new CrisisFlaggingService(detector, scorer, flagRepo, settingsRepo, notificationService, emailService, publisher);
     }
 
     @Test
