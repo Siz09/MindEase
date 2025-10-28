@@ -8,7 +8,9 @@ import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Repository
@@ -45,7 +47,7 @@ public class AnalyticsRepository {
                 .setParameter("to", to)
                 .getResultList();
         return rows.stream()
-                .map(r -> new ActiveUsersPoint(((java.sql.Date) r[0]).toLocalDate(), ((Number) r[1]).longValue()))
+                .map(r -> new ActiveUsersPoint(toLocalDate(r[0]), ((Number) r[1]).longValue()))
                 .toList();
     }
 
@@ -68,7 +70,7 @@ public class AnalyticsRepository {
                 .setParameter("to", to)
                 .getResultList();
         return rows.stream()
-                .map(r -> new AiUsagePoint(((java.sql.Date) r[0]).toLocalDate(), ((Number) r[1]).longValue()))
+                .map(r -> new AiUsagePoint(toLocalDate(r[0]), ((Number) r[1]).longValue()))
                 .toList();
     }
 
@@ -110,9 +112,27 @@ public class AnalyticsRepository {
                 .getResultList();
         return rows.stream()
                 .map(r -> new MoodCorrelationPoint(
-                        ((java.sql.Date) r[0]).toLocalDate(),
+                        toLocalDate(r[0]),
                         r[1] == null ? null : ((Number) r[1]).doubleValue(),
                         ((Number) r[2]).longValue()))
                 .toList();
+    }
+
+    private static LocalDate toLocalDate(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.sql.Date d) {
+            return d.toLocalDate();
+        }
+        if (value instanceof java.time.LocalDate ld) {
+            return ld;
+        }
+        if (value instanceof java.sql.Timestamp ts) {
+            return ts.toInstant().atZone(ZoneOffset.UTC).toLocalDate();
+        }
+        if (value instanceof java.util.Date ud) {
+            return ud.toInstant().atZone(ZoneOffset.UTC).toLocalDate();
+        }
+        // Fallback: try string parse
+        return LocalDate.parse(value.toString());
     }
 }
