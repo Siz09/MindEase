@@ -14,7 +14,8 @@ public class SubscriptionCreateRequest {
     private String planType;
 
     // Optional; defaults are applied server-side when absent
-    @Pattern(regexp = "MONTHLY|YEARLY|QUARTERLY", message = "Invalid billing period")
+    // Accept common variants case-insensitively; controller further normalizes
+    @Pattern(regexp = "(?i)monthly|month|mo|annual|yearly|year|yr", message = "Invalid billing period")
     private String billingPeriod;
 
     public SubscriptionCreateRequest() {

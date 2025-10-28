@@ -1,0 +1,499 @@
+{
+  "info": {
+    "name": "MindEase Full API",
+    "_postman_id": "7a2d9b64-9dbe-4bdb-9a9d-8b28a3f28f7a",
+    "description": "End-to-end Postman collection for MindEase across Phases 1–7. Uses /api/dev/login-test for local JWT minting.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Dev Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/dev/login-test",
+              "host": ["{{baseUrl}}"],
+              "path": ["dev", "login-test"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('adminToken', json.token);",
+                  "if (json.user && json.user.id) { pm.environment.set('adminUserId', json.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dev Login User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/dev/login-test",
+              "host": ["{{baseUrl}}"],
+              "path": ["dev", "login-test"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.environment.set('userToken', json.token);",
+                  "if (json.user && json.user.id) { pm.environment.set('userId', json.user.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Who Am I",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "if (json.user && json.user.id) { pm.environment.set('userId', json.user.id); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Patch Quiet Hours",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/quiet-hours",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "quiet-hours"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quietHoursStart\": \"22:00\",\n  \"quietHoursEnd\": \"07:00\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Anonymous Mode",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/anonymous-mode",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "anonymous-mode"]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"anonymousMode\": true\n}" }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/list?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "list"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-count"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/mark-all-read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "mark-all-read"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mood Tracker",
+      "item": [
+        {
+          "name": "Add Mood",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mood/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood", "add"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"moodValue\": 7,\n  \"notes\": \"Feeling okay\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Mood History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/mood/history?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["mood", "history"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Journal",
+      "item": [
+        {
+          "name": "Add Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/journal/add",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "add"]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Today I tested MindEase.\"\n}" }
+          },
+          "response": []
+        },
+        {
+          "name": "History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/journal/history?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "history"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recent",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/journal/recent",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "recent"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Count",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/journal/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["journal", "count"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chat Bot",
+      "item": [
+        {
+          "name": "Send Chat (normal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "send"]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Hello, how are you?\"\n}" }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Chat (crisis trigger)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chat/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "send"]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"I want to die\"\n}" }
+          },
+          "response": []
+        },
+        {
+          "name": "History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/chat/history?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "history"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Subscription / Stripe",
+      "item": [
+        {
+          "name": "Create Checkout Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{userToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription", "create"]
+            },
+            "body": { "mode": "raw", "raw": "{\n  \"billingPeriod\": \"monthly\"\n}" }
+          },
+          "response": []
+        },
+        {
+          "name": "Webhook (signature required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Stripe-Signature", "value": "{{stripeSignature}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/webhook",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription", "webhook"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"checkout.session.completed\",\n  \"data\": { \"object\": { \"id\": \"cs_test_123\", \"subscription\": \"sub_test_123\" } }\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscription", "status"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin (Phase 7)",
+      "item": [
+        {
+          "name": "Active Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/active-users",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "active-users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "AI Usage",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/ai-usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "ai-usage"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mood Correlation",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/mood-correlation",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "mood-correlation"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/audit-logs?page=0&size=25",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "audit-logs"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "25" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crisis Flags",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/crisis-flags?page=0&size=25",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "crisis-flags"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "25" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "adminEmail", "value": "admin@mindease.com" },
+    { "key": "userEmail", "value": "user@example.com" },
+    { "key": "adminToken", "value": "" },
+    { "key": "userToken", "value": "" },
+    { "key": "adminUserId", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "stripeSignature", "value": "" }
+  ]
+}

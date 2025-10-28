@@ -318,6 +318,25 @@ The application includes a comprehensive WebSocket testing suite accessible at `
 
 Use the provided Postman collection or Swagger UI for manual API testing.
 
+### QA Pass (Phases 1–7)
+
+- Walk UI: register/login → mood → journal → chat → subscription → admin.
+- Verify DB-backed entities render in UI and via APIs (history lists, counts).
+- Validate RBAC: user blocked from `/admin`, admin has access and data loads.
+- Confirm crisis flow: sending a crisis phrase creates a flag, visible in admin and via SSE.
+- Stripe: create session → webhook updates status → premium-gated API returns 200.
+
+Notes
+
+- Quiet hours expects strings in `HH:mm`, e.g. `{ "quietHoursStart": "22:00", "quietHoursEnd": "07:00" }`.
+
+Postman Quickstart
+
+- Collection: `postman/MindEase_Full_API.postman_collection.json`
+- Environment: `postman/mindease_local.postman_environment.json`
+- Local tokens: call `POST /api/dev/login-test` using the collection items to set `{{adminToken}}` and `{{userToken}}`.
+- Admin endpoints require `hasRole('ADMIN')`; use `admin@mindease.com` seeded in Flyway.
+
 **Monetization (Stripe) — Setup & Runbook**
 
 - Env (backend):

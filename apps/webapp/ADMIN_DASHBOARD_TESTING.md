@@ -137,3 +137,16 @@ ORDER BY d.day;
 - SSE limits and behavior
   - `/api/admin/crisis-flags/stream` caps concurrent connections (HTTP 429 if limit reached).
   - A connection is only registered after an initial `open` event is delivered; failed opens are closed and not retained.
+
+## Postman RBAC Quickstart (Local)
+
+- Use the provided collection: `postman/MindEase_Full_API.postman_collection.json`
+- Import environment: `postman/mindease_local.postman_environment.json`
+- Run "Auth → Dev Login Admin" to set `{{adminToken}}`.
+- Run "Auth → Dev Login User" to set `{{userToken}}` and `{{userId}}`.
+- All admin requests send `Authorization: Bearer {{adminToken}}`; user requests use `{{userToken}}`.
+
+Notes
+
+- Dev login endpoint: `POST /api/dev/login-test` (available in `dev` profile only).
+- SSE testing: prefer browser or `curl -N` for `GET /api/admin/crisis-flags/stream` (Postman does not support SSE).
