@@ -237,7 +237,9 @@ public class SubscriptionService {
                 .orElse(null);
 
         if (sub == null) {
-            sub = new Subscription(user, null, planType, SubscriptionStatus.ACTIVE);
+            String placeholderStripeId = "dev_" + UUID.randomUUID();
+            sub = new Subscription(user, placeholderStripeId, planType, SubscriptionStatus.ACTIVE);
+            sub.setCheckoutSessionId("dev_cs_" + UUID.randomUUID());
             sub.setBillingPeriod(billing);
         } else {
             sub.setStatus(SubscriptionStatus.ACTIVE);
