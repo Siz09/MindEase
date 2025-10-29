@@ -224,4 +224,33 @@ public class SubscriptionService {
                 })
                 .orElse("inactive");
     }
+
+    /**
+     * DEV-ONLY helper: mark user's subscription ACTIVE, creating a row if needed.
+     */
+    @Transactional
+    public Subscription markActiveForUser(UUID userId, PlanType planType, BillingPeriod billing) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        Subscription sub = subscriptionRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)
+                .orElse(null);
+
+        if (sub == null) {
+            sub = new Subscription(user, null, planType, SubscriptionStatus.ACTIVE);
+            sub.setBillingPeriod(billing);
+        } else {
+            sub.setStatus(SubscriptionStatus.ACTIVE);
+            sub.setPlanType(planType);
+            if (billing != null) sub.setBillingPeriod(billing);
+        }
+
+        Subscription saved = subscriptionRepository.save(sub);
+        Cache cache = cacheManager.getCache("subscription_status");
+        if (cache != null) {
+            cache.evictIfPresent(userId);
+        }
+        logger.info("[DEV] Marked subscription ACTIVE for user {} (subId={})", userId, saved.getId());
+        return saved;
+    }
 }
