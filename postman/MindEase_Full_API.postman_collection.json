@@ -1,8 +1,8 @@
-{
+﻿{
   "info": {
     "name": "MindEase Full API",
     "_postman_id": "7a2d9b64-9dbe-4bdb-9a9d-8b28a3f28f7a",
-    "description": "End-to-end Postman collection for MindEase across Phases 1–7. Uses /api/dev/login-test for local JWT minting.",
+    "description": "End-to-end Postman collection for MindEase across Phases 1â€“7. Uses /api/dev/login-test for local JWT minting.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -13,7 +13,12 @@
           "name": "Dev Login Admin",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/dev/login-test",
               "host": ["{{baseUrl}}"],
@@ -31,10 +36,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test(\u0027Status code is 200\u0027, function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
-                  "pm.environment.set('adminToken', json.token);",
-                  "if (json.user && json.user.id) { pm.environment.set('adminUserId', json.user.id); }"
+                  "pm.environment.set(\u0027adminToken\u0027, json.token);",
+                  "if (json.user \u0026\u0026 json.user.id) { pm.environment.set(\u0027adminUserId\u0027, json.user.id); }"
                 ]
               }
             }
@@ -44,7 +49,12 @@
           "name": "Dev Login User",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/dev/login-test",
               "host": ["{{baseUrl}}"],
@@ -62,10 +72,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test(\u0027Status code is 200\u0027, function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
-                  "pm.environment.set('userToken', json.token);",
-                  "if (json.user && json.user.id) { pm.environment.set('userId', json.user.id); }"
+                  "pm.environment.set(\u0027userToken\u0027, json.token);",
+                  "if (json.user \u0026\u0026 json.user.id) { pm.environment.set(\u0027userId\u0027, json.user.id); }"
                 ]
               }
             }
@@ -75,7 +85,12 @@
           "name": "Who Am I",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
               "host": ["{{baseUrl}}"],
@@ -89,9 +104,9 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test(\u0027Status code is 200\u0027, function () { pm.response.to.have.status(200); });",
                   "const json = pm.response.json();",
-                  "if (json.user && json.user.id) { pm.environment.set('userId', json.user.id); }"
+                  "if (json.user \u0026\u0026 json.user.id) { pm.environment.set(\u0027userId\u0027, json.user.id); }"
                 ]
               }
             }
@@ -107,8 +122,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{userToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/user/quiet-hours",
@@ -127,15 +148,24 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{userToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/users/{{userId}}/anonymous-mode",
               "host": ["{{baseUrl}}"],
               "path": ["users", "{{userId}}", "anonymous-mode"]
             },
-            "body": { "mode": "raw", "raw": "{\n  \"anonymousMode\": true\n}" }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"anonymousMode\": true\n}"
+            }
           },
           "response": []
         }
@@ -148,14 +178,25 @@
           "name": "List Notifications",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/notifications/list?page=0&size=10",
+              "raw": "{{baseUrl}}/notifications/list?page=0\u0026size=10",
               "host": ["{{baseUrl}}"],
               "path": ["notifications", "list"],
               "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
               ]
             }
           },
@@ -165,7 +206,12 @@
           "name": "Unread Count",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/notifications/unread-count",
               "host": ["{{baseUrl}}"],
@@ -178,7 +224,12 @@
           "name": "Mark All Read",
           "request": {
             "method": "PATCH",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/notifications/mark-all-read",
               "host": ["{{baseUrl}}"],
@@ -197,8 +248,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{userToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/mood/add",
@@ -216,14 +273,25 @@
           "name": "List Mood History",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/mood/history?page=0&size=10",
+              "raw": "{{baseUrl}}/mood/history?page=0\u0026size=10",
               "host": ["{{baseUrl}}"],
               "path": ["mood", "history"],
               "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
               ]
             }
           },
@@ -239,15 +307,24 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{userToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/journal/add",
               "host": ["{{baseUrl}}"],
               "path": ["journal", "add"]
             },
-            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Today I tested MindEase.\"\n}" }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Today I tested MindEase.\"\n}"
+            }
           },
           "response": []
         },
@@ -255,14 +332,25 @@
           "name": "History",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/journal/history?page=0&size=20",
+              "raw": "{{baseUrl}}/journal/history?page=0\u0026size=20",
               "host": ["{{baseUrl}}"],
               "path": ["journal", "history"],
               "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "20" }
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
               ]
             }
           },
@@ -272,7 +360,12 @@
           "name": "Recent",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/journal/recent",
               "host": ["{{baseUrl}}"],
@@ -285,7 +378,12 @@
           "name": "Count",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/journal/count",
               "host": ["{{baseUrl}}"],
@@ -304,15 +402,24 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{userToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/chat/send",
               "host": ["{{baseUrl}}"],
               "path": ["chat", "send"]
             },
-            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Hello, how are you?\"\n}" }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Hello, how are you?\"\n}"
+            }
           },
           "response": []
         },
@@ -321,15 +428,24 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{userToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/chat/send",
               "host": ["{{baseUrl}}"],
               "path": ["chat", "send"]
             },
-            "body": { "mode": "raw", "raw": "{\n  \"message\": \"I want to die\"\n}" }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"I want to die\"\n}"
+            }
           },
           "response": []
         },
@@ -337,14 +453,25 @@
           "name": "History",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/chat/history?page=0&size=20",
+              "raw": "{{baseUrl}}/chat/history?page=0\u0026size=20",
               "host": ["{{baseUrl}}"],
               "path": ["chat", "history"],
               "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "20" }
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
               ]
             }
           },
@@ -360,15 +487,24 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{userToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/subscription/create",
               "host": ["{{baseUrl}}"],
               "path": ["subscription", "create"]
             },
-            "body": { "mode": "raw", "raw": "{\n  \"billingPeriod\": \"monthly\"\n}" }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"billingPeriod\": \"monthly\"\n}"
+            }
           },
           "response": []
         },
@@ -377,8 +513,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Stripe-Signature", "value": "{{stripeSignature}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Stripe-Signature",
+                "value": "{{stripeSignature}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{baseUrl}}/subscription/webhook",
@@ -390,13 +532,37 @@
               "raw": "{\n  \"type\": \"checkout.session.completed\",\n  \"data\": { \"object\": { \"id\": \"cs_test_123\", \"subscription\": \"sub_test_123\" } }\n}"
             }
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const secret = pm.environment.get('stripeWebhookSecret');",
+                  "if (!secret) { throw new Error('Set stripeWebhookSecret env var (whsec_...)'); }",
+                  "if (!pm.request.body || pm.request.body.mode !== 'raw') { throw new Error('Body must be raw JSON'); }",
+                  "const payload = pm.request.body.raw;",
+                  "const ts = Math.floor(Date.now() / 1000);",
+                  "const signed = `${ts}.${payload}`;",
+                  "const sig = CryptoJS.HmacSHA256(signed, secret).toString(CryptoJS.enc.Hex);",
+                  "pm.request.headers.upsert({ key: 'Stripe-Signature', value: `t=${ts},v1=${sig}` });",
+                  "console.log('Stripe-Signature', `t=${ts},v1=${sig}`);"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Status",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/subscription/status",
               "host": ["{{baseUrl}}"],
@@ -414,7 +580,12 @@
           "name": "Active Users",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/admin/active-users",
               "host": ["{{baseUrl}}"],
@@ -427,7 +598,12 @@
           "name": "AI Usage",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/admin/ai-usage",
               "host": ["{{baseUrl}}"],
@@ -440,7 +616,12 @@
           "name": "Mood Correlation",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/admin/mood-correlation",
               "host": ["{{baseUrl}}"],
@@ -453,14 +634,25 @@
           "name": "Audit Logs",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/admin/audit-logs?page=0&size=25",
+              "raw": "{{baseUrl}}/admin/audit-logs?page=0\u0026size=25",
               "host": ["{{baseUrl}}"],
               "path": ["admin", "audit-logs"],
               "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "25" }
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "25"
+                }
               ]
             }
           },
@@ -470,14 +662,25 @@
           "name": "Crisis Flags",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/admin/crisis-flags?page=0&size=25",
+              "raw": "{{baseUrl}}/admin/crisis-flags?page=0\u0026size=25",
               "host": ["{{baseUrl}}"],
               "path": ["admin", "crisis-flags"],
               "query": [
-                { "key": "page", "value": "0" },
-                { "key": "size", "value": "25" }
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "25"
+                }
               ]
             }
           },
@@ -487,13 +690,37 @@
     }
   ],
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080/api" },
-    { "key": "adminEmail", "value": "admin@mindease.com" },
-    { "key": "userEmail", "value": "user@example.com" },
-    { "key": "adminToken", "value": "" },
-    { "key": "userToken", "value": "" },
-    { "key": "adminUserId", "value": "" },
-    { "key": "userId", "value": "" },
-    { "key": "stripeSignature", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@mindease.com"
+    },
+    {
+      "key": "userEmail",
+      "value": "user@example.com"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "userToken",
+      "value": ""
+    },
+    {
+      "key": "adminUserId",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "stripeSignature",
+      "value": ""
+    }
   ]
 }
