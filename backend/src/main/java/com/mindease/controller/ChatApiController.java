@@ -150,9 +150,19 @@ public class ChatApiController {
         messagingTemplate.convertAndSend(userTopic, crisisMessagePayload);
       }
 
-      // Generate AI response
-      logger.info("Generating AI response...");
-      ChatResponse aiResponse = chatBotService.generateResponse(request.getMessage(), user.getId().toString());
+      // Prepare recent conversation history (last 12 messages)
+      var fullHistoryAsc = messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession);
+      int maxHistory = 12;
+      int startIdx = Math.max(0, fullHistoryAsc.size() - maxHistory);
+      var recentHistory = fullHistoryAsc.subList(startIdx, fullHistoryAsc.size());
+
+      // Generate AI response with context
+      logger.info("Generating AI response with {} history messages...", recentHistory.size());
+      ChatResponse aiResponse = chatBotService.generateResponse(
+        request.getMessage(),
+        user.getId().toString(),
+        recentHistory
+      );
       logger.info("Generated AI response: {}", aiResponse.getContent());
 
       Message botMessage = new Message(chatSession, aiResponse.getContent(), false);
