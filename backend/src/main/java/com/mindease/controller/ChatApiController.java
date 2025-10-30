@@ -230,12 +230,19 @@ public class ChatApiController {
 
       ChatSession chatSession = chatSessionOptional.get();
 
-      Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending()); // Changed to ascending for proper order
-      Page<Message> messagesPage = messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, pageable);
+      Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending());
+      Page<Message> messagesPage = messageRepository.findByChatSession(chatSession, pageable);
+
+      // Normalize to the same payload shape used by WebSocket messages
+      List<Map<String, Object>> items = new java.util.ArrayList<>();
+      for (Message m : messagesPage.getContent()) {
+        boolean isUser = Boolean.TRUE.equals(m.getIsUserMessage());
+        items.add(createMessagePayload(m, isUser));
+      }
 
       Map<String, Object> response = new HashMap<>();
       response.put("status", "success");
-      response.put("data", messagesPage.getContent());
+      response.put("data", items);
       response.put("currentPage", messagesPage.getNumber());
       response.put("totalItems", messagesPage.getTotalElements());
       response.put("totalPages", messagesPage.getTotalPages());
