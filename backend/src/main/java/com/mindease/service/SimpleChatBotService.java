@@ -25,13 +25,14 @@ public class SimpleChatBotService implements ChatBotService {
     }
 
     String content;
-    if (prior != null && !prior.isBlank() && (message == null || !prior.equals(message))) {
+    if (prior != null && !prior.isBlank() && message != null && !message.isBlank() && !prior.equals(message)) {
       content = "I’m here with you. You said: \"" + message + "\". Earlier you shared \"" + prior +
         "\" — does that still resonate?";
     } else {
-      content = "I’m here with you. You said: \"" + message + "\". Would you like to unpack what felt hardest about that?";
+      String userMessage = (message != null && !message.isBlank()) ? message : "[your message]";
+      content = "I’m here with you. You said: \"" + userMessage + "\". Would you like to unpack what felt hardest about that?";
     }
-    boolean isCrisis = isCrisisMessage(message);
+    boolean isCrisis = message != null && isCrisisMessage(message);
 
     return new ChatResponse(content, isCrisis, "simple");
   }
