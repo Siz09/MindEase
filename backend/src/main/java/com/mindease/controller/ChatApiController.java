@@ -224,6 +224,9 @@ public class ChatApiController {
                                           @RequestParam(defaultValue = "20") int size,
                                           @RequestParam(defaultValue = "asc") String sort) {
     try {
+      if (!"asc".equalsIgnoreCase(sort) && !"desc".equalsIgnoreCase(sort)) {
+        return ResponseEntity.badRequest().body(createErrorResponse("Invalid sort parameter. Must be 'asc' or 'desc'."));
+      }
       String email = authentication.getName();
       Optional<User> userOptional = userRepository.findByEmail(email);
 
