@@ -147,12 +147,13 @@ const Chat = () => {
 
   const loadHistory = async () => {
     try {
-      // First request small page to learn total pages
-      const meta = await apiGet('/api/chat/history?page=0&size=1', token);
+      const pageSize = 50;
+      // Use same page size for meta to compute accurate lastPage
+      const meta = await apiGet(`/api/chat/history?page=0&size=${pageSize}`, token);
       const totalPages = Number.isFinite(meta?.totalPages) ? meta.totalPages : 1;
       const lastPage = Math.max(0, totalPages - 1);
 
-      const res = await apiGet(`/api/chat/history?page=${lastPage}&size=50`, token);
+      const res = await apiGet(`/api/chat/history?page=${lastPage}&size=${pageSize}`, token);
       const items = Array.isArray(res?.data) ? res.data : [];
       const normalized = items.map((m) => {
         const id = m.id;
