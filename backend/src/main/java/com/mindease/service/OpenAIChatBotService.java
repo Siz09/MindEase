@@ -70,7 +70,18 @@ public class OpenAIChatBotService implements ChatBotService {
       List<Message> boundedHistory = history == null ? java.util.Collections.emptyList() :
         (history.size() > maxHistorySize ? history.subList(history.size() - maxHistorySize, history.size()) : history);
 
+      boolean hasCurrentAlready = false;
       if (boundedHistory != null) {
+        // Check if the last user message in history equals the current message
+        for (int i = boundedHistory.size() - 1; i >= 0; i--) {
+          Message m = boundedHistory.get(i);
+          if (Boolean.TRUE.equals(m.getIsUserMessage())) {
+            if (m.getContent() != null && m.getContent().equals(message)) {
+              hasCurrentAlready = true;
+            }
+            break;
+          }
+        }
         for (Message m : boundedHistory) {
           String role = Boolean.TRUE.equals(m.getIsUserMessage()) ? ChatMessageRole.USER.value() : ChatMessageRole.ASSISTANT.value();
           if (m.getContent() == null || m.getContent().isBlank()) continue;
@@ -78,8 +89,10 @@ public class OpenAIChatBotService implements ChatBotService {
         }
       }
 
-      // Append the current user turn explicitly at the end for clarity
-      msgs.add(new ChatMessage(ChatMessageRole.USER.value(), message));
+      // Append the current user turn explicitly at the end only if not already present
+      if (!hasCurrentAlready) {
+        msgs.add(new ChatMessage(ChatMessageRole.USER.value(), message));
+      }
 
       ChatCompletionRequest completionRequest = ChatCompletionRequest.builder()
         .model(chatConfig.getOpenai().getModel())

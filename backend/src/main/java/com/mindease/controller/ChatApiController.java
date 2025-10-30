@@ -45,6 +45,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 @SecurityRequirement(name = "Bearer Authentication")
 public class ChatApiController {
 
+  private static final int MAX_CONVERSATION_HISTORY = 12;
+
   @Autowired
   private ChatSessionRepository chatSessionRepository;
 
@@ -152,13 +154,25 @@ public class ChatApiController {
         messagingTemplate.convertAndSend(userTopic, crisisMessagePayload);
       }
 
-      // Prepare recent conversation history (last 12 messages) using DB pagination
-      int maxHistory = 12;
-      Pageable historyPage = PageRequest.of(0, maxHistory, Sort.by("createdAt").descending());
+      // Prepare recent conversation history using DB pagination
+      Pageable historyPage = PageRequest.of(0, MAX_CONVERSATION_HISTORY, Sort.by("createdAt").descending());
       List<Message> recentHistory = new java.util.ArrayList<>(
         messageRepository.findByChatSession(chatSession, historyPage).getContent()
       );
       Collections.reverse(recentHistory); // chronological order oldest -> newest for AI context
+
+      // Avoid duplicating the current user message in AI context
+      if (!recentHistory.isEmpty()) {
+        Message last = recentHistory.get(recentHistory.size() - 1);
+        String incoming = request.getMessage();
+        if (Boolean.TRUE.equals(last.getIsUserMessage())
+            && last.getContent() != null
+            && incoming != null
+            && last.getContent().equals(incoming)) {
+          // Remove the most-recent (current) user message; service will append it explicitly
+          recentHistory.remove(recentHistory.size() - 1);
+        }
+      }
 
       // Generate AI response with context
       logger.info("Generating AI response with {} history messages...", recentHistory.size());
