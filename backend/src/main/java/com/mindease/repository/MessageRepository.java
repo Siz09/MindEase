@@ -14,6 +14,5 @@ import java.util.UUID;
 public interface MessageRepository extends JpaRepository<Message, UUID> {
   Page<Message> findByChatSessionOrderByCreatedAtDesc(ChatSession chatSession, Pageable pageable);
   List<Message> findByChatSessionOrderByCreatedAtAsc(ChatSession chatSession);
-  Page<Message> findByChatSession(ChatSession chatSession, Pageable pageable);
   Page<Message> findByChatSessionOrderByCreatedAtAsc(ChatSession chatSession, Pageable pageable);
 }

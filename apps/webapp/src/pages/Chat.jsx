@@ -25,7 +25,7 @@ const Chat = () => {
   // Use refs to track connection state
   const stompClientRef = useRef(null);
   const isConnectingRef = useRef(false);
-  const processedMessageIds = useRef(new Set());
+  const processedMessageIds = useRef(new Map()); // Map<id, timestamp>
   const messagesContainerRef = useRef(null);
   const preventAutoScrollRef = useRef(false);
   const prevScrollHeightRef = useRef(null);
@@ -34,9 +34,31 @@ const Chat = () => {
   const MAX_PROCESSED_IDS = 1000;
   const trimProcessedIds = () => {
     if (processedMessageIds.current.size > MAX_PROCESSED_IDS) {
-      const idsArray = Array.from(processedMessageIds.current);
-      processedMessageIds.current = new Set(idsArray.slice(-MAX_PROCESSED_IDS));
+      const entries = Array.from(processedMessageIds.current.entries())
+        .sort(([, a], [, b]) => b - a) // newest first by timestamp
+        .slice(0, MAX_PROCESSED_IDS);
+      processedMessageIds.current = new Map(entries);
     }
+  };
+
+  const extractTotalPages = (res) =>
+    Number.isFinite(res?.pagination?.totalPages)
+      ? res.pagination.totalPages
+      : Number.isFinite(res?.totalPages)
+        ? res.totalPages
+        : undefined;
+
+  const normalizeMessage = (m) => {
+    const id = m.id;
+    if (id) processedMessageIds.current.set(id, Date.now());
+    return {
+      id,
+      content: m.content || m.message || m.text || 'Empty message',
+      isUserMessage: m.isUserMessage || (m.sender ? m.sender === 'user' : false),
+      isCrisisFlagged: m.isCrisisFlagged || false,
+      createdAt: m.createdAt || new Date().toISOString(),
+      sender: m.sender || (m.isUserMessage ? 'user' : 'bot'),
+    };
   };
 
   const scrollToBottom = () => {
@@ -114,7 +136,7 @@ const Chat = () => {
                 return;
               }
 
-              processedMessageIds.current.add(messageId);
+              processedMessageIds.current.set(messageId, Date.now());
               trimProcessedIds();
 
               const normalizedMessage = {
@@ -180,25 +202,9 @@ const Chat = () => {
       const pageSize = 50;
       // Request newest first; reverse to chronological for UI
       const res = await apiGet(`/api/chat/history?page=0&size=${pageSize}&sort=desc`, token);
-      const totalPages = Number.isFinite(res?.pagination?.totalPages)
-        ? res.pagination.totalPages
-        : Number.isFinite(res?.totalPages)
-          ? res.totalPages
-          : 1;
+      const totalPages = extractTotalPages(res) ?? 1;
       const items = Array.isArray(res?.data) ? res.data.slice().reverse() : [];
-      const normalized = items.map((m) => {
-        const id = m.id;
-        // Mark as processed to avoid duplicates when websocket echoes same ids
-        if (id) processedMessageIds.current.add(id);
-        return {
-          id,
-          content: m.content || m.message || m.text || 'Empty message',
-          isUserMessage: m.isUserMessage || (m.sender ? m.sender === 'user' : false),
-          isCrisisFlagged: m.isCrisisFlagged || false,
-          createdAt: m.createdAt || new Date().toISOString(),
-          sender: m.sender || (m.isUserMessage ? 'user' : 'bot'),
-        };
-      });
+      const normalized = items.map((m) => normalizeMessage(m));
       trimProcessedIds();
       setMessages((prev) => {
         if (prev.length === 0) return normalized;
@@ -241,25 +247,12 @@ const Chat = () => {
       const el = messagesContainerRef.current;
       const prevScrollHeight = el ? el.scrollHeight : 0;
       const res = await apiGet(`/api/chat/history?page=${nextPage}&size=50&sort=desc`, token);
-      const totalPages = Number.isFinite(res?.pagination?.totalPages)
-        ? res.pagination.totalPages
-        : Number.isFinite(res?.totalPages)
-          ? res.totalPages
-          : undefined;
+      const totalPages = extractTotalPages(res);
       const items = Array.isArray(res?.data) ? res.data.slice().reverse() : [];
       const normalized = items
         .map((m) => {
-          const id = m.id;
-          if (processedMessageIds.current.has(id)) return null; // skip duplicates
-          if (id) processedMessageIds.current.add(id);
-          return {
-            id,
-            content: m.content || m.message || m.text || 'Empty message',
-            isUserMessage: m.isUserMessage || (m.sender ? m.sender === 'user' : false),
-            isCrisisFlagged: m.isCrisisFlagged || false,
-            createdAt: m.createdAt || new Date().toISOString(),
-            sender: m.sender || (m.isUserMessage ? 'user' : 'bot'),
-          };
+          if (processedMessageIds.current.has(m.id)) return null;
+          return normalizeMessage(m);
         })
         .filter(Boolean);
 
