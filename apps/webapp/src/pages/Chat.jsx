@@ -129,6 +129,10 @@ const Chat = () => {
         onWebSocketError: (event) => {
           console.error('WebSocket error:', event);
           isConnectingRef.current = false;
+          // Fallback: ensure history loads even if WS fails
+          if (token && currentUser && historyPage === null) {
+            loadHistory();
+          }
         },
       });
 
@@ -173,6 +177,14 @@ const Chat = () => {
       toast.error('Failed to load chat history');
     }
   };
+
+  // Fallback: load history when auth becomes available (even before WS connects)
+  useEffect(() => {
+    if (token && currentUser && historyPage === null) {
+      loadHistory();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, currentUser]);
 
   const handleScroll = async () => {
     const el = messagesContainerRef.current;
