@@ -151,7 +151,7 @@ public class OpenAIChatBotService implements ChatBotService {
       return "[empathetic][supportive]";
     if (m.contains("angry") || m.contains("mad") || m.contains("frustrat") || m.contains("irritat"))
       return "[reflective][encouraging]";
-    if (m.contains("numb") || m.contains("pointless") || m.contains("don\'t care"))
+    if (m.contains("numb") || m.contains("pointless") || m.contains("don't care"))
       return "[empathetic][encouraging]";
     if (m.contains("good") || m.contains("better") || m.contains("grateful") || m.contains("happy"))
       return "[encouraging][reflective]";

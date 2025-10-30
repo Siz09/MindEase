@@ -157,7 +157,7 @@ public class ChatApiController {
       // Prepare recent conversation history using DB pagination
       Pageable historyPage = PageRequest.of(0, MAX_CONVERSATION_HISTORY, Sort.by("createdAt").descending());
       List<Message> recentHistory = new java.util.ArrayList<>(
-        messageRepository.findByChatSession(chatSession, historyPage).getContent()
+        messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, historyPage).getContent()
       );
       Collections.reverse(recentHistory); // chronological order oldest -> newest for AI context
 
@@ -249,7 +249,9 @@ public class ChatApiController {
         ? Sort.by("createdAt").descending()
         : Sort.by("createdAt").ascending();
       Pageable pageable = PageRequest.of(page, size, sortSpec);
-      Page<Message> messagesPage = messageRepository.findByChatSession(chatSession, pageable);
+      Page<Message> messagesPage = "desc".equalsIgnoreCase(sort)
+        ? messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, pageable)
+        : messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession, pageable);
 
       // Normalize to the same payload shape used by WebSocket messages
       List<Map<String, Object>> items = new java.util.ArrayList<>();
@@ -261,13 +263,11 @@ public class ChatApiController {
       Map<String, Object> response = new HashMap<>();
       response.put("status", "success");
       response.put("data", items);
-      response.put("currentPage", messagesPage.getNumber());
-      response.put("totalItems", messagesPage.getTotalElements());
-      response.put("totalPages", messagesPage.getTotalPages());
       Map<String, Object> pagination = new HashMap<>();
       pagination.put("currentPage", messagesPage.getNumber());
       pagination.put("totalPages", messagesPage.getTotalPages());
       pagination.put("pageSize", messagesPage.getSize());
+      pagination.put("totalItems", messagesPage.getTotalElements());
       response.put("pagination", pagination);
 
       return ResponseEntity.ok(response);
