@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import '../styles/Chat.css';
+import { apiGet } from '../lib/api';
 
 const Chat = () => {
   const { t } = useTranslation();
@@ -99,6 +100,9 @@ const Chat = () => {
               console.error('Error parsing message:', error);
             }
           });
+
+          // Load existing chat history once connected
+          loadHistory();
         },
 
         onStompError: (frame) => {
@@ -125,6 +129,31 @@ const Chat = () => {
       console.error('WebSocket connection error:', error);
       toast.error('Failed to connect to chat');
       isConnectingRef.current = false;
+    }
+  };
+
+  const loadHistory = async () => {
+    try {
+      const res = await apiGet('/api/chat/history?page=0&size=50', token);
+      // Expected shape: { status: 'success', data: [payloads...] }
+      const items = Array.isArray(res?.data) ? res.data : [];
+      const normalized = items.map((m) => {
+        const id = m.id;
+        // Mark as processed to avoid duplicates when websocket echoes same ids
+        if (id) processedMessageIds.current.add(id);
+        return {
+          id,
+          content: m.content || m.message || m.text || 'Empty message',
+          isUserMessage: m.isUserMessage || (m.sender ? m.sender === 'user' : false),
+          isCrisisFlagged: m.isCrisisFlagged || false,
+          createdAt: m.createdAt || new Date().toISOString(),
+          sender: m.sender || (m.isUserMessage ? 'user' : 'bot'),
+        };
+      });
+      setMessages(normalized);
+    } catch (err) {
+      console.error('Failed to load chat history:', err);
+      toast.error('Failed to load chat history');
     }
   };
 
