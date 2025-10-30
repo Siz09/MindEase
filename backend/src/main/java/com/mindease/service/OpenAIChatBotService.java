@@ -28,15 +28,13 @@ public class OpenAIChatBotService implements ChatBotService {
   @Override
   public ChatResponse generateResponse(String message, String userId, List<Message> history) {
     try {
-      String apiKey = chatConfig.getOpenai().getApiKey();
-      if (apiKey == null || apiKey.isBlank()) {
+      OpenAiService service = getOrCreateService();
+      if (service == null) {
         log.warn("OpenAI API key missing (chat.openai.api-key); returning fallback response");
         String fallbackContent = "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
         boolean isCrisis = isCrisisMessage(message);
         return new ChatResponse(fallbackContent, isCrisis, "fallback:no_api_key");
       }
-
-      OpenAiService service = new OpenAiService(apiKey, Duration.ofSeconds(30));
 
       // Persona + safety-first system prompt derived from your spec
       String persona = String.join("\n",
@@ -67,8 +65,13 @@ public class OpenAIChatBotService implements ChatBotService {
       msgs.add(systemPersona);
       msgs.add(systemBehavior);
 
-      if (history != null) {
-        for (Message m : history) {
+      // Bound history size to reduce token usage
+      int maxHistorySize = 20;
+      List<Message> boundedHistory = history == null ? java.util.Collections.emptyList() :
+        (history.size() > maxHistorySize ? history.subList(history.size() - maxHistorySize, history.size()) : history);
+
+      if (boundedHistory != null) {
+        for (Message m : boundedHistory) {
           String role = Boolean.TRUE.equals(m.getIsUserMessage()) ? ChatMessageRole.USER.value() : ChatMessageRole.ASSISTANT.value();
           if (m.getContent() == null || m.getContent().isBlank()) continue;
           msgs.add(new ChatMessage(role, m.getContent()));
@@ -86,8 +89,11 @@ public class OpenAIChatBotService implements ChatBotService {
         .maxTokens(chatConfig.getOpenai().getMaxTokens())
         .build();
 
-      ChatMessage responseMessage = service.createChatCompletion(completionRequest)
-        .getChoices().get(0).getMessage();
+      var completion = service.createChatCompletion(completionRequest);
+      if (completion.getChoices() == null || completion.getChoices().isEmpty()) {
+        throw new IllegalStateException("OpenAI returned no choices");
+      }
+      ChatMessage responseMessage = completion.getChoices().get(0).getMessage();
 
       String content = responseMessage.getContent() != null ? responseMessage.getContent().trim() : "";
       boolean isCrisis = crisis;
@@ -100,6 +106,18 @@ public class OpenAIChatBotService implements ChatBotService {
       boolean isCrisis = isCrisisMessage(message);
       return new ChatResponse(fallbackContent, isCrisis, "fallback:error");
     }
+  }
+
+  private volatile OpenAiService openAiService;
+
+  private synchronized OpenAiService getOrCreateService() {
+    if (openAiService != null) return openAiService;
+    String apiKey = chatConfig.getOpenai().getApiKey();
+    if (apiKey == null || apiKey.isBlank()) {
+      return null;
+    }
+    openAiService = new OpenAiService(apiKey, Duration.ofSeconds(30));
+    return openAiService;
   }
 
   @Override
