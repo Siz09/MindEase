@@ -207,7 +207,8 @@ public class ChatApiController {
   @GetMapping("/history")
   public ResponseEntity<?> getChatHistory(Authentication authentication,
                                           @RequestParam(defaultValue = "0") int page,
-                                          @RequestParam(defaultValue = "20") int size) {
+                                          @RequestParam(defaultValue = "20") int size,
+                                          @RequestParam(defaultValue = "asc") String sort) {
     try {
       String email = authentication.getName();
       Optional<User> userOptional = userRepository.findByEmail(email);
@@ -230,7 +231,10 @@ public class ChatApiController {
 
       ChatSession chatSession = chatSessionOptional.get();
 
-      Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").ascending());
+      Sort sortSpec = "desc".equalsIgnoreCase(sort)
+        ? Sort.by("createdAt").descending()
+        : Sort.by("createdAt").ascending();
+      Pageable pageable = PageRequest.of(page, size, sortSpec);
       Page<Message> messagesPage = messageRepository.findByChatSession(chatSession, pageable);
 
       // Normalize to the same payload shape used by WebSocket messages
@@ -246,6 +250,11 @@ public class ChatApiController {
       response.put("currentPage", messagesPage.getNumber());
       response.put("totalItems", messagesPage.getTotalElements());
       response.put("totalPages", messagesPage.getTotalPages());
+      Map<String, Object> pagination = new HashMap<>();
+      pagination.put("currentPage", messagesPage.getNumber());
+      pagination.put("totalPages", messagesPage.getTotalPages());
+      pagination.put("pageSize", messagesPage.getSize());
+      response.put("pagination", pagination);
 
       return ResponseEntity.ok(response);
 
