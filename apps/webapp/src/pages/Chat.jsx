@@ -17,17 +17,26 @@ const Chat = () => {
   const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [historyPage, setHistoryPage] = useState(null); // current loaded page index (ascending sort)
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Use refs to track connection state
   const stompClientRef = useRef(null);
   const isConnectingRef = useRef(false);
   const processedMessageIds = useRef(new Set());
+  const messagesContainerRef = useRef(null);
+  const preventAutoScrollRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
+    if (preventAutoScrollRef.current) {
+      preventAutoScrollRef.current = false;
+      return;
+    }
     scrollToBottom();
   }, [messages]);
 
@@ -134,8 +143,12 @@ const Chat = () => {
 
   const loadHistory = async () => {
     try {
-      const res = await apiGet('/api/chat/history?page=0&size=50', token);
-      // Expected shape: { status: 'success', data: [payloads...] }
+      // First request small page to learn total pages
+      const meta = await apiGet('/api/chat/history?page=0&size=1', token);
+      const totalPages = Number.isFinite(meta?.totalPages) ? meta.totalPages : 1;
+      const lastPage = Math.max(0, totalPages - 1);
+
+      const res = await apiGet(`/api/chat/history?page=${lastPage}&size=50`, token);
       const items = Array.isArray(res?.data) ? res.data : [];
       const normalized = items.map((m) => {
         const id = m.id;
@@ -151,9 +164,72 @@ const Chat = () => {
         };
       });
       setMessages(normalized);
+      setHistoryPage(lastPage);
+      setHasMoreHistory(lastPage > 0);
+      // Scroll to bottom after initial history load
+      setTimeout(scrollToBottom, 0);
     } catch (err) {
       console.error('Failed to load chat history:', err);
       toast.error('Failed to load chat history');
+    }
+  };
+
+  const handleScroll = async () => {
+    const el = messagesContainerRef.current;
+    if (!el || loadingHistory || !hasMoreHistory) return;
+    if (el.scrollTop <= 40) {
+      await loadOlderHistory();
+    }
+  };
+
+  const loadOlderHistory = async () => {
+    if (historyPage === null || historyPage <= 0) {
+      setHasMoreHistory(false);
+      return;
+    }
+    try {
+      setLoadingHistory(true);
+      const nextPage = historyPage - 1;
+      const el = messagesContainerRef.current;
+      const prevScrollHeight = el ? el.scrollHeight : 0;
+      const res = await apiGet(`/api/chat/history?page=${nextPage}&size=50`, token);
+      const items = Array.isArray(res?.data) ? res.data : [];
+      const normalized = items
+        .map((m) => {
+          const id = m.id;
+          if (processedMessageIds.current.has(id)) return null; // skip duplicates
+          if (id) processedMessageIds.current.add(id);
+          return {
+            id,
+            content: m.content || m.message || m.text || 'Empty message',
+            isUserMessage: m.isUserMessage || (m.sender ? m.sender === 'user' : false),
+            isCrisisFlagged: m.isCrisisFlagged || false,
+            createdAt: m.createdAt || new Date().toISOString(),
+            sender: m.sender || (m.isUserMessage ? 'user' : 'bot'),
+          };
+        })
+        .filter(Boolean);
+
+      if (normalized.length === 0) {
+        setHasMoreHistory(false);
+      } else {
+        preventAutoScrollRef.current = true; // don't jump to bottom
+        setMessages((prev) => [...normalized, ...prev]);
+        setHistoryPage(nextPage);
+        setHasMoreHistory(nextPage > 0);
+        // Preserve scroll position after prepending
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            const newScrollHeight = messagesContainerRef.current.scrollHeight;
+            messagesContainerRef.current.scrollTop = newScrollHeight - prevScrollHeight;
+          }
+        }, 0);
+      }
+    } catch (err) {
+      console.error('Failed to load older history:', err);
+      toast.error('Failed to load older messages');
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
@@ -248,7 +324,7 @@ const Chat = () => {
         </div>
 
         <div className="chat-container">
-          <div className="chat-messages">
+          <div className="chat-messages" ref={messagesContainerRef} onScroll={handleScroll}>
             {messages.length === 0 ? (
               <div className="empty-chat">
                 <div className="empty-chat-content">
