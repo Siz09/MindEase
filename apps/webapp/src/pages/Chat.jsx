@@ -137,7 +137,9 @@ const Chat = () => {
           });
 
           // Load existing chat history once connected
-          loadHistory();
+          if (historyPage === null && !loadingHistory) {
+            loadHistory();
+          }
         },
 
         onStompError: (frame) => {
@@ -172,7 +174,9 @@ const Chat = () => {
   };
 
   const loadHistory = async () => {
+    if (loadingHistory) return;
     try {
+      setLoadingHistory(true);
       const pageSize = 50;
       // Request newest first; reverse to chronological for UI
       const res = await apiGet(`/api/chat/history?page=0&size=${pageSize}&sort=desc`, token);
@@ -196,13 +200,20 @@ const Chat = () => {
         };
       });
       trimProcessedIds();
-      setMessages(normalized);
+      setMessages((prev) => {
+        if (prev.length === 0) return normalized;
+        const newIds = new Set(normalized.map((m) => m.id));
+        const prevFiltered = prev.filter((m) => !newIds.has(m.id));
+        return [...normalized, ...prevFiltered];
+      });
       setHistoryPage(0);
       setHasMoreHistory(totalPages > 1);
       setInitialLoadComplete(true);
     } catch (err) {
       console.error('Failed to load chat history:', err);
       toast.error('Failed to load chat history');
+    } finally {
+      setLoadingHistory(false);
     }
   };
 
