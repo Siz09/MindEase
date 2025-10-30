@@ -23,9 +23,11 @@ import org.springframework.web.bind.annotation.*;
 import com.mindease.aop.annotations.AuditChatSent;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Collections;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,11 +152,12 @@ public class ChatApiController {
         messagingTemplate.convertAndSend(userTopic, crisisMessagePayload);
       }
 
-      // Prepare recent conversation history (last 12 messages)
-      var fullHistoryAsc = messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession);
+      // Prepare recent conversation history (last 12 messages) using DB pagination
       int maxHistory = 12;
-      int startIdx = Math.max(0, fullHistoryAsc.size() - maxHistory);
-      var recentHistory = fullHistoryAsc.subList(startIdx, fullHistoryAsc.size());
+      Pageable historyPage = PageRequest.of(0, maxHistory, Sort.by("createdAt").descending());
+      List<Message> recentHistoryDesc = messageRepository.findByChatSession(chatSession, historyPage).getContent();
+      Collections.reverse(recentHistoryDesc); // chronological order oldest -> newest for AI context
+      List<Message> recentHistory = recentHistoryDesc;
 
       // Generate AI response with context
       logger.info("Generating AI response with {} history messages...", recentHistory.size());
