@@ -155,9 +155,10 @@ public class ChatApiController {
       // Prepare recent conversation history (last 12 messages) using DB pagination
       int maxHistory = 12;
       Pageable historyPage = PageRequest.of(0, maxHistory, Sort.by("createdAt").descending());
-      List<Message> recentHistoryDesc = messageRepository.findByChatSession(chatSession, historyPage).getContent();
-      Collections.reverse(recentHistoryDesc); // chronological order oldest -> newest for AI context
-      List<Message> recentHistory = recentHistoryDesc;
+      List<Message> recentHistory = new java.util.ArrayList<>(
+        messageRepository.findByChatSession(chatSession, historyPage).getContent()
+      );
+      Collections.reverse(recentHistory); // chronological order oldest -> newest for AI context
 
       // Generate AI response with context
       logger.info("Generating AI response with {} history messages...", recentHistory.size());
