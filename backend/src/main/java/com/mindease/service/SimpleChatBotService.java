@@ -5,6 +5,7 @@ import com.mindease.model.Message;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class SimpleChatBotService implements ChatBotService {
@@ -14,22 +15,29 @@ public class SimpleChatBotService implements ChatBotService {
     // Use a bit of recent context to make this slightly more aware
     String prior = null;
     if (history != null && !history.isEmpty()) {
-      // find most recent user message before the current one
+      // Find most recent prior user message, skipping the current one if present
       for (int i = history.size() - 1; i >= 0; i--) {
         Message m = history.get(i);
-        if (Boolean.TRUE.equals(m.getIsUserMessage())) {
-          prior = m.getContent();
-          break;
+        if (!Boolean.TRUE.equals(m.getIsUserMessage())) continue;
+        String content = m.getContent();
+        if (content == null || content.isBlank()) continue;
+        if (message != null && Objects.equals(content, message)) {
+          // Skip current user message if history includes it
+          continue;
         }
+        prior = content;
+        break;
       }
     }
 
     String content;
-    if (prior != null && !prior.isBlank() && message != null && !message.isBlank() && !prior.equals(message)) {
-      content = "I’m here with you. You said: \"" + message + "\". Earlier you shared \"" + prior +
+    String safeMsg = safeSnippet(message, 300);
+    String safePrior = safeSnippet(prior, 200);
+    if (safePrior != null && safeMsg != null && !safePrior.equals(safeMsg)) {
+      content = "I’m here with you. You said: \"" + safeMsg + "\". Earlier you shared \"" + safePrior +
         "\" — does that still resonate?";
     } else {
-      String userMessage = (message != null && !message.isBlank()) ? message : "[your message]";
+      String userMessage = safeMsg != null ? safeMsg : "[your message]";
       content = "I’m here with you. You said: \"" + userMessage + "\". Would you like to unpack what felt hardest about that?";
     }
     boolean isCrisis = message != null && isCrisisMessage(message);
@@ -42,5 +50,14 @@ public class SimpleChatBotService implements ChatBotService {
     String lowerMessage = message.toLowerCase();
     return lowerMessage.contains("suicide") || lowerMessage.contains("kill myself") ||
       lowerMessage.contains("want to die") || lowerMessage.contains("harm myself");
+  }
+
+  private static String safeSnippet(String s, int maxChars) {
+    if (s == null) return null;
+    String cleaned = s.replace('\n', ' ').replace('\r', ' ').trim();
+    if (cleaned.length() > maxChars) {
+      cleaned = cleaned.substring(0, maxChars - 1).trim() + "…";
+    }
+    return cleaned;
   }
 }
