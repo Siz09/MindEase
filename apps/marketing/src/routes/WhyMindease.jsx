@@ -63,14 +63,14 @@ export default function WhyMindease() {
             {t('why.eyebrow') || 'Our Mission'}
           </motion.p>
           <motion.h1 variants={itemVariants} className="me-bento-title">
-            {t('why.title')}
+            {t('why.title') || 'Why MindEase'}
           </motion.h1>
           <motion.p
             variants={itemVariants}
             className="me-bento-subtitle"
             style={{ marginTop: 'var(--spacing-lg)' }}
           >
-            {t('why.subtitle')}
+            {t('why.subtitle') || 'Accessible mental health support for everyone'}
           </motion.p>
         </motion.div>
 
@@ -206,7 +206,7 @@ export default function WhyMindease() {
             </motion.div>
             <motion.div variants={itemVariants} className="md:order-2">
               <h2 style={{ fontSize: 'var(--font-size-3xl)', marginBottom: 'var(--spacing-lg)' }}>
-                {t('why.solution.title')}
+                {t('why.solution.title') || 'Our Solution'}
               </h2>
               <p
                 style={{
@@ -215,7 +215,8 @@ export default function WhyMindease() {
                   lineHeight: '1.8',
                 }}
               >
-                {t('why.solution.desc')}
+                {t('why.solution.desc') ||
+                  'Private, affordable, and accessible support powered by AI.'}
               </p>
               <ul
                 style={{
@@ -267,7 +268,7 @@ export default function WhyMindease() {
                 textAlign: 'center',
               }}
             >
-              {t('why.trust.title')}
+              {t('why.trust.title') || 'Trust and Privacy'}
             </h2>
             <p
               style={{
@@ -280,7 +281,8 @@ export default function WhyMindease() {
                 marginRight: 'auto',
               }}
             >
-              {t('why.trust.desc')}
+              {t('why.trust.desc') ||
+                'Your conversations are private. Anonymous mode lets you express yourself freely without judgment.'}
             </p>
 
             <div className="me-bento-grid">
@@ -304,7 +306,10 @@ export default function WhyMindease() {
           style={{ marginTop: 'var(--spacing-4xl)', textAlign: 'center' }}
         >
           <a
-            href={(import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173') + '/login'}
+            href={
+              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
+                .href
+            }
             className="me-button me-button-primary"
           >
             {t('why.cta')}

@@ -35,7 +35,7 @@
   "features.title": "Core Features",
   "features.eyebrow": "Our Capabilities",
   "features.subtitle": "Everything you need for mental wellness, in one app.",
-  "features.coreFeatures": "Core Features",
+
   "features.aiChat.title": "AI Chat",
   "features.aiChat.desc": "Our AI companion is available 24/7 to listen without judgment. Trained on supportive conversation techniques, it helps you explore your thoughts and feelings in a safe space.",
   "features.mood.title": "Mood Tracking",
@@ -83,7 +83,7 @@
   "about.team.desc": "We are a small, dedicated team of developers, designers, and mental health professionals. (Team member details can be added here).",
   "about.ethical.title": "An Ethical Note",
   "about.ethical.desc": "MindEase is a supportive tool, not a crisis line. If you are in immediate danger, please contact a local emergency service. We are committed to ethical AI and user privacy.",
-  "about.crisis": "If you're in crisis, please contact: Nepal Crisis Helpline: 1645 or your local emergency services.",
+  "about.crisis": "If you're in crisis, please contact Nepal Crisis Helpline: 1645 or your local emergency services.",
   "about.questions": "Have questions? We'd love to hear from you.",
   "about.cta": "Get in Touch",
   "contact.title": "Get in Touch",

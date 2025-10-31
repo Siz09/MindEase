@@ -50,10 +50,11 @@ export default function Navbar() {
         <div className="me-navbar-actions">
           <LanguageSwitcher />
           <a
-            href={(import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173') + '/login'}
+            href={
+              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
+                .href
+            }
             className="me-button me-button-primary"
-            style={{ display: 'none' }}
-            id="navbar-cta"
           >
             {t('nav.openApp')}
           </a>
@@ -82,7 +83,10 @@ export default function Navbar() {
             </NavLink>
           ))}
           <a
-            href={(import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173') + '/login'}
+            href={
+              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
+                .href
+            }
             className="me-button me-button-primary"
           >
             {t('nav.openApp')}
