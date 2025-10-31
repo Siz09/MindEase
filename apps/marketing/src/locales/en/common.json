@@ -6,6 +6,7 @@
   "nav.about": "About",
   "nav.contact": "Contact",
   "nav.openApp": "Open App",
+  "hero.eyebrow": "Welcome to Mental Wellness",
   "hero.title": "Feel better, one step at a time",
   "hero.subtitle": "Your AI-powered mental wellness companion — private, bilingual, always here.",
   "hero.primaryCta": "Try MindEase",
@@ -22,7 +23,11 @@
   "bento.privacy.desc": "Anonymous mode and local awareness.",
   "bento.nepal.title": "Made for Nepal",
   "bento.nepal.desc": "English + Nepali, culturally aware.",
+  "features.bento.eyebrow": "What We Offer",
+  "features.bento.title": "Everything You Need",
+  "features.bento.subtitle": "Comprehensive features for your mental wellness journey",
   "features.title": "Core Features",
+  "features.eyebrow": "Our Capabilities",
   "features.subtitle": "Everything you need for mental wellness, in one app.",
   "features.aiChat.title": "AI Chat",
   "features.aiChat.desc": "Our AI companion is available 24/7 to listen without judgment. Trained on supportive conversation techniques, it helps you explore your thoughts and feelings in a safe space.",
@@ -60,5 +65,6 @@
   "contact.form.message": "Your Message",
   "contact.form.submit": "Send Message",
   "contact.partnership.title": "Partnerships",
-  "contact.partnership.desc": "We partner with NGOs, schools, and workplaces to bring mental wellness tools to their communities. Contact us to learn more."
+  "contact.partnership.desc": "We partner with NGOs, schools, and workplaces to bring mental wellness tools to their communities. Contact us to learn more.",
+  "footer.tagline": "Your AI-powered mental wellness companion for Nepal and beyond."
 }
