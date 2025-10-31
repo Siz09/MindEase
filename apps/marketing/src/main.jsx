@@ -1,3 +1,5 @@
+'use client';
+
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { HelmetProvider } from '@dr.pogodin/react-helmet';
