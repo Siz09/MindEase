@@ -1,21 +1,28 @@
-import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from './components/LanguageSwitcher';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Home from './routes/Home';
+import Features from './routes/Features';
+import WhyMindease from './routes/WhyMindease';
+import About from './routes/About';
+import Contact from './routes/Contact';
 
 export default function App() {
-  const { t } = useTranslation();
-
   return (
-    <div style={{ maxWidth: 880, margin: '0 auto', padding: 24 }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>{t('appName')}</h1>
-        <LanguageSwitcher />
-      </header>
-      <main style={{ paddingTop: 24 }}>
-        <h2>{t('hero.title')}</h2>
-        <p>{t('hero.subtitle')}</p>
-        <p>{t('tagline')}</p>
-        <button style={{ padding: '8px 14px' }}>{t('cta')}</button>
-      </main>
-    </div>
+    <Router>
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow pt-14">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/why-mindease" element={<WhyMindease />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
   );
 }
