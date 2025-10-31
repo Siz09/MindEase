@@ -14,6 +14,9 @@ i18n
     defaultNS: 'common',
     supportedLngs: ['en', 'ne'],
     fallbackLng: 'en',
+    returnNull: false,
+    react: { useSuspense: false },
+    initImmediate: false,
     detection: {
       order: ['querystring', 'localStorage', 'navigator'],
       lookupQuerystring: 'lang',

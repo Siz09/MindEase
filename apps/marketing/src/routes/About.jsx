@@ -2,7 +2,6 @@
 
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useTranslation } from 'react-i18next';
-import Section from '../components/Section';
 import { motion } from 'framer-motion';
 import { AlertCircle, Heart, Lightbulb } from 'lucide-react';
 
@@ -11,17 +10,17 @@ export default function About() {
 
   const values = [
     {
-      icon: <Heart className="w-8 h-8 text-accent" />,
+      icon: <Heart size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Compassion First',
       desc: 'We approach every feature with empathy and understanding.',
     },
     {
-      icon: <Lightbulb className="w-8 h-8 text-accent" />,
+      icon: <Lightbulb size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Innovation',
       desc: 'Continuously improving through user feedback and research.',
     },
     {
-      icon: <AlertCircle className="w-8 h-8 text-accent" />,
+      icon: <AlertCircle size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Transparency',
       desc: 'Clear about our limitations and when professional help is needed.',
     },
@@ -29,12 +28,7 @@ export default function About() {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants = {
@@ -51,47 +45,60 @@ export default function About() {
         <meta property="og:description" content={t('about.subtitle')} />
       </Helmet>
 
-      <Section>
+      <div className="container" style={{ paddingTop: 'var(--spacing-4xl)' }}>
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="show"
+          animate="show"
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center"
+          style={{ marginBottom: 'var(--spacing-4xl)' }}
         >
-          <motion.p
-            variants={itemVariants}
-            className="text-accent text-sm font-semibold tracking-widest uppercase mb-3"
-          >
-            Our Story
+          <motion.p variants={itemVariants} className="me-bento-eyebrow">
+            {t('about.eyebrow') || 'Our Story'}
           </motion.p>
-          <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-200">
-              {t('about.title')}
-            </span>
+          <motion.h1 variants={itemVariants} className="me-bento-title">
+            {t('about.title')}
           </motion.h1>
           <motion.p
             variants={itemVariants}
-            className="mt-4 max-w-2xl mx-auto text-lg text-slate-300"
+            className="me-bento-subtitle"
+            style={{ marginTop: 'var(--spacing-lg)' }}
           >
             {t('about.subtitle')}
           </motion.p>
         </motion.div>
 
-        <div className="space-y-12 max-w-3xl mx-auto">
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 'var(--spacing-3xl)',
+            maxWidth: '48rem',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
+        >
           {/* Story */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView="show"
+            animate="show"
             viewport={{ once: true }}
           >
             <motion.div
               variants={itemVariants}
-              className="p-8 bg-gradient-to-br from-slate-800/30 to-slate-900/30 rounded-xl border border-slate-700/50"
+              className="me-bento-card"
+              style={{
+                background: 'linear-gradient(135deg, rgba(22, 33, 62, 0.3), rgba(11, 18, 32, 0.3))',
+              }}
             >
-              <h2 className="text-2xl font-bold mb-4">{t('about.story.title')}</h2>
-              <p className="text-slate-300 leading-relaxed">{t('about.story.desc')}</p>
+              <h2 style={{ fontSize: 'var(--font-size-2xl)', marginBottom: 'var(--spacing-lg)' }}>
+                {t('about.story.title')}
+              </h2>
+              <p style={{ color: 'var(--color-text-secondary)', lineHeight: '1.8' }}>
+                {t('about.story.desc')}
+              </p>
             </motion.div>
           </motion.div>
 
@@ -99,20 +106,18 @@ export default function About() {
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView="show"
+            animate="show"
             viewport={{ once: true }}
           >
-            <h2 className="text-2xl font-bold mb-6">Our Values</h2>
-            <div className="grid md:grid-cols-3 gap-6">
+            <h2 style={{ fontSize: 'var(--font-size-2xl)', marginBottom: 'var(--spacing-2xl)' }}>
+              {t('about.values') || 'Our Values'}
+            </h2>
+            <div className="me-bento-grid">
               {values.map((value, idx) => (
-                <motion.div
-                  key={idx}
-                  variants={itemVariants}
-                  className="p-6 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700/50 hover:border-accent/50 transition-all"
-                >
-                  <div className="mb-4">{value.icon}</div>
-                  <h3 className="font-semibold text-lg mb-2">{value.title}</h3>
-                  <p className="text-slate-400">{value.desc}</p>
+                <motion.div key={idx} variants={itemVariants} className="me-bento-card">
+                  <div style={{ marginBottom: 'var(--spacing-lg)' }}>{value.icon}</div>
+                  <h3 className="me-bento-card-title">{value.title}</h3>
+                  <p className="me-bento-card-desc">{value.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -122,15 +127,22 @@ export default function About() {
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView="show"
+            animate="show"
             viewport={{ once: true }}
           >
             <motion.div
               variants={itemVariants}
-              className="p-8 bg-gradient-to-br from-slate-800/30 to-slate-900/30 rounded-xl border border-slate-700/50"
+              className="me-bento-card"
+              style={{
+                background: 'linear-gradient(135deg, rgba(22, 33, 62, 0.3), rgba(11, 18, 32, 0.3))',
+              }}
             >
-              <h2 className="text-2xl font-bold mb-4">{t('about.team.title')}</h2>
-              <p className="text-slate-300 leading-relaxed">{t('about.team.desc')}</p>
+              <h2 style={{ fontSize: 'var(--font-size-2xl)', marginBottom: 'var(--spacing-lg)' }}>
+                {t('about.team.title')}
+              </h2>
+              <p style={{ color: 'var(--color-text-secondary)', lineHeight: '1.8' }}>
+                {t('about.team.desc')}
+              </p>
             </motion.div>
           </motion.div>
 
@@ -138,21 +150,42 @@ export default function About() {
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView="show"
+            animate="show"
             viewport={{ once: true }}
           >
             <motion.div
               variants={itemVariants}
-              className="p-8 border-l-4 border-red-500 bg-red-500/10 rounded-xl"
+              style={{
+                padding: 'var(--spacing-2xl)',
+                borderLeft: '4px solid rgba(239, 68, 68, 0.8)',
+                background: 'rgba(239, 68, 68, 0.1)',
+                borderRadius: 'var(--radius-lg)',
+              }}
             >
-              <h3 className="font-semibold text-lg text-red-400 mb-2 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
+              <h3
+                style={{
+                  fontWeight: '600',
+                  fontSize: 'var(--font-size-lg)',
+                  color: 'rgba(239, 68, 68, 0.8)',
+                  marginBottom: 'var(--spacing-md)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--spacing-sm)',
+                }}
+              >
+                <AlertCircle size={20} />
                 {t('about.ethical.title')}
               </h3>
-              <p className="text-slate-300">{t('about.ethical.desc')}</p>
-              <p className="mt-4 text-sm text-slate-400">
-                If you're in crisis, please contact: Nepal Crisis Helpline: 1645 or your local
-                emergency services.
+              <p style={{ color: 'var(--color-text-secondary)' }}>{t('about.ethical.desc')}</p>
+              <p
+                style={{
+                  marginTop: 'var(--spacing-lg)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-text-secondary)',
+                }}
+              >
+                {t('about.crisis') ||
+                  "If you're in crisis, please contact: Nepal Crisis Helpline: 1645 or your local emergency services."}
               </p>
             </motion.div>
           </motion.div>
@@ -161,20 +194,19 @@ export default function About() {
         {/* CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.6 }}
-          className="mt-20 text-center"
+          style={{ marginTop: 'var(--spacing-4xl)', textAlign: 'center' }}
         >
-          <p className="text-slate-300 mb-6">Have questions? We'd love to hear from you.</p>
-          <a
-            href="/contact"
-            className="inline-block px-8 py-4 bg-accent text-slate-950 rounded-full font-semibold hover:shadow-lg hover:shadow-accent/50 transition-all hover:scale-105"
-          >
-            Get in Touch
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
+            {t('about.questions') || "Have questions? We'd love to hear from you."}
+          </p>
+          <a href="/contact" className="me-button me-button-primary">
+            {t('about.cta') || 'Get in Touch'}
           </a>
         </motion.div>
-      </Section>
+      </div>
     </>
   );
 }

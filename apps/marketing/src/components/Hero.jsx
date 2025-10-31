@@ -1,7 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
 export default function Hero() {
@@ -11,50 +11,33 @@ export default function Hero() {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
+      transition: { staggerChildren: 0.1, delayChildren: 0.2 },
     },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: 'easeOut' },
-    },
+    show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: 'easeOut' } },
   };
 
   return (
-    <section className="w-full py-20 lg:py-32 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-accent-light/5 pointer-events-none" />
-      <div className="absolute top-40 -right-32 w-96 h-96 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-accent-light/5 rounded-full blur-3xl pointer-events-none" />
+    <section className="me-hero">
+      <div className="me-hero-bg">
+        <div className="me-hero-gradient" style={{ top: '10%', right: '-10%', opacity: 0.5 }} />
+        <div className="me-hero-gradient" style={{ bottom: '20%', left: '-15%', opacity: 0.3 }} />
+      </div>
 
-      <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+      <div className="me-hero-content">
         <motion.div variants={containerVariants} initial="hidden" animate="show">
-          <motion.p
-            variants={itemVariants}
-            className="text-accent text-sm font-semibold tracking-widest uppercase mb-6"
-          >
+          <motion.div variants={itemVariants} className="me-hero-badge">
             {t('hero.eyebrow') || 'Mental Wellness for Everyone'}
-          </motion.p>
+          </motion.div>
 
-          <motion.h1
-            variants={itemVariants}
-            className="text-5xl md:text-6xl lg:text-7xl font-bold text-text leading-tight mb-6"
-          >
-            <span className="bg-gradient-to-r from-accent via-accent-dark to-accent bg-clip-text text-transparent">
-              {t('hero.title')}
-            </span>
+          <motion.h1 variants={itemVariants} className="me-hero-title">
+            {t('hero.title')}
           </motion.h1>
 
-          <motion.p
-            variants={itemVariants}
-            className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-text-light leading-relaxed"
-          >
+          <motion.p variants={itemVariants} className="me-hero-subtitle">
             {t('hero.subtitle')}
           </motion.p>
         </motion.div>
@@ -63,23 +46,23 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.6 }}
-          className="mt-12 flex flex-col sm:flex-row justify-center gap-4"
+          className="me-hero-actions"
         >
           <motion.a
-            href="http://localhost:5173/login"
+            href={(import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173') + '/login'}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center px-8 py-4 bg-accent text-white rounded-lg font-semibold shadow-md hover:shadow-lg hover:bg-accent-dark transition-all"
+            className="me-button me-button-primary"
           >
             {t('hero.primaryCta')}
-            <ArrowRight className="ml-2 w-5 h-5" />
+            <ArrowRight size={20} />
           </motion.a>
 
           <motion.a
             href="#features"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center justify-center px-8 py-4 bg-surface-secondary text-text rounded-lg font-semibold border border-border hover:bg-surface-secondary/80 transition-colors"
+            className="me-button me-button-secondary"
           >
             {t('hero.secondaryCta')}
           </motion.a>
@@ -89,16 +72,20 @@ export default function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className="mt-16 pt-12 border-t border-border"
+          className="me-hero-features"
         >
-          <p className="text-text-light text-sm mb-6">Trusted by users across Nepal</p>
-          <div className="flex flex-wrap justify-center items-center gap-6 text-text-light text-sm">
-            <span className="flex items-center gap-2">🔒 End-to-end encrypted</span>
-            <span className="text-border">•</span>
-            <span className="flex items-center gap-2">🌍 Bilingual support</span>
-            <span className="text-border">•</span>
-            <span className="flex items-center gap-2">⚡ Always available</span>
-          </div>
+          <p className="me-hero-features-label">
+            {t('hero.badge') || 'Trusted by users across Nepal'}
+          </p>
+          <ul className="me-hero-features-list">
+            <li className="me-hero-features-item">
+              🔒 {t('hero.feature1') || 'End-to-end encrypted'}
+            </li>
+            <li className="me-hero-features-item">
+              🌍 {t('hero.feature2') || 'Bilingual support'}
+            </li>
+            <li className="me-hero-features-item">⚡ {t('hero.feature3') || 'Always available'}</li>
+          </ul>
         </motion.div>
       </div>
     </section>
