@@ -2,7 +2,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Lock, Languages, Zap } from 'lucide-react';
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -49,7 +49,10 @@ export default function Hero() {
           className="me-hero-actions"
         >
           <motion.a
-            href={(import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173') + '/login'}
+            href={
+              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
+                .href
+            }
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="me-button me-button-primary"

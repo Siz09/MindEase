@@ -59,22 +59,46 @@ export default function Footer() {
           <h4 className="me-footer-title">{t('footer.legal') || 'Legal'}</h4>
           <ul className="me-footer-links">
             <li>
-              <a href="#" className="me-footer-link">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                aria-disabled="true"
+                title="Coming soon"
+                className="me-footer-link"
+              >
                 {t('footer.privacy') || 'Privacy Policy'}
               </a>
             </li>
             <li>
-              <a href="#" className="me-footer-link">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                aria-disabled="true"
+                title="Coming soon"
+                className="me-footer-link"
+              >
                 {t('footer.terms') || 'Terms of Service'}
               </a>
             </li>
             <li>
-              <a href="#" className="me-footer-link">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                aria-disabled="true"
+                title="Coming soon"
+                className="me-footer-link"
+              >
                 {t('footer.cookies') || 'Cookie Policy'}
               </a>
             </li>
             <li>
-              <a href="#" className="me-footer-link">
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                aria-disabled="true"
+                title="Coming soon"
+                className="me-footer-link"
+              >
                 {t('footer.security') || 'Security'}
               </a>
             </li>
