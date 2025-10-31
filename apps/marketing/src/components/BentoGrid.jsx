@@ -89,9 +89,15 @@ export default function BentoGrid() {
           {t('bento.cta') || 'Ready to start your wellness journey?'}
         </motion.p>
         <motion.a
-          href={
-            new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173').href
-          }
+          href={(() => {
+            try {
+              const base = import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173';
+              return new URL('/login', base).href;
+            } catch (error) {
+              console.error('Invalid VITE_MINDEASE_APP_URL:', error);
+              return 'http://localhost:5173/login';
+            }
+          })()}
           className="me-button me-button-primary"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

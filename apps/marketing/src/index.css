@@ -34,6 +34,7 @@
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
   --radius-2xl: 2rem;
+  --radius-full: 9999px;
 
   /* Typography */
   --font-family:
@@ -793,6 +794,13 @@ textarea {
 
 .me-footer-link:hover {
   color: var(--color-accent);
+}
+
+/* Disabled footer link style */
+.me-footer-link-disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .me-footer-bottom {

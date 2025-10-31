@@ -59,48 +59,36 @@ export default function Footer() {
           <h4 className="me-footer-title">{t('footer.legal') || 'Legal'}</h4>
           <ul className="me-footer-links">
             <li>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                aria-disabled="true"
-                title="Coming soon"
-                className="me-footer-link"
+              <span
+                className="me-footer-link me-footer-link-disabled"
+                aria-label="Privacy Policy (Coming soon)"
               >
                 {t('footer.privacy') || 'Privacy Policy'}
-              </a>
+              </span>
             </li>
             <li>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                aria-disabled="true"
-                title="Coming soon"
-                className="me-footer-link"
+              <span
+                className="me-footer-link me-footer-link-disabled"
+                aria-label="Terms of Service (Coming soon)"
               >
                 {t('footer.terms') || 'Terms of Service'}
-              </a>
+              </span>
             </li>
             <li>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                aria-disabled="true"
-                title="Coming soon"
-                className="me-footer-link"
+              <span
+                className="me-footer-link me-footer-link-disabled"
+                aria-label="Cookie Policy (Coming soon)"
               >
                 {t('footer.cookies') || 'Cookie Policy'}
-              </a>
+              </span>
             </li>
             <li>
-              <a
-                href="#"
-                onClick={(e) => e.preventDefault()}
-                aria-disabled="true"
-                title="Coming soon"
-                className="me-footer-link"
+              <span
+                className="me-footer-link me-footer-link-disabled"
+                aria-label="Security (Coming soon)"
               >
                 {t('footer.security') || 'Security'}
-              </a>
+              </span>
             </li>
           </ul>
         </div>
