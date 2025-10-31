@@ -1,5 +1,3 @@
-'use client';
-
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Suspense } from 'react';
 import { Helmet } from '@dr.pogodin/react-helmet';
