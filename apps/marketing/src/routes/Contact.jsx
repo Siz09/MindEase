@@ -2,7 +2,6 @@
 
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useTranslation } from 'react-i18next';
-import Section from '../components/Section';
 import { motion } from 'framer-motion';
 import { Mail, MessageSquare, Users } from 'lucide-react';
 import { useState } from 'react';
@@ -28,33 +27,28 @@ export default function Contact() {
 
   const contactMethods = [
     {
-      icon: <Mail className="w-8 h-8 text-accent" />,
+      icon: <Mail size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Email',
       desc: 'hello@mindease.app',
       link: 'mailto:hello@mindease.app',
     },
     {
-      icon: <MessageSquare className="w-8 h-8 text-accent" />,
+      icon: <MessageSquare size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Support',
       desc: 'Get help with the app',
-      link: '/',
+      link: '#',
     },
     {
-      icon: <Users className="w-8 h-8 text-accent" />,
+      icon: <Users size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Community',
       desc: 'Join our user community',
-      link: '/',
+      link: '#',
     },
   ];
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants = {
@@ -71,28 +65,25 @@ export default function Contact() {
         <meta property="og:description" content={t('contact.subtitle')} />
       </Helmet>
 
-      <Section>
+      <div className="container" style={{ paddingTop: 'var(--spacing-4xl)' }}>
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="show"
+          animate="show"
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center"
+          style={{ marginBottom: 'var(--spacing-4xl)' }}
         >
-          <motion.p
-            variants={itemVariants}
-            className="text-accent text-sm font-semibold tracking-widest uppercase mb-3"
-          >
-            Support
+          <motion.p variants={itemVariants} className="me-bento-eyebrow">
+            {t('contact.eyebrow') || 'Support'}
           </motion.p>
-          <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-200">
-              {t('contact.title')}
-            </span>
+          <motion.h1 variants={itemVariants} className="me-bento-title">
+            {t('contact.title')}
           </motion.h1>
           <motion.p
             variants={itemVariants}
-            className="mt-4 max-w-2xl mx-auto text-lg text-slate-300"
+            className="me-bento-subtitle"
+            style={{ marginTop: 'var(--spacing-lg)' }}
           >
             {t('contact.subtitle')}
           </motion.p>
@@ -101,35 +92,59 @@ export default function Contact() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="show"
+          animate="show"
           viewport={{ once: true }}
-          className="grid md:grid-cols-3 gap-6 mb-16"
+          className="me-bento-grid"
+          style={{ marginBottom: 'var(--spacing-3xl)' }}
         >
           {contactMethods.map((method, idx) => (
             <motion.a
               key={idx}
               href={method.link}
               variants={itemVariants}
-              className="p-6 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700/50 hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/10"
+              className="me-bento-card"
+              style={{ textDecoration: 'none' }}
             >
-              <div className="mb-4">{method.icon}</div>
-              <h3 className="font-semibold text-lg mb-2">{method.title}</h3>
-              <p className="text-slate-400 text-sm">{method.desc}</p>
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>{method.icon}</div>
+              <h3 className="me-bento-card-title">{method.title}</h3>
+              <p className="me-bento-card-desc">{method.desc}</p>
             </motion.a>
           ))}
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-12 max-w-4xl mx-auto">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr',
+            gap: 'var(--spacing-3xl)',
+            maxWidth: '64rem',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
+          className="lg:grid-cols-2"
+        >
           {/* Form */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView="show"
+            animate="show"
             viewport={{ once: true }}
           >
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form
+              onSubmit={handleSubmit}
+              style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-xl)' }}
+            >
               <motion.div variants={itemVariants}>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
+                <label
+                  htmlFor="name"
+                  style={{
+                    display: 'block',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: '500',
+                    color: 'var(--color-text-secondary)',
+                    marginBottom: 'var(--spacing-md)',
+                  }}
+                >
                   {t('contact.form.name')}
                 </label>
                 <input
@@ -139,13 +154,30 @@ export default function Contact() {
                   value={formState.name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-white"
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-lg)',
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    color: 'var(--color-white)',
+                    fontSize: 'var(--font-size-base)',
+                  }}
                   placeholder="Your name"
                 />
               </motion.div>
 
               <motion.div variants={itemVariants}>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+                <label
+                  htmlFor="email"
+                  style={{
+                    display: 'block',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: '500',
+                    color: 'var(--color-text-secondary)',
+                    marginBottom: 'var(--spacing-md)',
+                  }}
+                >
                   {t('contact.form.email')}
                 </label>
                 <input
@@ -155,13 +187,30 @@ export default function Contact() {
                   value={formState.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-white"
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-lg)',
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    color: 'var(--color-white)',
+                    fontSize: 'var(--font-size-base)',
+                  }}
                   placeholder="your.email@example.com"
                 />
               </motion.div>
 
               <motion.div variants={itemVariants}>
-                <label htmlFor="message" className="block text-sm font-medium text-slate-300 mb-2">
+                <label
+                  htmlFor="message"
+                  style={{
+                    display: 'block',
+                    fontSize: 'var(--font-size-sm)',
+                    fontWeight: '500',
+                    color: 'var(--color-text-secondary)',
+                    marginBottom: 'var(--spacing-md)',
+                  }}
+                >
                   {t('contact.form.message')}
                 </label>
                 <textarea
@@ -171,7 +220,17 @@ export default function Contact() {
                   onChange={handleChange}
                   required
                   rows="5"
-                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all text-white resize-none"
+                  style={{
+                    width: '100%',
+                    padding: 'var(--spacing-lg)',
+                    background: 'var(--color-surface)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    color: 'var(--color-white)',
+                    fontSize: 'var(--font-size-base)',
+                    fontFamily: 'inherit',
+                    resize: 'none',
+                  }}
                   placeholder="Tell us how we can help..."
                 />
               </motion.div>
@@ -179,8 +238,9 @@ export default function Contact() {
               <motion.button
                 variants={itemVariants}
                 type="submit"
-                className="w-full px-6 py-3 bg-accent text-slate-950 rounded-lg font-semibold hover:shadow-lg hover:shadow-accent/50 transition-all hover:scale-105 disabled:opacity-50"
+                className="me-button me-button-primary"
                 disabled={submitted}
+                style={{ width: '100%' }}
               >
                 {submitted ? 'Message Sent! ✓' : t('contact.form.submit')}
               </motion.button>
@@ -191,36 +251,91 @@ export default function Contact() {
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView="show"
+            animate="show"
             viewport={{ once: true }}
           >
             <motion.div
               variants={itemVariants}
-              className="p-8 bg-gradient-to-br from-slate-800/30 to-slate-900/30 rounded-xl border border-slate-700/50 h-full flex flex-col justify-between"
+              className="me-bento-card"
+              style={{
+                background: 'linear-gradient(135deg, rgba(22, 33, 62, 0.3), rgba(11, 18, 32, 0.3))',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                minHeight: '100%',
+              }}
             >
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <Users className="w-6 h-6 text-accent" />
-                  <h3 className="font-semibold text-lg">{t('contact.partnership.title')}</h3>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--spacing-md)',
+                    marginBottom: 'var(--spacing-lg)',
+                  }}
+                >
+                  <Users size={24} style={{ color: 'var(--color-accent)' }} />
+                  <h3 style={{ fontWeight: '600', fontSize: 'var(--font-size-lg)' }}>
+                    {t('contact.partnership.title')}
+                  </h3>
                 </div>
-                <p className="text-slate-300 leading-relaxed mb-6">
+                <p
+                  style={{
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: '1.8',
+                    marginBottom: 'var(--spacing-lg)',
+                  }}
+                >
                   {t('contact.partnership.desc')}
                 </p>
 
-                <div className="space-y-4">
-                  <div className="p-4 bg-slate-900/50 rounded-lg">
-                    <p className="text-sm text-slate-300">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+                  <div
+                    style={{
+                      padding: 'var(--spacing-lg)',
+                      background: 'rgba(11, 18, 32, 0.5)',
+                      borderRadius: 'var(--radius-md)',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
                       <strong>For NGOs:</strong> Reach out to implement MindEase at your
                       organization.
                     </p>
                   </div>
-                  <div className="p-4 bg-slate-900/50 rounded-lg">
-                    <p className="text-sm text-slate-300">
+                  <div
+                    style={{
+                      padding: 'var(--spacing-lg)',
+                      background: 'rgba(11, 18, 32, 0.5)',
+                      borderRadius: 'var(--radius-md)',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
                       <strong>For Schools:</strong> Mental health resources for students and staff.
                     </p>
                   </div>
-                  <div className="p-4 bg-slate-900/50 rounded-lg">
-                    <p className="text-sm text-slate-300">
+                  <div
+                    style={{
+                      padding: 'var(--spacing-lg)',
+                      background: 'rgba(11, 18, 32, 0.5)',
+                      borderRadius: 'var(--radius-md)',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 'var(--font-size-sm)',
+                        color: 'var(--color-text-secondary)',
+                      }}
+                    >
                       <strong>For Workplaces:</strong> Employee wellness programs available.
                     </p>
                   </div>
@@ -229,14 +344,26 @@ export default function Contact() {
 
               <a
                 href="mailto:partnerships@mindease.app"
-                className="mt-6 inline-block px-6 py-2 bg-accent/20 text-accent rounded-lg font-semibold hover:bg-accent/30 transition-all"
+                style={{
+                  marginTop: 'var(--spacing-xl)',
+                  display: 'inline-block',
+                  padding: 'var(--spacing-md) var(--spacing-lg)',
+                  background: 'rgba(0, 212, 255, 0.2)',
+                  color: 'var(--color-accent)',
+                  borderRadius: 'var(--radius-lg)',
+                  fontWeight: '600',
+                  textDecoration: 'none',
+                  transition: 'all var(--transition-base)',
+                }}
+                onMouseEnter={(e) => (e.target.style.background = 'rgba(0, 212, 255, 0.3)')}
+                onMouseLeave={(e) => (e.target.style.background = 'rgba(0, 212, 255, 0.2)')}
               >
                 Explore Partnership
               </a>
             </motion.div>
           </motion.div>
         </div>
-      </Section>
+      </div>
     </>
   );
 }

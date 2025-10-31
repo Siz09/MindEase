@@ -2,8 +2,6 @@
 
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useTranslation } from 'react-i18next';
-import Section from '../components/Section';
-import FeatureIcon from '../components/FeatureIcon';
 import { motion } from 'framer-motion';
 import {
   MessageCircle,
@@ -23,37 +21,37 @@ export default function Features() {
   const features = [
     {
       key: 'aiChat',
-      icon: <MessageCircle className="w-6 h-6" />,
+      icon: <MessageCircle size={24} />,
       title: t('features.aiChat.title'),
       desc: t('features.aiChat.desc'),
     },
     {
       key: 'mood',
-      icon: <BarChart2 className="w-6 h-6" />,
+      icon: <BarChart2 size={24} />,
       title: t('features.mood.title'),
       desc: t('features.mood.desc'),
     },
     {
       key: 'journal',
-      icon: <BookOpen className="w-6 h-6" />,
+      icon: <BookOpen size={24} />,
       title: t('features.journal.title'),
       desc: t('features.journal.desc'),
     },
     {
       key: 'mindfulness',
-      icon: <Zap className="w-6 h-6" />,
+      icon: <Zap size={24} />,
       title: t('features.mindfulness.title'),
       desc: t('features.mindfulness.desc'),
     },
     {
       key: 'privacy',
-      icon: <Shield className="w-6 h-6" />,
+      icon: <Shield size={24} />,
       title: t('features.privacy.title'),
       desc: t('features.privacy.desc'),
     },
     {
       key: 'bilingual',
-      icon: <Globe className="w-6 h-6" />,
+      icon: <Globe size={24} />,
       title: t('features.bilingual.title'),
       desc: t('features.bilingual.desc'),
     },
@@ -61,17 +59,17 @@ export default function Features() {
 
   const highlights = [
     {
-      icon: <Lock className="w-8 h-8 text-accent" />,
+      icon: <Lock size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'End-to-End Encrypted',
       desc: 'Your conversations are completely private and encrypted.',
     },
     {
-      icon: <Heart className="w-8 h-8 text-accent" />,
+      icon: <Heart size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Supportive AI',
       desc: 'Trained on compassionate communication techniques.',
     },
     {
-      icon: <Smartphone className="w-8 h-8 text-accent" />,
+      icon: <Smartphone size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Always Available',
       desc: 'Access MindEase 24/7 from any device.',
     },
@@ -79,12 +77,7 @@ export default function Features() {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants = {
@@ -101,28 +94,25 @@ export default function Features() {
         <meta property="og:description" content={t('features.subtitle')} />
       </Helmet>
 
-      <Section>
+      <div className="container" style={{ paddingTop: 'var(--spacing-4xl)' }}>
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="show"
+          animate="show"
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center"
+          style={{ marginBottom: 'var(--spacing-4xl)' }}
         >
-          <motion.p
-            variants={itemVariants}
-            className="text-accent text-sm font-semibold tracking-widest uppercase mb-3"
-          >
+          <motion.p variants={itemVariants} className="me-bento-eyebrow">
             {t('features.eyebrow') || 'Our Capabilities'}
           </motion.p>
-          <motion.h1 variants={itemVariants} className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-200">
-              {t('features.title')}
-            </span>
+          <motion.h1 variants={itemVariants} className="me-bento-title">
+            {t('features.title')}
           </motion.h1>
           <motion.p
             variants={itemVariants}
-            className="mt-4 max-w-2xl mx-auto text-lg text-slate-300"
+            className="me-bento-subtitle"
+            style={{ marginTop: 'var(--spacing-lg)' }}
           >
             {t('features.subtitle')}
           </motion.p>
@@ -131,71 +121,88 @@ export default function Features() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="show"
+          animate="show"
           viewport={{ once: true }}
-          className="grid md:grid-cols-3 gap-6 mb-20"
+          className="me-bento-grid"
+          style={{
+            marginBottom: 'var(--spacing-4xl)',
+            maxWidth: '80rem',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
         >
           {highlights.map((item, idx) => (
             <motion.div
               key={idx}
               variants={itemVariants}
-              className="p-6 bg-slate-800/30 rounded-xl border border-slate-700/50 hover:border-accent/50 transition-all"
+              className="me-bento-card"
+              style={{ paddingBottom: 0 }}
             >
-              <div className="mb-4">{item.icon}</div>
-              <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
-              <p className="text-slate-400">{item.desc}</p>
+              <div style={{ marginBottom: 'var(--spacing-lg)' }}>{item.icon}</div>
+              <h3 className="me-bento-card-title">{item.title}</h3>
+              <p className="me-bento-card-desc">{item.desc}</p>
             </motion.div>
           ))}
         </motion.div>
 
+        {/* Core Features */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          whileInView="show"
+          animate="show"
           viewport={{ once: true }}
-          className="mt-16"
         >
-          <h2 className="text-3xl font-bold mb-12">Core Features</h2>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <h2 style={{ fontSize: 'var(--font-size-3xl)', marginBottom: 'var(--spacing-3xl)' }}>
+            {t('features.coreFeatures') || 'Core Features'}
+          </h2>
+          <div className="me-bento-grid">
             {features.map((feature, idx) => (
               <motion.div
                 key={feature.key}
                 variants={itemVariants}
-                className="group p-6 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700/50 hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/10"
+                className="me-bento-card"
+                style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}
               >
-                <div className="flex gap-4 items-start">
-                  <FeatureIcon icon={feature.icon} />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg group-hover:text-accent transition-colors">
-                      {feature.title}
-                    </h3>
-                    <p className="mt-2 text-slate-400 group-hover:text-slate-300 transition-colors">
-                      {feature.desc}
-                    </p>
-                  </div>
+                <div className="me-bento-card-icon" style={{ width: '3rem', height: '3rem' }}>
+                  {feature.icon}
                 </div>
+                <h3 className="me-bento-card-title">{feature.title}</h3>
+                <p className="me-bento-card-desc">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
         </motion.div>
 
+        {/* CTA Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.6 }}
-          className="mt-20 text-center p-8 bg-gradient-to-r from-accent/10 to-accent/5 rounded-2xl border border-accent/20"
+          style={{
+            marginTop: 'var(--spacing-4xl)',
+            padding: 'var(--spacing-2xl)',
+            background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 212, 255, 0.05))',
+            border: '1px solid var(--color-accent)',
+            borderRadius: 'var(--radius-2xl)',
+            textAlign: 'center',
+            opacity: 0.9,
+          }}
         >
-          <h3 className="text-2xl font-bold mb-4">Ready to transform your mental wellness?</h3>
-          <p className="text-slate-300 mb-6">Start your free journey with MindEase today.</p>
+          <h3 style={{ fontSize: 'var(--font-size-2xl)', marginBottom: 'var(--spacing-lg)' }}>
+            {t('features.readyCta') || 'Ready to transform your mental wellness?'}
+          </h3>
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
+            {t('features.ctaDesc') || 'Start your free journey with MindEase today.'}
+          </p>
           <a
-            href="http://localhost:5173/login"
-            className="inline-block px-8 py-3 bg-accent text-slate-950 rounded-full font-semibold hover:shadow-lg hover:shadow-accent/50 transition-all hover:scale-105"
+            href={(import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173') + '/login'}
+            className="me-button me-button-primary"
           >
-            Start Free
+            {t('features.startFree') || 'Start Free'}
           </a>
         </motion.div>
-      </Section>
+      </div>
     </>
   );
 }

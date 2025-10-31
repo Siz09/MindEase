@@ -20,9 +20,8 @@ export default function BentoCard({ icon, title, desc, custom, className }) {
     <motion.div
       variants={cardVariants}
       initial="hidden"
-      whileInView="show"
+      animate="show"
       whileHover={{ scale: 1.02, translateY: -2 }}
-      viewport={{ once: true, margin: '-100px' }}
       custom={custom}
       className={`group rounded-xl bg-surface border border-border p-6 md:p-8 cursor-pointer transition-all duration-300 hover:border-accent/30 hover:shadow-bento ${className}`}
     >

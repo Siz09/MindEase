@@ -40,7 +40,7 @@ MindEase now includes two powerful wellbeing modules:
 
 #### 🧠 CBT Journal APIs
 
-**POST /api/journal/add**  
+**POST /api/journal/add**
 _Adds new journal entry with AI summary._
 
 Request Body:
@@ -60,15 +60,15 @@ Response:
 }
 ```
 
-**GET /api/journal/history**  
+**GET /api/journal/history**
 Returns all entries for logged-in user.
 
 #### 🌿 Mindfulness APIs
 
-**GET /api/mindfulness/list**  
+**GET /api/mindfulness/list**
 → List all sessions
 
-**GET /api/mindfulness/{id}**  
+**GET /api/mindfulness/{id}**
 → Fetch audio/animation URL
 
 ### 💻 Frontend Usage

@@ -1,39 +1,37 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 
 export default function LanguageSwitcher() {
   const { i18n } = useTranslation();
 
   const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
+    if (i18n.language !== lng) i18n.changeLanguage(lng);
   };
 
+  const isEN = (i18n.language || '').startsWith('en');
+  const isNE = (i18n.language || '').startsWith('ne');
+
   return (
-    <div className="flex items-center gap-1 bg-slate-800/50 rounded-full p-1 border border-slate-700/50">
-      <motion.button
+    <div className="me-lang" role="group" aria-label="Language switcher">
+      <button
+        type="button"
+        className={`me-lang-btn ${isEN ? 'active' : ''}`}
+        aria-pressed={isEN}
         onClick={() => changeLanguage('en')}
-        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-          i18n.language === 'en' ? 'bg-accent text-slate-950' : 'text-slate-300 hover:text-white'
-        }`}
-        aria-label="Switch to English"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        title="English"
       >
         EN
-      </motion.button>
-      <motion.button
+      </button>
+      <button
+        type="button"
+        className={`me-lang-btn ${isNE ? 'active' : ''}`}
+        aria-pressed={isNE}
         onClick={() => changeLanguage('ne')}
-        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-          i18n.language === 'ne' ? 'bg-accent text-slate-950' : 'text-slate-300 hover:text-white'
-        }`}
-        aria-label="Switch to Nepali"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        title="नेपाली"
       >
-        ने
-      </motion.button>
+        नेपाली
+      </button>
     </div>
   );
 }
