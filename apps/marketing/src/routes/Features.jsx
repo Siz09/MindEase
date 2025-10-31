@@ -98,8 +98,8 @@ export default function Features() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          animate="show"
-          viewport={{ once: true }}
+          whileInView="show"
+          viewport={{ once: true, margin: '-100px' }}
           className="text-center"
           style={{ marginBottom: 'var(--spacing-4xl)' }}
         >
@@ -121,8 +121,8 @@ export default function Features() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          animate="show"
-          viewport={{ once: true }}
+          whileInView="show"
+          viewport={{ once: true, margin: '-100px' }}
           className="me-bento-grid"
           style={{
             marginBottom: 'var(--spacing-4xl)',
@@ -149,10 +149,10 @@ export default function Features() {
         <motion.div
           variants={containerVariants}
           initial="hidden"
-          animate="show"
-          viewport={{ once: true }}
+          whileInView="show"
+          viewport={{ once: true, margin: '-100px' }}
         >
-          <h2 style={{ fontSize: 'var(--font-size-3xl)', marginBottom: 'var(--spacing-3xl)' }}>
+          <h2 className="me-bento-section-title">
             {t('features.coreFeatures') || 'Core Features'}
           </h2>
           <div className="me-bento-grid">
@@ -176,18 +176,10 @@ export default function Features() {
         {/* CTA Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-100px' }}
           transition={{ delay: 0.6 }}
-          style={{
-            marginTop: 'var(--spacing-4xl)',
-            padding: 'var(--spacing-2xl)',
-            background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 212, 255, 0.05))',
-            border: '1px solid var(--color-accent)',
-            borderRadius: 'var(--radius-2xl)',
-            textAlign: 'center',
-            opacity: 0.9,
-          }}
+          className="me-bento-cta"
         >
           <h3 style={{ fontSize: 'var(--font-size-2xl)', marginBottom: 'var(--spacing-lg)' }}>
             {t('features.readyCta') || 'Ready to transform your mental wellness?'}
@@ -196,7 +188,10 @@ export default function Features() {
             {t('features.ctaDesc') || 'Start your free journey with MindEase today.'}
           </p>
           <a
-            href={(import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173') + '/login'}
+            href={
+              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
+                .href
+            }
             className="me-button me-button-primary"
           >
             {t('features.startFree') || 'Start Free'}
