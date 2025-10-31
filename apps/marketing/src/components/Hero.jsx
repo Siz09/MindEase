@@ -49,7 +49,10 @@ export default function Hero() {
           className="me-hero-actions"
         >
           <motion.a
-            href={new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL).href}
+            href={
+              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
+                .href
+            }
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="me-button me-button-primary"
