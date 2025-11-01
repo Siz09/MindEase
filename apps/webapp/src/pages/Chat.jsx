@@ -334,38 +334,6 @@ const Chat = () => {
   return (
     <div className="page chat-page">
       <div className="container">
-        <div className="chat-header">
-          <div className="chat-header-content">
-            <div className="chat-title-section">
-              <div className="chat-avatar">
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="16" r="14" fill="var(--primary-green)" opacity="0.1" />
-                  <path
-                    d="M12 16c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4-4-1.8-4-4z"
-                    fill="var(--primary-green)"
-                  />
-                  <path
-                    d="M8 16c0-4.4 3.6-8 8-8s8 3.6 8 4"
-                    stroke="var(--primary-green)"
-                    strokeWidth="2"
-                    fill="none"
-                  />
-                </svg>
-              </div>
-              <div className="chat-title-text">
-                <h1 className="chat-title">{t('chat.title')}</h1>
-                <p className="chat-subtitle">{t('chat.subtitle')}</p>
-              </div>
-            </div>
-            <div className="connection-status">
-              <div className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></div>
-              <span className="status-text">
-                {isConnected ? t('chat.connected') : t('chat.disconnected')}
-              </span>
-            </div>
-          </div>
-        </div>
-
         <div className="chat-container">
           <div className="chat-messages" ref={messagesContainerRef} onScroll={handleScroll}>
             {loadingHistory && (

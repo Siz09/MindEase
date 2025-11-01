@@ -1,0 +1,206 @@
+/* Sidebar Styles */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 70px; /* Changed from top: 0 to top: 70px to position below navbar */
+  width: 280px;
+  height: calc(100vh - 70px); /* Adjusted height to account for navbar height */
+  background-color: var(--bg-card);
+  border-right: none;
+  /* Enhanced shadow on right side for better visual separation */
+  box-shadow:
+    2px 0 8px rgba(0, 0, 0, 0.08),
+    4px 0 12px rgba(0, 148, 133, 0.06);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  /* Enhanced transition to include all properties for smooth closing animation */
+  transition:
+    width var(--transition-normal),
+    padding var(--transition-normal);
+  padding-top: var(--spacing-lg);
+}
+
+.sidebar.closed {
+  width: 100px;
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 var(--spacing-md);
+  /* Added transition for smooth collapse/expand of content */
+  transition: opacity var(--transition-normal);
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-xl);
+  /* Added transition for smooth justify-content change during collapse */
+  transition: justify-content var(--transition-normal);
+}
+
+.sidebar.closed .sidebar-header {
+  justify-content: center;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--bg-secondary);
+  color: var(--primary-green);
+}
+
+.sidebar-toggle svg {
+  /* Ensure transform transitions both directions for smooth icon flip */
+  transition: transform var(--transition-normal);
+}
+
+.sidebar.closed .sidebar-toggle svg {
+  /* Icon flips when collapsed */
+  transform: scaleX(-1);
+}
+
+/* Navigation */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+/* Nav items with icon/label styling and active state */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  /* Enhanced transition to include opacity for label fade effect during collapse */
+  transition:
+    all var(--transition-fast),
+    opacity var(--transition-normal);
+  position: relative;
+}
+
+.nav-item:hover {
+  background-color: var(--bg-secondary);
+  color: var(--primary-green);
+  transform: translateX(4px);
+}
+
+.nav-item.active {
+  background-color: var(--bg-secondary);
+  color: var(--primary-green);
+  font-weight: 600;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--primary-green);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  color: currentColor;
+  transition: transform var(--transition-fast);
+}
+
+.nav-item:hover .nav-icon {
+  transform: scale(1.1);
+}
+
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Fade + contract smoothly on collapse with opacity and max-width transition */
+  transition:
+    opacity var(--transition-normal),
+    max-width var(--transition-normal);
+  opacity: 1;
+  max-width: 180px;
+}
+
+.sidebar.closed .nav-label {
+  /* Both opacity and max-width animate together for smooth fade and contraction */
+  opacity: 0;
+  max-width: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 240px;
+  }
+
+  .sidebar.closed {
+    width: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Hide sidebar completely on mobile - burger menu handles navigation */
+  .sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Ensure sidebar stays hidden on small devices */
+  .sidebar {
+    display: none;
+  }
+
+  .sidebar-content {
+    padding: 0 var(--spacing-sm);
+  }
+
+  .nav-item {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  .nav-icon {
+    min-width: 20px;
+  }
+}
+
+/* Focus states for accessibility */
+.nav-item:focus {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
+}
+
+.sidebar-toggle:focus {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
+}
