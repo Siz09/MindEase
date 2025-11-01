@@ -1,17 +1,31 @@
 'use client';
 
+import React from 'react';
+
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Navigation from './Navigation';
+import Navbar from './Navbar';
+import Sidebar from './Sidebar';
 import ConnectionStatus from './ConnectionStatus';
+import '../styles/UserLayout.css';
+
+export const SidebarContext = React.createContext();
 
 export default function UserLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   return (
-    <div className="app">
-      <Navigation />
-      <ConnectionStatus />
-      <main className="main-content">
-        <Outlet />
-      </main>
-    </div>
+    <SidebarContext.Provider value={{ sidebarOpen, setSidebarOpen }}>
+      <div className="app-layout">
+        <Sidebar />
+        <div className={`layout-container ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+          <Navbar />
+          <ConnectionStatus />
+          <main className="main-content">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    </SidebarContext.Provider>
   );
 }

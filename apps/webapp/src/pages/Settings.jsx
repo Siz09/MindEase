@@ -20,12 +20,11 @@ const Settings = () => {
   useEffect(() => {
     if (currentUser) {
       setAnonymousMode(currentUser.anonymousMode || false);
-      // Load quiet hours from user data
       if (currentUser.quietHoursStart) {
-        setQuietStart(currentUser.quietHoursStart.slice(0, 5)); // Extract HH:MM from HH:MM:SS
+        setQuietStart(currentUser.quietHoursStart.slice(0, 5));
       }
       if (currentUser.quietHoursEnd) {
-        setQuietEnd(currentUser.quietHoursEnd.slice(0, 5)); // Extract HH:MM from HH:MM:SS
+        setQuietEnd(currentUser.quietHoursEnd.slice(0, 5));
       }
     }
     setCurrentLanguage(i18n.language || 'en');
@@ -124,6 +123,25 @@ const Settings = () => {
         </div>
 
         <div className="settings-content">
+          {/* Profile Information */}
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">Profile Information</h2>
+            </div>
+
+            <div className="profile-section">
+              <div className="profile-avatar-large">
+                {currentUser?.email?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div className="profile-info">
+                <h3>{currentUser?.email}</h3>
+                <p className="profile-member-since">
+                  Member since {new Date(currentUser?.createdAt || Date.now()).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Account Information */}
           <div className="card">
             <div className="card-header">

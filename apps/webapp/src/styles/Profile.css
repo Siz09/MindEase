@@ -1,0 +1,79 @@
+/* Profile Page Styles */
+.profile-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: var(--spacing-xl) var(--spacing-md);
+  min-height: 100%;
+  background-color: var(--bg-primary);
+}
+
+.profile-container {
+  width: 100%;
+  max-width: 600px;
+}
+
+.profile-header {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.profile-header h1 {
+  font-size: var(--font-size-3xl);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.profile-card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.profile-avatar-large {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-green), var(--accent-lime));
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--font-size-3xl);
+  box-shadow: var(--shadow-md);
+}
+
+.profile-info {
+  text-align: center;
+}
+
+.profile-info h2 {
+  font-size: var(--font-size-2xl);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.profile-member-since {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-page {
+    padding: var(--spacing-lg) var(--spacing-sm);
+  }
+
+  .profile-card {
+    padding: var(--spacing-xl);
+  }
+
+  .profile-header h1 {
+    font-size: var(--font-size-2xl);
+  }
+}
