@@ -216,14 +216,18 @@ export const AuthProvider = ({ children }) => {
         anonymousMode,
       });
 
-      const { token: jwtToken, user: userData } = response.data;
-
-      localStorage.setItem('token', jwtToken);
-      setToken(jwtToken);
-      setCurrentUser(userData);
+      // Do not auto-login after registration. Ensure clean auth state.
+      try {
+        await auth.signOut();
+      } catch (e) {
+        // Non-fatal: just ensure local state is cleared
+      }
+      localStorage.removeItem('token');
+      setToken(null);
+      setCurrentUser(null);
 
       toast.update(toastId, {
-        render: 'Account created successfully!',
+        render: 'Account created! Please log in.',
         type: 'success',
         isLoading: false,
         autoClose: 3000,

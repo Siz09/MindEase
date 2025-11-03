@@ -46,7 +46,8 @@ const Register = () => {
       const result = await register(formData.email, formData.password, formData.anonymousMode);
 
       if (result.success) {
-        navigate('/');
+        // After successful sign up, direct user to login screen
+        navigate('/login');
       } else {
         setError(result.error);
       }
