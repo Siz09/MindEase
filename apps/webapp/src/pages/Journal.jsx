@@ -55,14 +55,7 @@ const Journal = () => {
 
   // 🧩 Load history once on mount with API integration
   useEffect(() => {
-    api
-      .get('/journal/history')
-      .then((res) => {
-        if (res.data && Array.isArray(res.data)) {
-          setEntries(res.data);
-        }
-      })
-      .catch(() => toast.error('Failed to load journal history'));
+    // Initial load handled by fetchJournalEntries
   }, []);
 
   // Fetch journal entries
@@ -161,14 +154,15 @@ const Journal = () => {
       // 🧩 Handle both ai_summary and aiSummary field mapping
       setSummary(data.ai_summary || data.aiSummary || 'Summary unavailable');
       toast.success('Journal entry added!');
+      // Optimistically prepend the new entry
+      if (data.entry) {
+        setEntries((prev) => [data.entry, ...prev]);
+      }
       setNewEntry('');
       setSelectedEmoji('😊');
 
-      // Refresh history
-      const historyRes = await api.get('/journal/history');
-      if (historyRes.data && Array.isArray(historyRes.data)) {
-        setEntries(historyRes.data);
-      }
+      // Refresh history with the unified paginated fetch
+      await fetchJournalEntries(0);
     } catch (err) {
       console.error(err);
       toast.error('Error saving journal entry');
