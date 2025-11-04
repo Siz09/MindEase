@@ -209,9 +209,7 @@ const Register = () => {
                     required
                   />
                   {formData.email && !isEmailValid && (
-                    <p className="validation-error-text">
-                      Please enter a valid email address (e.g., user@example.com)
-                    </p>
+                    <p className="validation-error-text">{t('auth.invalidEmailFormatHint')}</p>
                   )}
                 </div>
 
@@ -245,7 +243,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>At least 8 characters</span>
+                        <span>{t('auth.requirement.minLength')}</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasUpperCase ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -259,7 +257,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>One uppercase letter (A-Z)</span>
+                        <span>{t('auth.requirement.uppercase')}</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasLowerCase ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -273,7 +271,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>One lowercase letter (a-z)</span>
+                        <span>{t('auth.requirement.lowercase')}</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasNumber ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -287,7 +285,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>One number (0-9)</span>
+                        <span>{t('auth.requirement.number')}</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasSpecialChar ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -301,7 +299,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>One special character (!@#$%^&*)</span>
+                        <span>{t('auth.requirement.specialChar')}</span>
                       </div>
                     </div>
                   )}
@@ -326,7 +324,7 @@ const Register = () => {
                     required
                   />
                   {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                    <p className="validation-error-text">Passwords do not match</p>
+                    <p className="validation-error-text">{t('auth.passwordMismatch')}</p>
                   )}
                 </div>
 

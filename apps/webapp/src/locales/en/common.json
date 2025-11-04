@@ -46,7 +46,19 @@
     "registerError": "Failed to create account. Please try again.",
     "anonymousError": "Failed to continue anonymously. Please try again.",
     "passwordMismatch": "Passwords do not match.",
-    "passwordTooShort": "Password must be at least 6 characters long."
+    "passwordTooShort": "Password must be at least 6 characters long.",
+    "emailRequired": "Email is required.",
+    "invalidEmailFormat": "Invalid email format.",
+    "invalidEmailFormatHint": "Please enter a valid email address (e.g., user@example.com)",
+    "passwordRequired": "Password is required.",
+    "passwordNotMeetRequirements": "Password does not meet the requirements.",
+    "requirement": {
+      "minLength": "At least 8 characters",
+      "uppercase": "One uppercase letter (A-Z)",
+      "lowercase": "One lowercase letter (a-z)",
+      "number": "One number (0-9)",
+      "specialChar": "One special character (!@#$%^&*)"
+    }
   },
   "mood": {
     "title": "Mood Tracker",
