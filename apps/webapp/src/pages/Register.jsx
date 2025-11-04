@@ -18,6 +18,20 @@ const Register = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+
+  const passwordRules = {
+    minLength: formData.password.length >= 8,
+    hasUpperCase: /[A-Z]/.test(formData.password),
+    hasLowerCase: /[a-z]/.test(formData.password),
+    hasNumber: /\d/.test(formData.password),
+    hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password),
+  };
+
+  const isPasswordValid = Object.values(passwordRules).every((rule) => rule);
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = emailRegex.test(formData.email);
 
   const handleChange = (e) => {
     setFormData({
@@ -30,13 +44,28 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
-      setError(t('auth.passwordMismatch'));
+    if (!formData.email.trim()) {
+      setError(t('auth.emailRequired'));
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError(t('auth.passwordTooShort'));
+    if (!isEmailValid) {
+      setError(t('auth.invalidEmailFormat'));
+      return;
+    }
+
+    if (!formData.password) {
+      setError(t('auth.passwordRequired'));
+      return;
+    }
+
+    if (!isPasswordValid) {
+      setError(t('auth.passwordNotMeetRequirements'));
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError(t('auth.passwordMismatch'));
       return;
     }
 
@@ -46,8 +75,7 @@ const Register = () => {
       const result = await register(formData.email, formData.password, formData.anonymousMode);
 
       if (result.success) {
-        // After successful sign up, direct user to login screen
-        navigate('/login');
+        navigate('/');
       } else {
         setError(result.error);
       }
@@ -176,10 +204,15 @@ const Register = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="form-input"
+                    className={`form-input ${formData.email && !isEmailValid ? 'form-input-error' : ''}`}
                     placeholder={t('auth.emailPlaceholder')}
                     required
                   />
+                  {formData.email && !isEmailValid && (
+                    <p className="validation-error-text">
+                      Please enter a valid email address (e.g., user@example.com)
+                    </p>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -192,10 +225,86 @@ const Register = () => {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="form-input"
+                    onFocus={() => setShowPasswordRequirements(true)}
+                    onBlur={() => setShowPasswordRequirements(false)}
+                    className={`form-input ${formData.password && !isPasswordValid ? 'form-input-error' : ''}`}
                     placeholder={t('auth.passwordPlaceholder')}
                     required
                   />
+                  {showPasswordRequirements && formData.password && (
+                    <div className="password-requirements">
+                      <div className={`requirement ${passwordRules.minLength ? 'met' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                          {passwordRules.minLength && (
+                            <path
+                              d="M4 8l2 2 4-4"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="none"
+                            />
+                          )}
+                        </svg>
+                        <span>At least 8 characters</span>
+                      </div>
+                      <div className={`requirement ${passwordRules.hasUpperCase ? 'met' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                          {passwordRules.hasUpperCase && (
+                            <path
+                              d="M4 8l2 2 4-4"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="none"
+                            />
+                          )}
+                        </svg>
+                        <span>One uppercase letter (A-Z)</span>
+                      </div>
+                      <div className={`requirement ${passwordRules.hasLowerCase ? 'met' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                          {passwordRules.hasLowerCase && (
+                            <path
+                              d="M4 8l2 2 4-4"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="none"
+                            />
+                          )}
+                        </svg>
+                        <span>One lowercase letter (a-z)</span>
+                      </div>
+                      <div className={`requirement ${passwordRules.hasNumber ? 'met' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                          {passwordRules.hasNumber && (
+                            <path
+                              d="M4 8l2 2 4-4"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="none"
+                            />
+                          )}
+                        </svg>
+                        <span>One number (0-9)</span>
+                      </div>
+                      <div className={`requirement ${passwordRules.hasSpecialChar ? 'met' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                          {passwordRules.hasSpecialChar && (
+                            <path
+                              d="M4 8l2 2 4-4"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="none"
+                            />
+                          )}
+                        </svg>
+                        <span>One special character (!@#$%^&*)</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -208,16 +317,23 @@ const Register = () => {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="form-input"
+                    className={`form-input ${
+                      formData.confirmPassword && formData.password !== formData.confirmPassword
+                        ? 'form-input-error'
+                        : ''
+                    }`}
                     placeholder={t('auth.confirmPasswordPlaceholder')}
                     required
                   />
+                  {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                    <p className="validation-error-text">Passwords do not match</p>
+                  )}
                 </div>
 
                 <button
                   type="submit"
                   className={`btn btn-primary w-full ${loading ? 'loading' : ''}`}
-                  disabled={loading}
+                  disabled={loading || !isEmailValid || !isPasswordValid}
                 >
                   {loading ? (
                     <>

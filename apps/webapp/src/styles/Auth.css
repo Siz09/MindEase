@@ -194,6 +194,24 @@
   color: var(--text-muted);
 }
 
+/* Added validation error styling */
+.form-input-error {
+  border-color: #dc2626 !important;
+  background-color: #fef2f2;
+}
+
+.form-input-error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
+}
+
+.validation-error-text {
+  color: #dc2626;
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
+  display: block;
+}
+
 /* Form Divider */
 .form-divider {
   position: relative;
@@ -251,6 +269,43 @@
   width: 16px;
   height: 16px;
   margin-right: var(--spacing-sm);
+}
+
+/* Added password requirements checklist styling */
+.password-requirements {
+  background-color: #f9fafb;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.requirement {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+  transition: all var(--transition-fast);
+}
+
+.requirement:last-child {
+  margin-bottom: 0;
+}
+
+.requirement svg {
+  flex-shrink: 0;
+  color: var(--gray-300);
+  transition: color var(--transition-fast);
+}
+
+.requirement.met {
+  color: var(--primary-green);
+}
+
+.requirement.met svg {
+  color: var(--primary-green);
 }
 
 /* Responsive Design */
