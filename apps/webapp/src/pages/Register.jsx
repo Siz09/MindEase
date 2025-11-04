@@ -19,6 +19,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
 
   const passwordRules = {
     minLength: formData.password.length >= 8,
@@ -72,7 +74,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const result = await register(formData.email, formData.password, formData.anonymousMode);
+      const result = await register(formData.email, formData.password);
 
       if (result.success) {
         navigate('/');
@@ -204,12 +206,15 @@ const Register = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className={`form-input ${formData.email && !isEmailValid ? 'form-input-error' : ''}`}
+                    onBlur={() => setEmailTouched(true)}
+                    className={`form-input ${emailTouched && formData.email && !isEmailValid ? 'form-input-error' : ''}`}
                     placeholder={t('auth.emailPlaceholder')}
                     required
                   />
-                  {formData.email && !isEmailValid && (
-                    <p className="validation-error-text">{t('auth.invalidEmailFormatHint')}</p>
+                  {emailTouched && formData.email && !isEmailValid && (
+                    <p className="validation-error-text">
+                      Please enter a valid email address (e.g., user@example.com)
+                    </p>
                   )}
                 </div>
 
@@ -224,7 +229,7 @@ const Register = () => {
                     value={formData.password}
                     onChange={handleChange}
                     onFocus={() => setShowPasswordRequirements(true)}
-                    onBlur={() => setShowPasswordRequirements(false)}
+                    onBlur={() => setTimeout(() => setShowPasswordRequirements(false), 200)}
                     className={`form-input ${formData.password && !isPasswordValid ? 'form-input-error' : ''}`}
                     placeholder={t('auth.passwordPlaceholder')}
                     required
@@ -243,7 +248,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>{t('auth.requirement.minLength')}</span>
+                        <span>At least 8 characters</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasUpperCase ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -257,7 +262,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>{t('auth.requirement.uppercase')}</span>
+                        <span>One uppercase letter (A-Z)</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasLowerCase ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -271,7 +276,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>{t('auth.requirement.lowercase')}</span>
+                        <span>One lowercase letter (a-z)</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasNumber ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -285,7 +290,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>{t('auth.requirement.number')}</span>
+                        <span>One number (0-9)</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasSpecialChar ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -299,7 +304,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>{t('auth.requirement.specialChar')}</span>
+                        <span>One special character (!@#$%^&*)</span>
                       </div>
                     </div>
                   )}
@@ -315,17 +320,22 @@ const Register = () => {
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    onBlur={() => setConfirmPasswordTouched(true)}
                     className={`form-input ${
-                      formData.confirmPassword && formData.password !== formData.confirmPassword
+                      confirmPasswordTouched &&
+                      formData.confirmPassword &&
+                      formData.password !== formData.confirmPassword
                         ? 'form-input-error'
                         : ''
                     }`}
                     placeholder={t('auth.confirmPasswordPlaceholder')}
                     required
                   />
-                  {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                    <p className="validation-error-text">{t('auth.passwordMismatch')}</p>
-                  )}
+                  {confirmPasswordTouched &&
+                    formData.confirmPassword &&
+                    formData.password !== formData.confirmPassword && (
+                      <p className="validation-error-text">Passwords do not match</p>
+                    )}
                 </div>
 
                 <button
