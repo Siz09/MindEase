@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +21,15 @@ const Register = () => {
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const passwordRules = {
     minLength: formData.password.length >= 8,
@@ -212,9 +221,7 @@ const Register = () => {
                     required
                   />
                   {emailTouched && formData.email && !isEmailValid && (
-                    <p className="validation-error-text">
-                      Please enter a valid email address (e.g., user@example.com)
-                    </p>
+                    <p className="validation-error-text">{t('auth.invalidEmailFormat')}</p>
                   )}
                 </div>
 
@@ -229,7 +236,13 @@ const Register = () => {
                     value={formData.password}
                     onChange={handleChange}
                     onFocus={() => setShowPasswordRequirements(true)}
-                    onBlur={() => setTimeout(() => setShowPasswordRequirements(false), 200)}
+                    onBlur={() => {
+                      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                      timeoutRef.current = setTimeout(
+                        () => setShowPasswordRequirements(false),
+                        200
+                      );
+                    }}
                     className={`form-input ${formData.password && !isPasswordValid ? 'form-input-error' : ''}`}
                     placeholder={t('auth.passwordPlaceholder')}
                     required
@@ -248,7 +261,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>At least 8 characters</span>
+                        <span>{t('auth.passwordRequirement.minLength')}</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasUpperCase ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -262,7 +275,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>One uppercase letter (A-Z)</span>
+                        <span>{t('auth.passwordRequirement.uppercase')}</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasLowerCase ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -276,7 +289,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>One lowercase letter (a-z)</span>
+                        <span>{t('auth.passwordRequirement.lowercase')}</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasNumber ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -290,7 +303,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>One number (0-9)</span>
+                        <span>{t('auth.passwordRequirement.number')}</span>
                       </div>
                       <div className={`requirement ${passwordRules.hasSpecialChar ? 'met' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -304,7 +317,7 @@ const Register = () => {
                             />
                           )}
                         </svg>
-                        <span>One special character (!@#$%^&*)</span>
+                        <span>{t('auth.passwordRequirement.specialChar')}</span>
                       </div>
                     </div>
                   )}
@@ -334,7 +347,7 @@ const Register = () => {
                   {confirmPasswordTouched &&
                     formData.confirmPassword &&
                     formData.password !== formData.confirmPassword && (
-                      <p className="validation-error-text">Passwords do not match</p>
+                      <p className="validation-error-text">{t('auth.passwordMismatch')}</p>
                     )}
                 </div>
 

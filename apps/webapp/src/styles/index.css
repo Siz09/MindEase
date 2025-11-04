@@ -34,6 +34,11 @@
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
 
+  /* Feedback Colors */
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+  --color-error-border: #fecaca;
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
