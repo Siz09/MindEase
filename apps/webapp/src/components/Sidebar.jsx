@@ -101,8 +101,7 @@ const Sidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
-              title={item.label}
+              className={`sidebar-link ${isActive(item.path) ? 'active' : ''}`}
             >
               <div className="nav-icon">{item.icon}</div>
               <span className="nav-label">{item.label}</span>

@@ -51,7 +51,8 @@
 .sidebar-toggle {
   background: none;
   border: none;
-  color: var(--text-secondary);
+  /* Changed from var(--text-secondary) to var(--text-primary) for better icon visibility */
+  color: var(--text-primary);
   cursor: pointer;
   padding: var(--spacing-sm);
   border-radius: var(--radius-md);
@@ -85,7 +86,8 @@
 }
 
 /* Nav items with icon/label styling and active state */
-.nav-item {
+.nav-item,
+.sidebar-link {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
@@ -95,26 +97,29 @@
   color: var(--text-secondary);
   font-weight: 500;
   font-size: var(--font-size-sm);
-  /* Enhanced transition to include opacity for label fade effect during collapse */
   transition:
     all var(--transition-fast),
     opacity var(--transition-normal);
   position: relative;
+  /* Removed transform on hover to prevent the visual "line" shifting effect */
 }
 
-.nav-item:hover {
+.nav-item:hover,
+.sidebar-link:hover {
   background-color: var(--bg-secondary);
   color: var(--primary-green);
-  transform: translateX(4px);
+  /* Removed transform: translateX(4px) - no shifting on hover */
 }
 
-.nav-item.active {
+.nav-item.active,
+.sidebar-link.active {
   background-color: var(--bg-secondary);
   color: var(--primary-green);
   font-weight: 600;
 }
 
-.nav-item.active::before {
+.nav-item.active::before,
+.sidebar-link.active::before {
   content: '';
   position: absolute;
   left: 0;
