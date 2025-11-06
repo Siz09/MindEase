@@ -10,6 +10,7 @@ import java.util.List;
 public class ChatConfig {
   private Openai openai = new Openai();
   private CrisisDetection crisisDetection = new CrisisDetection();
+  private Limits limits = new Limits();
 
   public static class Openai {
     private String apiKey;
@@ -43,9 +44,18 @@ public class ChatConfig {
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
   }
 
+  public static class Limits {
+    private Integer freeDailyMessageLimit = 50;
+
+    public Integer getFreeDailyMessageLimit() { return freeDailyMessageLimit; }
+    public void setFreeDailyMessageLimit(Integer freeDailyMessageLimit) { this.freeDailyMessageLimit = freeDailyMessageLimit; }
+  }
+
   // Getters and setters
   public Openai getOpenai() { return openai; }
   public void setOpenai(Openai openai) { this.openai = openai; }
   public CrisisDetection getCrisisDetection() { return crisisDetection; }
   public void setCrisisDetection(CrisisDetection crisisDetection) { this.crisisDetection = crisisDetection; }
+  public Limits getLimits() { return limits; }
+  public void setLimits(Limits limits) { this.limits = limits; }
 }

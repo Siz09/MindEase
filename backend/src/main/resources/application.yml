@@ -101,6 +101,8 @@ chat:
       - helpless
       - can't go on
       - better off without me
+  limits:
+    free-daily-message-limit: ${CHAT_FREE_DAILY_LIMIT:50}
 
 # Development specific settings
 management:

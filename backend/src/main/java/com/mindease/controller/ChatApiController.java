@@ -8,6 +8,8 @@ import com.mindease.repository.MessageRepository;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.ChatBotService;
 import com.mindease.service.UserService;
+import com.mindease.service.PremiumAccessService;
+import com.mindease.config.ChatConfig;
 import com.mindease.service.CrisisFlaggingService;
 import com.mindease.dto.ChatResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.Collections;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +72,12 @@ public class ChatApiController {
   @Autowired
   private CrisisFlaggingService crisisFlaggingService;
 
+  @Autowired
+  private PremiumAccessService premiumAccessService;
+
+  @Autowired
+  private ChatConfig chatConfig;
+
   private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
 
   @Operation(summary = "Send a chat message", description = "Send a message to the AI assistant and receive a response")
@@ -76,7 +86,6 @@ public class ChatApiController {
     @ApiResponse(responseCode = "400", description = "Invalid request or user not found"),
     @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
   })
-  @RequiresPremium
   @PostMapping("/send")
   @AuditChatSent
   public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
@@ -114,6 +123,26 @@ public class ChatApiController {
       // Check for crisis
       boolean isCrisis = chatBotService.isCrisisMessage(request.getMessage());
       logger.info("Crisis detection result: {}", isCrisis);
+
+      // Enforce soft daily message limit for free users (non-crisis only)
+      boolean isPremium = premiumAccessService.isPremium(user.getId());
+      if (!isPremium && !isCrisis) {
+        Integer limit = chatConfig.getLimits().getFreeDailyMessageLimit();
+        if (limit != null && limit > 0) {
+          LocalDate today = LocalDate.now();
+          LocalDateTime start = today.atStartOfDay();
+          LocalDateTime end = today.plusDays(1).atStartOfDay();
+          long sentToday = messageRepository
+            .countByChatSession_UserAndIsUserMessageTrueAndCreatedAtBetween(user, start, end);
+          logger.info("Free daily usage: userId={}, sentToday={}, limit={}", user.getId(), sentToday, limit);
+          if (sentToday >= limit) {
+            logger.info("Free daily limit reached for user: {}", user.getId());
+            return ResponseEntity.status(429).body(createErrorResponse(
+              "You've reached today's free chat limit. You can continue tomorrow or upgrade to Premium for unlimited chat."
+            ));
+          }
+        }
+      }
 
       // Save user message
       Message userMessage = new Message(chatSession, request.getMessage(), true);
