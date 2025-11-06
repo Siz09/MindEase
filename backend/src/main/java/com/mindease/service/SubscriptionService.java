@@ -255,4 +255,58 @@ public class SubscriptionService {
         logger.info("[DEV] Marked subscription ACTIVE for user {} (subId={})", userId, saved.getId());
         return saved;
     }
+
+    /**
+     * Cancel the user's most recent active-ish subscription in Stripe and mark it CANCELED locally.
+     * If only a pending Checkout session exists (INCOMPLETE), expire that session.
+     */
+    @Transactional
+    public void cancelActiveSubscription(UUID userId) throws StripeException {
+        var targetStatuses = java.util.List.of(
+                SubscriptionStatus.ACTIVE,
+                SubscriptionStatus.TRIALING,
+                SubscriptionStatus.PAST_DUE,
+                SubscriptionStatus.INCOMPLETE
+        );
+
+        var subOpt = subscriptionRepository
+                .findFirstByUser_IdAndStatusInOrderByCreatedAtDesc(userId, targetStatuses);
+
+        if (subOpt.isEmpty()) {
+            logger.info("No subscription to cancel for user {}", userId);
+            return; // idempotent: nothing to do
+        }
+
+        var sub = subOpt.get();
+
+        String stripeSubId = sub.getStripeSubscriptionId();
+        if (stripeSubId != null && !stripeSubId.isBlank()) {
+            try {
+                stripeClient.v1().subscriptions().cancel(stripeSubId, null, null);
+                logger.info("Canceled Stripe subscription {} for user {}", stripeSubId, userId);
+            } catch (Exception e) {
+                logger.error("Failed to cancel Stripe subscription {} for user {}", stripeSubId, userId, e);
+                if (e instanceof StripeException se) throw se; else throw new StripeException(e.getMessage(), null, null, 0, null);
+            }
+        } else if (sub.getCheckoutSessionId() != null && !sub.getCheckoutSessionId().isBlank()) {
+            try {
+                stripeClient.v1().checkout().sessions().expire(
+                        sub.getCheckoutSessionId(),
+                        SessionExpireParams.builder().build(),
+                        null
+                );
+                logger.info("Expired Stripe Checkout session {} for user {}", sub.getCheckoutSessionId(), userId);
+            } catch (Exception e) {
+                logger.warn("Failed to expire Checkout session {} for user {} (continuing)", sub.getCheckoutSessionId(), userId, e);
+            }
+        }
+
+        sub.setStatus(SubscriptionStatus.CANCELED);
+        subscriptionRepository.save(sub);
+
+        Cache cache = cacheManager.getCache("subscription_status");
+        if (cache != null) {
+            cache.evictIfPresent(userId);
+        }
+    }
 }

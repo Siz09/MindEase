@@ -92,4 +92,14 @@ public class SubscriptionController {
         String status = subscriptionService.findLatestStatusForUser(userId);
         return ResponseEntity.ok(Map.of("status", status));
     }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/cancel")
+    public ResponseEntity<?> cancel() throws StripeException {
+        UUID userId = CurrentUserId.get();
+        subscriptionService.cancelActiveSubscription(userId);
+        return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "Subscription canceled"));
+    }
 }
