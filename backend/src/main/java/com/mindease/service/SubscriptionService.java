@@ -275,8 +275,9 @@ public class SubscriptionService {
                 SubscriptionStatus.INCOMPLETE
         );
 
+        // Use pessimistic lock to prevent concurrent cancellation attempts
         var subOpt = subscriptionRepository
-                .findFirstByUser_IdAndStatusInOrderByCreatedAtDesc(userId, targetStatuses);
+                .findFirstByUser_IdAndStatusInOrderByCreatedAtDescForUpdate(userId, targetStatuses);
 
         if (subOpt.isEmpty()) {
             logger.info("No subscription to cancel for user {}", userId);
@@ -290,14 +291,13 @@ public class SubscriptionService {
             try {
                 stripeClient.v1().subscriptions().cancel(stripeSubId, null, null);
                 logger.info("Canceled Stripe subscription {} for user {}", stripeSubId, userId);
-            } catch (com.stripe.exception.StripeException e) {
-                logger.error("Failed to cancel Stripe subscription {} for user {}", stripeSubId, userId, e);
-                throw e;
             } catch (Exception e) {
                 logger.error("Failed to cancel Stripe subscription {} for user {}", stripeSubId, userId, e);
-                throw new RuntimeException("Failed to cancel Stripe subscription: " + e.getMessage(), e);
+                throw (e instanceof StripeException) ? (StripeException) e
+                        : new RuntimeException("Failed to cancel Stripe subscription", e);
             }
         } else if (sub.getCheckoutSessionId() != null && !sub.getCheckoutSessionId().isBlank()) {
+            // Note: Checkout session expiration is non-critical; we proceed even if it fails
             try {
                 stripeClient.v1().checkout().sessions().expire(
                         sub.getCheckoutSessionId(),

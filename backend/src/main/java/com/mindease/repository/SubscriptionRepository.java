@@ -49,4 +49,12 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
   Optional<Subscription> findByUser_IdAndStatusForUpdate(
     @Param("userId") UUID userId, @Param("status") SubscriptionStatus status
   );
+
+  // Pessimistic lock to serialize cancel flows and avoid double Stripe cancellation
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT s FROM Subscription s WHERE s.user.id = :userId AND s.status IN :statuses ORDER BY s.createdAt DESC")
+  Optional<Subscription> findFirstByUser_IdAndStatusInOrderByCreatedAtDescForUpdate(
+    @Param("userId") UUID userId,
+    @Param("statuses") Collection<SubscriptionStatus> statuses
+  );
 }
