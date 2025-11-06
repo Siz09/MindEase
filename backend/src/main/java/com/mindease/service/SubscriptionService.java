@@ -306,25 +306,33 @@ public class SubscriptionService {
 
     @Transactional
     protected void finalizeCancellation(UUID subscriptionId, UUID userId) {
-        subscriptionRepository.findById(subscriptionId).ifPresent(sub -> {
-            sub.setStatus(SubscriptionStatus.CANCELED);
-            subscriptionRepository.save(sub);
-            Cache cache = cacheManager.getCache("subscription_status");
-            if (cache != null) {
-                cache.evictIfPresent(userId);
-            }
-        });
+        var sub = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Subscription " + subscriptionId + " not found during finalization"));
+        sub.setStatus(SubscriptionStatus.CANCELED);
+        subscriptionRepository.save(sub);
+        Cache cache = cacheManager.getCache("subscription_status");
+        if (cache != null) {
+            cache.evictIfPresent(userId);
+        }
     }
 
     @Transactional
     protected void revertCancellation(UUID subscriptionId, SubscriptionStatus prevStatus) {
-        subscriptionRepository.findById(subscriptionId).ifPresent(sub -> {
-            sub.setStatus(prevStatus);
-            subscriptionRepository.save(sub);
-        });
+        var sub = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Subscription " + subscriptionId + " not found during reversion"));
+        sub.setStatus(prevStatus);
+        subscriptionRepository.save(sub);
+        Cache cache = cacheManager.getCache("subscription_status");
+        if (cache != null) {
+            cache.evictIfPresent(sub.getUser().getId());
+        }
+        logger.warn("Reverted subscription {} from CANCELING to {} due to Stripe cancellation failure",
+                subscriptionId, prevStatus);
     }
 
-    public boolean cancelActiveSubscription(UUID userId) throws StripeException {
+    public boolean cancelActiveSubscription(UUID userId) throws StripeException, IllegalStateException {
         // Phase 1: mark CANCELING quickly under lock
         CancelTarget target = beginCancellation(userId);
         if (target == null) {
@@ -359,7 +367,13 @@ public class SubscriptionService {
         }
 
         // Phase 3: finalize locally
-        finalizeCancellation(target.subscriptionId, userId);
+        try {
+            finalizeCancellation(target.subscriptionId, userId);
+        } catch (Exception e) {
+            logger.error("Failed to finalize cancellation for subscription {} (Stripe already canceled)",
+                    target.subscriptionId, e);
+            throw new IllegalStateException("Failed to finalize cancellation locally", e);
+        }
         return true;
     }
 }

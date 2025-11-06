@@ -102,7 +102,13 @@ public class AuthController {
     } catch (FirebaseAuthException e) {
       return ResponseEntity.status(401).body(createErrorResponse("Invalid Firebase token: " + e.getMessage()));
     } catch (Exception e) {
-      return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+      String msg = e.getMessage() != null ? e.getMessage() : "Login failed";
+      if (msg.toLowerCase().contains("user not found")) {
+        Map<String, Object> error = createErrorResponse(msg);
+        error.put("code", "USER_NOT_FOUND");
+        return ResponseEntity.status(404).body(error);
+      }
+      return ResponseEntity.badRequest().body(createErrorResponse(msg));
     }
   }
 

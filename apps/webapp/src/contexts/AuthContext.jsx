@@ -55,6 +55,23 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  // Helper to DRY success-path state updates and toasts
+  const handleAuthSuccess = (jwtToken, userData, toastId, messageText) => {
+    localStorage.setItem('token', jwtToken);
+    setToken(jwtToken);
+    setCurrentUser(userData);
+
+    if (toastId) {
+      toast.update(toastId, {
+        render: messageText || 'Signed in!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+    }
+    return { success: true, user: userData, token: jwtToken };
+  };
+
   // Configure axios interceptors for global error handling
   useEffect(() => {
     const responseInterceptor = axios.interceptors.response.use(
@@ -125,18 +142,7 @@ export const AuthProvider = ({ children }) => {
 
       const { token: jwtToken, user: userData } = response.data;
 
-      localStorage.setItem('token', jwtToken);
-      setToken(jwtToken);
-      setCurrentUser(userData);
-
-      toast.update(toastId, {
-        render: 'Successfully signed in!',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000,
-      });
-
-      return { success: true, user: userData, token: jwtToken };
+      return handleAuthSuccess(jwtToken, userData, toastId, 'Successfully signed in!');
     } catch (error) {
       console.error('Login error:', error);
 
@@ -170,27 +176,33 @@ export const AuthProvider = ({ children }) => {
       // Get Firebase ID token
       const firebaseToken = await firebaseUser.getIdToken();
 
-      // Register anonymously with our backend
-      const response = await axios.post('http://localhost:8080/api/auth/register', {
-        email: `anonymous_${firebaseUser.uid}@mindease.com`,
-        firebaseToken,
-        anonymousMode: true,
-      });
+      // First try to login (handles returning anonymous users)
+      try {
+        const loginResponse = await axios.post('http://localhost:8080/api/auth/login', {
+          firebaseToken,
+        });
 
-      const { token: jwtToken, user: userData } = response.data;
+        const { token: jwtToken, user: userData } = loginResponse.data;
+        return handleAuthSuccess(jwtToken, userData, toastId, 'Continuing anonymously!');
+      } catch (loginErr) {
+        const status = loginErr?.response?.status;
+        const message = loginErr?.response?.data?.message || '';
+        const errorCode = loginErr?.response?.data?.code;
 
-      localStorage.setItem('token', jwtToken);
-      setToken(jwtToken);
-      setCurrentUser(userData);
+        // If user doesn't exist yet, register then proceed
+        if (errorCode === 'USER_NOT_FOUND' || status === 404) {
+          const registerResponse = await axios.post('http://localhost:8080/api/auth/register', {
+            email: `anonymous_${firebaseUser.uid}@mindease.com`,
+            firebaseToken,
+            anonymousMode: true,
+          });
+          const { token: jwtToken, user: userData } = registerResponse.data;
+          return handleAuthSuccess(jwtToken, userData, toastId, 'Continuing anonymously!');
+        }
 
-      toast.update(toastId, {
-        render: 'Continuing anonymously!',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000,
-      });
-
-      return { success: true, user: userData, token: jwtToken };
+        // Any other error bubbles up to outer catch
+        throw loginErr;
+      }
     } catch (error) {
       console.error('Anonymous login error:', error);
       toast.error('Failed to continue anonymously. Please try again.');

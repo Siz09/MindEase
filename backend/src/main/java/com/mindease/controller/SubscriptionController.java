@@ -102,10 +102,10 @@ public class SubscriptionController {
         boolean canceled = subscriptionService.cancelActiveSubscription(userId);
 
         if (!canceled) {
-            logger.warn("User {} attempted to cancel but has no active subscription", userId);
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "no_active_subscription",
-                    "message", "No active subscription found to cancel."));
+            logger.info("User {} requested cancellation but has no active subscription (idempotent success)", userId);
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "message", "No active subscription to cancel."));
         }
 
         logger.info("Successfully canceled subscription for user {}", userId);
