@@ -259,6 +259,12 @@ public class SubscriptionService {
     /**
      * Cancel the user's most recent active-ish subscription in Stripe and mark it CANCELED locally.
      * If only a pending Checkout session exists (INCOMPLETE), expire that session.
+     *
+     * Notes on consistency:
+     * - This operation talks to Stripe first (external) and then updates local DB in a transaction.
+     * - If the local save fails after a successful Stripe cancel, systems will temporarily diverge.
+     * - We rely on Stripe webhooks (e.g., customer.subscription.deleted) to reconcile status to CANCELED.
+     * - Consider a periodic reconciliation job if stronger guarantees are required.
      */
     @Transactional
     public boolean cancelActiveSubscription(UUID userId) throws StripeException {
@@ -284,13 +290,12 @@ public class SubscriptionService {
             try {
                 stripeClient.v1().subscriptions().cancel(stripeSubId, null, null);
                 logger.info("Canceled Stripe subscription {} for user {}", stripeSubId, userId);
+            } catch (com.stripe.exception.StripeException e) {
+                logger.error("Failed to cancel Stripe subscription {} for user {}", stripeSubId, userId, e);
+                throw e;
             } catch (Exception e) {
                 logger.error("Failed to cancel Stripe subscription {} for user {}", stripeSubId, userId, e);
-                if (e instanceof StripeException se) {
-                    throw se;
-                } else {
-                    throw new RuntimeException("Failed to cancel Stripe subscription: " + e.getMessage(), e);
-                }
+                throw new RuntimeException("Failed to cancel Stripe subscription: " + e.getMessage(), e);
             }
         } else if (sub.getCheckoutSessionId() != null && !sub.getCheckoutSessionId().isBlank()) {
             try {
