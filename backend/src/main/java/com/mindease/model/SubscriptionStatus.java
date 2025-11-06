@@ -5,6 +5,6 @@ public enum SubscriptionStatus {
   CANCELED,
   PAST_DUE,
   TRIALING,
-  INCOMPLETE
+  INCOMPLETE,
+  CANCELING
 }
-

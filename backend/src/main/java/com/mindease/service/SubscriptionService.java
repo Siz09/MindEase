@@ -266,8 +266,22 @@ public class SubscriptionService {
      * - We rely on Stripe webhooks (e.g., customer.subscription.deleted) to reconcile status to CANCELED.
      * - Consider a periodic reconciliation job if stronger guarantees are required.
      */
+    // Phase-1 helper container
+    private static final class CancelTarget {
+        final UUID subscriptionId;
+        final String stripeSubId;
+        final String checkoutSessionId;
+        final SubscriptionStatus previousStatus;
+        CancelTarget(UUID subscriptionId, String stripeSubId, String checkoutSessionId, SubscriptionStatus prev) {
+            this.subscriptionId = subscriptionId;
+            this.stripeSubId = stripeSubId;
+            this.checkoutSessionId = checkoutSessionId;
+            this.previousStatus = prev;
+        }
+    }
+
     @Transactional
-    public boolean cancelActiveSubscription(UUID userId) throws StripeException {
+    protected CancelTarget beginCancellation(UUID userId) {
         var targetStatuses = java.util.List.of(
                 SubscriptionStatus.ACTIVE,
                 SubscriptionStatus.TRIALING,
@@ -275,49 +289,77 @@ public class SubscriptionService {
                 SubscriptionStatus.INCOMPLETE
         );
 
-        // Use pessimistic lock to prevent concurrent cancellation attempts
         var subOpt = subscriptionRepository
                 .findFirstByUser_IdAndStatusInOrderByCreatedAtDescForUpdate(userId, targetStatuses);
 
         if (subOpt.isEmpty()) {
-            logger.info("No subscription to cancel for user {}", userId);
-            return false; // nothing to cancel
+            return null;
         }
 
-        var sub = subOpt.get();
+        Subscription sub = subOpt.get();
+        SubscriptionStatus prev = sub.getStatus();
+        // quick state flip to release lock before external calls
+        sub.setStatus(SubscriptionStatus.CANCELING);
+        subscriptionRepository.save(sub);
+        return new CancelTarget(sub.getId(), sub.getStripeSubscriptionId(), sub.getCheckoutSessionId(), prev);
+    }
 
-        String stripeSubId = sub.getStripeSubscriptionId();
-        if (stripeSubId != null && !stripeSubId.isBlank()) {
+    @Transactional
+    protected void finalizeCancellation(UUID subscriptionId, UUID userId) {
+        subscriptionRepository.findById(subscriptionId).ifPresent(sub -> {
+            sub.setStatus(SubscriptionStatus.CANCELED);
+            subscriptionRepository.save(sub);
+            Cache cache = cacheManager.getCache("subscription_status");
+            if (cache != null) {
+                cache.evictIfPresent(userId);
+            }
+        });
+    }
+
+    @Transactional
+    protected void revertCancellation(UUID subscriptionId, SubscriptionStatus prevStatus) {
+        subscriptionRepository.findById(subscriptionId).ifPresent(sub -> {
+            sub.setStatus(prevStatus);
+            subscriptionRepository.save(sub);
+        });
+    }
+
+    public boolean cancelActiveSubscription(UUID userId) throws StripeException {
+        // Phase 1: mark CANCELING quickly under lock
+        CancelTarget target = beginCancellation(userId);
+        if (target == null) {
+            logger.info("No subscription to cancel for user {}", userId);
+            return false;
+        }
+
+        // Phase 2: external Stripe call (no DB lock held)
+        if (target.stripeSubId != null && !target.stripeSubId.isBlank()) {
             try {
-                stripeClient.v1().subscriptions().cancel(stripeSubId, null, null);
-                logger.info("Canceled Stripe subscription {} for user {}", stripeSubId, userId);
+                stripeClient.v1().subscriptions().cancel(target.stripeSubId, null, null);
+                logger.info("Canceled Stripe subscription {} for user {}", target.stripeSubId, userId);
             } catch (Exception e) {
-                logger.error("Failed to cancel Stripe subscription {} for user {}", stripeSubId, userId, e);
+                logger.error("Failed to cancel Stripe subscription {} for user {}", target.stripeSubId, userId, e);
+                // revert back to previous state to avoid dangling CANCELING
+                revertCancellation(target.subscriptionId, target.previousStatus);
                 throw (e instanceof StripeException) ? (StripeException) e
                         : new RuntimeException("Failed to cancel Stripe subscription", e);
             }
-        } else if (sub.getCheckoutSessionId() != null && !sub.getCheckoutSessionId().isBlank()) {
+        } else if (target.checkoutSessionId != null && !target.checkoutSessionId.isBlank()) {
             // Note: Checkout session expiration is non-critical; we proceed even if it fails
             try {
                 stripeClient.v1().checkout().sessions().expire(
-                        sub.getCheckoutSessionId(),
+                        target.checkoutSessionId,
                         SessionExpireParams.builder().build(),
                         null
                 );
-                logger.info("Expired Stripe Checkout session {} for user {}", sub.getCheckoutSessionId(), userId);
+                logger.info("Expired Stripe Checkout session {} for user {}", target.checkoutSessionId, userId);
             } catch (Exception e) {
-                logger.warn("Failed to expire Checkout session {} for user {} (continuing)", sub.getCheckoutSessionId(), userId, e);
+                logger.warn("Failed to expire Checkout session {} for user {} (continuing)", target.checkoutSessionId, userId, e);
             }
         }
 
-        sub.setStatus(SubscriptionStatus.CANCELED);
-        subscriptionRepository.save(sub);
-
-        Cache cache = cacheManager.getCache("subscription_status");
-        if (cache != null) {
-            cache.evictIfPresent(userId);
-        }
-
+        // Phase 3: finalize locally
+        finalizeCancellation(target.subscriptionId, userId);
         return true;
     }
 }
