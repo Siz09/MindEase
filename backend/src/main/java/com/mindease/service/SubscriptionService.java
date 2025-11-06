@@ -261,7 +261,7 @@ public class SubscriptionService {
      * If only a pending Checkout session exists (INCOMPLETE), expire that session.
      */
     @Transactional
-    public void cancelActiveSubscription(UUID userId) throws StripeException {
+    public boolean cancelActiveSubscription(UUID userId) throws StripeException {
         var targetStatuses = java.util.List.of(
                 SubscriptionStatus.ACTIVE,
                 SubscriptionStatus.TRIALING,
@@ -274,7 +274,7 @@ public class SubscriptionService {
 
         if (subOpt.isEmpty()) {
             logger.info("No subscription to cancel for user {}", userId);
-            return; // idempotent: nothing to do
+            return false; // nothing to cancel
         }
 
         var sub = subOpt.get();
@@ -286,7 +286,11 @@ public class SubscriptionService {
                 logger.info("Canceled Stripe subscription {} for user {}", stripeSubId, userId);
             } catch (Exception e) {
                 logger.error("Failed to cancel Stripe subscription {} for user {}", stripeSubId, userId, e);
-                if (e instanceof StripeException se) throw se; else throw new StripeException(e.getMessage(), null, null, 0, null);
+                if (e instanceof StripeException se) {
+                    throw se;
+                } else {
+                    throw new RuntimeException("Failed to cancel Stripe subscription: " + e.getMessage(), e);
+                }
             }
         } else if (sub.getCheckoutSessionId() != null && !sub.getCheckoutSessionId().isBlank()) {
             try {
@@ -308,5 +312,7 @@ public class SubscriptionService {
         if (cache != null) {
             cache.evictIfPresent(userId);
         }
+
+        return true;
     }
 }
