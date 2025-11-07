@@ -31,8 +31,8 @@ public class OpenAIConfig {
                 : chatOpenaiApiKey;
 
         if (key == null || key.trim().isEmpty()) {
-            log.warn("OpenAI API key not configured (openai.api.key or chat.openai.api-key)");
-            return null;
+            throw new IllegalStateException(
+                    "OpenAI API key not configured. Please set either openai.api.key or chat.openai.api-key");
         }
 
         log.info("Configuring OpenAI client (timeout={}s)", timeoutSeconds);

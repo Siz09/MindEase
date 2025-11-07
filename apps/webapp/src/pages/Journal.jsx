@@ -21,8 +21,8 @@ const Journal = () => {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   // Kept state for API flow (no inline summary card rendered anymore)
-  const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
+  const pollingRef = useRef(null);
 
   const emojiPickerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -47,6 +47,20 @@ const Journal = () => {
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Cleanup any pending polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        if (typeof pollingRef.current === 'number') {
+          clearTimeout(pollingRef.current);
+        } else if (typeof pollingRef.current?.cancel === 'function') {
+          pollingRef.current.cancel();
+        }
+        pollingRef.current = null;
+      }
     };
   }, []);
 
@@ -119,20 +133,12 @@ const Journal = () => {
     }
 
     setLoading(true);
-    setSummary('');
 
     try {
       const res = await api.post('/journal/add', { content: `${selectedEmoji} ${newEntry}` });
       const data = res.data || {};
 
-      // Prefer summary from returned entry; otherwise show processing message
       const returnedEntry = data.entry || null;
-      const initialSummary =
-        (returnedEntry && (returnedEntry.aiSummary || returnedEntry.ai_summary)) ||
-        data.ai_summary ||
-        data.aiSummary ||
-        'AI is processing your summary...';
-      setSummary(initialSummary);
       toast.success('Journal entry added!');
 
       if (returnedEntry) {
@@ -143,29 +149,7 @@ const Journal = () => {
 
       // Poll briefly for AI summary completion and refresh the entry in the list
       if (returnedEntry && returnedEntry.id) {
-        const entryId = returnedEntry.id;
-        const maxAttempts = 8;
-        const intervalMs = 1500;
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          const historyRes = await api.get('/journal/history?page=0&size=10').catch(() => null);
-          if (historyRes) {
-            const payload = historyRes.data || {};
-            const list = payload.entries || [];
-            const found = list.find((it) => it.id === entryId);
-            if (found && (found.aiSummary || found.moodInsight)) {
-              if (found.aiSummary) setSummary(found.aiSummary);
-              setEntries((prev) => {
-                const idx = prev.findIndex((it) => it.id === entryId);
-                if (idx === -1) return prev;
-                const next = prev.slice();
-                next[idx] = found;
-                return next;
-              });
-              break;
-            }
-          }
-          await new Promise((r) => setTimeout(r, intervalMs));
-        }
+        pollForAICompletion(returnedEntry.id);
       }
     } catch (err) {
       console.error(err);
@@ -188,11 +172,49 @@ const Journal = () => {
 
   const extractEmoji = (content) => {
     if (!content) return { emoji: '📝', text: '' };
-    if (content.length >= 2 && content[1] === ' ') {
-      return { emoji: content[0], text: content.slice(2) };
+    const chars = Array.from(content);
+    if (chars.length >= 2 && chars[1] === ' ') {
+      return { emoji: chars[0], text: chars.slice(2).join('') };
     }
     return { emoji: '📝', text: content };
   };
+
+  const pollForAICompletion = useCallback(async (entryId) => {
+    const maxAttempts = 8;
+    const intervalMs = 1500;
+    let isCancelled = false;
+
+    pollingRef.current = {
+      cancel: () => {
+        isCancelled = true;
+      },
+    };
+
+    for (let attempt = 0; attempt < maxAttempts && !isCancelled; attempt++) {
+      await new Promise((resolve) => {
+        pollingRef.current = setTimeout(resolve, intervalMs);
+      });
+      if (isCancelled) break;
+
+      const historyRes = await api.get('/journal/history?page=0&size=10').catch(() => null);
+      if (historyRes && !isCancelled) {
+        const payload = historyRes.data || {};
+        const list = payload.entries || [];
+        const found = list.find((it) => it.id === entryId);
+        if (found && (found.aiSummary || found.moodInsight)) {
+          setEntries((prev) => {
+            const idx = prev.findIndex((it) => it.id === entryId);
+            if (idx === -1) return prev;
+            const next = prev.slice();
+            next[idx] = found;
+            return next;
+          });
+          break;
+        }
+      }
+    }
+    pollingRef.current = null;
+  }, []);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < totalPages) {

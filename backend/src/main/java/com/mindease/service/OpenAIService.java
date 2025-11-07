@@ -40,6 +40,11 @@ public class OpenAIService {
 
         try {
             String resolvedModel = resolveChatModel(effectiveModel());
+            var openaiConfig = chatConfig.getOpenai();
+            if (openaiConfig == null) {
+                logger.warn("OpenAI configuration missing - returning mock summary");
+                return generateMockSummary(journalContent);
+            }
 
             List<ChatMessage> messages = new ArrayList<>();
             messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(),
@@ -50,9 +55,9 @@ public class OpenAIService {
             ChatCompletionRequest req = ChatCompletionRequest.builder()
                     .model(resolvedModel)
                     .messages(messages)
-                    .temperature(chatConfig.getOpenai().getTemperature())
+                    .temperature(openaiConfig.getTemperature())
                     .topP(0.9)
-                    .maxTokens(chatConfig.getOpenai().getMaxTokens())
+                    .maxTokens(openaiConfig.getMaxTokens())
                     .build();
 
             var result = svc.createChatCompletion(req);
@@ -81,6 +86,11 @@ public class OpenAIService {
 
         try {
             String resolvedModel = resolveChatModel(effectiveModel());
+            var openaiConfig = chatConfig.getOpenai();
+            if (openaiConfig == null) {
+                logger.warn("OpenAI configuration missing - returning mock insight");
+                return generateMockMoodInsight(journalContent);
+            }
 
             List<ChatMessage> messages = new ArrayList<>();
             messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(),
@@ -93,7 +103,7 @@ public class OpenAIService {
                     .messages(messages)
                     .temperature(0.5)
                     .topP(0.9)
-                    .maxTokens(Math.min(chatConfig.getOpenai().getMaxTokens(), 120))
+                    .maxTokens(Math.min(openaiConfig.getMaxTokens(), 120))
                     .build();
 
             var result = svc.createChatCompletion(req);
@@ -156,19 +166,25 @@ public class OpenAIService {
         return legacyModel;
     }
 
-    private synchronized OpenAiService getOrCreateService() {
+    private OpenAiService getOrCreateService() {
         if (client != null) return client;
-        String apiKey = null;
-        try {
-            apiKey = chatConfig.getOpenai().getApiKey();
-        } catch (Exception ignored) {
-            // chat config not available
+        synchronized (this) {
+            if (client != null) return client;
+            String apiKey = null;
+            try {
+                var openaiCfg = chatConfig.getOpenai();
+                if (openaiCfg != null) {
+                    apiKey = openaiCfg.getApiKey();
+                }
+            } catch (Exception ignored) {
+                // chat config not available
+            }
+            if (apiKey == null || apiKey.isBlank()) {
+                logger.warn("OpenAI API key not found via chat config (chat.openai.api-key)");
+                return null;
+            }
+            client = new OpenAiService(apiKey, Duration.ofSeconds(30));
+            return client;
         }
-        if (apiKey == null || apiKey.isBlank()) {
-            logger.warn("OpenAI API key not found via chat config (chat.openai.api-key)");
-            return null;
-        }
-        client = new OpenAiService(apiKey, Duration.ofSeconds(30));
-        return client;
     }
 }
