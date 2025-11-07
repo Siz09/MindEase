@@ -22,7 +22,7 @@ const Journal = () => {
 
   // Kept state for API flow (no inline summary card rendered anymore)
   const [loading, setLoading] = useState(false);
-  const pollingRef = useRef(null);
+  const pollingMapRef = useRef(new Map());
 
   const emojiPickerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -53,10 +53,11 @@ const Journal = () => {
   // Cleanup any pending polling on unmount
   useEffect(() => {
     return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        clearTimeout(pollingRef.current);
-        pollingRef.current = null;
+      if (pollingMapRef.current) {
+        for (const id of pollingMapRef.current.values()) {
+          clearInterval(id);
+        }
+        pollingMapRef.current.clear();
       }
     };
   }, []);
@@ -184,10 +185,9 @@ const Journal = () => {
     const maxAttempts = 8;
     const intervalMs = 1500;
 
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      clearTimeout(pollingRef.current);
-      pollingRef.current = null;
+    if (pollingMapRef.current) {
+      const existing = pollingMapRef.current.get(entryId);
+      if (existing) clearInterval(existing);
     }
 
     let attempts = 0;
@@ -207,17 +207,16 @@ const Journal = () => {
             return next;
           });
           clearInterval(id);
-          pollingRef.current = null;
+          pollingMapRef.current.delete(entryId);
           return;
         }
       }
       if (attempts >= maxAttempts) {
         clearInterval(id);
-        pollingRef.current = null;
+        pollingMapRef.current.delete(entryId);
       }
     }, intervalMs);
-
-    pollingRef.current = id;
+    pollingMapRef.current.set(entryId, id);
   }, []);
 
   const handlePageChange = (newPage) => {
@@ -329,7 +328,7 @@ const Journal = () => {
                 {t('journal.page')} {currentPage + 1} {t('journal.of')} {totalPages}
                 <span className="total-entries">
                   {' '}
-                  â€¢ {entries.length} {t('journal.entries')}
+                  • {entries.length} {t('journal.entries')}
                 </span>
               </div>
             )}
@@ -337,7 +336,7 @@ const Journal = () => {
 
           {entries.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">ðŸ“</div>
+              <div className="empty-icon">📔</div>
               <h3>{t('journal.noEntries')}</h3>
               <p>{t('journal.startWriting')}</p>
             </div>
@@ -362,7 +361,7 @@ const Journal = () => {
                       {entry.aiSummary && (
                         <div className="ai-summary-section">
                           <div className="ai-summary-header">
-                            <span className="ai-icon">ðŸ¤–</span>
+                            <span className="ai-icon">🤖</span>
                             <strong>{t('journal.aiSummary')}</strong>
                           </div>
                           <div className="ai-summary-content">
@@ -374,7 +373,7 @@ const Journal = () => {
                       {entry.moodInsight && (
                         <div className="mood-insight-section">
                           <div className="mood-insight-header">
-                            <span className="mood-icon">ðŸ’¡</span>
+                            <span className="mood-icon">💡</span>
                             <strong>{t('journal.moodInsight')}</strong>
                           </div>
                           <div className="mood-insight-content">

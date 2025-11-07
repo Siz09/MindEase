@@ -1,4 +1,4 @@
-package com.mindease.service;
+﻿package com.mindease.service;
 
 import com.mindease.config.ChatConfig;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
@@ -162,7 +162,7 @@ public class OpenAIService {
         try {
             String m = chatConfig.getOpenai().getModel();
             if (m != null && !m.isBlank()) return m;
-        } catch (Exception ignored) {}
+        } catch (Exception e) { logger.debug("Could not retrieve model from chat config, using legacy: {}", e.getMessage()); }
         return legacyModel;
     }
 
@@ -188,3 +188,4 @@ public class OpenAIService {
         }
     }
 }
+
