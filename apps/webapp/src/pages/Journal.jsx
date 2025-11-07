@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -54,11 +54,8 @@ const Journal = () => {
   useEffect(() => {
     return () => {
       if (pollingRef.current) {
-        if (typeof pollingRef.current === 'number') {
-          clearTimeout(pollingRef.current);
-        } else if (typeof pollingRef.current?.cancel === 'function') {
-          pollingRef.current.cancel();
-        }
+        clearInterval(pollingRef.current);
+        clearTimeout(pollingRef.current);
         pollingRef.current = null;
       }
     };
@@ -127,6 +124,10 @@ const Journal = () => {
       toast.info('Write something first!');
       return;
     }
+    if (newEntry.length > 1000) {
+      toast.error('Entry must be 1000 characters or less');
+      return;
+    }
     if (!navigator.onLine) {
       toast.info('Offline: AI summary disabled.');
       return;
@@ -179,25 +180,21 @@ const Journal = () => {
     return { emoji: '📝', text: content };
   };
 
-  const pollForAICompletion = useCallback(async (entryId) => {
+  const pollForAICompletion = useCallback((entryId) => {
     const maxAttempts = 8;
     const intervalMs = 1500;
-    let isCancelled = false;
 
-    pollingRef.current = {
-      cancel: () => {
-        isCancelled = true;
-      },
-    };
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      clearTimeout(pollingRef.current);
+      pollingRef.current = null;
+    }
 
-    for (let attempt = 0; attempt < maxAttempts && !isCancelled; attempt++) {
-      await new Promise((resolve) => {
-        pollingRef.current = setTimeout(resolve, intervalMs);
-      });
-      if (isCancelled) break;
-
+    let attempts = 0;
+    const id = setInterval(async () => {
+      attempts += 1;
       const historyRes = await api.get('/journal/history?page=0&size=10').catch(() => null);
-      if (historyRes && !isCancelled) {
+      if (historyRes) {
         const payload = historyRes.data || {};
         const list = payload.entries || [];
         const found = list.find((it) => it.id === entryId);
@@ -209,11 +206,18 @@ const Journal = () => {
             next[idx] = found;
             return next;
           });
-          break;
+          clearInterval(id);
+          pollingRef.current = null;
+          return;
         }
       }
-    }
-    pollingRef.current = null;
+      if (attempts >= maxAttempts) {
+        clearInterval(id);
+        pollingRef.current = null;
+      }
+    }, intervalMs);
+
+    pollingRef.current = id;
   }, []);
 
   const handlePageChange = (newPage) => {
@@ -287,6 +291,7 @@ const Journal = () => {
                 value={newEntry}
                 onChange={(e) => setNewEntry(e.target.value)}
                 rows={6}
+                maxLength={1000}
               />
 
               <div className="form-actions">
@@ -324,7 +329,7 @@ const Journal = () => {
                 {t('journal.page')} {currentPage + 1} {t('journal.of')} {totalPages}
                 <span className="total-entries">
                   {' '}
-                  • {entries.length} {t('journal.entries')}
+                  â€¢ {entries.length} {t('journal.entries')}
                 </span>
               </div>
             )}
@@ -332,7 +337,7 @@ const Journal = () => {
 
           {entries.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">📝</div>
+              <div className="empty-icon">ðŸ“</div>
               <h3>{t('journal.noEntries')}</h3>
               <p>{t('journal.startWriting')}</p>
             </div>
@@ -357,7 +362,7 @@ const Journal = () => {
                       {entry.aiSummary && (
                         <div className="ai-summary-section">
                           <div className="ai-summary-header">
-                            <span className="ai-icon">🤖</span>
+                            <span className="ai-icon">ðŸ¤–</span>
                             <strong>{t('journal.aiSummary')}</strong>
                           </div>
                           <div className="ai-summary-content">
@@ -369,7 +374,7 @@ const Journal = () => {
                       {entry.moodInsight && (
                         <div className="mood-insight-section">
                           <div className="mood-insight-header">
-                            <span className="mood-icon">💡</span>
+                            <span className="mood-icon">ðŸ’¡</span>
                             <strong>{t('journal.moodInsight')}</strong>
                           </div>
                           <div className="mood-insight-content">

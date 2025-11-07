@@ -101,7 +101,7 @@ public class OpenAIService {
             ChatCompletionRequest req = ChatCompletionRequest.builder()
                     .model(resolvedModel)
                     .messages(messages)
-                    .temperature(0.5)
+                    .temperature(openaiConfig.getTemperature())
                     .topP(0.9)
                     .maxTokens(Math.min(openaiConfig.getMaxTokens(), 120))
                     .build();

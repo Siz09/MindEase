@@ -27,8 +27,8 @@ public class OpenAIConfig {
     @Bean
     public OpenAiService openAiService() {
         String key = (openaiApiKey != null && !openaiApiKey.trim().isEmpty())
-                ? openaiApiKey
-                : chatOpenaiApiKey;
+                ? openaiApiKey.trim()
+                : (chatOpenaiApiKey != null ? chatOpenaiApiKey.trim() : null);
 
         if (key == null || key.trim().isEmpty()) {
             throw new IllegalStateException(
