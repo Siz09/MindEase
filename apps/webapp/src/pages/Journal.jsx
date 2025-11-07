@@ -20,7 +20,7 @@ const Journal = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  // 🧩 API integration state
+  // Kept state for API flow (no inline summary card rendered anymore)
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +34,6 @@ const Journal = () => {
         setShowEmojiPicker(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -43,46 +42,25 @@ const Journal = () => {
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  // 🧩 Load history once on mount with API integration
-  useEffect(() => {
-    // Initial load handled by fetchJournalEntries
-  }, []);
-
   // Fetch journal entries
   const fetchJournalEntries = useCallback(
     async (page = 0) => {
       try {
-        if (!token) {
-          console.error('No authentication token available');
-          return;
-        }
-        const response = await fetch(
-          `http://localhost:8080/api/journal/history?page=${page}&size=10`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        if (!response.ok) throw new Error('Failed to fetch journal entries');
-
-        const data = await response.json();
+        setIsLoading(true);
+        const res = await api.get(`/journal/history?page=${page}&size=10`);
+        const data = res.data || {};
         if (data.success) {
-          setEntries(data.entries);
-          setCurrentPage(data.currentPage);
-          setTotalPages(data.totalPages);
+          setEntries(data.entries || []);
+          setCurrentPage(data.currentPage || 0);
+          setTotalPages(data.totalPages || 0);
         }
       } catch (error) {
         console.error('Error fetching journal entries:', error);
@@ -91,46 +69,43 @@ const Journal = () => {
         setIsLoading(false);
       }
     },
-    [token, t]
+    [t]
   );
 
   // Check AI status
   const checkAIStatus = useCallback(async () => {
     try {
-      if (!token) {
-        console.error('No authentication token available');
-        return;
-      }
-
-      // If offline, AI is not available
       if (isOffline) {
         setAiStatus({ available: false, loading: false });
         return;
       }
-
-      const response = await fetch('http://localhost:8080/api/journal/ai-status', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAiStatus({ available: data.aiAvailable, loading: false });
-      }
+      const res = await api.get('/journal/ai-status');
+      const data = res.data || {};
+      setAiStatus({ available: !!data.aiAvailable, loading: false });
     } catch (error) {
       console.error('Error checking AI status:', error);
       setAiStatus({ available: false, loading: false });
     }
-  }, [token, isOffline]);
+  }, [isOffline]);
 
-  // Handle emoji selection
+  // Initial load
+  useEffect(() => {
+    if (!token) return;
+    fetchJournalEntries(0);
+    checkAIStatus();
+  }, [token, fetchJournalEntries, checkAIStatus]);
+
+  // Re-check AI status when online status changes
+  useEffect(() => {
+    checkAIStatus();
+  }, [isOffline, checkAIStatus]);
+
   const handleEmojiSelect = (emoji) => {
     setSelectedEmoji(emoji);
     setShowEmojiPicker(false);
   };
 
-  // 🧩 Handle form submission with API integration
+  // Submit new entry
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -138,7 +113,6 @@ const Journal = () => {
       toast.info('Write something first!');
       return;
     }
-
     if (!navigator.onLine) {
       toast.info('Offline: AI summary disabled.');
       return;
@@ -149,20 +123,50 @@ const Journal = () => {
 
     try {
       const res = await api.post('/journal/add', { content: `${selectedEmoji} ${newEntry}` });
-      const data = res.data;
+      const data = res.data || {};
 
-      // 🧩 Handle both ai_summary and aiSummary field mapping
-      setSummary(data.ai_summary || data.aiSummary || 'Summary unavailable');
+      // Prefer summary from returned entry; otherwise show processing message
+      const returnedEntry = data.entry || null;
+      const initialSummary =
+        (returnedEntry && (returnedEntry.aiSummary || returnedEntry.ai_summary)) ||
+        data.ai_summary ||
+        data.aiSummary ||
+        'AI is processing your summary...';
+      setSummary(initialSummary);
       toast.success('Journal entry added!');
-      // Optimistically prepend the new entry
-      if (data.entry) {
-        setEntries((prev) => [data.entry, ...prev]);
+
+      if (returnedEntry) {
+        setEntries((prev) => [returnedEntry, ...prev]);
       }
       setNewEntry('');
       setSelectedEmoji('😊');
 
-      // Refresh history with the unified paginated fetch
-      await fetchJournalEntries(0);
+      // Poll briefly for AI summary completion and refresh the entry in the list
+      if (returnedEntry && returnedEntry.id) {
+        const entryId = returnedEntry.id;
+        const maxAttempts = 8;
+        const intervalMs = 1500;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const historyRes = await api.get('/journal/history?page=0&size=10').catch(() => null);
+          if (historyRes) {
+            const payload = historyRes.data || {};
+            const list = payload.entries || [];
+            const found = list.find((it) => it.id === entryId);
+            if (found && (found.aiSummary || found.moodInsight)) {
+              if (found.aiSummary) setSummary(found.aiSummary);
+              setEntries((prev) => {
+                const idx = prev.findIndex((it) => it.id === entryId);
+                if (idx === -1) return prev;
+                const next = prev.slice();
+                next[idx] = found;
+                return next;
+              });
+              break;
+            }
+          }
+          await new Promise((r) => setTimeout(r, intervalMs));
+        }
+      }
     } catch (err) {
       console.error(err);
       toast.error('Error saving journal entry');
@@ -171,7 +175,6 @@ const Journal = () => {
     }
   };
 
-  // Format date for display
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -183,26 +186,14 @@ const Journal = () => {
     }).format(date);
   };
 
-  // Extract emoji from entry content
   const extractEmoji = (content) => {
-    const emojiMatch = content.match(/^(\p{Emoji})\s(.*)/u);
-    return emojiMatch
-      ? { emoji: emojiMatch[1], text: emojiMatch[2] }
-      : { emoji: '📝', text: content };
+    if (!content) return { emoji: '📝', text: '' };
+    if (content.length >= 2 && content[1] === ' ') {
+      return { emoji: content[0], text: content.slice(2) };
+    }
+    return { emoji: '📝', text: content };
   };
 
-  // Load data on component mount
-  useEffect(() => {
-    fetchJournalEntries();
-    checkAIStatus();
-  }, [fetchJournalEntries, checkAIStatus]);
-
-  // Re-check AI status when online status changes
-  useEffect(() => {
-    checkAIStatus();
-  }, [isOffline, checkAIStatus]);
-
-  // Handle pagination
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < totalPages) {
       fetchJournalEntries(newPage);
@@ -225,8 +216,6 @@ const Journal = () => {
       <div className="journal-header">
         <h1>{t('journal.title')}</h1>
         <p className="journal-subtitle">{t('journal.subtitle')}</p>
-
-        {/* AI Status Badge */}
         <div className={`ai-status ${aiStatus.available ? 'available' : 'unavailable'}`}>
           <span className="ai-dot"></span>
           {aiStatus.available ? t('journal.aiAvailable') : t('journal.aiUnavailable')}
@@ -258,64 +247,42 @@ const Journal = () => {
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                   >
                     <span className="selected-emoji">{selectedEmoji}</span>
-                    <span className="emoji-dropdown-arrow">▼</span>
                   </button>
-
                   {showEmojiPicker && (
-                    <div className="emoji-picker-container">
-                      <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+                    <div className="emoji-picker-dropdown">
+                      <EmojiPicker onSelect={handleEmojiSelect} />
                     </div>
                   )}
                 </div>
               </div>
 
+              {/* Entry Textarea */}
               <textarea
-                ref={textareaRef}
                 id="journal-entry"
+                ref={textareaRef}
+                className="journal-textarea"
+                placeholder={t('journal.placeholder')}
                 value={newEntry}
                 onChange={(e) => setNewEntry(e.target.value)}
-                placeholder={t('journal.placeholder')}
-                className="journal-textarea"
-                rows="6"
-                disabled={loading}
+                rows={6}
               />
-              <div className="character-count">
-                {newEntry.length} {t('journal.characters')}
-              </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading || !newEntry.trim()}
-              className={`btn btn-primary submit-btn ${loading ? 'loading' : ''}`}
-            >
-              {loading ? (
-                <>
-                  <div className="btn-spinner"></div>
-                  {t('journal.saving')}
-                </>
-              ) : (
-                t('journal.saveEntry')
+              <div className="form-actions">
+                <div className="char-count">{newEntry.length} / 1000</div>
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? t('journal.saving') : t('journal.saveEntry')}
+                </button>
+              </div>
+
+              {aiStatus.available && (
+                <div className="ai-info">
+                  <p>{t('journal.aiInfo')}</p>
+                </div>
               )}
-            </button>
-
-            {/* AI Info */}
-            {aiStatus.available && (
-              <div className="ai-info">
-                <p>{t('journal.aiInfo')}</p>
-              </div>
-            )}
+            </div>
           </form>
 
-          {/* 🧩 AI Summary Display */}
-          {summary && (
-            <div className="summary-card">
-              <h3>AI Summary</h3>
-              <p>{summary}</p>
-            </div>
-          )}
-
-          {/* 🧩 Loading Overlay */}
+          {/* Loading Overlay */}
           {loading && (
             <div className="loader-overlay">
               <div className="loading-spinner">
@@ -352,7 +319,6 @@ const Journal = () => {
               <div className="entries-list">
                 {entries.map((entry) => {
                   const { emoji, text } = extractEmoji(entry.content);
-
                   return (
                     <div key={entry.id} className="journal-entry-card">
                       <div className="entry-header">
@@ -366,7 +332,6 @@ const Journal = () => {
                         <p>{text}</p>
                       </div>
 
-                      {/* AI Summary Section */}
                       {entry.aiSummary && (
                         <div className="ai-summary-section">
                           <div className="ai-summary-header">
@@ -379,7 +344,6 @@ const Journal = () => {
                         </div>
                       )}
 
-                      {/* Mood Insight Section */}
                       {entry.moodInsight && (
                         <div className="mood-insight-section">
                           <div className="mood-insight-header">
@@ -392,7 +356,6 @@ const Journal = () => {
                         </div>
                       )}
 
-                      {/* AI Processing Indicator */}
                       {!entry.aiSummary && !entry.moodInsight && (
                         <div className="ai-processing">
                           <div className="processing-spinner"></div>
@@ -404,7 +367,6 @@ const Journal = () => {
                 })}
               </div>
 
-              {/* Pagination Controls */}
               {totalPages > 1 && (
                 <div className="pagination-controls">
                   <button
@@ -427,7 +389,6 @@ const Journal = () => {
                       } else {
                         pageNum = currentPage - 2 + i;
                       }
-
                       return (
                         <button
                           key={pageNum}

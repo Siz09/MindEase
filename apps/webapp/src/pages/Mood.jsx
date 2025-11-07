@@ -15,6 +15,7 @@ import {
   Tooltip,
   Legend,
   BarElement,
+  Filler,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import '../styles/Mood.css';
@@ -28,7 +29,8 @@ ChartJS.register(
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 const Mood = () => {
@@ -72,7 +74,7 @@ const Mood = () => {
       setHistoryLoading(true);
       const response = await axios.get('http://localhost:8080/api/mood/history', {
         headers: { Authorization: `Bearer ${token}` },
-        params: { page: 0, size: 30 } // Get last 30 entries
+        params: { page: 0, size: 30 }, // Get last 30 entries
       });
 
       if (response.data.status === 'success') {
@@ -127,7 +129,7 @@ const Mood = () => {
     const average = (total / moodHistory.length).toFixed(1);
     const latest = moodHistory[0]?.moodValue || 0;
     const previous = moodHistory[1]?.moodValue || latest;
-    
+
     let trend = 'stable';
     if (latest > previous) trend = 'up';
     else if (latest < previous) trend = 'down';
@@ -145,24 +147,24 @@ const Mood = () => {
 
     // Reverse to show chronological order
     const sortedHistory = [...moodHistory].reverse();
-    
+
     return {
-      labels: sortedHistory.map(entry => 
-        new Date(entry.createdAt).toLocaleDateString([], { 
-          month: 'short', 
-          day: 'numeric' 
+      labels: sortedHistory.map((entry) =>
+        new Date(entry.createdAt).toLocaleDateString([], {
+          month: 'short',
+          day: 'numeric',
         })
       ),
       datasets: [
         {
           label: 'Mood Level',
-          data: sortedHistory.map(entry => entry.moodValue),
+          data: sortedHistory.map((entry) => entry.moodValue),
           borderColor: 'rgb(21, 128, 61)',
           backgroundColor: 'rgba(21, 128, 61, 0.1)',
           tension: 0.4,
           fill: true,
-          pointBackgroundColor: sortedHistory.map(entry => {
-            const mood = detailedMoods.find(m => m.value === entry.moodValue);
+          pointBackgroundColor: sortedHistory.map((entry) => {
+            const mood = detailedMoods.find((m) => m.value === entry.moodValue);
             return mood?.color || 'rgb(21, 128, 61)';
           }),
           pointBorderColor: '#fff',
@@ -176,19 +178,19 @@ const Mood = () => {
   const getMoodDistribution = () => {
     if (moodHistory.length === 0) return null;
 
-    const distribution = detailedMoods.map(mood => ({
+    const distribution = detailedMoods.map((mood) => ({
       ...mood,
-      count: moodHistory.filter(entry => entry.moodValue === mood.value).length,
+      count: moodHistory.filter((entry) => entry.moodValue === mood.value).length,
     }));
 
     return {
-      labels: distribution.map(d => `${d.emoji} ${d.label}`),
+      labels: distribution.map((d) => `${d.emoji} ${d.label}`),
       datasets: [
         {
           label: 'Frequency',
-          data: distribution.map(d => d.count),
-          backgroundColor: distribution.map(d => d.color),
-          borderColor: distribution.map(d => d.color),
+          data: distribution.map((d) => d.count),
+          backgroundColor: distribution.map((d) => d.color),
+          borderColor: distribution.map((d) => d.color),
           borderWidth: 1,
         },
       ],
@@ -218,8 +220,8 @@ const Mood = () => {
         max: 10,
         ticks: {
           stepSize: 1,
-          callback: function(value) {
-            const mood = detailedMoods.find(m => m.value === value);
+          callback: function (value) {
+            const mood = detailedMoods.find((m) => m.value === value);
             return mood ? `${mood.emoji} ${value}` : value;
           },
         },
@@ -272,7 +274,9 @@ const Mood = () => {
             <div className="card mood-entry-card">
               <div className="card-header">
                 <h2 className="card-title">{t('mood.howAreYouFeeling')}</h2>
-                <p className="card-description">Track your mood with a quick entry or detailed form</p>
+                <p className="card-description">
+                  Track your mood with a quick entry or detailed form
+                </p>
               </div>
 
               {!showForm ? (
@@ -283,7 +287,11 @@ const Mood = () => {
                         key={mood.id}
                         className="mood-option-quick"
                         onClick={() => {
-                          setSelectedMood({ value: mood.value * 2, emoji: mood.emoji, label: mood.label });
+                          setSelectedMood({
+                            value: mood.value * 2,
+                            emoji: mood.emoji,
+                            label: mood.label,
+                          });
                           handleMoodSubmit();
                         }}
                         disabled={loading}
@@ -295,10 +303,7 @@ const Mood = () => {
                     ))}
                   </div>
                   <div className="form-actions">
-                    <button 
-                      className="btn btn-outline"
-                      onClick={() => setShowForm(true)}
-                    >
+                    <button className="btn btn-outline" onClick={() => setShowForm(true)}>
                       Detailed Entry
                     </button>
                   </div>
@@ -336,13 +341,11 @@ const Mood = () => {
                       rows="3"
                       maxLength="500"
                     />
-                    <div className="character-count">
-                      {notes.length}/500 characters
-                    </div>
+                    <div className="character-count">{notes.length}/500 characters</div>
                   </div>
 
                   <div className="form-actions">
-                    <button 
+                    <button
                       className="btn btn-outline"
                       onClick={() => {
                         setShowForm(false);
@@ -421,20 +424,22 @@ const Mood = () => {
                     <div className="loading-state">Loading mood history...</div>
                   ) : (
                     moodHistory.slice(0, 10).map((entry) => {
-                      const mood = detailedMoods.find(m => m.value === entry.moodValue);
-                      const isAutoGenerated = entry.notes && entry.notes.includes('Automatic daily mood');
-                      
+                      const mood = detailedMoods.find((m) => m.value === entry.moodValue);
+                      const isAutoGenerated =
+                        entry.notes && entry.notes.includes('Automatic daily mood');
+
                       return (
-                        <div key={entry.id} className={`history-item ${isAutoGenerated ? 'auto-generated' : ''}`}>
+                        <div
+                          key={entry.id}
+                          className={`history-item ${isAutoGenerated ? 'auto-generated' : ''}`}
+                        >
                           <div className="history-mood">
                             <span className="history-emoji">{mood?.emoji || '😐'}</span>
                             <div className="history-details">
                               <span className="history-label">
                                 {mood?.label || 'Unknown'} ({entry.moodValue}/10)
                               </span>
-                              {entry.notes && (
-                                <span className="history-notes">{entry.notes}</span>
-                              )}
+                              {entry.notes && <span className="history-notes">{entry.notes}</span>}
                               {isAutoGenerated && (
                                 <span className="auto-badge">Auto-generated</span>
                               )}
@@ -468,7 +473,12 @@ const Mood = () => {
                       fill="var(--primary-green)"
                       opacity="0.3"
                     />
-                    <path d="M26 28h4M34 28h4M24 38s4 4 8 4 8-4 8-4" stroke="var(--primary-green)" strokeWidth="2" fill="none" />
+                    <path
+                      d="M26 28h4M34 28h4M24 38s4 4 8 4 8-4 8-4"
+                      stroke="var(--primary-green)"
+                      strokeWidth="2"
+                      fill="none"
+                    />
                   </svg>
                 </div>
                 <h3 className="empty-title">No mood entries yet</h3>

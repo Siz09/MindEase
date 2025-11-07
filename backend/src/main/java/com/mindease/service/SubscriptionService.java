@@ -349,8 +349,10 @@ public class SubscriptionService {
                 logger.error("Failed to cancel Stripe subscription {} for user {}", target.stripeSubId, userId, e);
                 // revert back to previous state to avoid dangling CANCELING
                 revertCancellation(target.subscriptionId, target.previousStatus);
-                throw (e instanceof StripeException) ? (StripeException) e
-                        : new RuntimeException("Failed to cancel Stripe subscription", e);
+                if (e instanceof StripeException) {
+                    throw (StripeException) e;
+                }
+                throw new RuntimeException("Failed to cancel Stripe subscription", e);
             }
         } else if (target.checkoutSessionId != null && !target.checkoutSessionId.isBlank()) {
             // Note: Checkout session expiration is non-critical; we proceed even if it fails
