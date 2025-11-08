@@ -1,4 +1,4 @@
-﻿package com.mindease.service;
+package com.mindease.service;
 
 import com.mindease.config.ChatConfig;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;

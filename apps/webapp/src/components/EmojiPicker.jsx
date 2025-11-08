@@ -1,30 +1,20 @@
 import { useState } from 'react';
 
-const EmojiPicker = ({ onEmojiSelect }) => {
+const EmojiPicker = ({ onSelect, onEmojiSelect }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Popular emojis for mental health/journaling
+  // Support both prop names
+  const emit = onSelect || onEmojiSelect;
+
   const emojiCategories = [
     {
       name: 'Feelings',
-      emojis: ['😊', '😢', '😠', '😴', '😰', '😍', '🤔', '😌', '😔', '🤗', '🥺', '😎'],
+      emojis: ['😀', '🙂', '😐', '🙁', '😢', '😭', '😡', '😤', '😱', '😴', '🤒', '🤗'],
     },
-    {
-      name: 'Activities',
-      emojis: ['📝', '🎯', '💪', '🚶', '🧘', '🎵', '📚', '🎮', '🏃', '🚴'],
-    },
-    {
-      name: 'Nature',
-      emojis: ['🌞', '🌙', '⭐', '🌧️', '🌈', '🌻', '🌊', '🏔️', '🍃'],
-    },
-    {
-      name: 'Objects',
-      emojis: ['💭', '📖', '✏️', '🎨', '🎭', '💡', '🔍', '📊', '⏰'],
-    },
-    {
-      name: 'Symbols',
-      emojis: ['❤️', '✨', '🌟', '🎉', '💫', '🔥', '💧', '🌱', '🌀'],
-    },
+    { name: 'Activities', emojis: ['🎧', '📖', '🏃', '🧘', '☕', '🍽️', '🛌', '✍️', '🎮'] },
+    { name: 'Nature', emojis: ['🌞', '🌙', '⭐', '☁️', '🌧️', '🌈', '🌻', '🌲', '🌊'] },
+    { name: 'Objects', emojis: ['📱', '💻', '🕰️', '🎁', '📷', '🔑', '💡', '📝', '🎒'] },
+    { name: 'Symbols', emojis: ['❤️', '💔', '✨', '🔥', '❄️', '✅', '❌', '⚠️', '🎯'] },
   ];
 
   const filteredCategories = emojiCategories
@@ -37,7 +27,7 @@ const EmojiPicker = ({ onEmojiSelect }) => {
     .filter((category) => category.emojis.length > 0);
 
   const handleEmojiClick = (emoji) => {
-    onEmojiSelect(emoji);
+    if (emit) emit(emoji);
   };
 
   return (
