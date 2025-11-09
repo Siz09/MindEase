@@ -92,6 +92,7 @@
     "characterCount": "{{current}}/{{max}} characters",
     "saveMood": "Save Mood",
     "detailedEntry": "Detailed Entry",
+    "selectMoodWithValue": "Select {{mood}} ({{value}})",
     "veryBad": "Very Bad",
     "bad": "Bad",
     "poor": "Poor",
@@ -139,7 +140,8 @@
     "characters": "characters",
     "success": {
       "saved": "Journal entry saved successfully!",
-      "selectEmoji": "Select emoji"
+      "selectEmoji": "Select emoji",
+      "added": "Journal entry added!"
     },
     "errors": {
       "emptyEntry": "Please write something before saving",
@@ -147,8 +149,7 @@
       "fetchFailed": "Failed to load journal entries"
     },
     "loading": "Loading your journal...",
-    "justNow": "Just now",
-    "success": { "added": "Journal entry added!" }
+    "justNow": "Just now"
   },
   "charts": {
     "moodTrendOverTime": "Mood Trend Over Time",
@@ -159,7 +160,8 @@
   },
   "common": {
     "cancel": "Cancel",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "selected": "Selected"
   },
   "checkin": {
     "title": "Check-in",

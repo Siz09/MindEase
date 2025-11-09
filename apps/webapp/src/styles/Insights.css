@@ -355,7 +355,7 @@
   }
 
   .journal-stats-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
@@ -376,5 +376,11 @@
   .ai-summary-section {
     padding: 0.75rem;
     gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .journal-stats-grid {
+    grid-template-columns: 1fr;
   }
 }

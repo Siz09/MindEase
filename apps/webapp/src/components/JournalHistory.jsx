@@ -1,5 +1,3 @@
-﻿'use client';
-
 import { useTranslation } from 'react-i18next';
 import '../styles/components/JournalHistory.css';
 
@@ -12,6 +10,10 @@ const JournalHistory = ({
   onPageChange,
 }) => {
   const { t, i18n } = useTranslation();
+
+  const handlePageChange = (page) => {
+    if (typeof onPageChange === 'function') onPageChange(page);
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return t('journal.justNow');
@@ -27,12 +29,12 @@ const JournalHistory = ({
   };
 
   const extractEmoji = (content) => {
-    if (!content) return { emoji: 'ðŸ“', text: '' };
+    if (!content) return { emoji: '📝', text: '' };
     const chars = Array.from(content);
     if (chars.length >= 2 && chars[1] === ' ') {
       return { emoji: chars[0], text: chars.slice(2).join('') };
     }
-    return { emoji: 'ðŸ“', text: content };
+    return { emoji: '📝', text: content };
   };
 
   if (isLoading && entries.length === 0) {
@@ -50,7 +52,7 @@ const JournalHistory = ({
     return (
       <div className="journal-history-section">
         <div className="empty-state">
-          <div className="empty-icon">ðŸ“”</div>
+          <div className="empty-icon">📝</div>
           <h3>{t('journal.noEntries')}</h3>
           <p>{t('journal.startWriting')}</p>
         </div>
@@ -97,7 +99,7 @@ const JournalHistory = ({
       {totalPages > 1 && (
         <div className="pagination-controls">
           <button
-            onClick={() => onPageChange(currentPage - 1)}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 0}
             className="btn btn-outline pagination-btn"
           >
@@ -119,7 +121,7 @@ const JournalHistory = ({
               return (
                 <button
                   key={pageNum}
-                  onClick={() => onPageChange(pageNum)}
+                  onClick={() => handlePageChange(pageNum)}
                   className={`pagination-number ${pageNum === currentPage ? 'active' : ''}`}
                 >
                   {pageNum + 1}
@@ -129,7 +131,7 @@ const JournalHistory = ({
           </span>
 
           <button
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages - 1}
             className="btn btn-outline pagination-btn"
           >

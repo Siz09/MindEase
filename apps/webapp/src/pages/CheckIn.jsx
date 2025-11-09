@@ -18,6 +18,7 @@ const CheckIn = () => {
   // Journal state
   const [journalEntries, setJournalEntries] = useState([]);
   const [journalLoading, setJournalLoading] = useState(true);
+  const [journalSubmitting, setJournalSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isOffline, setIsOffline] = useState(
@@ -26,6 +27,7 @@ const CheckIn = () => {
 
   // Handle online/offline status
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
     window.addEventListener('online', handleOnline);
@@ -84,13 +86,14 @@ const CheckIn = () => {
 
   const handleJournalSubmit = async (content) => {
     try {
-      setJournalLoading(true);
+      setJournalSubmitting(true);
       const res = await api.post('/journal/add', { content });
       const data = res.data || {};
 
       if (data.success || data.status === 'success') {
         toast.success(t('journal.success.added') || 'Journal entry added!');
-        await fetchJournalEntries(currentPage);
+        await fetchJournalEntries(0);
+        setCurrentPage(0);
       } else {
         toast.error(t('journal.errors.saveFailed') || 'Failed to save journal entry');
       }
@@ -98,7 +101,7 @@ const CheckIn = () => {
       console.error('Error saving journal entry:', err);
       toast.error(t('journal.errors.saveFailed') || 'Error saving journal entry');
     } finally {
-      setJournalLoading(false);
+      setJournalSubmitting(false);
     }
   };
 
@@ -128,7 +131,7 @@ const CheckIn = () => {
           <section className="check-in-section">
             <JournalForm
               onSubmit={handleJournalSubmit}
-              loading={journalLoading}
+              loading={journalSubmitting}
               isOffline={isOffline}
             />
           </section>

@@ -1,5 +1,3 @@
-﻿'use client';
-
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../styles/components/MoodInput.css';
@@ -11,33 +9,37 @@ const MoodInput = ({ onSubmit, loading }) => {
   const [showForm, setShowForm] = useState(false);
 
   const moods = [
-    { id: 1, emoji: 'ðŸ˜¢', label: t('mood.terrible'), color: '#dc2626', value: 1 },
-    { id: 2, emoji: 'ðŸ˜”', label: t('mood.low'), color: '#f97316', value: 2 },
-    { id: 3, emoji: 'ðŸ˜', label: t('mood.okay'), color: '#eab308', value: 3 },
-    { id: 4, emoji: 'ðŸ™‚', label: t('mood.good'), color: '#84cc16', value: 4 },
-    { id: 5, emoji: 'ðŸ˜Š', label: t('mood.excellent'), color: '#16a34a', value: 5 },
+    { id: 1, emoji: '😭', label: t('mood.terrible'), color: '#dc2626', value: 1 },
+    { id: 2, emoji: '😢', label: t('mood.low'), color: '#f97316', value: 2 },
+    { id: 3, emoji: '😐', label: t('mood.okay'), color: '#eab308', value: 3 },
+    { id: 4, emoji: '🙂', label: t('mood.good'), color: '#84cc16', value: 4 },
+    { id: 5, emoji: '🤩', label: t('mood.excellent'), color: '#16a34a', value: 5 },
   ];
 
   const detailedMoods = [
-    { value: 1, emoji: 'ðŸ˜­', label: t('mood.terrible'), color: '#dc2626' },
-    { value: 2, emoji: 'ðŸ˜¢', label: t('mood.veryBad'), color: '#ea580c' },
-    { value: 3, emoji: 'ðŸ˜”', label: t('mood.bad'), color: '#f97316' },
-    { value: 4, emoji: 'ðŸ˜•', label: t('mood.poor'), color: '#fb923c' },
-    { value: 5, emoji: 'ðŸ˜', label: t('mood.neutral'), color: '#eab308' },
-    { value: 6, emoji: 'ðŸ™‚', label: t('mood.okay'), color: '#a3e635' },
-    { value: 7, emoji: 'ðŸ˜Š', label: t('mood.good'), color: '#84cc16' },
-    { value: 8, emoji: 'ðŸ˜„', label: t('mood.veryGood'), color: '#65a30d' },
-    { value: 9, emoji: 'ðŸ˜', label: t('mood.great'), color: '#16a34a' },
-    { value: 10, emoji: 'ðŸ¤©', label: t('mood.amazing'), color: '#15803d' },
+    { value: 1, emoji: '😭', label: t('mood.terrible'), color: '#dc2626' },
+    { value: 2, emoji: '😢', label: t('mood.veryBad'), color: '#ea580c' },
+    { value: 3, emoji: '😔', label: t('mood.bad'), color: '#f97316' },
+    { value: 4, emoji: '😕', label: t('mood.poor'), color: '#fb923c' },
+    { value: 5, emoji: '😐', label: t('mood.neutral'), color: '#eab308' },
+    { value: 6, emoji: '🙂', label: t('mood.okay'), color: '#a3e635' },
+    { value: 7, emoji: '😊', label: t('mood.good'), color: '#84cc16' },
+    { value: 8, emoji: '😄', label: t('mood.veryGood'), color: '#65a30d' },
+    { value: 9, emoji: '😁', label: t('mood.great'), color: '#16a34a' },
+    { value: 10, emoji: '🤩', label: t('mood.amazing'), color: '#15803d' },
   ];
 
-  const handleQuickMoodSubmit = (moodData) => {
-    onSubmit({
-      value: moodData.value * 2,
-      emoji: moodData.emoji,
-      label: moodData.label,
-      notes: null,
-    });
+  const handleQuickMoodSubmit = async (moodData) => {
+    try {
+      await onSubmit({
+        value: moodData.value * 2,
+        emoji: moodData.emoji,
+        label: moodData.label,
+        notes: null,
+      });
+    } catch (error) {
+      console.error('Failed to submit mood:', error);
+    }
   };
 
   const handleDetailedMoodSubmit = async () => {
@@ -49,12 +51,10 @@ const MoodInput = ({ onSubmit, loading }) => {
         label: selectedMood.label,
         notes: notes.trim() || null,
       });
-      // Reset form only on success
       setSelectedMood(null);
       setNotes('');
       setShowForm(false);
     } catch (error) {
-      // Keep form data so user can retry
       console.error('Failed to submit mood:', error);
     }
   };
@@ -77,10 +77,12 @@ const MoodInput = ({ onSubmit, loading }) => {
                   onClick={() => handleQuickMoodSubmit(mood)}
                   disabled={loading}
                   style={{ '--mood-color': mood.color }}
+                  aria-label={t('mood.selectMoodWithValue', {
+                    mood: mood.label,
+                    value: mood.value,
+                  })}
                 >
-                  <div className="mood-emoji-large">
-                    {{ 1: '😭', 2: '😢', 3: '😐', 4: '🙂', 5: '🤩' }[mood.value]}
-                  </div>
+                  <div className="mood-emoji-large">{mood.emoji}</div>
                   <span className="mood-label-small">{mood.label}</span>
                 </button>
               ))}
@@ -106,25 +108,18 @@ const MoodInput = ({ onSubmit, loading }) => {
                     className={`mood-scale-option ${selectedMood?.value === mood.value ? 'selected' : ''}`}
                     onClick={() => setSelectedMood(mood)}
                     style={{ '--mood-color': mood.color }}
+                    aria-label={t('mood.selectMoodWithValue', {
+                      mood: mood.label,
+                      value: mood.value,
+                    })}
+                    aria-pressed={selectedMood?.value === mood.value}
                   >
-                    <div className="mood-emoji">
-                      {
-                        {
-                          1: '😭',
-                          2: '😢',
-                          3: '😔',
-                          4: '😕',
-                          5: '😐',
-                          6: '🙂',
-                          7: '😊',
-                          8: '😄',
-                          9: '😁',
-                          10: '🤩',
-                        }[mood.value]
-                      }
-                    </div>
+                    <div className="mood-emoji">{mood.emoji}</div>
                     <div className="mood-value">{mood.value}</div>
                     <div className="mood-label-tiny">{mood.label}</div>
+                    {selectedMood?.value === mood.value && (
+                      <span className="sr-only">{t('common.selected') || 'Selected'}</span>
+                    )}
                   </button>
                 ))}
               </div>

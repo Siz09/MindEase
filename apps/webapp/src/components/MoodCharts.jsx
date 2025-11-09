@@ -1,4 +1,4 @@
-﻿import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,7 +14,6 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import '../styles/components/MoodCharts.css';
 
-// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -27,45 +26,31 @@ ChartJS.register(
   Filler
 );
 
+const detailedMoods = [
+  { value: 1, emoji: '😭', labelKey: 'mood.terrible', color: '#dc2626' },
+  { value: 2, emoji: '😢', labelKey: 'mood.veryBad', color: '#ea580c' },
+  { value: 3, emoji: '😔', labelKey: 'mood.bad', color: '#f97316' },
+  { value: 4, emoji: '😕', labelKey: 'mood.poor', color: '#fb923c' },
+  { value: 5, emoji: '😐', labelKey: 'mood.neutral', color: '#eab308' },
+  { value: 6, emoji: '🙂', labelKey: 'mood.okay', color: '#a3e635' },
+  { value: 7, emoji: '😊', labelKey: 'mood.good', color: '#84cc16' },
+  { value: 8, emoji: '😄', labelKey: 'mood.veryGood', color: '#65a30d' },
+  { value: 9, emoji: '😁', labelKey: 'mood.great', color: '#16a34a' },
+  { value: 10, emoji: '🤩', labelKey: 'mood.amazing', color: '#15803d' },
+];
+
+const emojiByValue = Object.fromEntries(detailedMoods.map((m) => [m.value, m.emoji]));
+
 const MoodCharts = ({ moodHistory, isLoading }) => {
   const { t } = useTranslation();
 
-  const detailedMoods = [
-    { value: 1, emoji: 'ðŸ˜­', label: t('mood.terrible'), color: '#dc2626' },
-    { value: 2, emoji: 'ðŸ˜¢', label: t('mood.veryBad'), color: '#ea580c' },
-    { value: 3, emoji: 'ðŸ˜”', label: t('mood.bad'), color: '#f97316' },
-    { value: 4, emoji: 'ðŸ˜•', label: t('mood.poor'), color: '#fb923c' },
-    { value: 5, emoji: 'ðŸ˜', label: t('mood.neutral'), color: '#eab308' },
-    { value: 6, emoji: 'ðŸ™‚', label: t('mood.okay'), color: '#a3e635' },
-    { value: 7, emoji: 'ðŸ˜Š', label: t('mood.good'), color: '#84cc16' },
-    { value: 8, emoji: 'ðŸ˜„', label: t('mood.veryGood'), color: '#65a30d' },
-    { value: 9, emoji: 'ðŸ˜', label: t('mood.great'), color: '#16a34a' },
-    { value: 10, emoji: 'ðŸ¤©', label: t('mood.amazing'), color: '#15803d' },
-  ];
-  const emojiByValue = {
-    1: '😭',
-    2: '😢',
-    3: '😔',
-    4: '😕',
-    5: '😐',
-    6: '🙂',
-    7: '😊',
-    8: '😄',
-    9: '😁',
-    10: '🤩',
-  };
-
   const getChartData = () => {
     if (!moodHistory || moodHistory.length === 0) return null;
-
     const sortedHistory = [...moodHistory].reverse();
 
     return {
       labels: sortedHistory.map((entry) =>
-        new Date(entry.createdAt).toLocaleDateString([], {
-          month: 'short',
-          day: 'numeric',
-        })
+        new Date(entry.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })
       ),
       datasets: [
         {
@@ -92,6 +77,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
 
     const distribution = detailedMoods.map((mood) => ({
       ...mood,
+      label: t(mood.labelKey),
       count: moodHistory.filter((entry) => entry.moodValue === mood.value).length,
     }));
 
@@ -113,16 +99,11 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       title: {
         display: true,
         text: t('charts.moodTrendOverTime'),
-        font: {
-          size: 16,
-          weight: 'bold',
-        },
+        font: { size: 16, weight: 'bold' },
         color: '#15803d',
       },
     },
@@ -142,26 +123,16 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       title: {
         display: true,
         text: t('charts.moodDistribution'),
-        font: {
-          size: 16,
-          weight: 'bold',
-        },
+        font: { size: 16, weight: 'bold' },
         color: '#15803d',
       },
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          stepSize: 1,
-        },
-      },
+      y: { beginAtZero: true, ticks: { stepSize: 1 } },
     },
   };
 
@@ -177,10 +148,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
 
   const chartData = getChartData();
   const distributionData = getMoodDistribution();
-
-  if (!chartData || !distributionData) {
-    return null;
-  }
+  if (!chartData || !distributionData) return null;
 
   return (
     <div className="charts-container">
@@ -189,7 +157,6 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
           <Line data={chartData} options={chartOptions} />
         </div>
       </div>
-
       <div className="card chart-card">
         <div className="chart-container">
           <Bar data={distributionData} options={barChartOptions} />

@@ -1,4 +1,4 @@
-﻿import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import '../styles/components/MoodStats.css';
 
 const MoodStats = ({ stats, isLoading }) => {
@@ -19,11 +19,11 @@ const MoodStats = ({ stats, isLoading }) => {
       </div>
       <div className="stats-grid">
         <div className="stat-item">
-          <div className="stat-value">{stats.average}</div>
+          <div className="stat-value">{stats.average ?? '—'}</div>
           <div className="stat-label">{t('mood.averageMood')}</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value">{stats.total}</div>
+          <div className="stat-value">{stats.total ?? 0}</div>
           <div className="stat-label">{t('mood.entriesLogged')}</div>
         </div>
         <div className="stat-item">

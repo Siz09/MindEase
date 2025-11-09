@@ -33,23 +33,19 @@ const Insights = () => {
         const history = response.data.data || [];
         setMoodHistory(history);
 
-        // Compute statistics
-        if (history.length > 0) {
-          const total = history.reduce((sum, entry) => sum + entry.moodValue, 0);
-          const average = (total / history.length).toFixed(1);
-          const latest = history[0]?.moodValue || 0;
-          const previous = history[1]?.moodValue || latest;
+        // Compute statistics (guard invalid values)
+        const validEntries = history.filter((e) => typeof e.moodValue === 'number');
+        if (validEntries.length > 0) {
+          const total = validEntries.reduce((sum, entry) => sum + entry.moodValue, 0);
+          const average = (total / validEntries.length).toFixed(1);
+          const latest = validEntries[0]?.moodValue ?? 0;
+          const previous = validEntries[1]?.moodValue ?? latest;
 
           let trend = 'stable';
           if (latest > previous) trend = 'up';
           else if (latest < previous) trend = 'down';
 
-          setStats({
-            average,
-            total: history.length,
-            trend,
-            latest,
-          });
+          setStats({ average, total: validEntries.length, trend, latest });
         } else {
           setStats(null);
         }
@@ -77,9 +73,9 @@ const Insights = () => {
         const today = new Date();
         const keyFor = (d) => {
           const dt = new Date(d);
-          const y = dt.getFullYear();
-          const m = String(dt.getMonth() + 1).padStart(2, '0');
-          const day = String(dt.getDate()).padStart(2, '0');
+          const y = dt.getUTCFullYear();
+          const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(dt.getUTCDate()).padStart(2, '0');
           return `${y}-${m}-${day}`;
         };
         const todayKey = keyFor(today);
@@ -251,7 +247,10 @@ const Insights = () => {
               ) : (
                 <div className="summary-list">
                   {journalEntries.slice(0, 8).map((entry, idx) => (
-                    <div key={entry.id || idx} className="summary-item">
+                    <div
+                      key={entry.id || `${entry.createdAt}-${(entry.content || '').slice(0, 20)}`}
+                      className="summary-item"
+                    >
                       <div className="summary-meta">
                         {new Date(entry.createdAt).toLocaleString()}
                       </div>
