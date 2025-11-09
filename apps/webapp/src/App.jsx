@@ -1,10 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 // user layout now lives under a separate shell
 import Login from './pages/Login';
 import Register from './pages/Register';
-import Mood from './pages/Mood';
-import Journal from './pages/Journal';
+import CheckIn from './pages/CheckIn';
+import Insights from './pages/Insights';
 import Mindfulness from './pages/Mindfulness';
 import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -58,7 +58,15 @@ function App() {
               path="/"
               element={
                 <ProtectedRoute>
-                  <Mood />
+                  <CheckIn />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/insights"
+              element={
+                <ProtectedRoute>
+                  <Insights />
                 </ProtectedRoute>
               }
             />
@@ -66,10 +74,11 @@ function App() {
               path="/journal"
               element={
                 <ProtectedRoute>
-                  <Journal />
+                  <Navigate to="/" replace />
                 </ProtectedRoute>
               }
             />
+            {/* Existing code */}
             <Route
               path="/settings"
               element={

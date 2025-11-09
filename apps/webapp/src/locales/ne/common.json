@@ -7,7 +7,9 @@
     "login": "लगइन",
     "register": "दर्ता",
     "logout": "लगआउट",
-    "chat": "च्याट"
+    "chat": "च्याट",
+    "checkin": "Check-in",
+    "insights": "Insights"
   },
   "auth": {
     "welcomeBack": "फिर्ता स्वागत छ",
@@ -259,5 +261,23 @@
     },
     "aiUnavailable": "अफलाइनमा AI सारांश उपलब्ध छैन।",
     "journalOffline": "डायरी प्रविष्टिहरू स्थानीय रूपमा सेभ हुनेछ र अनलाइन हुँदा सिङ्क हुनेछ।"
+  },
+  "checkin": {
+    "title": "Check-in",
+    "subtitle": "How are you feeling today? Share your mood and thoughts."
+  },
+  "insights": {
+    "title": "Insights",
+    "subtitle": "Understand your mood patterns and track your progress.",
+    "journalInsights": "Journal Insights",
+    "entriestoday": "Entries Today",
+    "totalEntries": "Total Entries",
+    "avgPerDay": "Avg Per Day",
+    "generatingSummary": "Generating summary...",
+    "recentSummary": "Recent AI Summaries",
+    "todaysSummary": "Today's AI Summary",
+    "summaryProcessing": "AI summaries are being generated for your entries. Check back soon!",
+    "recentSummaries": "Daily Summaries",
+    "noDailySummaries": "No daily summaries yet"
   }
 }

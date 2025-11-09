@@ -7,7 +7,9 @@
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
-    "chat": "Chat"
+    "chat": "Chat",
+    "checkin": "Check-in",
+    "insights": "Insights"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -103,6 +105,8 @@
     "startWriting": "Start by writing your first journal entry",
     "aiSummary": "AI Summary",
     "moodInsight": "Mood Insight",
+    "journalSummary": "Journal Summary",
+    "entry": "Entry",
     "aiProcessing": "AI is analyzing your entry...",
     "aiAvailable": "AI Insights Available",
     "aiUnavailable": "AI Insights Unavailable",
@@ -122,6 +126,24 @@
       "fetchFailed": "Failed to load journal entries"
     },
     "loading": "Loading your journal..."
+  },
+  "checkin": {
+    "title": "Check-in",
+    "subtitle": "How are you feeling today? Share your mood and thoughts."
+  },
+  "insights": {
+    "title": "Insights",
+    "subtitle": "Understand your mood patterns and track your progress.",
+    "journalInsights": "Journal Insights",
+    "entriestoday": "Entries Today",
+    "totalEntries": "Total Entries",
+    "avgPerDay": "Avg Per Day",
+    "generatingSummary": "Generating summary...",
+    "recentSummary": "Recent AI Summaries",
+    "todaysSummary": "Today's AI Summary",
+    "summaryProcessing": "AI summaries are being generated for your entries. Check back soon!",
+    "recentSummaries": "Daily Summaries",
+    "noDailySummaries": "No daily summaries yet"
   },
   "chatbot": {
     "name": "MindEase Assistant",

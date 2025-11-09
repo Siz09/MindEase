@@ -1,0 +1,49 @@
+.stats-card {
+  margin-bottom: 1.5rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #16a34a;
+}
+
+.stat-value.trend-up {
+  color: #16a34a;
+}
+
+.stat-value.trend-down {
+  color: #dc2626;
+}
+
+.stat-value.trend-stable {
+  color: #f59e0b;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.stats-skeleton {
+  padding: 2rem;
+  text-align: center;
+  color: #999;
+}
