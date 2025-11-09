@@ -49,6 +49,12 @@
   box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15);
 }
 
+.emoji-trigger:focus-visible {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
 .selected-emoji {
   font-size: 2rem;
 }

@@ -99,7 +99,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
       labels: distribution.map((d) => `${emojiByValue[d.value]} ${d.label}`),
       datasets: [
         {
-          label: 'Frequency',
+          label: t('charts.frequency'),
           data: distribution.map((d) => d.count),
           backgroundColor: distribution.map((d) => d.color),
           borderColor: distribution.map((d) => d.color),

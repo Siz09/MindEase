@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,7 +29,7 @@ const Insights = () => {
         params: { page: 0, size: 100 }, // Get more entries for better analytics
       });
 
-      if (response.data.status === 'success') {
+      if (response.data.success || response.data.status === 'success') {
         const history = response.data.data || [];
         setMoodHistory(history);
 
@@ -69,7 +69,7 @@ const Insights = () => {
         params: { page: 0, size: 100 }, // Get all entries
       });
 
-      if (response.data.success) {
+      if (response.data.success || response.data.status === 'success') {
         const entries = response.data.entries || [];
         setJournalEntries(entries);
 
@@ -144,7 +144,7 @@ const Insights = () => {
         </div>
 
         <div className="insights-content">
-          {(dailySummary || journalStats) && (
+          {journalStats && (
             <section className="insights-section">
               <div className="card daily-summary-card">
                 <div className="card-header">
@@ -203,7 +203,7 @@ const Insights = () => {
                 </div>
               ) : dailySummaries.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">🗓️</div>
+                  <div className="empty-icon">ðŸ—“ï¸</div>
                   <h3 className="empty-title">
                     {t('insights.noDailySummaries') || 'No daily summaries yet'}
                   </h3>
@@ -221,7 +221,7 @@ const Insights = () => {
                           const [y, m, d] = day.dateKey.split('-').map(Number);
                           return new Date(y, m - 1, d).toLocaleDateString();
                         })()}
-                        {day.count ? ` • ${day.count} entries` : ''}
+                        {day.count ? ` â€¢ ${day.count} entries` : ''}
                       </div>
                       <p className="summary-text">{day.summary}</p>
                     </div>
@@ -242,7 +242,7 @@ const Insights = () => {
                 </div>
               ) : journalEntries.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">🙂</div>
+                  <div className="empty-icon">ðŸ™‚</div>
                   <h3 className="empty-title">{t('journal.noEntries') || 'No entries yet'}</h3>
                   <p className="empty-description">
                     {t('journal.startWriting') || 'Add a journal entry to see AI insights here.'}
@@ -296,9 +296,10 @@ const Insights = () => {
                     />
                   </svg>
                 </div>
-                <h3 className="empty-title">No mood data yet</h3>
+                <h3 className="empty-title">{t('insights.noMoodData') || 'No mood data yet'}</h3>
                 <p className="empty-description">
-                  Start tracking your mood from the Check-in page to see insights and trends.
+                  {t('insights.startTracking') ||
+                    'Start tracking your mood from the Check-in page to see insights and trends.'}
                 </p>
               </div>
             </section>

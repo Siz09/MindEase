@@ -67,6 +67,9 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline }) => {
                 type="button"
                 className="emoji-trigger"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                aria-label={t('journal.selectEmoji') || 'Select emoji'}
+                aria-expanded={showEmojiPicker}
+                aria-haspopup="true"
               >
                 <span className="selected-emoji">{selectedEmoji}</span>
               </button>

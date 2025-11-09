@@ -176,6 +176,11 @@
   padding: 0.5rem 1rem;
 }
 
+.pagination-btn:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 2px;
+}
+
 .pagination-numbers {
   display: flex;
   gap: 0.5rem;
@@ -192,6 +197,11 @@
   font-size: 0.875rem;
   font-weight: 500;
   transition: all 0.2s ease;
+}
+
+.pagination-number:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 2px;
 }
 
 .pagination-number:hover {

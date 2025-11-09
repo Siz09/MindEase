@@ -1,4 +1,4 @@
-{
+﻿{
   "navigation": {
     "mood": "Mood",
     "journal": "Journal",
@@ -138,7 +138,8 @@
     "next": "Next",
     "characters": "characters",
     "success": {
-      "saved": "Journal entry saved successfully!"
+      "saved": "Journal entry saved successfully!",
+      "selectEmoji": "Select emoji"
     },
     "errors": {
       "emptyEntry": "Please write something before saving",
@@ -153,7 +154,8 @@
     "moodTrendOverTime": "Mood Trend Over Time",
     "moodDistribution": "Mood Distribution",
     "loading": "Loading charts...",
-    "moodLevel": "Mood Level"
+    "moodLevel": "Mood Level",
+    "frequency": "Frequency"
   },
   "common": {
     "cancel": "Cancel",
@@ -175,7 +177,9 @@
     "todaysSummary": "Today's AI Summary",
     "summaryProcessing": "AI summaries are being generated for your entries. Check back soon!",
     "recentSummaries": "Daily Summaries",
-    "noDailySummaries": "No daily summaries yet"
+    "noDailySummaries": "No daily summaries yet",
+    "noMoodData": "No mood data yet",
+    "startTracking": "Start tracking your mood from the Check-in page to see insights and trends."
   },
   "chatbot": {
     "name": "MindEase Assistant",
@@ -249,7 +253,7 @@
       "title": "Language Preferences",
       "currentLanguage": "Current Language",
       "english": "English",
-      "nepali": "नेपाली (Nepali)",
+      "nepali": "à¤¨à¥‡à¤ªà¤¾à¤²à¥€ (Nepali)",
       "changeLanguage": "Change Language"
     },
     "actions": {
@@ -352,7 +356,7 @@
   },
   "offline": {
     "banner": {
-      "message": "You're offline — AI summaries are disabled."
+      "message": "You're offline â€” AI summaries are disabled."
     },
     "aiUnavailable": "AI summarization is unavailable offline.",
     "journalOffline": "Journal entries will be saved locally and synced when online."
