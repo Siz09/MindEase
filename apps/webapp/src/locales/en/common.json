@@ -85,6 +85,26 @@
     "trend": "Trend",
     "recentMoods": "Recent Moods",
     "wellnessTips": "Wellness Tips",
+    "description": "Track your mood with a quick entry or detailed form",
+    "rateYourMood": "Rate your mood (1-10)",
+    "notesOptional": "Notes (optional)",
+    "notesPlaceholder": "How are you feeling? What's on your mind?",
+    "characterCount": "{{current}}/{{max}} characters",
+    "saveMood": "Save Mood",
+    "detailedEntry": "Detailed Entry",
+    "veryBad": "Very Bad",
+    "bad": "Bad",
+    "poor": "Poor",
+    "neutral": "Neutral",
+    "veryGood": "Very Good",
+    "great": "Great",
+    "amazing": "Amazing",
+    "loadingStats": "Loading stats...",
+    "trendUp": "Trend up",
+    "trendDown": "Trend down",
+    "trendStable": "Trend stable",
+    "success": { "saved": "Mood entry saved!" },
+    "errors": { "saveFailed": "Failed to save mood entry" },
     "tip1Title": "Practice Mindfulness",
     "tip1Description": "Take a few minutes each day to focus on the present moment.",
     "tip2Title": "Stay Active",
@@ -125,7 +145,19 @@
       "saveFailed": "Failed to save journal entry",
       "fetchFailed": "Failed to load journal entries"
     },
-    "loading": "Loading your journal..."
+    "loading": "Loading your journal...",
+    "justNow": "Just now",
+    "success": { "added": "Journal entry added!" }
+  },
+  "charts": {
+    "moodTrendOverTime": "Mood Trend Over Time",
+    "moodDistribution": "Mood Distribution",
+    "loading": "Loading charts...",
+    "moodLevel": "Mood Level"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "saving": "Saving..."
   },
   "checkin": {
     "title": "Check-in",
@@ -135,7 +167,7 @@
     "title": "Insights",
     "subtitle": "Understand your mood patterns and track your progress.",
     "journalInsights": "Journal Insights",
-    "entriestoday": "Entries Today",
+    "entriesToday": "Entries Today",
     "totalEntries": "Total Entries",
     "avgPerDay": "Avg Per Day",
     "generatingSummary": "Generating summary...",

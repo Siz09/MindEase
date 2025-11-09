@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next';
+﻿import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -31,16 +31,16 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
   const { t } = useTranslation();
 
   const detailedMoods = [
-    { value: 1, emoji: '😭', label: 'Terrible', color: '#dc2626' },
-    { value: 2, emoji: '😢', label: 'Very Bad', color: '#ea580c' },
-    { value: 3, emoji: '😔', label: 'Bad', color: '#f97316' },
-    { value: 4, emoji: '😕', label: 'Poor', color: '#fb923c' },
-    { value: 5, emoji: '😐', label: 'Neutral', color: '#eab308' },
-    { value: 6, emoji: '🙂', label: 'Okay', color: '#a3e635' },
-    { value: 7, emoji: '😊', label: 'Good', color: '#84cc16' },
-    { value: 8, emoji: '😄', label: 'Very Good', color: '#65a30d' },
-    { value: 9, emoji: '😁', label: 'Great', color: '#16a34a' },
-    { value: 10, emoji: '🤩', label: 'Amazing', color: '#15803d' },
+    { value: 1, emoji: 'ðŸ˜­', label: t('mood.terrible'), color: '#dc2626' },
+    { value: 2, emoji: 'ðŸ˜¢', label: t('mood.veryBad'), color: '#ea580c' },
+    { value: 3, emoji: 'ðŸ˜”', label: t('mood.bad'), color: '#f97316' },
+    { value: 4, emoji: 'ðŸ˜•', label: t('mood.poor'), color: '#fb923c' },
+    { value: 5, emoji: 'ðŸ˜', label: t('mood.neutral'), color: '#eab308' },
+    { value: 6, emoji: 'ðŸ™‚', label: t('mood.okay'), color: '#a3e635' },
+    { value: 7, emoji: 'ðŸ˜Š', label: t('mood.good'), color: '#84cc16' },
+    { value: 8, emoji: 'ðŸ˜„', label: t('mood.veryGood'), color: '#65a30d' },
+    { value: 9, emoji: 'ðŸ˜', label: t('mood.great'), color: '#16a34a' },
+    { value: 10, emoji: 'ðŸ¤©', label: t('mood.amazing'), color: '#15803d' },
   ];
 
   const getChartData = () => {
@@ -57,7 +57,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
       ),
       datasets: [
         {
-          label: 'Mood Level',
+          label: t('charts.moodLevel'),
           data: sortedHistory.map((entry) => entry.moodValue),
           borderColor: 'rgb(21, 128, 61)',
           backgroundColor: 'rgba(21, 128, 61, 0.1)',
@@ -106,7 +106,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
       },
       title: {
         display: true,
-        text: 'Mood Trend Over Time',
+        text: t('charts.moodTrendOverTime'),
         font: {
           size: 16,
           weight: 'bold',
@@ -138,7 +138,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
       },
       title: {
         display: true,
-        text: 'Mood Distribution',
+        text: t('charts.moodDistribution'),
         font: {
           size: 16,
           weight: 'bold',
@@ -160,7 +160,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
     return (
       <div className="charts-container">
         <div className="card chart-card">
-          <div className="chart-skeleton">Loading charts...</div>
+          <div className="chart-skeleton">{t('charts.loading')}</div>
         </div>
       </div>
     );

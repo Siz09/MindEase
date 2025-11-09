@@ -1,16 +1,23 @@
-'use client';
+﻿'use client';
 
 import { useTranslation } from 'react-i18next';
 import '../styles/components/JournalHistory.css';
 
-const JournalHistory = ({ entries, isLoading, currentPage, totalPages, onPageChange }) => {
-  const { t } = useTranslation();
+const JournalHistory = ({
+  entries = [],
+  isLoading,
+  currentPage,
+  totalPages,
+  totalEntries,
+  onPageChange,
+}) => {
+  const { t, i18n } = useTranslation();
 
   const formatDate = (dateString) => {
-    if (!dateString) return 'Just now';
+    if (!dateString) return t('journal.justNow');
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Just now';
-    return new Intl.DateTimeFormat('en-US', {
+    if (isNaN(date.getTime())) return t('journal.justNow');
+    return new Intl.DateTimeFormat(i18n.language || 'en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -20,12 +27,12 @@ const JournalHistory = ({ entries, isLoading, currentPage, totalPages, onPageCha
   };
 
   const extractEmoji = (content) => {
-    if (!content) return { emoji: '📝', text: '' };
+    if (!content) return { emoji: 'ðŸ“', text: '' };
     const chars = Array.from(content);
     if (chars.length >= 2 && chars[1] === ' ') {
       return { emoji: chars[0], text: chars.slice(2).join('') };
     }
-    return { emoji: '📝', text: content };
+    return { emoji: 'ðŸ“', text: content };
   };
 
   if (isLoading && entries.length === 0) {
@@ -43,7 +50,7 @@ const JournalHistory = ({ entries, isLoading, currentPage, totalPages, onPageCha
     return (
       <div className="journal-history-section">
         <div className="empty-state">
-          <div className="empty-icon">📔</div>
+          <div className="empty-icon">ðŸ“”</div>
           <h3>{t('journal.noEntries')}</h3>
           <p>{t('journal.startWriting')}</p>
         </div>
@@ -60,7 +67,8 @@ const JournalHistory = ({ entries, isLoading, currentPage, totalPages, onPageCha
             {t('journal.page')} {currentPage + 1} {t('journal.of')} {totalPages}
             <span className="total-entries">
               {' '}
-              • {entries.length} {t('journal.entries')}
+              • {typeof totalEntries === 'number' ? totalEntries : entries.length}{' '}
+              {t('journal.entries')}
             </span>
           </div>
         )}
@@ -70,7 +78,7 @@ const JournalHistory = ({ entries, isLoading, currentPage, totalPages, onPageCha
         {entries.map((entry, idx) => {
           const { emoji, text } = extractEmoji(entry.content);
           return (
-            <div key={entry.id || idx} className="journal-entry-card">
+            <div key={entry.id ?? idx} className="journal-entry-card">
               <div className="entry-header">
                 <div className="entry-meta">
                   <span className="entry-emoji">{emoji}</span>

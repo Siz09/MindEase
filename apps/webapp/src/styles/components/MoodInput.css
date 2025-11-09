@@ -146,8 +146,8 @@
 
 .form-textarea:focus {
   outline: none;
-  border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  border-color: var(--mood-color);
+  box-shadow: 0 0 0 3px rgba(var(--mood-color-rgb), 0.1);
 }
 
 .character-count {

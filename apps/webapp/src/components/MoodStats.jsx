@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next';
+﻿import { useTranslation } from 'react-i18next';
 import '../styles/components/MoodStats.css';
 
 const MoodStats = ({ stats, isLoading }) => {
@@ -7,7 +7,7 @@ const MoodStats = ({ stats, isLoading }) => {
   if (isLoading || !stats) {
     return (
       <div className="card stats-card">
-        <div className="stats-skeleton">Loading stats...</div>
+        <div className="stats-skeleton">{t('mood.loadingStats')}</div>
       </div>
     );
   }
@@ -27,7 +27,16 @@ const MoodStats = ({ stats, isLoading }) => {
           <div className="stat-label">{t('mood.entriesLogged')}</div>
         </div>
         <div className="stat-item">
-          <div className={`stat-value trend-${stats.trend}`}>
+          <div
+            className={`stat-value trend-${stats.trend}`}
+            aria-label={
+              stats.trend === 'up'
+                ? t('mood.trendUp')
+                : stats.trend === 'down'
+                  ? t('mood.trendDown')
+                  : t('mood.trendStable')
+            }
+          >
             {stats.trend === 'up' ? '↗' : stats.trend === 'down' ? '↘' : '→'}
           </div>
           <div className="stat-label">{t('mood.trend')}</div>

@@ -22,7 +22,9 @@ const CheckIn = () => {
   const [journalLoading, setJournalLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== 'undefined' ? !navigator.onLine : false
+  );
 
   // Handle online/offline status
   useEffect(() => {
@@ -71,12 +73,12 @@ const CheckIn = () => {
         moodValue: moodData.value,
         notes: moodData.notes || null,
       });
-      if (response.data.status === 'success') {
-        toast.success('Mood entry saved!');
+      if (response.data.status === 'success' || response.data.success) {
+        toast.success(t('mood.success.saved') || 'Mood entry saved!');
       }
     } catch (error) {
       console.error('Failed to save mood:', error);
-      toast.error('Failed to save mood entry');
+      toast.error(t('mood.errors.saveFailed') || 'Failed to save mood entry');
     } finally {
       setMoodLoading(false);
     }
@@ -88,15 +90,15 @@ const CheckIn = () => {
       const res = await api.post('/journal/add', { content });
       const data = res.data || {};
 
-      toast.success('Journal entry added!');
-
-      const returnedEntry = data.entry || null;
-      if (returnedEntry) {
-        setJournalEntries((prev) => [returnedEntry, ...prev]);
+      if (data.success || data.status === 'success') {
+        toast.success(t('journal.success.added') || 'Journal entry added!');
+        await fetchJournalEntries(currentPage);
+      } else {
+        toast.error(t('journal.errors.saveFailed') || 'Failed to save journal entry');
       }
     } catch (err) {
       console.error('Error saving journal entry:', err);
-      toast.error('Error saving journal entry');
+      toast.error(t('journal.errors.saveFailed') || 'Error saving journal entry');
     } finally {
       setJournalLoading(false);
     }

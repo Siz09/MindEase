@@ -86,7 +86,13 @@ const Insights = () => {
 
         // Stats
         const todayEntriesCount = entries.filter((e) => keyFor(e.createdAt) === todayKey).length;
-        const avgEntriesPerDay = totalEntries > 0 ? (totalEntries / 30).toFixed(1) : 0;
+        // Calculate average entries per day over the actual date range of fetched entries
+        let avgEntriesPerDay = 0;
+        if (totalEntries > 0) {
+          const oldest = new Date(entries[entries.length - 1].createdAt);
+          const daysDiff = Math.max(1, Math.ceil((today - oldest) / (1000 * 60 * 60 * 24)));
+          avgEntriesPerDay = (totalEntries / daysDiff).toFixed(1);
+        }
         setJournalStats({ totalEntries, todayEntries: todayEntriesCount, avgEntriesPerDay });
 
         // Only yesterday's combined summary (local 12am-12am)
@@ -154,7 +160,7 @@ const Insights = () => {
                     <div className="stat-item">
                       <div className="stat-value">{journalStats.todayEntries}</div>
                       <div className="stat-label">
-                        {t('insights.entriestoday') || 'Entries Today'}
+                        {t('insights.entriesToday') || 'Entries Today'}
                       </div>
                     </div>
                     <div className="stat-item">
