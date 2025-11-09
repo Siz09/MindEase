@@ -78,7 +78,9 @@ const MoodInput = ({ onSubmit, loading }) => {
                   disabled={loading}
                   style={{ '--mood-color': mood.color }}
                 >
-                  <div className="mood-emoji-large">{mood.emoji}</div>
+                  <div className="mood-emoji-large">
+                    {{ 1: '😭', 2: '😢', 3: '😐', 4: '🙂', 5: '🤩' }[mood.value]}
+                  </div>
                   <span className="mood-label-small">{mood.label}</span>
                 </button>
               ))}
@@ -105,7 +107,22 @@ const MoodInput = ({ onSubmit, loading }) => {
                     onClick={() => setSelectedMood(mood)}
                     style={{ '--mood-color': mood.color }}
                   >
-                    <div className="mood-emoji">{mood.emoji}</div>
+                    <div className="mood-emoji">
+                      {
+                        {
+                          1: '😭',
+                          2: '😢',
+                          3: '😔',
+                          4: '😕',
+                          5: '😐',
+                          6: '🙂',
+                          7: '😊',
+                          8: '😄',
+                          9: '😁',
+                          10: '🤩',
+                        }[mood.value]
+                      }
+                    </div>
                     <div className="mood-value">{mood.value}</div>
                     <div className="mood-label-tiny">{mood.label}</div>
                   </button>

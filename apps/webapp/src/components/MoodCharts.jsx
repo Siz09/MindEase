@@ -42,6 +42,18 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
     { value: 9, emoji: 'ðŸ˜', label: t('mood.great'), color: '#16a34a' },
     { value: 10, emoji: 'ðŸ¤©', label: t('mood.amazing'), color: '#15803d' },
   ];
+  const emojiByValue = {
+    1: '😭',
+    2: '😢',
+    3: '😔',
+    4: '😕',
+    5: '😐',
+    6: '🙂',
+    7: '😊',
+    8: '😄',
+    9: '😁',
+    10: '🤩',
+  };
 
   const getChartData = () => {
     if (!moodHistory || moodHistory.length === 0) return null;
@@ -84,7 +96,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
     }));
 
     return {
-      labels: distribution.map((d) => `${d.emoji} ${d.label}`),
+      labels: distribution.map((d) => `${emojiByValue[d.value]} ${d.label}`),
       datasets: [
         {
           label: 'Frequency',
@@ -120,10 +132,7 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
         max: 10,
         ticks: {
           stepSize: 1,
-          callback: (value) => {
-            const mood = detailedMoods.find((m) => m.value === value);
-            return mood ? `${mood.emoji} ${value}` : value;
-          },
+          callback: (value) => `${emojiByValue[value] ?? ''} ${value}`,
         },
       },
     },
