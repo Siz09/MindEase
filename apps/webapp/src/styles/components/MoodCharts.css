@@ -13,6 +13,11 @@
   position: relative;
 }
 
+/* Make the line chart (first card) taller for better readability */
+.charts-container .chart-card:first-child .chart-container {
+  height: 380px;
+}
+
 .chart-skeleton {
   padding: 2rem;
   text-align: center;
