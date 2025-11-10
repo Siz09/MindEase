@@ -21,6 +21,8 @@ const Insights = () => {
   const [journalStats, setJournalStats] = useState(null);
   const [journalEntries, setJournalEntries] = useState([]);
   const [dailySummaries, setDailySummaries] = useState([]);
+  const [journalPage, setJournalPage] = useState(0);
+  const ENTRIES_PER_PAGE = 4;
 
   const fetchMoodHistory = useCallback(async () => {
     try {
@@ -186,11 +188,21 @@ const Insights = () => {
           </section>
 
           {/* AI Summaries (bottom, after charts) */}
-          <section className="insights-section">
+          <section className="insights-section insights-summaries-container">
             {/* Top: Daily summaries (yesterday) */}
-            <div className="card">
+            <div className="card daily-summaries-section">
               <div className="card-header">
-                <h3 className="card-title">{t('insights.recentSummaries') || 'Daily Summaries'}</h3>
+                <div className="section-header-wrapper">
+                  <div className="section-icon-badge">📅</div>
+                  <div>
+                    <h3 className="card-title">
+                      {t('insights.recentSummaries') || 'Daily Summaries'}
+                    </h3>
+                    <p className="section-subtitle">
+                      {t('insights.yesterdayOverview') || "Yesterday's journal overview"}
+                    </p>
+                  </div>
+                </div>
               </div>
               {summaryLoading ? (
                 <div className="loading-spinner">
@@ -199,27 +211,42 @@ const Insights = () => {
                 </div>
               ) : dailySummaries.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">ðŸ—“ï¸</div>
+                  <div className="empty-icon">📝</div>
                   <h3 className="empty-title">
                     {t('insights.noDailySummaries') || 'No daily summaries yet'}
                   </h3>
                   <p className="empty-description">
                     {t('insights.summaryProcessing') ||
-                      'AI summaries will appear here once available.'}
+                      'Add journal entries yesterday to see AI summaries here.'}
                   </p>
                 </div>
               ) : (
-                <div className="summary-list">
+                <div className="daily-summaries-list">
                   {dailySummaries.map((day) => (
-                    <div key={day.dateKey} className="summary-item">
-                      <div className="summary-meta">
-                        {(() => {
-                          const [y, m, d] = day.dateKey.split('-').map(Number);
-                          return new Date(y, m - 1, d).toLocaleDateString();
-                        })()}
-                        {day.count ? ` â€¢ ${day.count} entries` : ''}
+                    <div key={day.dateKey} className="daily-summary-card">
+                      <div className="daily-summary-header">
+                        <div className="date-info">
+                          <span className="date-label">
+                            {(() => {
+                              const [y, m, d] = day.dateKey.split('-').map(Number);
+                              return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                month: 'short',
+                                day: 'numeric',
+                              });
+                            })()}
+                          </span>
+                          {day.count && (
+                            <span className="entry-count-badge">
+                              {day.count} {day.count === 1 ? 'entry' : 'entries'}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <p className="summary-text">{day.summary}</p>
+                      <div className="daily-summary-content">
+                        <div className="summary-indicator">✨</div>
+                        <p className="daily-summary-text">{day.summary}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -227,9 +254,16 @@ const Insights = () => {
             </div>
 
             {/* Below: Individual journal summaries */}
-            <div className="card">
+            <div className="card journal-summary-section">
               <div className="card-header">
-                <h3 className="card-title">{t('journal.journalSummary') || 'Journal Summary'}</h3>
+                <div className="section-header-wrapper">
+                  <div className="section-icon-badge">📖</div>
+                  <div>
+                    <h3 className="card-title">
+                      {t('journal.journalSummary') || 'Journal Summary'}
+                    </h3>
+                  </div>
+                </div>
               </div>
               {summaryLoading ? (
                 <div className="loading-spinner">
@@ -238,40 +272,105 @@ const Insights = () => {
                 </div>
               ) : journalEntries.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">ðŸ™‚</div>
+                  <div className="empty-icon">✍️</div>
                   <h3 className="empty-title">{t('journal.noEntries') || 'No entries yet'}</h3>
                   <p className="empty-description">
                     {t('journal.startWriting') || 'Add a journal entry to see AI insights here.'}
                   </p>
                 </div>
               ) : (
-                <div className="summary-list">
-                  {journalEntries.slice(0, 8).map((entry, idx) => (
-                    <div
-                      key={entry.id || `${entry.createdAt}-${(entry.content || '').slice(0, 20)}`}
-                      className="summary-item"
-                    >
-                      <div className="summary-meta">
-                        {new Date(entry.createdAt).toLocaleString()}
-                      </div>
-                      {entry.content && (
-                        <p className="summary-text original">
-                          <strong>{t('journal.entry') || 'Entry'}:</strong> {entry.content}
-                        </p>
-                      )}
-                      {entry.aiSummary ? (
-                        <p className="summary-text">
-                          <strong>{t('journal.journalSummary') || 'Journal Summary'}:</strong>{' '}
-                          {entry.aiSummary}
-                        </p>
-                      ) : (
-                        <p className="summary-text muted">
-                          {t('journal.aiProcessing') || 'AI is processing this entry...'}
-                        </p>
-                      )}
+                <>
+                  <div className="journal-entries-grid">
+                    {journalEntries
+                      .slice(journalPage * ENTRIES_PER_PAGE, (journalPage + 1) * ENTRIES_PER_PAGE)
+                      .map((entry, idx) => (
+                        <div
+                          key={
+                            entry.id || `${entry.createdAt}-${(entry.content || '').slice(0, 20)}`
+                          }
+                          className="journal-entry-card"
+                        >
+                          <div className="entry-header">
+                            <span className="entry-timestamp">
+                              {new Date(entry.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                            <span className="entry-badge">
+                              Entry #{journalPage * ENTRIES_PER_PAGE + idx + 1}
+                            </span>
+                          </div>
+
+                          <div className="entry-content-wrapper">
+                            {/* Original Entry */}
+                            <div className="entry-original">
+                              <div className="content-label">
+                                <span className="label-icon">📝</span>
+                                <span>{t('journal.entry') || 'Your Entry'}</span>
+                              </div>
+                              {entry.content ? (
+                                <p className="entry-text">{entry.content}</p>
+                              ) : (
+                                <p className="entry-text muted">
+                                  {t('journal.noContent') || 'No content'}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* AI Summary */}
+                            <div className="entry-summary">
+                              <div className="content-label">
+                                <span className="label-icon">✨</span>
+                                <span>AI Insight</span>
+                              </div>
+                              {entry.aiSummary ? (
+                                <p className="summary-text">{entry.aiSummary}</p>
+                              ) : (
+                                <p className="summary-text processing">
+                                  {t('journal.aiProcessing') || 'AI is processing this entry...'}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                  {/* Pagination controls */}
+                  {journalEntries.length > ENTRIES_PER_PAGE && (
+                    <div className="pagination-controls">
+                      <button
+                        onClick={() => setJournalPage(Math.max(0, journalPage - 1))}
+                        disabled={journalPage === 0}
+                        className="pagination-button"
+                      >
+                        ← Previous
+                      </button>
+                      <span className="pagination-info">
+                        Page {journalPage + 1} of{' '}
+                        {Math.ceil(journalEntries.length / ENTRIES_PER_PAGE)}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setJournalPage(
+                            Math.min(
+                              Math.ceil(journalEntries.length / ENTRIES_PER_PAGE) - 1,
+                              journalPage + 1
+                            )
+                          )
+                        }
+                        disabled={
+                          journalPage >= Math.ceil(journalEntries.length / ENTRIES_PER_PAGE) - 1
+                        }
+                        className="pagination-button"
+                      >
+                        Next →
+                      </button>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </section>
