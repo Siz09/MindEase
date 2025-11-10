@@ -178,6 +178,7 @@
     "entriesToday": "Entries Today",
     "totalEntries": "Total Entries",
     "avgPerDay": "Avg Per Day",
+    "yesterdaysSummary": "Yesterdays Summary",
     "entryCount_one": "{{count}} entry",
     "entryCount_other": "{{count}} entries",
     "generatingSummary": "Generating summary...",
