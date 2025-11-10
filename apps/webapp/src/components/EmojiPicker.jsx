@@ -13,39 +13,86 @@ const EmojiPicker = ({ onSelect, onEmojiSelect }) => {
     {
       name: 'Feelings',
       icon: '😊',
-      emojis: ['😀', '🙂', '😐', '🙁', '😢', '😭', '😡', '😤', '😱', '😴', '🤒', '🤗'],
+      emojis: [
+        { emoji: '😀', keywords: ['grinning', 'smile', 'happy', 'joy'] },
+        { emoji: '🙂', keywords: ['slight smile', 'content', 'happy'] },
+        { emoji: '😐', keywords: ['neutral', 'meh', 'okay'] },
+        { emoji: '🙁', keywords: ['sad', 'down'] },
+        { emoji: '😢', keywords: ['cry', 'tears', 'sad'] },
+        { emoji: '😡', keywords: ['angry', 'mad', 'rage'] },
+        { emoji: '😤', keywords: ['frustrated', 'triumph'] },
+        { emoji: '😱', keywords: ['scream', 'shock', 'surprised'] },
+        { emoji: '😴', keywords: ['sleep', 'tired'] },
+        { emoji: '🤒', keywords: ['sick', 'ill'] },
+        { emoji: '🤗', keywords: ['hug', 'comfort', 'care'] },
+      ],
     },
     {
       name: 'Activities',
-      icon: '🎮',
-      emojis: ['🎧', '📖', '🏃', '🧘', '☕', '🍽️', '🛌', '✍️', '🎮'],
+      icon: '🏃',
+      emojis: [
+        { emoji: '🏃', keywords: ['run', 'exercise', 'activity'] },
+        { emoji: '🧘', keywords: ['meditate', 'calm', 'yoga'] },
+        { emoji: '🎵', keywords: ['music', 'listen', 'song'] },
+        { emoji: '📚', keywords: ['read', 'study', 'book'] },
+        { emoji: '☕', keywords: ['tea', 'coffee', 'break'] },
+        { emoji: '🛌', keywords: ['rest', 'sleep', 'nap'] },
+        { emoji: '🍽️', keywords: ['eat', 'meal', 'food'] },
+        { emoji: '🚶', keywords: ['walk', 'stroll', 'outdoors'] },
+      ],
     },
     {
       name: 'Nature',
-      icon: '🌻',
-      emojis: ['🌞', '🌙', '⭐', '☁️', '🌧️', '🌈', '🌻', '🌲', '🌊'],
+      icon: '🌿',
+      emojis: [
+        { emoji: '🌞', keywords: ['sun', 'sunny', 'day'] },
+        { emoji: '🌧️', keywords: ['rain', 'rainy', 'weather'] },
+        { emoji: '🌈', keywords: ['rainbow', 'bright'] },
+        { emoji: '🌙', keywords: ['moon', 'night'] },
+        { emoji: '⭐', keywords: ['star', 'night', 'sparkle'] },
+        { emoji: '🌸', keywords: ['flower', 'bloom'] },
+        { emoji: '🌿', keywords: ['leaf', 'plant', 'green'] },
+        { emoji: '🔥', keywords: ['fire', 'hot'] },
+      ],
     },
     {
       name: 'Objects',
-      icon: '💻',
-      emojis: ['📱', '💻', '🕰️', '🎁', '📷', '🔑', '💡', '📝', '🎒'],
+      icon: '📦',
+      emojis: [
+        { emoji: '📱', keywords: ['phone', 'mobile'] },
+        { emoji: '💡', keywords: ['idea', 'lightbulb'] },
+        { emoji: '⌛', keywords: ['wait', 'time', 'hourglass'] },
+        { emoji: '📝', keywords: ['note', 'write', 'journal'] },
+        { emoji: '🔔', keywords: ['bell', 'reminder', 'alert'] },
+        { emoji: '🎁', keywords: ['gift', 'present'] },
+        { emoji: '🎧', keywords: ['headphones', 'music'] },
+      ],
     },
     {
       name: 'Symbols',
       icon: '❤️',
-      emojis: ['❤️', '💔', '✨', '🔥', '❄️', '✅', '❌', '⚠️', '🎯'],
+      emojis: [
+        { emoji: '❤️', keywords: ['heart', 'love'] },
+        { emoji: '💔', keywords: ['broken heart', 'sad'] },
+        { emoji: '✨', keywords: ['sparkles', 'magic'] },
+        { emoji: '❗', keywords: ['exclamation', 'important'] },
+        { emoji: '❓', keywords: ['question', 'help'] },
+        { emoji: '✅', keywords: ['check', 'done'] },
+        { emoji: '⚠️', keywords: ['warning', 'caution'] },
+        { emoji: '➕', keywords: ['plus', 'add'] },
+      ],
     },
   ];
 
-  // Filter emojis based on search term
+  // Filter emojis based on search term (by keywords)
   const getFilteredEmojis = () => {
     if (searchTerm.trim()) {
-      // When searching, show all matching emojis from all categories
+      const q = searchTerm.toLowerCase();
       return emojiCategories
         .map((category) => ({
           ...category,
-          emojis: category.emojis.filter((emoji) =>
-            emoji.toLowerCase().includes(searchTerm.toLowerCase())
+          emojis: category.emojis.filter((item) =>
+            item.keywords.some((k) => k.toLowerCase().includes(q))
           ),
         }))
         .filter((category) => category.emojis.length > 0);
@@ -99,15 +146,15 @@ const EmojiPicker = ({ onSelect, onEmojiSelect }) => {
             <div key={category.name} className="emoji-category">
               {searchTerm && <div className="emoji-category-name">{category.name}</div>}
               <div className="emoji-list">
-                {category.emojis.map((emoji) => (
+                {category.emojis.map((item) => (
                   <button
-                    key={emoji}
+                    key={item.emoji}
                     type="button"
                     className="emoji-option"
-                    onClick={() => handleEmojiClick(emoji)}
-                    aria-label={`Select ${emoji}`}
+                    onClick={() => handleEmojiClick(item.emoji)}
+                    aria-label={`Select ${item.emoji}`}
                   >
-                    {emoji}
+                    {item.emoji}
                   </button>
                 ))}
               </div>
