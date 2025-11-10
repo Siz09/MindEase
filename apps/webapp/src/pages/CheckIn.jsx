@@ -7,6 +7,7 @@ import MoodInput from '../components/MoodInput';
 import JournalForm from '../components/JournalForm';
 import JournalHistory from '../components/JournalHistory';
 import '../styles/CheckIn.css';
+import '../styles/EmojiPicker.css';
 
 const CheckIn = () => {
   const { t } = useTranslation();

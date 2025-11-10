@@ -196,11 +196,8 @@ const Insights = () => {
                   <div className="section-icon-badge">📅</div>
                   <div>
                     <h3 className="card-title">
-                      {t('insights.recentSummaries') || 'Daily Summaries'}
+                      {t('insights.yesterdaysSummary') || 'Yesterdays Summary'}
                     </h3>
-                    <p className="section-subtitle">
-                      {t('insights.yesterdayOverview') || "Yesterday's journal overview"}
-                    </p>
                   </div>
                 </div>
               </div>

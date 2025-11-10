@@ -1,5 +1,11 @@
 /* ========== PAGE HEADER (Reverted to original) ========== */
 /* Reverted page-header to original App.css styling */
+.insights-page {
+  padding: 2rem 1rem;
+  background-color: #fafafa;
+  min-height: 100vh;
+}
+
 .insights-page .page-header {
   text-align: center;
   margin-bottom: var(--spacing-2xl);
@@ -8,7 +14,7 @@
 .insights-page .page-title {
   font-size: var(--font-size-3xl);
   font-weight: 700;
-  color: var(--primary-green);
+  color: var(--primary-black);
   margin-bottom: var(--spacing-md);
 }
 
