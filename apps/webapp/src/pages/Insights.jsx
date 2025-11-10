@@ -10,7 +10,7 @@ import MoodCharts from '../components/MoodCharts';
 import '../styles/Insights.css';
 
 const Insights = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useAuth();
 
   const [moodHistory, setMoodHistory] = useState([]);
@@ -229,16 +229,19 @@ const Insights = () => {
                           <span className="date-label">
                             {(() => {
                               const [y, m, d] = day.dateKey.split('-').map(Number);
-                              return new Date(y, m - 1, d).toLocaleDateString('en-US', {
-                                weekday: 'long',
-                                month: 'short',
-                                day: 'numeric',
-                              });
+                              return new Date(y, m - 1, d).toLocaleDateString(
+                                i18n.language || 'en-US',
+                                {
+                                  weekday: 'long',
+                                  month: 'short',
+                                  day: 'numeric',
+                                }
+                              );
                             })()}
                           </span>
                           {day.count && (
                             <span className="entry-count-badge">
-                              {day.count} {day.count === 1 ? 'entry' : 'entries'}
+                              {t('insights.entryCount', { count: day.count })}
                             </span>
                           )}
                         </div>
@@ -292,12 +295,15 @@ const Insights = () => {
                         >
                           <div className="entry-header">
                             <span className="entry-timestamp">
-                              {new Date(entry.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
+                              {new Date(entry.createdAt).toLocaleDateString(
+                                i18n.language || 'en-US',
+                                {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                }
+                              )}
                             </span>
                             <span className="entry-badge">
                               Entry #{journalPage * ENTRIES_PER_PAGE + idx + 1}
@@ -324,7 +330,7 @@ const Insights = () => {
                             <div className="entry-summary">
                               <div className="content-label">
                                 <span className="label-icon">✨</span>
-                                <span>AI Insight</span>
+                                <span>{t('journal.aiInsight') || 'AI Insight'}</span>
                               </div>
                               {entry.aiSummary ? (
                                 <p className="summary-text">{entry.aiSummary}</p>
@@ -349,8 +355,13 @@ const Insights = () => {
                         ← Previous
                       </button>
                       <span className="pagination-info">
-                        Page {journalPage + 1} of{' '}
-                        {Math.ceil(journalEntries.length / ENTRIES_PER_PAGE)}
+                        {t('common.pageInfo', {
+                          current: journalPage + 1,
+                          total: Math.ceil(journalEntries.length / ENTRIES_PER_PAGE),
+                        }) ||
+                          `Page ${journalPage + 1} of ${Math.ceil(
+                            journalEntries.length / ENTRIES_PER_PAGE
+                          )}`}
                       </span>
                       <button
                         onClick={() =>

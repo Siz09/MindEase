@@ -117,6 +117,11 @@
   border-color: #d1d5db;
 }
 
+.daily-summaries-section .daily-summary-card:focus-visible {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
+}
+
 .daily-summary-header {
   display: flex;
   justify-content: space-between;
@@ -321,6 +326,11 @@
   box-shadow: 0 2px 8px rgba(21, 128, 61, 0.2);
 }
 
+.pagination-button:focus-visible {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
+}
+
 .pagination-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -359,6 +369,11 @@
   transform: translateY(-2px);
 }
 
+.tip-item:focus-visible {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 4px;
+}
+
 .tip-icon {
   flex-shrink: 0;
   width: 48px;
@@ -395,7 +410,6 @@
   }
 
   .entry-content-wrapper {
-    grid-template-columns: 1fr; /* This rule is effectively overridden by the update above, but kept for context if it was to affect other breakpoints */
     gap: 0.75rem;
   }
 

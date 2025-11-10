@@ -128,6 +128,7 @@
     "moodInsight": "Mood Insight",
     "journalSummary": "Journal Summary",
     "entry": "Entry",
+    "aiInsight": "AI Insight",
     "aiProcessing": "AI is analyzing your entry...",
     "aiAvailable": "AI Insights Available",
     "aiUnavailable": "AI Insights Unavailable",
@@ -161,7 +162,10 @@
   "common": {
     "cancel": "Cancel",
     "saving": "Saving...",
-    "selected": "Selected"
+    "selected": "Selected",
+    "previous": "Previous",
+    "next": "Next",
+    "pageInfo": "Page {{current}} of {{total}}"
   },
   "checkin": {
     "title": "Check-in",
@@ -174,6 +178,8 @@
     "entriesToday": "Entries Today",
     "totalEntries": "Total Entries",
     "avgPerDay": "Avg Per Day",
+    "entryCount_one": "{{count}} entry",
+    "entryCount_other": "{{count}} entries",
     "generatingSummary": "Generating summary...",
     "recentSummary": "Recent AI Summaries",
     "todaysSummary": "Today's AI Summary",
