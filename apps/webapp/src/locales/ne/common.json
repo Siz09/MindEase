@@ -263,24 +263,24 @@
     "journalOffline": "डायरी प्रविष्टिहरू स्थानीय रूपमा सेभ हुनेछ र अनलाइन हुँदा सिङ्क हुनेछ।"
   },
   "checkin": {
-    "title": "Check-in",
-    "subtitle": "How are you feeling today? Share your mood and thoughts."
+    "title": "चेक-इन",
+    "subtitle": "आज तपाईं कस्तो अनुभूति गर्दै हुनुहुन्छ? आफ्नो मनोभाव र विचारहरू साझा गर्नुहोस्।"
   },
   "insights": {
-    "title": "Insights",
-    "subtitle": "Understand your mood patterns and track your progress.",
-    "journalInsights": "Journal Insights",
-    "entriestoday": "Entries Today",
-    "totalEntries": "Total Entries",
-    "avgPerDay": "Avg Per Day",
+    "title": "अन्तर्दृष्टि",
+    "subtitle": "आफ्नो मनोवृत्तिका ढाँचाहरू बुझ्नुहोस् र प्रगतिलाई ट्र्याक गर्नुहोस्।",
+    "journalInsights": "जर्नल अन्तर्दृष्टि",
+    "entriestoday": "आजका प्रविष्टिहरू",
+    "totalEntries": "जम्मा प्रविष्टिहरू",
+    "avgPerDay": "दिनको औसत",
     "yesterdaysSummary": "हिजोको सारांश",
     "entryCount_one": "{{count}} प्रविष्टि",
     "entryCount_other": "{{count}} प्रविष्टिहरू",
-    "generatingSummary": "Generating summary...",
-    "recentSummary": "Recent AI Summaries",
-    "todaysSummary": "Today's AI Summary",
-    "summaryProcessing": "AI summaries are being generated for your entries. Check back soon!",
-    "recentSummaries": "Daily Summaries",
-    "noDailySummaries": "No daily summaries yet"
+    "generatingSummary": "सारांश तयार हुँदै...",
+    "recentSummary": "हालका AI सारांशहरू",
+    "todaysSummary": "आजको AI सारांश",
+    "summaryProcessing": "AI ले तपाईंका प्रविष्टिहरूका सारांशहरू तयार गर्दैछ। चाँडै फेरि जाँच्नुहोस्!",
+    "recentSummaries": "दैनिक सारांशहरू",
+    "noDailySummaries": "अहिले दैनिक सारांश छैन"
   }
 }
