@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import api from '../../utils/api';
+import api from '../adminApi';
 import { toCSV } from '../../utils/export';
 
 export default function AuditLogs() {

@@ -13,7 +13,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import api from '../../utils/api';
+import api from '../adminApi';
 
 Chart.register(
   LineController,
@@ -40,6 +40,7 @@ export default function Overview() {
   const aiRef = useRef(null);
   const moodRef = useRef(null);
   const charts = useRef({});
+  const isCanvasLive = (canvas) => !!(canvas && canvas.ownerDocument && canvas.isConnected);
 
   useEffect(() => {
     let mounted = true;
@@ -59,6 +60,23 @@ export default function Overview() {
         }
       } catch (err) {
         if (mounted) setError('Failed to load dashboard data');
+        // Proactively tear down any existing charts to avoid Chart.js acting on detached canvases
+        try {
+          charts.current.active?.destroy?.();
+        } catch (_e) {
+          /* noop */
+        }
+        try {
+          charts.current.ai?.destroy?.();
+        } catch (_e) {
+          /* noop */
+        }
+        try {
+          charts.current.mood?.destroy?.();
+        } catch (_e) {
+          /* noop */
+        }
+        charts.current = {};
         console.error('Dashboard load error:', err);
       } finally {
         if (mounted) setLoading(false);
@@ -78,8 +96,10 @@ export default function Overview() {
   }, []);
 
   useEffect(() => {
+    // If there was a load error, skip chart work on this pass
+    if (error) return;
     if (activeRef.current) {
-      if (!charts.current.active) {
+      if (!charts.current.active && isCanvasLive(activeRef.current)) {
         charts.current.active = new Chart(activeRef.current, {
           type: 'line',
           data: {
@@ -97,16 +117,27 @@ export default function Overview() {
             scales: { y: { beginAtZero: true } },
           },
         });
-      } else {
+      } else if (charts.current.active && isCanvasLive(charts.current.active.canvas)) {
         charts.current.active.data.labels = active.map((x) => fmt(x.day));
         charts.current.active.data.datasets[0].data = active.map(
           (x) => x.activeUsers ?? x.count ?? 0
         );
-        charts.current.active.update();
+        try {
+          charts.current.active.update();
+        } catch (_e) {
+          /* noop */
+        }
+      } else if (charts.current.active && !isCanvasLive(charts.current.active.canvas)) {
+        try {
+          charts.current.active.destroy();
+        } catch (_e) {
+          /* noop */
+        }
+        charts.current.active = null;
       }
     }
     if (aiRef.current) {
-      if (!charts.current.ai) {
+      if (!charts.current.ai && isCanvasLive(aiRef.current)) {
         charts.current.ai = new Chart(aiRef.current, {
           type: 'bar',
           data: {
@@ -119,14 +150,25 @@ export default function Overview() {
             scales: { y: { beginAtZero: true } },
           },
         });
-      } else {
+      } else if (charts.current.ai && isCanvasLive(charts.current.ai.canvas)) {
         charts.current.ai.data.labels = ai.map((x) => fmt(x.day));
         charts.current.ai.data.datasets[0].data = ai.map((x) => x.calls ?? 0);
-        charts.current.ai.update();
+        try {
+          charts.current.ai.update();
+        } catch (_e) {
+          /* noop */
+        }
+      } else if (charts.current.ai && !isCanvasLive(charts.current.ai.canvas)) {
+        try {
+          charts.current.ai.destroy();
+        } catch (_e) {
+          /* noop */
+        }
+        charts.current.ai = null;
       }
     }
     if (moodRef.current) {
-      if (!charts.current.mood) {
+      if (!charts.current.mood && isCanvasLive(moodRef.current)) {
         charts.current.mood = new Chart(moodRef.current, {
           type: 'line',
           data: {
@@ -154,16 +196,27 @@ export default function Overview() {
             },
           },
         });
-      } else {
+      } else if (charts.current.mood && isCanvasLive(charts.current.mood.canvas)) {
         charts.current.mood.data.labels = mood.map((x) => fmt(x.day));
         charts.current.mood.data.datasets[0].data = mood.map((x) => x.avgMood ?? null);
         charts.current.mood.data.datasets[1].data = mood.map(
           (x) => x.chatCount ?? x.sessionCount ?? 0
         );
-        charts.current.mood.update();
+        try {
+          charts.current.mood.update();
+        } catch (_e) {
+          /* noop */
+        }
+      } else if (charts.current.mood && !isCanvasLive(charts.current.mood.canvas)) {
+        try {
+          charts.current.mood.destroy();
+        } catch (_e) {
+          /* noop */
+        }
+        charts.current.mood = null;
       }
     }
-  }, [active, ai, mood]);
+  }, [active, ai, mood, error]);
 
   return (
     <div className="grid">

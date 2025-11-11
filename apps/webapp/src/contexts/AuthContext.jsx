@@ -8,6 +8,11 @@ import {
 } from 'firebase/auth';
 import { toast } from 'react-toastify';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(
+  /\/$/,
+  ''
+);
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -38,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          const response = await axios.get('http://localhost:8080/api/auth/me');
+          const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
           setCurrentUser(response.data.user);
           setToken(storedToken);
           toast.success('Welcome back!');
@@ -136,11 +141,23 @@ export const AuthProvider = ({ children }) => {
 
       const firebaseToken = await firebaseUser.getIdToken();
 
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
         firebaseToken,
       });
 
       const { token: jwtToken, user: userData } = response.data;
+      // If the account is ADMIN, do not bind it to user session here.
+      // Let the caller (Login page) adopt it into AdminAuth instead to keep sessions separate.
+      const role = userData?.role || userData?.authority;
+      if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
+        toast.update(toastId, {
+          render: 'Signed in as admin',
+          type: 'success',
+          isLoading: false,
+          autoClose: 1500,
+        });
+        return { success: true, user: userData, token: jwtToken, isAdmin: true };
+      }
 
       return handleAuthSuccess(jwtToken, userData, toastId, 'Successfully signed in!');
     } catch (error) {
@@ -178,7 +195,7 @@ export const AuthProvider = ({ children }) => {
 
       // First try to login (handles returning anonymous users)
       try {
-        const loginResponse = await axios.post('http://localhost:8080/api/auth/login', {
+        const loginResponse = await axios.post(`${API_BASE_URL}/api/auth/login`, {
           firebaseToken,
         });
 
@@ -191,7 +208,7 @@ export const AuthProvider = ({ children }) => {
 
         // If user doesn't exist yet, register then proceed
         if (errorCode === 'USER_NOT_FOUND' || status === 404) {
-          const registerResponse = await axios.post('http://localhost:8080/api/auth/register', {
+          const registerResponse = await axios.post(`${API_BASE_URL}/api/auth/register`, {
             email: `anonymous_${firebaseUser.uid}@mindease.com`,
             firebaseToken,
             anonymousMode: true,
@@ -222,7 +239,7 @@ export const AuthProvider = ({ children }) => {
       const firebaseToken = await firebaseUser.getIdToken();
 
       // Step 3: Register in our backend
-      const response = await axios.post('http://localhost:8080/api/auth/register', {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
         email,
         firebaseToken,
         anonymousMode,
@@ -280,7 +297,7 @@ export const AuthProvider = ({ children }) => {
       // Use the correct endpoint for anonymous mode
       if (updates.anonymousMode !== undefined) {
         const response = await axios.patch(
-          `http://localhost:8080/api/users/${currentUser.id}/anonymous-mode`,
+          `${API_BASE_URL}/api/users/${currentUser.id}/anonymous-mode`,
           { anonymousMode: updates.anonymousMode },
           {
             headers: {

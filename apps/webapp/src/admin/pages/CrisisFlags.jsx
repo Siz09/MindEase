@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import api from '../../utils/api';
+import api from '../adminApi';
 import { toCSV } from '../../utils/export';
 
 const pct = (n) => `${Math.round((n || 0) * 100)}%`;

@@ -1,9 +1,9 @@
 'use client';
 
-import { useAuth } from '../contexts/AuthContext';
+import { useAdminAuth } from './AdminAuthContext';
 
 export default function AdminTopbar({ pathname }) {
-  const { currentUser, logout } = useAuth();
+  const { adminUser: currentUser, logout } = useAdminAuth();
   const p = pathname ?? '';
   const label =
     p === '/admin'

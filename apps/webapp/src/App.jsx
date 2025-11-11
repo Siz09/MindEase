@@ -13,6 +13,7 @@ import UserLayout from './components/UserLayout';
 // Admin-only subtree (separate shell)
 import AdminRoute from './admin/AdminRoute';
 import AdminLayout from './admin/AdminLayout';
+import { AdminAuthProvider } from './admin/AdminAuthContext';
 import Overview from './admin/pages/Overview';
 import AuditLogs from './admin/pages/AuditLogs';
 import CrisisFlags from './admin/pages/CrisisFlags';
@@ -30,130 +31,134 @@ import Profile from './pages/Profile';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public auth routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+    <AdminAuthProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public auth routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/* Admin app — separate shell and routes */}
-          <Route
-            path="/admin/*"
-            element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
-            }
-          >
-            <Route index element={<Overview />} />
-            <Route path="audit-logs" element={<AuditLogs />} />
-            <Route path="crisis-flags" element={<CrisisFlags />} />
-            <Route path="settings" element={<AdminSettings />} />
-          </Route>
+            {/* Admin app — separate shell and routes */}
+            <Route
+              path="/admin/*"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<Overview />} />
+              <Route path="audit-logs" element={<AuditLogs />} />
+              <Route path="crisis-flags" element={<CrisisFlags />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
 
-          {/* User app — uses user layout with navbar */}
-          <Route element={<UserLayout />}>
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <CheckIn />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/insights"
-              element={
-                <ProtectedRoute>
-                  <Insights />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/journal"
-              element={
-                <ProtectedRoute>
-                  <Navigate to="/" replace />
-                </ProtectedRoute>
-              }
-            />
-            {/* Existing code */}
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/chat"
-              element={
-                <ProtectedRoute>
-                  <Chat />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/mindfulness"
-              element={
-                <ProtectedRoute>
-                  <Mindfulness />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/testing"
-              element={
-                <ProtectedRoute>
-                  <Testing />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <Notifications />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/subscription"
-              element={
-                <ProtectedRoute>
-                  <Subscription />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-            <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-        </Routes>
+            {null}
 
-        {/* Toasts */}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
-      </Router>
-    </AuthProvider>
+            {/* User app — uses user layout with navbar */}
+            <Route element={<UserLayout />}>
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <CheckIn />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/insights"
+                element={
+                  <ProtectedRoute>
+                    <Insights />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/journal"
+                element={
+                  <ProtectedRoute>
+                    <Navigate to="/" replace />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Existing code */}
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute>
+                    <Chat />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mindfulness"
+                element={
+                  <ProtectedRoute>
+                    <Mindfulness />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/testing"
+                element={
+                  <ProtectedRoute>
+                    <Testing />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <Notifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/subscription"
+                element={
+                  <ProtectedRoute>
+                    <Subscription />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+              <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+          </Routes>
+
+          {/* Toasts */}
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+        </Router>
+      </AuthProvider>
+    </AdminAuthProvider>
   );
 }
 

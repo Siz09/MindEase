@@ -99,7 +99,7 @@ public class AnalyticsRepository {
                    m.avg_mood,
                    COALESCE(c.chat_count, 0) AS chat_count
             FROM (
-                SELECT generate_series(DATE(:from), DATE(:to), '1 day') AS day
+                SELECT generate_series(:from::date, :to::date, INTERVAL '1 day')::date AS day
             ) d
             LEFT JOIN moods m ON m.day = d.day
             LEFT JOIN chats c ON c.day = d.day

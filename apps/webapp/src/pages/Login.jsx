@@ -1,15 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { useAdminAuth } from '../admin/AdminAuthContext';
 import '../styles/Auth.css';
 
 const Login = () => {
   const { t } = useTranslation();
   const { login, loginAnonymously } = useAuth();
+  const { adopt, adminToken } = useAdminAuth();
   const navigate = useNavigate();
+
+  // If an admin session already exists, go straight to /admin
+  // This makes new tabs land on the admin dashboard instead of /login
+  useEffect(() => {
+    if (adminToken) navigate('/admin', { replace: true });
+  }, [adminToken, navigate]);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -34,7 +42,9 @@ const Login = () => {
       const result = await login(formData.email, formData.password);
       if (result?.success) {
         const role = result.user?.role || result.user?.authority;
-        if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
+        if (result.isAdmin || role === 'ADMIN' || role === 'ROLE_ADMIN') {
+          // Keep admin session isolated: move JWT into admin storage only
+          adopt(result.token, result.user);
           navigate('/admin');
         } else {
           navigate('/');
