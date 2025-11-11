@@ -86,7 +86,12 @@ export function AdminAuthProvider({ children }) {
       const token = data.token;
       const user = data.user;
 
-      if (!(user?.role === 'ADMIN')) {
+      if (!(user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN')) {
+        try {
+          await auth.signOut();
+        } catch (_e) {
+          /* ignore */
+        }
         toast.update(toastId, {
           render: 'Not an admin account',
           type: 'error',
