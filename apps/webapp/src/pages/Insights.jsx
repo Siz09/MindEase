@@ -315,7 +315,14 @@ const Insights = () => {
                                 <span>{t('journal.entry') || 'Your Entry'}</span>
                               </div>
                               {entry.content ? (
-                                <p className="entry-text">{entry.content}</p>
+                                <p className="entry-text">
+                                  {(() => {
+                                    const c = Array.from(entry.content || '');
+                                    return c.length >= 2 && c[1] === ' '
+                                      ? c.slice(2).join('')
+                                      : entry.content || '';
+                                  })()}
+                                </p>
                               ) : (
                                 <p className="entry-text muted">
                                   {t('journal.noContent') || 'No content'}

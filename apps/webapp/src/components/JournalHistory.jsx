@@ -28,13 +28,13 @@ const JournalHistory = ({
     }).format(date);
   };
 
-  const extractEmoji = (content) => {
-    if (!content) return { emoji: '📝', text: '' };
+  const stripLeadingEmoji = (content) => {
+    if (!content) return '';
     const chars = Array.from(content);
     if (chars.length >= 2 && chars[1] === ' ') {
-      return { emoji: chars[0], text: chars.slice(2).join('') };
+      return chars.slice(2).join('');
     }
-    return { emoji: '📝', text: content };
+    return content;
   };
 
   if (isLoading && entries.length === 0) {
@@ -77,23 +77,19 @@ const JournalHistory = ({
       </div>
 
       <div className="entries-list">
-        {entries.map((entry, idx) => {
-          const { emoji, text } = extractEmoji(entry.content);
-          return (
-            <div key={entry.id ?? idx} className="journal-entry-card">
-              <div className="entry-header">
-                <div className="entry-meta">
-                  <span className="entry-emoji">{emoji}</span>
-                  <span className="entry-date">{formatDate(entry.createdAt)}</span>
-                </div>
-              </div>
-
-              <div className="entry-content">
-                <p>{text}</p>
+        {entries.map((entry, idx) => (
+          <div key={entry.id ?? idx} className="journal-entry-card">
+            <div className="entry-header">
+              <div className="entry-meta">
+                <span className="entry-date">{formatDate(entry.createdAt)}</span>
               </div>
             </div>
-          );
-        })}
+
+            <div className="entry-content">
+              <p>{stripLeadingEmoji(entry.content)}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {totalPages > 1 && (
