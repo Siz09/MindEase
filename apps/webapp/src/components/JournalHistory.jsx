@@ -30,11 +30,19 @@ const JournalHistory = ({
 
   const stripLeadingEmoji = (content) => {
     if (!content) return '';
-    const chars = Array.from(content);
-    if (chars.length >= 2 && chars[1] === ' ') {
-      return chars.slice(2).join('');
+    const s = String(content);
+    const cp = s.codePointAt(0);
+    if (!cp) return s;
+    const isEmoji =
+      (cp >= 0x1f300 && cp <= 0x1faff) || // Misc Symbols and Pictographs + Supplemental Symbols and Pictographs
+      (cp >= 0x2600 && cp <= 0x26ff) || // Misc symbols
+      (cp >= 0x2700 && cp <= 0x27bf) || // Dingbats
+      (cp >= 0x1f1e6 && cp <= 0x1f1ff); // Regional indicator symbols (flags)
+    const firstLen = cp > 0xffff ? 2 : 1;
+    if (isEmoji && s[firstLen] === ' ') {
+      return s.slice(firstLen + 1);
     }
-    return content;
+    return s;
   };
 
   if (isLoading && entries.length === 0) {

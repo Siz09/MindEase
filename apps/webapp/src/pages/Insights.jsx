@@ -60,6 +60,21 @@ const Insights = () => {
     }
   }, []);
 
+  const stripLeadingEmoji = (content) => {
+    if (!content) return '';
+    const s = String(content);
+    const cp = s.codePointAt(0);
+    if (!cp) return s;
+    const isEmoji =
+      (cp >= 0x1f300 && cp <= 0x1faff) ||
+      (cp >= 0x2600 && cp <= 0x26ff) ||
+      (cp >= 0x2700 && cp <= 0x27bf) ||
+      (cp >= 0x1f1e6 && cp <= 0x1f1ff);
+    const firstLen = cp > 0xffff ? 2 : 1;
+    if (isEmoji && s[firstLen] === ' ') return s.slice(firstLen + 1);
+    return s;
+  };
+
   const fetchDailySummary = useCallback(async () => {
     try {
       setSummaryLoading(true);
@@ -315,14 +330,7 @@ const Insights = () => {
                                 <span>{t('journal.entry') || 'Your Entry'}</span>
                               </div>
                               {entry.content ? (
-                                <p className="entry-text">
-                                  {(() => {
-                                    const c = Array.from(entry.content || '');
-                                    return c.length >= 2 && c[1] === ' '
-                                      ? c.slice(2).join('')
-                                      : entry.content || '';
-                                  })()}
-                                </p>
+                                <p className="entry-text">{stripLeadingEmoji(entry.content)}</p>
                               ) : (
                                 <p className="entry-text muted">
                                   {t('journal.noContent') || 'No content'}
