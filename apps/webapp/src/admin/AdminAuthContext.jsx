@@ -57,7 +57,12 @@ export function AdminAuthProvider({ children }) {
         ) {
           setAdminUser({
             email: claims.sub || claims.email || 'admin',
-            role: claims.role || (claims.authority === 'ROLE_ADMIN' ? 'ROLE_ADMIN' : undefined),
+            role:
+              claims.role === 'ADMIN' || claims.role === 'ROLE_ADMIN'
+                ? claims.role
+                : claims.authority === 'ROLE_ADMIN'
+                  ? 'ROLE_ADMIN'
+                  : undefined,
           });
         }
 
