@@ -137,3 +137,10 @@
   display: flex;
   gap: 0.5rem;
 }
+
+/* Highlight to draw attention to the mood scale */
+.scale-highlight {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+  border-radius: 8px;
+  padding: 0.25rem;
+}

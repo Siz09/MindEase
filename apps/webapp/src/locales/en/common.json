@@ -156,7 +156,8 @@
       "noticePositive": "Your entry feels positive, but mood is set to {{mood}}.",
       "noticeNegative": "Your entry feels negative, but mood is set to {{mood}}.",
       "keep": "Keep mood",
-      "update": "Update mood"
+      "update": "Update mood",
+      "updateRequired": "Please update your mood first or choose Keep mood."
     }
   },
   "charts": {

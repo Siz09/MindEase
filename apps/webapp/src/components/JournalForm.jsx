@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import EmojiPicker from './EmojiPicker';
 import '../styles/components/JournalForm.css';
@@ -11,9 +12,41 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
   const [selectedEmoji, setSelectedEmoji] = useState('😊');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [contrastDismissed, setContrastDismissed] = useState(false);
+  const [updateMoodRequested, setUpdateMoodRequested] = useState(false);
+  const [scaleHighlight, setScaleHighlight] = useState(false);
+  const [pendingMoodValue, setPendingMoodValue] = useState(null);
 
   const emojiPickerRef = useRef(null);
   const textareaRef = useRef(null);
+  const moodScaleRef = useRef(null);
+
+  // Reuse detailed mood options like MoodInput
+  const detailedMoods = [
+    { value: 1, emoji: '😭', label: t('mood.terrible'), color: '#dc2626' },
+    { value: 2, emoji: '😢', label: t('mood.veryBad'), color: '#ea580c' },
+    { value: 3, emoji: '😔', label: t('mood.bad'), color: '#f97316' },
+    { value: 4, emoji: '😕', label: t('mood.poor'), color: '#fb923c' },
+    { value: 5, emoji: '😐', label: t('mood.neutral'), color: '#eab308' },
+    { value: 6, emoji: '🙂', label: t('mood.okay'), color: '#a3e635' },
+    { value: 7, emoji: '😊', label: t('mood.good'), color: '#84cc16' },
+    { value: 8, emoji: '😄', label: t('mood.veryGood'), color: '#65a30d' },
+    { value: 9, emoji: '😁', label: t('mood.great'), color: '#16a34a' },
+    { value: 10, emoji: '🤩', label: t('mood.amazing'), color: '#15803d' },
+  ];
+
+  const hexToRgbString = (hex) => {
+    try {
+      const c = (hex || '').replace('#', '');
+      const bigint = parseInt(c, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return '0, 0, 0';
+      return `${r}, ${g}, ${b}`;
+    } catch {
+      return '0, 0, 0';
+    }
+  };
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -42,10 +75,24 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
       return;
     }
 
+    // If the user chose "Update mood" but hasn't picked a new mood yet, block save and guide them
+    if (updateMoodRequested && pendingMoodValue == null) {
+      toast.info(
+        t('journal.contrast.updateRequired') || 'Please update your mood first or choose Keep mood.'
+      );
+      setScaleHighlight(true);
+      if (moodScaleRef.current)
+        moodScaleRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => setScaleHighlight(false), 1200);
+      return;
+    }
+
     onSubmit(`${selectedEmoji} ${newEntry}`);
     setNewEntry('');
     setSelectedEmoji('😊');
     setContrastDismissed(false);
+    setPendingMoodValue(null);
+    setUpdateMoodRequested(false);
   };
 
   // Initialize selected emoji from currentMood if available
@@ -151,19 +198,13 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
     !!currentCategory && currentCategory !== 'neutral' && hasStrongContrast && !contrastDismissed;
 
   const handleUpdateMoodFromJournal = () => {
-    if (!onUpdateMood) return;
-    const category = emojiCategory !== 'neutral' ? emojiCategory : textSentiment || 'neutral';
-    let value = 5;
-    let label = t('mood.okay');
-    if (category === 'positive') {
-      value = 8;
-      label = t('mood.good');
-    } else if (category === 'negative') {
-      value = 2;
-      label = t('mood.low');
-    }
-    onUpdateMood({ value, label, emoji: selectedEmoji });
-    setContrastDismissed(true);
+    // Guide the user to explicitly select a new mood from the scale
+    setUpdateMoodRequested(true);
+    setContrastDismissed(false);
+    setScaleHighlight(true);
+    if (moodScaleRef.current)
+      moodScaleRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => setScaleHighlight(false), 1200);
   };
 
   return (
@@ -213,6 +254,52 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
             rows={6}
             maxLength={1000}
           />
+
+          {/* Mood scale (same options as MoodInput detailed) */}
+          <div
+            className={`mood-scale ${scaleHighlight ? 'scale-highlight' : ''}`}
+            ref={moodScaleRef}
+            aria-label={t('mood.rateYourMood')}
+          >
+            <h3>{t('mood.rateYourMood')}</h3>
+            <div className="mood-scale-options">
+              {detailedMoods.map((mood) => {
+                const selected = (pendingMoodValue ?? currentMood?.value) === mood.value;
+                return (
+                  <button
+                    key={mood.value}
+                    type="button"
+                    className={`mood-scale-option ${selected ? 'selected' : ''}`}
+                    onClick={() => {
+                      setPendingMoodValue(mood.value);
+                      setSelectedEmoji(mood.emoji);
+                      setUpdateMoodRequested(false);
+                      if (onUpdateMood) {
+                        onUpdateMood({ value: mood.value, label: mood.label, emoji: mood.emoji });
+                      }
+                    }}
+                    style={{
+                      '--mood-color': mood.color,
+                      '--mood-color-rgb': hexToRgbString(mood.color),
+                    }}
+                    aria-label={t('mood.selectMoodWithValue', {
+                      mood: mood.label,
+                      value: mood.value,
+                    })}
+                    aria-pressed={selected}
+                    title={selected ? t('mood.selectedTooltip', { mood: mood.label }) : undefined}
+                  >
+                    <div className="mood-emoji">{mood.emoji}</div>
+                    <div className="mood-value">{mood.value}</div>
+                    <div className="mood-label-tiny">{mood.label}</div>
+                    {selected && (
+                      <span className="sr-only">{t('common.selected') || 'Selected'}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Mood/Journal contrast notice (non-blocking) */}
           {shouldShowContrast && (
