@@ -11,11 +11,18 @@ const MoodInput = ({ onSubmit, loading }) => {
   const hexToRgbString = (hex) => {
     try {
       const c = (hex || '').replace('#', '');
-      const bigint = parseInt(c, 16);
+      const expanded =
+        c.length === 3
+          ? c
+              .split('')
+              .map((x) => x + x)
+              .join('')
+          : c;
+      const bigint = parseInt(expanded, 16);
+      if (Number.isNaN(bigint)) return '0, 0, 0';
       const r = (bigint >> 16) & 255;
       const g = (bigint >> 8) & 255;
       const b = bigint & 255;
-      if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return '0, 0, 0';
       return `${r}, ${g}, ${b}`;
     } catch {
       return '0, 0, 0';

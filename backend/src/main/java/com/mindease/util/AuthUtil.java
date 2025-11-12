@@ -1,5 +1,7 @@
 package com.mindease.util;
 
+import com.mindease.exception.UnauthenticatedException;
+import com.mindease.exception.UserNotFoundException;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,37 +19,27 @@ public class AuthUtil {
 
   public UUID getCurrentUserId() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null && authentication.isAuthenticated()) {
-      Object principal = authentication.getPrincipal();
-
-      // CustomUserDetails holds the UUID directly
-      if (principal instanceof CustomUserDetails) {
-        return ((CustomUserDetails) principal).getId();
-      }
-
-      // Spring Security may set principal to a username (email). Look it up.
-      if (principal instanceof String) {
-        String username = (String) principal; // typically the email
-        return userRepository
-            .findByEmail(username)
-            .map(u -> u.getId())
-            .orElseThrow(() -> new RuntimeException("Cannot resolve user by username: " + username));
-      }
-
-      // Fallback: use authentication.getName() if present
-      String name = authentication.getName();
-      if (name != null) {
-        return userRepository
-            .findByEmail(name)
-            .map(u -> u.getId())
-            .orElseThrow(() -> new RuntimeException("Cannot resolve user by name: " + name
-                + " (principal type: " + principal.getClass().getSimpleName() + ")"));
-      }
-
-      throw new RuntimeException("Unsupported authentication principal type: "
-          + principal.getClass().getSimpleName());
+    if (authentication == null || !authentication.isAuthenticated()) {
+      throw new UnauthenticatedException("User not authenticated");
     }
-    throw new RuntimeException("User not authenticated");
+
+    Object principal = authentication.getPrincipal();
+
+    // Preferred path: CustomUserDetails already carries the UUID
+    if (principal instanceof CustomUserDetails) {
+      return ((CustomUserDetails) principal).getId();
+    }
+
+    // Fallback: resolve by email from authentication name
+    String email = authentication.getName();
+    if (email == null || email.isEmpty()) {
+      throw new UnauthenticatedException("Unable to resolve current user");
+    }
+
+    return userRepository
+        .findByEmail(email)
+        .map(u -> u.getId())
+        .orElseThrow(() -> new UserNotFoundException("User not found"));
   }
 
   public String getCurrentUsername() {
@@ -55,6 +47,6 @@ public class AuthUtil {
     if (authentication != null && authentication.isAuthenticated()) {
       return authentication.getName();
     }
-    throw new RuntimeException("User not authenticated");
+    throw new UnauthenticatedException("User not authenticated");
   }
 }

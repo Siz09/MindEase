@@ -175,17 +175,9 @@ const Journal = () => {
   const extractEmoji = (content) => {
     if (!content) return { emoji: '📝', text: '' };
     const s = String(content);
-    const cp = s.codePointAt(0);
-    if (!cp) return { emoji: '📝', text: s };
-    const isEmoji =
-      (cp >= 0x1f300 && cp <= 0x1faff) ||
-      (cp >= 0x2600 && cp <= 0x26ff) ||
-      (cp >= 0x2700 && cp <= 0x27bf) ||
-      (cp >= 0x1f1e6 && cp <= 0x1f1ff);
-    const firstLen = cp > 0xffff ? 2 : 1;
-    if (isEmoji && s[firstLen] === ' ') {
-      const emojiChar = s.slice(0, firstLen);
-      return { emoji: emojiChar, text: s.slice(firstLen + 1) };
+    const match = s.match(/^(?:\p{Emoji}|\u200d|\ufe0f)+/u);
+    if (match && s[match[0].length] === ' ') {
+      return { emoji: match[0], text: s.slice(match[0].length + 1) };
     }
     return { emoji: '📝', text: s };
   };

@@ -48,7 +48,13 @@ export function AdminAuthProvider({ children }) {
 
         // Optimistically bootstrap role/email from JWT claims to avoid redirect flicker on new tabs
         const claims = decodeJwt(stored);
-        if (!cancelled && claims && (claims.role === 'ADMIN' || claims.role === 'ROLE_ADMIN')) {
+        if (
+          !cancelled &&
+          claims &&
+          (claims.role === 'ADMIN' ||
+            claims.role === 'ROLE_ADMIN' ||
+            claims.authority === 'ROLE_ADMIN')
+        ) {
           setAdminUser({ email: claims.sub || claims.email || 'admin', role: claims.role });
         }
 

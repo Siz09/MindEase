@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../styles/components/JournalForm.css';
 
@@ -58,6 +57,19 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
   const getTextSentiment = (text) => {
     const s = (text || '').toLowerCase();
     if (!s.trim()) return null;
+    // Basic negation handling: if a negation appears shortly before a sentiment term, skip classification
+    const negations = [
+      'not',
+      'no',
+      'never',
+      "don't",
+      "doesn't",
+      "didn't",
+      "won't",
+      "can't",
+      "couldn't",
+      "shouldn't",
+    ];
     const positives = [
       'happy',
       'great',
@@ -86,6 +98,12 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
       'cry',
       'low',
     ];
+    const sentiments = [...positives, ...negatives].join('|');
+    const negationRegex = new RegExp(
+      `\\b(?:${negations.join('|')})\\s+(?:\\w+\\s+){0,2}(?:${sentiments})\\b`,
+      'i'
+    );
+    if (negationRegex.test(s)) return null;
     const posHit = positives.some((w) => s.includes(w));
     const negHit = negatives.some((w) => s.includes(w));
     if (posHit && !negHit) return 'positive';
