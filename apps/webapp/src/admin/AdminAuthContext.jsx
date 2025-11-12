@@ -55,7 +55,10 @@ export function AdminAuthProvider({ children }) {
             claims.role === 'ROLE_ADMIN' ||
             claims.authority === 'ROLE_ADMIN')
         ) {
-          setAdminUser({ email: claims.sub || claims.email || 'admin', role: claims.role });
+          setAdminUser({
+            email: claims.sub || claims.email || 'admin',
+            role: claims.role || (claims.authority === 'ROLE_ADMIN' ? 'ROLE_ADMIN' : undefined),
+          });
         }
 
         const { data } = await adminApi.get('/auth/me');

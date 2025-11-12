@@ -31,7 +31,9 @@ const JournalHistory = ({
   const stripLeadingEmoji = (content) => {
     if (!content) return '';
     const s = String(content);
-    const match = s.match(/^(?:\p{Emoji}|\u200d|\ufe0f)+\s/u);
+    const match = s.match(
+      /^(?:\p{Extended_Pictographic}(?:\u200d\p{Extended_Pictographic})*(?:\ufe0f)?)+\s?/u
+    );
     return match ? s.slice(match[0].length) : s;
   };
 

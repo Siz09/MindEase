@@ -175,9 +175,14 @@ const Journal = () => {
   const extractEmoji = (content) => {
     if (!content) return { emoji: '📝', text: '' };
     const s = String(content);
-    const match = s.match(/^(?:\p{Emoji}|\u200d|\ufe0f)+/u);
-    if (match && s[match[0].length] === ' ') {
-      return { emoji: match[0], text: s.slice(match[0].length + 1) };
+    const match = s.match(
+      /^(?:\p{Emoji_Presentation}|\p{Emoji}\uFE0F)(?:\u200D(?:\p{Emoji_Presentation}|\p{Emoji}\uFE0F))*/u
+    );
+    if (match) {
+      const rest = s.slice(match[0].length);
+      if (rest.startsWith(' ')) {
+        return { emoji: match[0], text: rest.slice(1) };
+      }
     }
     return { emoji: '📝', text: s };
   };
