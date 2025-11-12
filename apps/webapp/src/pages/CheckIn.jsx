@@ -15,6 +15,7 @@ const CheckIn = () => {
 
   // Mood state
   const [moodLoading, setMoodLoading] = useState(false);
+  const [currentMood, setCurrentMood] = useState(null);
 
   // Journal state
   const [journalEntries, setJournalEntries] = useState([]);
@@ -76,6 +77,12 @@ const CheckIn = () => {
       });
       if (response.data.status === 'success' || response.data.success) {
         toast.success(t('mood.success.saved') || 'Mood entry saved!');
+        // Update shared current mood for cross-component sync
+        setCurrentMood({
+          value: moodData.value,
+          emoji: moodData.emoji,
+          label: moodData.label,
+        });
       }
     } catch (error) {
       console.error('Failed to save mood:', error);
@@ -134,6 +141,8 @@ const CheckIn = () => {
               onSubmit={handleJournalSubmit}
               loading={journalSubmitting}
               isOffline={isOffline}
+              currentMood={currentMood}
+              onUpdateMood={setCurrentMood}
             />
           </section>
 

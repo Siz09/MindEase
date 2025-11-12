@@ -93,6 +93,7 @@
     "saveMood": "Save Mood",
     "detailedEntry": "Detailed Entry",
     "selectMoodWithValue": "Select {{mood}} ({{value}})",
+    "selectedTooltip": "Selected: {{mood}}",
     "veryBad": "Very Bad",
     "bad": "Bad",
     "poor": "Poor",
@@ -150,7 +151,13 @@
       "fetchFailed": "Failed to load journal entries"
     },
     "loading": "Loading your journal...",
-    "justNow": "Just now"
+    "justNow": "Just now",
+    "contrast": {
+      "noticePositive": "Your entry feels positive, but mood is set to {{mood}}.",
+      "noticeNegative": "Your entry feels negative, but mood is set to {{mood}}.",
+      "keep": "Keep mood",
+      "update": "Update mood"
+    }
   },
   "charts": {
     "moodTrendOverTime": "Mood Trend Over Time",

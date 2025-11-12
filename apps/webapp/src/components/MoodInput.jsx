@@ -5,8 +5,22 @@ import '../styles/components/MoodInput.css';
 const MoodInput = ({ onSubmit, loading }) => {
   const { t } = useTranslation();
   const [selectedMood, setSelectedMood] = useState(null);
+  const [quickSelectedId, setQuickSelectedId] = useState(null);
   const [notes, setNotes] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const hexToRgbString = (hex) => {
+    try {
+      const c = (hex || '').replace('#', '');
+      const bigint = parseInt(c, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return '0, 0, 0';
+      return `${r}, ${g}, ${b}`;
+    } catch {
+      return '0, 0, 0';
+    }
+  };
 
   const moods = [
     { id: 1, emoji: '😭', label: t('mood.terrible'), color: '#dc2626', value: 1 },
@@ -31,6 +45,7 @@ const MoodInput = ({ onSubmit, loading }) => {
 
   const handleQuickMoodSubmit = async (moodData) => {
     try {
+      setQuickSelectedId(moodData.id);
       await onSubmit({
         value: moodData.value * 2,
         emoji: moodData.emoji,
@@ -73,14 +88,23 @@ const MoodInput = ({ onSubmit, loading }) => {
               {moods.map((mood) => (
                 <button
                   key={mood.id}
-                  className="mood-option-quick"
+                  className={`mood-option-quick ${quickSelectedId === mood.id ? 'selected' : ''}`}
                   onClick={() => handleQuickMoodSubmit(mood)}
                   disabled={loading}
-                  style={{ '--mood-color': mood.color }}
+                  style={{
+                    '--mood-color': mood.color,
+                    '--mood-color-rgb': hexToRgbString(mood.color),
+                  }}
                   aria-label={t('mood.selectMoodWithValue', {
                     mood: mood.label,
                     value: mood.value,
                   })}
+                  aria-pressed={quickSelectedId === mood.id}
+                  title={
+                    quickSelectedId === mood.id
+                      ? t('mood.selectedTooltip', { mood: mood.label })
+                      : undefined
+                  }
                 >
                   <div className="mood-emoji-large">{mood.emoji}</div>
                   <span className="mood-label-small">{mood.label}</span>
@@ -107,12 +131,20 @@ const MoodInput = ({ onSubmit, loading }) => {
                     key={mood.value}
                     className={`mood-scale-option ${selectedMood?.value === mood.value ? 'selected' : ''}`}
                     onClick={() => setSelectedMood(mood)}
-                    style={{ '--mood-color': mood.color }}
+                    style={{
+                      '--mood-color': mood.color,
+                      '--mood-color-rgb': hexToRgbString(mood.color),
+                    }}
                     aria-label={t('mood.selectMoodWithValue', {
                       mood: mood.label,
                       value: mood.value,
                     })}
                     aria-pressed={selectedMood?.value === mood.value}
+                    title={
+                      selectedMood?.value === mood.value
+                        ? t('mood.selectedTooltip', { mood: mood.label })
+                        : undefined
+                    }
                   >
                     <div className="mood-emoji">{mood.emoji}</div>
                     <div className="mood-value">{mood.value}</div>

@@ -114,3 +114,26 @@
 .ai-info p {
   margin: 0;
 }
+
+/* Contrast notice between selected mood and journal content */
+.contrast-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: #fef3c7; /* amber-100 */
+  border-left: 4px solid #f59e0b; /* amber-500 */
+  border-radius: 6px;
+  color: #92400e; /* amber-800 */
+}
+
+.contrast-text {
+  font-size: 0.9rem;
+}
+
+.contrast-actions {
+  display: flex;
+  gap: 0.5rem;
+}

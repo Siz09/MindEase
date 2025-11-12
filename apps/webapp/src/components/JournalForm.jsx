@@ -5,11 +5,12 @@ import { useTranslation } from 'react-i18next';
 import EmojiPicker from './EmojiPicker';
 import '../styles/components/JournalForm.css';
 
-const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline }) => {
+const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, onUpdateMood }) => {
   const { t } = useTranslation();
   const [newEntry, setNewEntry] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('😊');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [contrastDismissed, setContrastDismissed] = useState(false);
 
   const emojiPickerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -28,6 +29,7 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline }) => {
   const handleEmojiSelect = (emoji) => {
     setSelectedEmoji(emoji);
     setShowEmojiPicker(false);
+    setContrastDismissed(false);
   };
 
   const handleSubmit = (e) => {
@@ -43,6 +45,125 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline }) => {
     onSubmit(`${selectedEmoji} ${newEntry}`);
     setNewEntry('');
     setSelectedEmoji('😊');
+    setContrastDismissed(false);
+  };
+
+  // Initialize selected emoji from currentMood if available
+  useEffect(() => {
+    if (currentMood?.emoji && selectedEmoji === '😊') {
+      setSelectedEmoji(currentMood.emoji);
+    }
+  }, [currentMood]);
+
+  // Simple categorization helpers for contrast detection
+  const categorizeMoodValue = (value) => {
+    if (value == null) return null;
+    if (value <= 3) return 'negative';
+    if (value >= 8) return 'positive';
+    return 'neutral';
+  };
+
+  const positiveEmojis = new Set([
+    '🙂',
+    '😊',
+    '😄',
+    '😁',
+    '🤩',
+    '🌞',
+    '🌈',
+    '⭐',
+    '❤️',
+    '✨',
+    '✅',
+    '🎁',
+    '😀',
+    '😃',
+  ]);
+  const negativeEmojis = new Set([
+    '😭',
+    '😢',
+    '😔',
+    '😕',
+    '🙁',
+    '😡',
+    '😤',
+    '😱',
+    '🤒',
+    '💔',
+    '⚠️',
+  ]);
+
+  const categorizeEmoji = (emoji) => {
+    if (positiveEmojis.has(emoji)) return 'positive';
+    if (negativeEmojis.has(emoji)) return 'negative';
+    return 'neutral';
+  };
+
+  const getTextSentiment = (text) => {
+    const s = (text || '').toLowerCase();
+    if (!s.trim()) return null;
+    const positives = [
+      'happy',
+      'great',
+      'good',
+      'excited',
+      'joy',
+      'lovely',
+      'grateful',
+      'amazing',
+      'proud',
+      'calm',
+      'content',
+    ];
+    const negatives = [
+      'sad',
+      'down',
+      'bad',
+      'angry',
+      'upset',
+      'anxious',
+      'worried',
+      'stressed',
+      'depressed',
+      'terrible',
+      'awful',
+      'cry',
+      'low',
+    ];
+    const posHit = positives.some((w) => s.includes(w));
+    const negHit = negatives.some((w) => s.includes(w));
+    if (posHit && !negHit) return 'positive';
+    if (negHit && !posHit) return 'negative';
+    return null;
+  };
+
+  const currentCategory = categorizeMoodValue(currentMood?.value);
+  const emojiCategory = categorizeEmoji(selectedEmoji);
+  const textSentiment = getTextSentiment(newEntry);
+
+  const hasStrongContrast =
+    (currentCategory === 'positive' &&
+      (emojiCategory === 'negative' || textSentiment === 'negative')) ||
+    (currentCategory === 'negative' &&
+      (emojiCategory === 'positive' || textSentiment === 'positive'));
+
+  const shouldShowContrast =
+    !!currentCategory && currentCategory !== 'neutral' && hasStrongContrast && !contrastDismissed;
+
+  const handleUpdateMoodFromJournal = () => {
+    if (!onUpdateMood) return;
+    const category = emojiCategory !== 'neutral' ? emojiCategory : textSentiment || 'neutral';
+    let value = 5;
+    let label = t('mood.okay');
+    if (category === 'positive') {
+      value = 8;
+      label = t('mood.good');
+    } else if (category === 'negative') {
+      value = 2;
+      label = t('mood.low');
+    }
+    onUpdateMood({ value, label, emoji: selectedEmoji });
+    setContrastDismissed(true);
   };
 
   return (
@@ -92,6 +213,35 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline }) => {
             rows={6}
             maxLength={1000}
           />
+
+          {/* Mood/Journal contrast notice (non-blocking) */}
+          {shouldShowContrast && (
+            <div className="contrast-notice" role="status">
+              <div className="contrast-text">
+                {textSentiment === 'positive' || emojiCategory === 'positive'
+                  ? t('journal.contrast.noticePositive', { mood: currentMood?.label || '' }) ||
+                    `Your entry feels positive, but mood is set to ${currentMood?.label || ''}.`
+                  : t('journal.contrast.noticeNegative', { mood: currentMood?.label || '' }) ||
+                    `Your entry feels negative, but mood is set to ${currentMood?.label || ''}.`}
+              </div>
+              <div className="contrast-actions">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setContrastDismissed(true)}
+                >
+                  {t('journal.contrast.keep') || 'Keep mood'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleUpdateMoodFromJournal}
+                >
+                  {t('journal.contrast.update') || 'Update mood'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="form-actions">
             <div className="char-count">{newEntry.length} / 1000</div>

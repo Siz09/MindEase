@@ -86,7 +86,9 @@ export function AdminAuthProvider({ children }) {
       const token = data.token;
       const user = data.user;
 
-      if (!(user?.role === 'ADMIN' || user?.role === 'ROLE_ADMIN')) {
+      if (
+        !(user?.role === 'ADMIN' || user?.authority === 'ROLE_ADMIN' || user?.role === 'ROLE_ADMIN')
+      ) {
         try {
           await auth.signOut();
         } catch (_e) {

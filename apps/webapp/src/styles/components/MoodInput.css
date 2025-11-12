@@ -38,6 +38,12 @@
   transform: translateY(-2px);
 }
 
+.mood-option-quick.selected {
+  border-color: var(--mood-color);
+  background-color: rgba(var(--mood-color-rgb), 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--mood-color-rgb), 0.15);
+}
+
 .mood-option-quick:focus-visible {
   outline: 2px solid var(--mood-color);
   outline-offset: 2px;
