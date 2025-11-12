@@ -8,20 +8,7 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
   const { t } = useTranslation();
   const [newEntry, setNewEntry] = useState('');
 
-  const [contrastDismissed, setContrastDismissed] = useState(false);
-
   const textareaRef = useRef(null);
-
-  // Map mood value to a representative emoji (for updating shared mood)
-  const valueToEmoji = (value) => {
-    if (value == null) return '📝';
-    if (value <= 2) return '😢';
-    if (value <= 4) return '😕';
-    if (value === 5) return '😐';
-    if (value <= 7) return '😊';
-    if (value <= 9) return '😄';
-    return '🤩';
-  };
 
   // No local mood selection UI in journal form
 
@@ -39,7 +26,6 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
 
     onSubmit(newEntry);
     setNewEntry('');
-    setContrastDismissed(false);
   };
 
   // No emoji state to initialize
@@ -119,23 +105,7 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
     (currentCategory === 'negative' && textSentiment === 'positive');
 
   const shouldShowContrast =
-    !!currentCategory && currentCategory !== 'neutral' && hasStrongContrast && !contrastDismissed;
-
-  const handleUpdateMoodFromJournal = () => {
-    if (!onUpdateMood) return;
-    // Update current mood automatically from text sentiment (fallback neutral)
-    let value = 5;
-    let label = t('mood.neutral');
-    if (textSentiment === 'positive') {
-      value = 8;
-      label = t('mood.good');
-    } else if (textSentiment === 'negative') {
-      value = 2;
-      label = t('mood.low');
-    }
-    onUpdateMood({ value, label, emoji: valueToEmoji(value) });
-    setContrastDismissed(true);
-  };
+    !!currentCategory && currentCategory !== 'neutral' && hasStrongContrast;
 
   return (
     <div className="journal-form-component">
@@ -167,7 +137,7 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
 
           {/* Mood scale removed from journal form */}
 
-          {/* Mood/Journal contrast notice (non-blocking) */}
+          {/* Mood/Journal contrast notice (informational) */}
           {shouldShowContrast && (
             <div className="contrast-notice" role="status">
               <div className="contrast-text">
@@ -176,22 +146,6 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
                     `Your entry feels positive, but mood is set to ${currentMood?.label || ''}.`
                   : t('journal.contrast.noticeNegative', { mood: currentMood?.label || '' }) ||
                     `Your entry feels negative, but mood is set to ${currentMood?.label || ''}.`}
-              </div>
-              <div className="contrast-actions">
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => setContrastDismissed(true)}
-                >
-                  {t('journal.contrast.keep') || 'Keep mood'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleUpdateMoodFromJournal}
-                >
-                  {t('journal.contrast.update') || 'Update mood'}
-                </button>
               </div>
             </div>
           )}
