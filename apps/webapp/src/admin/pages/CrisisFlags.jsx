@@ -64,9 +64,7 @@ export default function CrisisFlags() {
     }
 
     const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
-    const sseUrl = adminToken
-      ? `${base}/api/admin/crisis-flags/stream?access_token=${encodeURIComponent(adminToken)}`
-      : `${base}/api/admin/crisis-flags/stream`;
+    const sseUrl = `${base}/api/admin/crisis-flags/stream`;
     let startedPolling = false;
 
     function startPolling() {
@@ -126,6 +124,20 @@ export default function CrisisFlags() {
       }
     };
   }, [size, page, from, to, load, adminToken]);
+
+  // Maintain a cookie with the admin JWT for SSE authentication (server only accepts this on dev)
+  useEffect(() => {
+    const name = 'ADMIN_JWT';
+    if (adminToken) {
+      document.cookie = `${name}=${encodeURIComponent(adminToken)}; Path=/api/admin/crisis-flags; SameSite=Lax`;
+    } else {
+      document.cookie = `${name}=; Path=/api/admin/crisis-flags; Max-Age=0; SameSite=Lax`;
+    }
+    return () => {
+      // Clean up on unmount
+      document.cookie = `${name}=; Path=/api/admin/crisis-flags; Max-Age=0; SameSite=Lax`;
+    };
+  }, [adminToken]);
 
   function exportCSV() {
     toCSV(rows, 'crisis-flags.csv', [

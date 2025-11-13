@@ -123,10 +123,28 @@ public class AnalyticsRepository {
                             ((Number) r[2]).longValue()))
                     .toList();
         } catch (jakarta.persistence.PersistenceException ex) {
-            // Fallback for environments without Postgres generate_series (e.g., H2)
-            log.warn("Primary moodCorrelation query failed, using fallback: {}", ex.getMessage());
-            return moodCorrelationFallback(from, to);
+            // Only fallback for dialect/SQL issues related to generate_series (e.g., H2/other DBs)
+            if (isGenerateSeriesUnsupported(ex)) {
+                log.warn("Database does not support generate_series; using Java fallback for moodCorrelation");
+                return moodCorrelationFallback(from, to);
+            }
+            // Re-throw for other persistence errors (connection, timeouts, etc.)
+            throw ex;
         }
+    }
+
+    private static boolean isGenerateSeriesUnsupported(Throwable ex) {
+        while (ex != null) {
+            String msg = ex.getMessage();
+            if (msg != null) {
+                String m = msg.toLowerCase();
+                if (m.contains("generate_series") || m.contains("function generate_series") || m.contains("unknown function: generate_series")) {
+                    return true;
+                }
+            }
+            ex = ex.getCause();
+        }
+        return false;
     }
 
     /**
@@ -179,8 +197,9 @@ public class AnalyticsRepository {
             chatCountByDay.put(day, count);
         }
 
-        LocalDate start = from.atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
-        LocalDate end = to.atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
+        // Align date extraction with DB DATE() behavior by using the offsets in the provided timestamps
+        LocalDate start = from.toLocalDate();
+        LocalDate end = to.toLocalDate();
 
         java.util.ArrayList<MoodCorrelationPoint> result = new java.util.ArrayList<>();
         LocalDate d = start;

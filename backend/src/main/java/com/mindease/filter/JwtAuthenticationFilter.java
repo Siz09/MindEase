@@ -4,6 +4,7 @@ package com.mindease.filter;
 import com.mindease.service.CustomUserDetailsService;
 import com.mindease.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +16,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import java.io.IOException;
 
 @Component
@@ -25,6 +27,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Autowired
   private CustomUserDetailsService userDetailsService;
+
+  @Value("${spring.profiles.active:}")
+  private String activeProfile;
+
+  private boolean isDevProfile() {
+    return activeProfile != null && ("dev".equalsIgnoreCase(activeProfile) || activeProfile.toLowerCase().contains("development"));
+  }
 
   @Override
   protected void doFilterInternal(
@@ -47,22 +56,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       }
     }
 
-    // 2) Restricted fallback for SSE where custom headers are not available:
-    //    accept token via query parameter ONLY for the crisis-flags stream endpoint.
+    // 2) Restricted DEV-ONLY fallback for SSE where custom headers aren't available.
+    //    Accept JWT from a cookie (preferred) or query param ONLY for the exact crisis-flags stream endpoint.
     if (username == null) {
       String uri = request.getRequestURI();
-      if (uri != null && uri.startsWith("/api/admin/crisis-flags/stream")) {
-        String qpToken = request.getParameter("access_token");
-        if (qpToken == null || qpToken.isBlank()) {
-          qpToken = request.getParameter("token");
-        }
-        if (qpToken != null && !qpToken.isBlank()) {
-          jwt = qpToken.trim();
-          try {
-            username = jwtUtil.extractUsername(jwt);
-            logger.warn("Using JWT from query param for SSE authentication on {} (dev-only).", uri);
-          } catch (Exception e) {
-            logger.warn("JWT (query param) validation failed: " + e.getMessage());
+      if (uri != null && (uri.equals("/api/admin/crisis-flags/stream"))) {
+        if (isDevProfile()) {
+          // Try cookie first (less exposure than query params)
+          String cookieToken = null;
+          Cookie[] cookies = request.getCookies();
+          if (cookies != null) {
+            for (Cookie c : cookies) {
+              if (c != null && "ADMIN_JWT".equals(c.getName()) && c.getValue() != null && !c.getValue().isBlank()) {
+                cookieToken = c.getValue();
+                break;
+              }
+            }
+          }
+          if (cookieToken != null) {
+            jwt = cookieToken;
+            try {
+              username = jwtUtil.extractUsername(jwt);
+              logger.warn("Using JWT from cookie for SSE authentication on {} (dev).", uri);
+            } catch (Exception e) {
+              logger.warn("JWT (cookie) validation failed: " + e.getMessage());
+            }
+          }
+
+          // Fallback to query param for dev if cookie isn't present
+          if (username == null) {
+            String qpToken = request.getParameter("access_token");
+            if (qpToken == null || qpToken.isBlank()) {
+              qpToken = request.getParameter("token");
+            }
+            if (qpToken != null && !qpToken.isBlank()) {
+              jwt = qpToken.trim();
+              try {
+                username = jwtUtil.extractUsername(jwt);
+                logger.warn("Using JWT from query param for SSE authentication on {} (dev).", uri);
+              } catch (Exception e) {
+                logger.warn("JWT (query param) validation failed: " + e.getMessage());
+              }
+            }
           }
         }
       }
