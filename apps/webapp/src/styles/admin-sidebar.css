@@ -1,0 +1,73 @@
+/* Admin Sidebar Styles */
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-2xl);
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  color: var(--color-white);
+}
+
+.sidebar-brand-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-dark));
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.sidebar-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.sidebar-section-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-md);
+  padding-left: var(--spacing-md);
+}
+
+.sidebar-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(0, 212, 255, 0.1);
+  color: var(--color-accent);
+}
+
+.sidebar-link.active {
+  background-color: rgba(0, 212, 255, 0.1);
+  color: var(--color-accent);
+  border-left: 3px solid var(--color-accent);
+  padding-left: calc(var(--spacing-lg) - 3px);
+}
+
+.sidebar-link svg {
+  width: 20px;
+  height: 20px;
+}

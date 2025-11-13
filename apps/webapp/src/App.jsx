@@ -1,6 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-// user layout now lives under a separate shell
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CheckIn from './pages/CheckIn';
@@ -10,14 +9,18 @@ import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserLayout from './components/UserLayout';
 
-// Admin-only subtree (separate shell)
 import AdminRoute from './admin/AdminRoute';
 import AdminLayout from './admin/AdminLayout';
 import { AdminAuthProvider } from './admin/AdminAuthContext';
-import Overview from './admin/pages/Overview';
 import AuditLogs from './admin/pages/AuditLogs';
 import CrisisFlags from './admin/pages/CrisisFlags';
+import CrisisMonitoring from './admin/pages/CrisisMonitoring';
 import AdminSettings from './admin/pages/Settings';
+import Dashboard from './admin/pages/Dashboard';
+import UserManagement from './admin/pages/UserManagement';
+import ContentLibrary from './admin/pages/ContentLibrary';
+import Analytics from './admin/pages/Analytics';
+import SystemMonitoring from './admin/pages/SystemMonitoring';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/App.css';
@@ -35,11 +38,9 @@ function App() {
       <AdminAuthProvider>
         <AuthProvider>
           <Routes>
-            {/* Public auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Admin app */}
             <Route
               path="/admin/*"
               element={
@@ -48,13 +49,17 @@ function App() {
                 </AdminRoute>
               }
             >
-              <Route index element={<Overview />} />
+              <Route index element={<Dashboard />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="crisis-monitoring" element={<CrisisMonitoring />} />
+              <Route path="content" element={<ContentLibrary />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="system" element={<SystemMonitoring />} />
               <Route path="audit-logs" element={<AuditLogs />} />
               <Route path="crisis-flags" element={<CrisisFlags />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
 
-            {/* User app */}
             <Route element={<UserLayout />}>
               <Route
                 path="/"
@@ -80,7 +85,6 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              {/* Existing code */}
               <Route
                 path="/settings"
                 element={
@@ -142,7 +146,6 @@ function App() {
             </Route>
           </Routes>
 
-          {/* Toasts */}
           <ToastContainer
             position="top-right"
             autoClose={3000}

@@ -77,7 +77,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwt = cookieToken;
             try {
               username = jwtUtil.extractUsername(jwt);
-              logger.warn("Using JWT from cookie for SSE authentication on {} (dev).", uri);
+              logger.warn("Using JWT from cookie for SSE authentication on " + uri + " (dev).");
             } catch (Exception e) {
               logger.warn("JWT (cookie) validation failed: " + e.getMessage());
             }
@@ -93,7 +93,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
               jwt = qpToken.trim();
               try {
                 username = jwtUtil.extractUsername(jwt);
-                logger.warn("Using JWT from query param for SSE authentication on {} (dev).", uri);
+                logger.warn("Using JWT from query param for SSE authentication on " + uri + " (dev).");
               } catch (Exception e) {
                 logger.warn("JWT (query param) validation failed: " + e.getMessage());
               }

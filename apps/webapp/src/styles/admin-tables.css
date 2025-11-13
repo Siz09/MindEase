@@ -1,0 +1,126 @@
+/* Table Styles */
+.table-container {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-primary);
+}
+
+.data-table,
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.data-table thead,
+.table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Rounded header corners */
+.data-table thead th:first-child,
+.table thead th:first-child {
+  border-top-left-radius: var(--radius-lg);
+}
+
+.data-table thead th:last-child,
+.table thead th:last-child {
+  border-top-right-radius: var(--radius-lg);
+}
+
+.data-table th,
+.table th {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.data-table tbody tr,
+.table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color var(--transition);
+}
+
+.data-table tbody tr:hover,
+.table tbody tr:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.data-table td,
+.table td {
+  padding: var(--spacing-md) var(--spacing-lg);
+  color: var(--color-text-primary);
+}
+
+.data-table tbody tr:last-child td,
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table .text-secondary,
+.table .text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.data-table .text-tertiary,
+.table .text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  font-size: 13px;
+}
+
+.pagination-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* If you use these directly instead of .btn */
+.pagination-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-btn.active {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}

@@ -104,127 +104,302 @@ export default function AuditLogs() {
 
   return (
     <div>
-      <div className="filters">
-        <label>
-          Email{' '}
-          <input
-            placeholder="Email"
-            value={f.email}
-            onChange={(e) => setF({ ...f, email: e.target.value })}
-          />
-        </label>
-        <label>
-          Action
-          <select value={f.action} onChange={(e) => setF({ ...f, action: e.target.value })}>
-            <option value="">All</option>
-            <option value="LOGIN">LOGIN</option>
-            <option value="CHAT_SENT">CHAT_SENT</option>
-            <option value="MOOD_ADDED">MOOD_ADDED</option>
-            <option value="JOURNAL_ADDED">JOURNAL_ADDED</option>
-          </select>
-        </label>
-        <label>
-          From{' '}
-          <input
-            type="date"
-            value={f.from}
-            onChange={(e) => setF({ ...f, from: e.target.value })}
-          />
-        </label>
-        <label>
-          To <input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
-        </label>
-        <button
-          className="admin-btn"
-          onClick={() => setF({ email: '', action: '', from: '', to: '' })}
+      <div className="page-header">
+        <h1 className="page-title">Audit Logs</h1>
+        <p className="page-subtitle">Track all user actions and system events</p>
+      </div>
+
+      <div
+        className="bento-card"
+        style={{ marginBottom: 'var(--spacing-lg)', padding: 'var(--spacing-lg)' }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 'var(--spacing-md)',
+            alignItems: 'flex-end',
+          }}
         >
-          Clear
-        </button>
-        <button className="admin-btn" onClick={exportCSV}>
-          Export CSV
-        </button>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <label
+              style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
+            >
+              Email
+            </label>
+            <input
+              placeholder="Filter by email"
+              value={f.email}
+              onChange={(e) => setF({ ...f, email: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid var(--gray-light)',
+                borderRadius: 'var(--radius-md)',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+              }}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '150px' }}>
+            <label
+              style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
+            >
+              Action
+            </label>
+            <select
+              value={f.action}
+              onChange={(e) => setF({ ...f, action: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid var(--gray-light)',
+                borderRadius: 'var(--radius-md)',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+              }}
+            >
+              <option value="">All</option>
+              <option value="LOGIN">LOGIN</option>
+              <option value="CHAT_SENT">CHAT_SENT</option>
+              <option value="MOOD_ADDED">MOOD_ADDED</option>
+              <option value="JOURNAL_ADDED">JOURNAL_ADDED</option>
+            </select>
+          </div>
+          <div style={{ flex: 1, minWidth: '150px' }}>
+            <label
+              style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
+            >
+              From
+            </label>
+            <input
+              type="date"
+              value={f.from}
+              onChange={(e) => setF({ ...f, from: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid var(--gray-light)',
+                borderRadius: 'var(--radius-md)',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+              }}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '150px' }}>
+            <label
+              style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
+            >
+              To
+            </label>
+            <input
+              type="date"
+              value={f.to}
+              onChange={(e) => setF({ ...f, to: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid var(--gray-light)',
+                borderRadius: 'var(--radius-md)',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+            <button
+              style={{
+                padding: '8px 16px',
+                background: 'none',
+                border: '1px solid var(--gray-light)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                fontWeight: '500',
+                color: 'var(--gray)',
+                transition: 'var(--transition-fast)',
+              }}
+              onClick={() => setF({ email: '', action: '', from: '', to: '' })}
+            >
+              Clear
+            </button>
+            <button
+              style={{
+                padding: '8px 16px',
+                background: 'var(--primary)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                fontWeight: '500',
+                transition: 'var(--transition-fast)',
+              }}
+              onClick={exportCSV}
+            >
+              Export CSV
+            </button>
+          </div>
+        </div>
       </div>
 
       {notice && !loading && !error && (
-        <div className="hint" style={{ marginBottom: '8px' }}>
+        <div
+          style={{
+            marginBottom: 'var(--spacing-lg)',
+            padding: 'var(--spacing-md)',
+            backgroundColor: '#fef3c7',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--dark)',
+            fontSize: '14px',
+          }}
+        >
           {notice}
         </div>
       )}
 
-      <div className="table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Action</th>
-              <th>Details</th>
-              <th>When</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td>{r.userId}</td>
-                <td>{r.actionType}</td>
-                <td title={r.details}>{r.details}</td>
-                <td>{new Date(r.createdAt).toLocaleString()}</td>
-              </tr>
-            ))}
-            {!loading && rows.length === 0 && (
+      <div className="bento-card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+        <div className="table-wrap">
+          <table className="table" style={{ width: '100%' }}>
+            <thead>
               <tr>
-                <td colSpan="4">No results</td>
+                <th>User</th>
+                <th>Action</th>
+                <th>Details</th>
+                <th>When</th>
               </tr>
-            )}
-            {loading && (
-              <tr>
-                <td colSpan="4">Loading...</td>
-              </tr>
-            )}
-            {!!error && !loading && (
-              <tr>
-                <td colSpan="4">{error}</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.userId}</td>
+                  <td>{r.actionType}</td>
+                  <td title={r.details}>{r.details}</td>
+                  <td>{new Date(r.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+              {!loading && rows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan="4"
+                    style={{
+                      textAlign: 'center',
+                      color: 'var(--gray)',
+                      padding: 'var(--spacing-lg)',
+                    }}
+                  >
+                    No results
+                  </td>
+                </tr>
+              )}
+              {loading && (
+                <tr>
+                  <td
+                    colSpan="4"
+                    style={{
+                      textAlign: 'center',
+                      color: 'var(--gray)',
+                      padding: 'var(--spacing-lg)',
+                    }}
+                  >
+                    Loading...
+                  </td>
+                </tr>
+              )}
+              {error && !loading && (
+                <tr>
+                  <td
+                    colSpan="4"
+                    style={{
+                      textAlign: 'center',
+                      color: 'var(--danger)',
+                      padding: 'var(--spacing-lg)',
+                    }}
+                  >
+                    {error}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div className="filters" style={{ justifyContent: 'space-between' }}>
-        <div>
-          <button
-            className="admin-btn"
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            Prev
-          </button>
-          <span style={{ margin: '0 8px' }}>
-            Page {page + 1} / {Math.max(1, totalPages)}
-          </span>
-          <button
-            className="admin-btn"
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </button>
-        </div>
-        <div>
-          <label>
-            Page size
-            <select
-              value={size}
-              onChange={(e) => {
-                setPage(0);
-                setSize(Number(e.target.value));
+      <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 'var(--spacing-lg)',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
+            <button
+              style={{
+                padding: '8px 16px',
+                background: 'none',
+                border: '1px solid var(--gray-light)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                fontWeight: '500',
+                color: 'var(--gray)',
+                transition: 'var(--transition-fast)',
+              }}
+              disabled={page === 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              Prev
+            </button>
+            <span style={{ fontSize: '14px', color: 'var(--dark)', fontWeight: '500' }}>
+              Page {page + 1} / {Math.max(1, totalPages)}
+            </span>
+            <button
+              style={{
+                padding: '8px 16px',
+                background: 'none',
+                border: '1px solid var(--gray-light)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                fontWeight: '500',
+                color: 'var(--gray)',
+                transition: 'var(--transition-fast)',
+              }}
+              disabled={page + 1 >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </button>
+          </div>
+          <div>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--spacing-sm)',
+                fontWeight: '500',
               }}
             >
-              <option>10</option>
-              <option>25</option>
-              <option>50</option>
-              <option>100</option>
-            </select>
-          </label>
+              Page size
+              <select
+                value={size}
+                onChange={(e) => {
+                  setPage(0);
+                  setSize(Number(e.target.value));
+                }}
+                style={{
+                  padding: '6px 10px',
+                  border: '1px solid var(--gray-light)',
+                  borderRadius: 'var(--radius-md)',
+                  fontFamily: 'inherit',
+                  fontSize: '14px',
+                }}
+              >
+                <option>10</option>
+                <option>25</option>
+                <option>50</option>
+                <option>100</option>
+              </select>
+            </label>
+          </div>
         </div>
       </div>
     </div>
