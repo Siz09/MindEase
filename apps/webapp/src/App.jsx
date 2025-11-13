@@ -31,9 +31,9 @@ import Profile from './pages/Profile';
 
 function App() {
   return (
-    <AdminAuthProvider>
-      <AuthProvider>
-        <Router>
+    <Router>
+      <AdminAuthProvider>
+        <AuthProvider>
           <Routes>
             {/* Public auth routes */}
             <Route path="/login" element={<Login />} />
@@ -154,9 +154,9 @@ function App() {
             draggable
             pauseOnHover
           />
-        </Router>
-      </AuthProvider>
-    </AdminAuthProvider>
+        </AuthProvider>
+      </AdminAuthProvider>
+    </Router>
   );
 }
 
