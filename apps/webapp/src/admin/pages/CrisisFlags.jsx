@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../adminApi';
+import { useAdminAuth } from '../AdminAuthContext';
 import { toCSV } from '../../utils/export';
 
 const pct = (n) => `${Math.round((n || 0) * 100)}%`;
 
 export default function CrisisFlags() {
+  const { adminToken } = useAdminAuth();
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(25);
@@ -62,7 +64,9 @@ export default function CrisisFlags() {
     }
 
     const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
-    const sseUrl = `${base}/api/admin/crisis-flags/stream`;
+    const sseUrl = adminToken
+      ? `${base}/api/admin/crisis-flags/stream?access_token=${encodeURIComponent(adminToken)}`
+      : `${base}/api/admin/crisis-flags/stream`;
     let startedPolling = false;
 
     function startPolling() {
@@ -85,7 +89,7 @@ export default function CrisisFlags() {
         opened = true;
         clearTimeout(fallbackTimer);
       };
-      es.onmessage = (ev) => {
+      const onFlag = (ev) => {
         try {
           const flag = JSON.parse(ev.data);
           if (page === 0 && !from && !to) {
@@ -103,6 +107,9 @@ export default function CrisisFlags() {
           return;
         }
       };
+      // Support both default and named events ('flag') from server
+      es.onmessage = onFlag;
+      es.addEventListener('flag', onFlag);
       es.onerror = () => {
         // network/server issue: fallback to polling
         es.close();
@@ -118,7 +125,7 @@ export default function CrisisFlags() {
         esRef.current.close();
       }
     };
-  }, [size, page, from, to, load]);
+  }, [size, page, from, to, load, adminToken]);
 
   function exportCSV() {
     toCSV(rows, 'crisis-flags.csv', [

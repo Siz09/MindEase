@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 @Transactional(readOnly = true)
@@ -105,17 +107,86 @@ public class AnalyticsRepository {
             LEFT JOIN chats c ON c.day = d.day
             ORDER BY d.day
         """;
+        try {
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = em.createNativeQuery(sql)
+                    .setParameter("from", from)
+                    .setParameter("to", to)
+                    .getResultList();
+            return rows.stream()
+                    .map(r -> new MoodCorrelationPoint(
+                            toLocalDate(r[0]),
+                            r[1] == null ? null : ((Number) r[1]).doubleValue(),
+                            ((Number) r[2]).longValue()))
+                    .toList();
+        } catch (Exception ex) {
+            // Fallback for environments without Postgres generate_series (e.g., H2)
+            return moodCorrelationFallback(from, to);
+        }
+    }
+
+    /**
+     * Fallback implementation that avoids generate_series for non-Postgres databases.
+     * Queries aggregated moods and chats, then stitches missing days in Java.
+     */
+    private List<MoodCorrelationPoint> moodCorrelationFallback(OffsetDateTime from, OffsetDateTime to) {
+        // Aggregate moods per day
+        var moodsSql = """
+            SELECT DATE(m.created_at) AS day, AVG(m.mood_value)
+            FROM mood_entries m
+            WHERE m.created_at BETWEEN :from AND :to
+            GROUP BY DATE(m.created_at)
+            ORDER BY DATE(m.created_at)
+        """;
+
+        // Aggregate chat counts per day
+        var chatsSql = """
+            SELECT DATE(a.created_at) AS day, COUNT(*)
+            FROM audit_logs a
+            WHERE a.created_at BETWEEN :from AND :to
+              AND a.action_type = 'CHAT_SENT'
+            GROUP BY DATE(a.created_at)
+            ORDER BY DATE(a.created_at)
+        """;
+
         @SuppressWarnings("unchecked")
-        List<Object[]> rows = em.createNativeQuery(sql)
+        List<Object[]> moodRows = em.createNativeQuery(moodsSql)
                 .setParameter("from", from)
                 .setParameter("to", to)
                 .getResultList();
-        return rows.stream()
-                .map(r -> new MoodCorrelationPoint(
-                        toLocalDate(r[0]),
-                        r[1] == null ? null : ((Number) r[1]).doubleValue(),
-                        ((Number) r[2]).longValue()))
-                .toList();
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> chatRows = em.createNativeQuery(chatsSql)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .getResultList();
+
+        Map<LocalDate, Double> avgMoodByDay = new HashMap<>();
+        for (Object[] r : moodRows) {
+            LocalDate day = toLocalDate(r[0]);
+            Double avg = r[1] == null ? null : ((Number) r[1]).doubleValue();
+            avgMoodByDay.put(day, avg);
+        }
+
+        Map<LocalDate, Long> chatCountByDay = new HashMap<>();
+        for (Object[] r : chatRows) {
+            LocalDate day = toLocalDate(r[0]);
+            Long count = r[1] == null ? 0L : ((Number) r[1]).longValue();
+            chatCountByDay.put(day, count);
+        }
+
+        LocalDate start = from.atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
+        LocalDate end = to.atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
+
+        java.util.ArrayList<MoodCorrelationPoint> result = new java.util.ArrayList<>();
+        LocalDate d = start;
+        while (!d.isAfter(end)) {
+            Double avgMood = avgMoodByDay.getOrDefault(d, null);
+            long chatCount = chatCountByDay.getOrDefault(d, 0L);
+            result.add(new MoodCorrelationPoint(d, avgMood, chatCount));
+            d = d.plusDays(1);
+        }
+        return result;
     }
 
     private static LocalDate toLocalDate(Object value) {

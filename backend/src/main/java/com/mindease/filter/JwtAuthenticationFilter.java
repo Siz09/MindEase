@@ -37,12 +37,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     String username = null;
     String jwt = null;
 
+    // 1) Standard Authorization: Bearer <token>
     if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
       jwt = authorizationHeader.substring(7);
       try {
         username = jwtUtil.extractUsername(jwt);
       } catch (Exception e) {
         logger.warn("JWT token validation failed: " + e.getMessage());
+      }
+    }
+
+    // 2) Fallback for SSE/WebSocket where custom headers are not available:
+    //    accept token via query parameter `access_token` (or `token`).
+    if (username == null) {
+      String qpToken = request.getParameter("access_token");
+      if (qpToken == null || qpToken.isBlank()) {
+        qpToken = request.getParameter("token");
+      }
+      if (qpToken != null && !qpToken.isBlank()) {
+        jwt = qpToken.trim();
+        try {
+          username = jwtUtil.extractUsername(jwt);
+        } catch (Exception e) {
+          logger.warn("JWT (query param) validation failed: " + e.getMessage());
+        }
       }
     }
 
