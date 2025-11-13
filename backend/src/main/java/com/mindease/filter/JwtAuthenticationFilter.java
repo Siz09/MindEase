@@ -47,19 +47,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       }
     }
 
-    // 2) Fallback for SSE/WebSocket where custom headers are not available:
-    //    accept token via query parameter `access_token` (or `token`).
+    // 2) Restricted fallback for SSE where custom headers are not available:
+    //    accept token via query parameter ONLY for the crisis-flags stream endpoint.
     if (username == null) {
-      String qpToken = request.getParameter("access_token");
-      if (qpToken == null || qpToken.isBlank()) {
-        qpToken = request.getParameter("token");
-      }
-      if (qpToken != null && !qpToken.isBlank()) {
-        jwt = qpToken.trim();
-        try {
-          username = jwtUtil.extractUsername(jwt);
-        } catch (Exception e) {
-          logger.warn("JWT (query param) validation failed: " + e.getMessage());
+      String uri = request.getRequestURI();
+      if (uri != null && uri.startsWith("/api/admin/crisis-flags/stream")) {
+        String qpToken = request.getParameter("access_token");
+        if (qpToken == null || qpToken.isBlank()) {
+          qpToken = request.getParameter("token");
+        }
+        if (qpToken != null && !qpToken.isBlank()) {
+          jwt = qpToken.trim();
+          try {
+            username = jwtUtil.extractUsername(jwt);
+            logger.warn("Using JWT from query param for SSE authentication on {} (dev-only).", uri);
+          } catch (Exception e) {
+            logger.warn("JWT (query param) validation failed: " + e.getMessage());
+          }
         }
       }
     }

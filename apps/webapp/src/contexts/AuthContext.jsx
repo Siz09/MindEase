@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { auth } from '../firebase';
 import {
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const location = useLocation();
 
   // Configure axios defaults
   useEffect(() => {
@@ -39,6 +41,11 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is authenticated on app load
   useEffect(() => {
+    // Skip user auth checks on admin pages to avoid noise and unnecessary calls
+    if (location.pathname.startsWith('/admin')) {
+      setLoading(false);
+      return;
+    }
     const checkAuth = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
@@ -51,14 +58,16 @@ export const AuthProvider = ({ children }) => {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
           setToken(null);
-          toast.error('Session expired. Please log in again.');
+          // Suppress toast on login route to reduce flicker
+          if (!location.pathname.startsWith('/login')) {
+            toast.error('Session expired. Please log in again.');
+          }
         }
       }
       setLoading(false);
     };
-
     checkAuth();
-  }, []);
+  }, [location.pathname]);
 
   // Helper to DRY success-path state updates and toasts
   const handleAuthSuccess = (jwtToken, userData, toastId, messageText) => {
@@ -123,7 +132,10 @@ export const AuthProvider = ({ children }) => {
           errorMessage = error.message || 'An unexpected error occurred';
         }
 
-        toast.error(errorMessage);
+        // Suppress global toasts on admin pages where this provider shouldn't affect UX
+        if (!location.pathname.startsWith('/admin')) {
+          toast.error(errorMessage);
+        }
         return Promise.reject(error);
       }
     );
@@ -131,7 +143,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       axios.interceptors.response.eject(responseInterceptor);
     };
-  }, []);
+  }, [location.pathname]);
   const login = async (email, password) => {
     try {
       const toastId = toast.loading('Signing in...');

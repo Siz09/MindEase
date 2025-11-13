@@ -5,6 +5,8 @@ import com.mindease.dto.AiUsagePoint;
 import com.mindease.dto.MoodCorrelationPoint;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import java.util.Map;
 @Repository
 @Transactional(readOnly = true)
 public class AnalyticsRepository {
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsRepository.class);
 
     @PersistenceContext
     private EntityManager em;
@@ -119,8 +122,9 @@ public class AnalyticsRepository {
                             r[1] == null ? null : ((Number) r[1]).doubleValue(),
                             ((Number) r[2]).longValue()))
                     .toList();
-        } catch (Exception ex) {
+        } catch (jakarta.persistence.PersistenceException ex) {
             // Fallback for environments without Postgres generate_series (e.g., H2)
+            log.warn("Primary moodCorrelation query failed, using fallback: {}", ex.getMessage());
             return moodCorrelationFallback(from, to);
         }
     }
