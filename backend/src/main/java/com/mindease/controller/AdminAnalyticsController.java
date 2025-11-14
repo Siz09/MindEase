@@ -112,9 +112,8 @@ public class AdminAnalyticsController {
         var dauSeries = analytics.dailyActiveUsers(to.minusDays(1), to);
         long dau = dauSeries.isEmpty() ? 0L : dauSeries.get(dauSeries.size() - 1).activeUsers();
 
-        // MAU: approximate by summing distinct-per-day counts over the selected window
-        var windowSeries = analytics.dailyActiveUsers(from, to);
-        long mau = windowSeries.stream().mapToLong(ActiveUsersPoint::activeUsers).sum();
+        // MAU: distinct users active at least once during the window
+        long mau = analytics.distinctActiveUsers(from, to);
 
         // Retention / churn: derived placeholders; real implementation would require cohort analysis
         double retention = 85.0;

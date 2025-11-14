@@ -67,10 +67,10 @@ public class AdminNotificationController {
         map.put("userId", n.getUser() != null ? n.getUser().getId() : null);
         map.put("title", "Notification");
         map.put("message", n.getMessage());
+        map.put("isRead", n.getIsRead());
         map.put("timestamp", n.getCreatedAt() != null
                 ? n.getCreatedAt().atOffset(ZoneOffset.UTC)
                 : OffsetDateTime.now(ZoneOffset.UTC));
         return map;
     }
 }
-

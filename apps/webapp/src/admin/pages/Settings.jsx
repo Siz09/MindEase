@@ -32,19 +32,27 @@ export default function Settings() {
         const { data } = await adminApi.get('/admin/settings');
         if (!isMountedRef.current || !data) return;
         if (typeof data.crisisThreshold === 'number') {
-          setCrisisThreshold(data.crisisThreshold);
+          const threshold = Math.max(1, Math.min(10, data.crisisThreshold));
+          setCrisisThreshold(threshold);
         }
         if (typeof data.emailNotifications === 'string') {
-          setEmailNotifications(data.emailNotifications);
+          const validOptions = ['all', 'critical', 'none'];
+          if (validOptions.includes(data.emailNotifications)) {
+            setEmailNotifications(data.emailNotifications);
+          }
         }
         if (typeof data.autoArchive === 'boolean') {
           setAutoArchive(data.autoArchive);
         }
         if (typeof data.autoArchiveDays === 'number') {
-          setAutoArchiveDays(data.autoArchiveDays);
+          const days = Math.max(1, Math.min(365, data.autoArchiveDays));
+          setAutoArchiveDays(days);
         }
         if (typeof data.dailyReportTime === 'string') {
-          setDailyReportTime(data.dailyReportTime);
+          // Validate HH:MM format
+          if (/^([0-1]\d|2[0-3]):[0-5]\d$/.test(data.dailyReportTime)) {
+            setDailyReportTime(data.dailyReportTime);
+          }
         }
       } catch (err) {
         // If the endpoint is unavailable, fall back to component defaults

@@ -147,25 +147,29 @@ export default function Dashboard() {
       );
 
       if (!charts.current.activity && isCanvasLive(canvas) && activityData.length > 0) {
-        charts.current.activity = new Chart(canvas, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [
-              {
-                label: 'Daily Active Users',
-                data: values,
-                borderColor: '#6366f1',
-                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true } },
-          },
-        });
+        try {
+          charts.current.activity = new Chart(canvas, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Daily Active Users',
+                  data: values,
+                  borderColor: '#6366f1',
+                  backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true } },
+            },
+          });
+        } catch (err) {
+          console.error('Failed to create activity chart:', err);
+        }
       } else if (
         charts.current.activity &&
         charts.current.activity.canvas &&
@@ -196,24 +200,28 @@ export default function Dashboard() {
         isCanvasLive(canvas) &&
         (values[0] || values[1] || values[2])
       ) {
-        charts.current.crisis = new Chart(canvas, {
-          type: 'bar',
-          data: {
-            labels,
-            datasets: [
-              {
-                label: 'Crisis Flags',
-                data: values,
-                backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'],
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true } },
-          },
-        });
+        try {
+          charts.current.crisis = new Chart(canvas, {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Crisis Flags',
+                  data: values,
+                  backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'],
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: { y: { beginAtZero: true } },
+            },
+          });
+        } catch (err) {
+          console.error('Failed to create crisis chart:', err);
+        }
       } else if (
         charts.current.crisis &&
         charts.current.crisis.canvas &&

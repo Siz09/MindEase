@@ -4,6 +4,8 @@ package com.mindease.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Entity
@@ -42,6 +44,18 @@ public class User {
 
   @Column(name = "quiet_hours_end")
   private LocalTime quietHoursEnd;
+
+  @Column(name = "deleted_at", columnDefinition = "timestamptz")
+  private OffsetDateTime deletedAt;
+
+  @Column(name = "banned", nullable = false)
+  private boolean banned = false;
+
+  @Column(name = "banned_at", columnDefinition = "timestamptz")
+  private OffsetDateTime bannedAt;
+
+  @Column(name = "banned_by")
+  private UUID bannedBy;
 
   // Constructors
   public User() {
@@ -137,6 +151,38 @@ public class User {
 
   public void setQuietHoursEnd(LocalTime quietHoursEnd) {
     this.quietHoursEnd = quietHoursEnd;
+  }
+
+  public OffsetDateTime getDeletedAt() {
+    return deletedAt;
+  }
+
+  public void setDeletedAt(OffsetDateTime deletedAt) {
+    this.deletedAt = deletedAt;
+  }
+
+  public boolean isBanned() {
+    return banned;
+  }
+
+  public void setBanned(boolean banned) {
+    this.banned = banned;
+  }
+
+  public OffsetDateTime getBannedAt() {
+    return bannedAt;
+  }
+
+  public void setBannedAt(OffsetDateTime bannedAt) {
+    this.bannedAt = bannedAt;
+  }
+
+  public UUID getBannedBy() {
+    return bannedBy;
+  }
+
+  public void setBannedBy(UUID bannedBy) {
+    this.bannedBy = bannedBy;
   }
 
   // Pre-update callback

@@ -57,7 +57,6 @@ public class AdminDashboardController {
     @Operation(summary = "Dashboard KPIs", description = "High-level metrics for the admin dashboard")
     public DashboardOverviewResponse overview() {
         OffsetDateTime to = nowUtc();
-        OffsetDateTime from14 = to.minusDays(14);
         OffsetDateTime from28 = to.minusDays(28);
 
         // Active users and AI usage over the last 28 days for simple trend calc
@@ -65,14 +64,14 @@ public class AdminDashboardController {
         var aiLast28 = analyticsRepository.dailyAiUsage(from28, to);
 
         // Helper to get last and previous values
-        long activeToday = activeLast28.isEmpty() ? 0L : activeLast28.get(activeLast28.size() - 1).activeUsers();
-        long activePrev = activeLast28.size() < 2 ? 0L : activeLast28.get(activeLast28.size() - 2).activeUsers();
+        long activeMostRecent = activeLast28.isEmpty() ? 0L : activeLast28.get(activeLast28.size() - 1).activeUsers();
+        long activePrevious = activeLast28.size() < 2 ? 0L : activeLast28.get(activeLast28.size() - 2).activeUsers();
 
-        long aiToday = aiLast28.isEmpty() ? 0L : aiLast28.get(aiLast28.size() - 1).calls();
-        long aiPrev = aiLast28.size() < 2 ? 0L : aiLast28.get(aiLast28.size() - 2).calls();
+        long aiMostRecent = aiLast28.isEmpty() ? 0L : aiLast28.get(aiLast28.size() - 1).calls();
+        long aiPrevious = aiLast28.size() < 2 ? 0L : aiLast28.get(aiLast28.size() - 2).calls();
 
-        Double activeTrend = percentChange(activePrev, activeToday);
-        Double aiTrend = percentChange(aiPrev, aiToday);
+        Double activeTrend = percentChange(activePrevious, activeMostRecent);
+        Double aiTrend = percentChange(aiPrevious, aiMostRecent);
 
         // Daily signups: number of users created today vs yesterday
         LocalDate today = to.toLocalDate();
@@ -95,10 +94,10 @@ public class AdminDashboardController {
         Double crisisTrend = percentChange(crisisPrev24, crisisLast24);
 
         return new DashboardOverviewResponse(
-                activeToday,
+                activeMostRecent,
                 signupsToday,
                 crisisLast24,
-                aiToday,
+                aiMostRecent,
                 activeTrend,
                 signupsTrend,
                 crisisTrend,
@@ -125,6 +124,10 @@ public class AdminDashboardController {
     ) {
         OffsetDateTime t = to != null ? to : nowUtc();
         OffsetDateTime f = from != null ? from : t.minusDays(30);
+        long daysBetween = ChronoUnit.DAYS.between(f.toLocalDate(), t.toLocalDate());
+        if (daysBetween > 365 || daysBetween < 0) {
+            throw new IllegalArgumentException("Date range must be between 0 and 365 days");
+        }
         return analyticsRepository.dailyActiveUsers(f, t);
     }
 
@@ -147,13 +150,17 @@ public class AdminDashboardController {
     public List<Map<String, Object>> crisisHeatmap() {
         OffsetDateTime to = nowUtc();
         OffsetDateTime from = to.minusDays(90);
-        var page = crisisFlagRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(
-                from, to, org.springframework.data.domain.PageRequest.of(0, 5000));
         Map<LocalDate, Long> counts = new HashMap<>();
-        for (CrisisFlag flag : page.getContent()) {
-            LocalDate day = flag.getCreatedAt().atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
-            counts.merge(day, 1L, Long::sum);
-        }
+        int pageNum = 0;
+        org.springframework.data.domain.Page<CrisisFlag> page;
+        do {
+            page = crisisFlagRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(
+                    from, to, org.springframework.data.domain.PageRequest.of(pageNum++, 1000));
+            for (CrisisFlag flag : page.getContent()) {
+                LocalDate day = flag.getCreatedAt().atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
+                counts.merge(day, 1L, Long::sum);
+            }
+        } while (page.hasNext());
         return counts.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> {
@@ -174,25 +181,13 @@ public class AdminDashboardController {
         OffsetDateTime to = nowUtc();
         OffsetDateTime from = to.minusDays(30);
         int max = Math.max(1, Math.min(limit, 20));
-        var page = crisisFlagRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(
-                from, to, org.springframework.data.domain.PageRequest.of(0, 5000));
-        Map<String, Long> counts = new HashMap<>();
-        for (CrisisFlag flag : page.getContent()) {
-            String keyword = flag.getKeywordDetected();
-            if (keyword == null || keyword.isBlank()) continue;
-            counts.merge(keyword.toLowerCase(), 1L, Long::sum);
-        }
-        return counts.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(max)
-                .map(e -> new KeywordStat(e.getKey(), e.getValue()))
-                .toList();
+        var pageRequest = org.springframework.data.domain.PageRequest.of(0, max);
+        return crisisFlagRepository.findTopKeywords(from, to, pageRequest);
     }
 
     private static RecentAlertDto toAlert(CrisisFlag flag) {
         String title = "Crisis alert";
-        String message = "Flagged user " + flag.getUserId()
-                + " (keyword: " + flag.getKeywordDetected() + ")";
+        String message = "Crisis keyword detected: " + flag.getKeywordDetected();
         return new RecentAlertDto(
                 flag.getId() != null ? flag.getId() : UUID.randomUUID(),
                 title,

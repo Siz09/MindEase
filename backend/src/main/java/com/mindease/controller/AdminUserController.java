@@ -1,13 +1,12 @@
 package com.mindease.controller;
 
 import com.mindease.dto.UserAdminSummary;
-import com.mindease.model.AdminSettings;
 import com.mindease.model.AuditLog;
 import com.mindease.model.User;
-import com.mindease.repository.AdminSettingsRepository;
 import com.mindease.repository.AuditLogRepository;
 import com.mindease.repository.CrisisFlagRepository;
 import com.mindease.repository.UserRepository;
+import com.mindease.service.AuditService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
@@ -18,11 +17,25 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,21 +45,19 @@ import java.util.stream.Collectors;
 @Tag(name = "Admin Users")
 public class AdminUserController {
 
-    private static final String USER_BANNED_PREFIX = "USER_BANNED:";
-
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
     private final CrisisFlagRepository crisisFlagRepository;
-    private final AdminSettingsRepository adminSettingsRepository;
+    private final AuditService auditService;
 
     public AdminUserController(UserRepository userRepository,
                                AuditLogRepository auditLogRepository,
                                CrisisFlagRepository crisisFlagRepository,
-                               AdminSettingsRepository adminSettingsRepository) {
+                               AuditService auditService) {
         this.userRepository = userRepository;
         this.auditLogRepository = auditLogRepository;
         this.crisisFlagRepository = crisisFlagRepository;
-        this.adminSettingsRepository = adminSettingsRepository;
+        this.auditService = auditService;
     }
 
     @GetMapping
@@ -63,17 +74,26 @@ public class AdminUserController {
 
         Page<User> usersPage;
         if (search != null && !search.isBlank()) {
-            usersPage = userRepository.findByEmailContainingIgnoreCase(search.trim(), pageable);
+            usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(search.trim(), pageable);
         } else {
-            usersPage = userRepository.findAll(pageable);
+            usersPage = userRepository.findByDeletedAtIsNull(pageable);
         }
 
-        List<UserAdminSummary> content = usersPage.getContent().stream()
-                .map(this::toSummary)
+        List<User> users = usersPage.getContent();
+        List<UUID> userIds = users.stream().map(User::getId).collect(Collectors.toList());
+
+        Map<UUID, OffsetDateTime> lastActiveMap = fetchLastActiveForUsers(userIds);
+        Map<UUID, Long> crisisCountMap = fetchCrisisCounts(userIds);
+
+        List<UserAdminSummary> content = users.stream()
+                .map(user -> toSummary(
+                        user,
+                        lastActiveMap.get(user.getId()),
+                        crisisCountMap.getOrDefault(user.getId(), 0L),
+                        true // mask email in list view
+                ))
                 .collect(Collectors.toList());
 
-        // Note: the status filter is currently applied client-side; this endpoint
-        // returns all users that match the search, regardless of status.
         return new PageImpl<>(content, pageable, usersPage.getTotalElements());
     }
 
@@ -82,17 +102,24 @@ public class AdminUserController {
     @Operation(summary = "Get user", description = "Fetch a single user with admin metadata")
     public ResponseEntity<UserAdminSummary> get(@PathVariable UUID id) {
         return userRepository.findById(id)
-                .map(this::toSummary)
+                .map(user -> toSummary(
+                        user,
+                        findLastActive(user.getId()),
+                        crisisFlagRepository.countByUserId(user.getId()),
+                        false // do not mask email for single-user view
+                ))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @Transactional
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user", description = "Currently supports updating logical status (e.g., banned)")
     public ResponseEntity<UserAdminSummary> updateStatus(
             @PathVariable UUID id,
-            @RequestBody(required = false) java.util.Map<String, Object> body
+            @RequestBody(required = false) java.util.Map<String, Object> body,
+            Authentication authentication
     ) {
         Optional<User> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
@@ -103,25 +130,43 @@ public class AdminUserController {
         if (body != null && body.containsKey("status")) {
             Object status = body.get("status");
             if (status instanceof String s) {
-                setBannedFlag(user.getId(), "banned".equalsIgnoreCase(s));
+                boolean banned = "banned".equalsIgnoreCase(s);
+                setBannedFlag(user.getId(), banned, authentication);
+                // Audit log
+                logAdminAction(authentication, banned ? "ADMIN_BAN_USER" : "ADMIN_UNBAN_USER",
+                        (banned ? "Banned user: " : "Unbanned user: ") + user.getEmail());
             }
         }
 
-        return ResponseEntity.ok(toSummary(user));
+        return ResponseEntity.ok(toSummary(
+                user,
+                findLastActive(user.getId()),
+                crisisFlagRepository.countByUserId(user.getId()),
+                false
+        ));
     }
 
+    @Transactional
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Delete user", description = "Hard-delete a user record")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        if (!userRepository.existsById(id)) {
+    @Operation(summary = "Delete user", description = "Soft-delete a user record (anonymize)")
+    public ResponseEntity<Void> delete(@PathVariable UUID id, Authentication authentication) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        // Best-effort delete; in case of FK constraints the operation may fail.
-        userRepository.deleteById(id);
+        User user = userOpt.get();
+        String anonymizedEmail = "deleted-" + user.getId() + "@anonymized.local";
+        user.setEmail(anonymizedEmail);
+        user.setDeletedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        userRepository.save(user);
+
+        logAdminAction(authentication, "ADMIN_DELETE_USER", "User anonymized: " + id);
+
         return ResponseEntity.noContent().build();
     }
 
+    @Transactional
     @PostMapping("/bulk-action")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Bulk user action", description = "Allows applying simple actions (e.g., ban) to many users")
@@ -135,21 +180,29 @@ public class AdminUserController {
                     .body(java.util.Map.of("message", "action and userIds are required"));
         }
         int affected = 0;
+        java.util.List<String> failed = new java.util.ArrayList<>();
         for (Object o : rawIds) {
             try {
                 UUID id = UUID.fromString(String.valueOf(o));
+                if (!userRepository.existsById(id)) {
+                    failed.add(id.toString());
+                    continue;
+                }
                 if ("ban".equalsIgnoreCase(action)) {
-                    setBannedFlag(id, true);
+                    setBannedFlag(id, true, null);
                     affected++;
                 } else if ("unban".equalsIgnoreCase(action)) {
-                    setBannedFlag(id, false);
+                    setBannedFlag(id, false, null);
                     affected++;
                 }
-            } catch (IllegalArgumentException ignored) {
-                // skip invalid UUIDs
+            } catch (IllegalArgumentException ex) {
+                failed.add(String.valueOf(o));
             }
         }
-        return ResponseEntity.ok(java.util.Map.of("affected", affected));
+        Map<String, Object> result = new HashMap<>();
+        result.put("affected", affected);
+        result.put("failed", failed);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/search")
@@ -163,28 +216,36 @@ public class AdminUserController {
         return list(page, size, q, "all");
     }
 
-    private void setBannedFlag(UUID userId, boolean banned) {
-        String key = USER_BANNED_PREFIX + userId;
-        Optional<AdminSettings> existing = adminSettingsRepository.findByFeatureName(key);
+    private void setBannedFlag(UUID userId, boolean banned, Authentication authentication) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+        user.setBanned(banned);
         if (banned) {
-            AdminSettings settings = existing.orElseGet(AdminSettings::new);
-            settings.setFeatureName(key);
-            settings.setEnabled(true);
-            adminSettingsRepository.save(settings);
+            user.setBannedAt(OffsetDateTime.now(ZoneOffset.UTC));
+            user.setBannedBy(resolveAdminId(authentication));
         } else {
-            existing.ifPresent(adminSettingsRepository::delete);
+            user.setBannedAt(null);
+            user.setBannedBy(null);
         }
+        userRepository.save(user);
     }
 
-    private UserAdminSummary toSummary(User user) {
-        OffsetDateTime lastActive = findLastActive(user.getId());
-        long crisisCount = crisisFlagRepository.countByUserId(user.getId());
+    private UserAdminSummary toSummary(User user,
+                                       OffsetDateTime lastActive,
+                                       long crisisCount,
+                                       boolean maskEmail) {
         String status = resolveStatus(user, lastActive);
+        String email = user.getEmail();
+        if (maskEmail && email != null) {
+            email = maskEmail(email);
+        }
         return new UserAdminSummary(
                 user.getId(),
-                user.getEmail(),
+                email,
                 status,
-                user.getCreatedAt(),
+                user.getCreatedAt() != null
+                        ? user.getCreatedAt().atOffset(ZoneOffset.UTC)
+                        : null,
                 lastActive,
                 crisisCount
         );
@@ -199,11 +260,7 @@ public class AdminUserController {
     }
 
     private String resolveStatus(User user, OffsetDateTime lastActive) {
-        String bannedKey = USER_BANNED_PREFIX + user.getId();
-        boolean banned = adminSettingsRepository.findByFeatureName(bannedKey)
-                .map(AdminSettings::isEnabled)
-                .orElse(false);
-        if (banned) {
+        if (user.isBanned()) {
             return "banned";
         }
         if (lastActive == null) {
@@ -212,5 +269,53 @@ public class AdminUserController {
         OffsetDateTime thirtyDaysAgo = OffsetDateTime.now(ZoneOffset.UTC).minusDays(30);
         return lastActive.isBefore(thirtyDaysAgo) ? "inactive" : "active";
     }
-}
 
+    private Map<UUID, OffsetDateTime> fetchLastActiveForUsers(List<UUID> userIds) {
+        if (userIds.isEmpty()) return java.util.Collections.emptyMap();
+        List<AuditLog> logs = auditLogRepository.findByUserIdInOrderByCreatedAtDesc(userIds);
+        Map<UUID, OffsetDateTime> map = new HashMap<>();
+        for (AuditLog log : logs) {
+            map.computeIfAbsent(log.getUserId(), id -> log.getCreatedAt());
+        }
+        return map;
+    }
+
+    private Map<UUID, Long> fetchCrisisCounts(List<UUID> userIds) {
+        if (userIds.isEmpty()) return java.util.Collections.emptyMap();
+        List<Object[]> rows = crisisFlagRepository.countByUserIdIn(userIds);
+        Map<UUID, Long> map = new HashMap<>();
+        for (Object[] row : rows) {
+            UUID userId = (UUID) row[0];
+            Long count = row[1] == null ? 0L : ((Number) row[1]).longValue();
+            map.put(userId, count);
+        }
+        return map;
+    }
+
+    private static String maskEmail(String email) {
+        int at = email.indexOf('@');
+        if (at <= 1) {
+            return "***";
+        }
+        String domain = email.substring(at);
+        char first = email.charAt(0);
+        return first + "***" + domain;
+    }
+
+    private UUID resolveAdminId(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return null;
+        }
+        return userRepository.findByEmailIgnoreCase(authentication.getName())
+                .map(User::getId)
+                .orElse(null);
+    }
+
+    private void logAdminAction(Authentication authentication, String actionType, String details) {
+        UUID adminId = resolveAdminId(authentication);
+        if (adminId == null) {
+            return;
+        }
+        auditService.logAction(adminId, actionType, details);
+    }
+}

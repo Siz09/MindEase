@@ -65,6 +65,28 @@ public class AdminSettingsController {
         if (payload == null) {
             return ResponseEntity.badRequest().build();
         }
+        // Validate crisis threshold (1-10)
+        if (payload.crisisThreshold() < 1 || payload.crisisThreshold() > 10) {
+            return ResponseEntity.badRequest().build();
+        }
+        // Validate email notifications mode
+        if (!"all".equals(payload.emailNotifications())
+                && !"critical".equals(payload.emailNotifications())
+                && !"none".equals(payload.emailNotifications())) {
+            return ResponseEntity.badRequest().build();
+        }
+        // Validate auto-archive days when enabled
+        if (payload.autoArchive()) {
+            Integer days = payload.autoArchiveDays();
+            if (days == null || days < 1 || days > 365) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+        // Validate daily report time (HH:mm)
+        if (payload.dailyReportTime() != null &&
+                !payload.dailyReportTime().matches("^([01]\\d|2[0-3]):[0-5]\\d$")) {
+            return ResponseEntity.badRequest().build();
+        }
         currentSettings.set(payload);
         return ResponseEntity.ok(payload);
     }
@@ -93,7 +115,7 @@ public class AdminSettingsController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Generate API key", description = "Not supported for environment-managed keys")
     public ResponseEntity<Map<String, String>> generateKey() {
-        return ResponseEntity.badRequest().body(Map.of(
+        return ResponseEntity.status(501).body(Map.of(
                 "status", "not_supported",
                 "message", "API keys are managed via environment configuration."
         ));
@@ -103,7 +125,7 @@ public class AdminSettingsController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Rotate API key", description = "Not supported for environment-managed keys")
     public ResponseEntity<Map<String, String>> rotateKey(@PathVariable String id) {
-        return ResponseEntity.badRequest().body(Map.of(
+        return ResponseEntity.status(501).body(Map.of(
                 "status", "not_supported",
                 "message", "Rotation for key '" + id + "' is managed outside the application."
         ));
@@ -114,4 +136,3 @@ public class AdminSettingsController {
         return value.substring(value.length() - 4);
     }
 }
-

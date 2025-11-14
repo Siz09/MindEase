@@ -148,6 +148,23 @@ public class AnalyticsRepository {
     }
 
     /**
+     * Count distinct users active in the given date-time range.
+     */
+    public long distinctActiveUsers(OffsetDateTime from, OffsetDateTime to) {
+        validateRange(from, to);
+        var sql = """
+            SELECT COUNT(DISTINCT a.user_id)
+            FROM audit_logs a
+            WHERE a.created_at BETWEEN :from AND :to
+        """;
+        Object result = em.createNativeQuery(sql)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .getSingleResult();
+        return ((Number) result).longValue();
+    }
+
+    /**
      * Count users created in the given date-time range.
      */
     public long countUsersCreatedBetween(OffsetDateTime from, OffsetDateTime to) {

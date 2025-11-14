@@ -5,6 +5,8 @@ import com.mindease.dto.SystemHealthResponse;
 import com.mindease.dto.SystemStatusResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,8 @@ import java.util.List;
 @Tag(name = "Admin System")
 public class AdminSystemController {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminSystemController.class);
+
     private final DataSource dataSource;
 
     public AdminSystemController(DataSource dataSource) {
@@ -37,6 +41,7 @@ public class AdminSystemController {
         try (Connection connection = dataSource.getConnection()) {
             dbStatus = connection.isValid(1) ? "healthy" : "degraded";
         } catch (Exception e) {
+            log.error("Database health check failed", e);
             dbStatus = "unhealthy";
         }
         // API is up if this endpoint is reachable; AI engine is assumed running if configured
@@ -48,9 +53,10 @@ public class AdminSystemController {
     @Operation(summary = "Server resources", description = "Approximate CPU, memory, and disk usage for the UI")
     public SystemHealthResponse health() {
         Runtime rt = Runtime.getRuntime();
-        long totalMem = rt.totalMemory();
+        long maxMem = rt.maxMemory();
         long freeMem = rt.freeMemory();
-        int memoryUsage = totalMem == 0 ? 0 : (int) (((totalMem - freeMem) * 100L) / totalMem);
+        long usedMem = rt.totalMemory() - freeMem;
+        int memoryUsage = maxMem == 0 ? 0 : (int) ((usedMem * 100L) / maxMem);
         // Simple placeholders for CPU and disk usage; real implementation would use OS metrics
         int cpu = 30;
         int disk = 40;

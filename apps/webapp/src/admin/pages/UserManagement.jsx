@@ -122,13 +122,7 @@ export default function UserManagement() {
     flags: user.crisisFlags || 0,
   }));
 
-  const filteredData = displayData.filter((row) => {
-    if (filters.status === 'all') return true;
-    const status = (row.status || 'active').toLowerCase();
-    return status === filters.status.toLowerCase();
-  });
-
-  const effectiveTotal = filters.status === 'all' ? totalUsers : filteredData.length;
+  const effectiveTotal = totalUsers;
 
   const getBadgeType = (status) => {
     const normalized = (status || 'active').toLowerCase();
@@ -181,7 +175,7 @@ export default function UserManagement() {
       <div className="bento-card" style={{ marginBottom: 'var(--spacing-lg)' }}>
         <Table
           columns={tableColumns}
-          data={filteredData}
+          data={displayData}
           loading={loading}
           onRowClick={handleUserClick}
           sortable={true}

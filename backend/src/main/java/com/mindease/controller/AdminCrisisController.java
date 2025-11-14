@@ -91,9 +91,10 @@ public class AdminCrisisController {
     @PostMapping("/{id}/resolve")
     @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> resolve(@PathVariable UUID id) {
-        if (!repo.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found");
-        }
+        CrisisFlag flag = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+        flag.setStatus("RESOLVED");
+        repo.save(flag);
         Map<String, Object> response = new HashMap<>();
         response.put("status", "ok");
         response.put("action", "resolved");
@@ -103,9 +104,10 @@ public class AdminCrisisController {
     @PostMapping("/{id}/escalate")
     @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Object> escalate(@PathVariable UUID id) {
-        if (!repo.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found");
-        }
+        CrisisFlag flag = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+        flag.setEscalated(true);
+        repo.save(flag);
         Map<String, Object> response = new HashMap<>();
         response.put("status", "ok");
         response.put("action", "escalated");
@@ -143,23 +145,7 @@ public class AdminCrisisController {
             f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
             t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
         }
-        Page<CrisisFlag> page = repo.findByCreatedAtBetweenOrderByCreatedAtDesc(f, t, PageRequest.of(0, 1000));
-        long high = 0;
-        long medium = 0;
-        long low = 0;
-        for (CrisisFlag flag : page.getContent()) {
-            Double score = flag.getRiskScore();
-            if (score == null) continue;
-            double pct = score * 100.0;
-            if (pct >= 8.0) {
-                high++;
-            } else if (pct >= 5.0) {
-                medium++;
-            } else {
-                low++;
-            }
-        }
-        return new CrisisStatsResponse(high, medium, low);
+        return repo.computeStats(f, t);
     }
 
     @GetMapping("/keywords")
@@ -172,18 +158,8 @@ public class AdminCrisisController {
         OffsetDateTime f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
         int max = Math.max(1, Math.min(limit, 50));
-        Page<CrisisFlag> page = repo.findByCreatedAtBetweenOrderByCreatedAtDesc(f, t, PageRequest.of(0, 5000));
-        Map<String, Long> counts = new HashMap<>();
-        for (CrisisFlag flag : page.getContent()) {
-            String keyword = flag.getKeywordDetected();
-            if (keyword == null || keyword.isBlank()) continue;
-            counts.merge(keyword.toLowerCase(), 1L, Long::sum);
-        }
-        return counts.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(max)
-                .map(e -> new KeywordStat(e.getKey(), e.getValue()))
-                .toList();
+        Pageable pageable = PageRequest.of(0, max);
+        return repo.findTopKeywords(f, t, pageable);
     }
 
     @GetMapping(path = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

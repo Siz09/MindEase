@@ -27,6 +27,12 @@ public class CrisisFlag {
     @Column(name = "risk_score")
     private Double riskScore;
 
+    @Column(name = "status", length = 50)
+    private String status;
+
+    @Column(name = "escalated", nullable = false)
+    private boolean escalated = false;
+
     @Column(name = "created_at", nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime createdAt;
 
@@ -46,4 +52,8 @@ public class CrisisFlag {
     public Double getRiskScore() { return riskScore; }
     public void setRiskScore(Double riskScore) { this.riskScore = riskScore; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public boolean isEscalated() { return escalated; }
+    public void setEscalated(boolean escalated) { this.escalated = escalated; }
 }
