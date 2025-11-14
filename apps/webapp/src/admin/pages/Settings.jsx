@@ -21,9 +21,10 @@ export default function Settings() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const isMountedRef = useRef(true);
+  const isMountedRef = useRef(false);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
     };

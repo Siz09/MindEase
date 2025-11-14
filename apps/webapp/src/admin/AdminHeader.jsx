@@ -38,8 +38,12 @@ export default function AdminHeader() {
             type="button"
             className="btn btn-ghost admin-signout-btn"
             onClick={async () => {
-              await logout()
-              navigate("/login")
+              try {
+                await logout()
+                navigate("/login")
+              } catch (error) {
+                console.error("Logout failed:", error)
+              }
             }}
           >
             Sign Out

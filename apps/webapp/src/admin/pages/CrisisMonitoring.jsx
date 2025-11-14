@@ -76,7 +76,9 @@ export default function CrisisMonitoring() {
           const flag = JSON.parse(ev.data);
           if (
             !flag ||
+            !flag.userId ||
             typeof flag.riskScore !== 'number' ||
+            Number.isNaN(flag.riskScore) ||
             flag.riskScore < 0 ||
             flag.riskScore > 1
           ) {

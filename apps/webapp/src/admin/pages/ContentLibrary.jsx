@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button, Badge, FilterBar, Select, Input, Modal, Card } from '../components/shared';
+import Toast from '../components/shared/Toast';
 import adminApi from '../adminApi';
 
 export default function ContentLibrary() {
@@ -16,6 +17,7 @@ export default function ContentLibrary() {
 
   const [selectedContent, setSelectedContent] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     loadContent();
@@ -38,7 +40,10 @@ export default function ContentLibrary() {
         'Failed to load content:',
         err.response?.data?.message || err.message || String(err)
       );
-      // TODO: Show user-facing error notification
+      setToast({
+        type: 'error',
+        message: 'Unable to load content. Please try again.',
+      });
       setContent([]);
     } finally {
       setLoading(false);
@@ -56,6 +61,10 @@ export default function ContentLibrary() {
         'Failed to delete content:',
         err.response?.data?.message || err.message || String(err)
       );
+      setToast({
+        type: 'error',
+        message: 'Failed to delete content. Please try again.',
+      });
     }
   };
 
@@ -342,6 +351,13 @@ export default function ContentLibrary() {
           </div>
         )}
       </Modal>
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
