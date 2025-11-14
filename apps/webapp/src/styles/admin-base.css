@@ -20,6 +20,9 @@
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
+  --color-error-bg: #fef2f2;
+  --color-info-bg: #e0f2fe;
+  --color-success-bg: #ecfdf3;
   --color-border-hover: #d1d5db;
   --color-success-light: #d1fae5;
   --color-warning-light: #fef3c7;

@@ -24,17 +24,24 @@ export default function Dashboard() {
         setError(null);
         setLoading(true);
 
-        // Fetch all dashboard data in parallel
-        const [statsRes, activityRes, alertsRes] = await Promise.all([
+        // Fetch all dashboard data in parallel, allowing partial failures
+        const [statsRes, activityRes, alertsRes] = await Promise.allSettled([
           adminApi.get('/admin/dashboard/overview'),
           adminApi.get('/admin/dashboard/activity-trend'),
           adminApi.get('/admin/dashboard/recent-alerts'),
         ]);
 
         if (mounted) {
-          const statsPayload = statsRes.data || {};
-          const activityPayload = Array.isArray(activityRes.data) ? activityRes.data : [];
-          const alertsPayload = Array.isArray(alertsRes.data) ? alertsRes.data : [];
+          const statsPayload =
+            statsRes.status === 'fulfilled' ? statsRes.value.data || {} : {};
+          const activityPayload =
+            activityRes.status === 'fulfilled' && Array.isArray(activityRes.value.data)
+              ? activityRes.value.data
+              : [];
+          const alertsPayload =
+            alertsRes.status === 'fulfilled' && Array.isArray(alertsRes.value.data)
+              ? alertsRes.value.data
+              : [];
 
           setStats(statsPayload);
           setActivityData(activityPayload);
@@ -44,7 +51,7 @@ export default function Dashboard() {
       } catch (err) {
         if (mounted) {
           setError('Failed to load dashboard data');
-          console.error('Dashboard error:', err.message);
+          console.error('Dashboard error:', err);
         }
       } finally {
         if (mounted) setLoading(false);

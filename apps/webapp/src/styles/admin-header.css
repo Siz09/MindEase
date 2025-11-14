@@ -125,3 +125,7 @@
     display: none;
   }
 }
+
+.admin-signout-btn {
+  margin-left: var(--spacing-lg);
+}

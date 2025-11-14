@@ -34,7 +34,10 @@ export default function ContentLibrary() {
 
       setContent(Array.isArray(data) ? data : data.content || []);
     } catch (err) {
-      console.error('Failed to load content:', err.message);
+      console.error(
+        'Failed to load content:',
+        err.response?.data?.message || err.message || String(err)
+      );
       // TODO: Show user-facing error notification
       setContent([]);
     } finally {
@@ -49,7 +52,10 @@ export default function ContentLibrary() {
       loadContent();
       setShowModal(false);
     } catch (err) {
-      console.error('Failed to delete content:', err.message);
+      console.error(
+        'Failed to delete content:',
+        err.response?.data?.message || err.message || String(err)
+      );
     }
   };
 

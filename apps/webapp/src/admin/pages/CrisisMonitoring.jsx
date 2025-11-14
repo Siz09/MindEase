@@ -71,18 +71,28 @@ export default function CrisisMonitoring() {
         clearTimeout(fallbackTimer);
       };
 
-    const onFlag = (ev) => {
-      try {
-        const flag = JSON.parse(ev.data);
-        const flagLevel = getRiskLevel(flag.riskScore * 100).toLowerCase();
-        const matchesFilter = filters.riskLevel === 'all' || filters.riskLevel === flagLevel;
-        if (page === 0 && matchesFilter) {
-          setFlags((prev) => [flag, ...prev].slice(0, pageSize));
+      const onFlag = (ev) => {
+        try {
+          const flag = JSON.parse(ev.data);
+          if (
+            !flag ||
+            typeof flag.riskScore !== 'number' ||
+            flag.riskScore < 0 ||
+            flag.riskScore > 1
+          ) {
+            console.warn('Invalid flag received from SSE:', flag);
+            return;
+          }
+          const flagLevel = getRiskLevel(flag.riskScore * 100).toLowerCase();
+          const matchesFilter = filters.riskLevel === 'all' || filters.riskLevel === flagLevel;
+          if (page === 0 && matchesFilter) {
+            setFlags((prev) => [flag, ...prev].slice(0, pageSize));
+          }
+        } catch (error) {
+          console.error('Failed to process SSE flag:', error);
+          return;
         }
-      } catch {
-        return;
-      }
-    };
+      };
 
       es.onmessage = onFlag;
       es.addEventListener('flag', onFlag);

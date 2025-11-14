@@ -1,9 +1,11 @@
 "use client"
 
+import { useNavigate } from "react-router-dom"
 import { useAdminAuth } from "./AdminAuthContext"
 
 export default function AdminHeader() {
   const { adminUser, logout } = useAdminAuth()
+  const navigate = useNavigate()
 
   return (
     <header className="admin-header">
@@ -28,21 +30,20 @@ export default function AdminHeader() {
 
           <div className="admin-user-menu">
             <div className="admin-user-info">
-              <div className="admin-user-info-name">{adminUser?.email || "Admin"}</div>
-              <div className="admin-user-info-role">Administrator</div>
-            </div>
-            <div className="admin-user-avatar">{(adminUser?.email || "A").charAt(0).toUpperCase()}</div>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => {
-                logout()
-                window.location.href = "/login"
-              }}
-              style={{ marginLeft: "var(--spacing-lg)" }}
-            >
-              Sign Out
-            </button>
+            <div className="admin-user-info-name">{adminUser?.email || "Admin"}</div>
+            <div className="admin-user-info-role">Administrator</div>
+          </div>
+          <div className="admin-user-avatar">{(adminUser?.email || "A").charAt(0).toUpperCase()}</div>
+          <button
+            type="button"
+            className="btn btn-ghost admin-signout-btn"
+            onClick={async () => {
+              await logout()
+              navigate("/login")
+            }}
+          >
+            Sign Out
+          </button>
           </div>
         </div>
       </div>

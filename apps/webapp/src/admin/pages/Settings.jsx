@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, Button } from '../components/shared';
 import adminApi from '../adminApi';
 
@@ -21,6 +21,14 @@ export default function Settings() {
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const handleSave = async () => {
     setIsLoading(true);
     setNotification(null);
@@ -32,12 +40,18 @@ export default function Settings() {
         autoArchiveDays: autoArchive ? autoArchiveDays : null,
         dailyReportTime,
       });
-      setNotification({ type: 'success', message: 'Settings saved successfully.' });
+      if (isMountedRef.current) {
+        setNotification({ type: 'success', message: 'Settings saved successfully.' });
+      }
     } catch (error) {
       console.error('Failed to save settings:', error?.message || error);
-      setNotification({ type: 'error', message: 'Unable to save settings.' });
+      if (isMountedRef.current) {
+        setNotification({ type: 'error', message: 'Unable to save settings.' });
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -323,10 +337,10 @@ export default function Settings() {
             borderRadius: 'var(--radius-md)',
             backgroundColor:
               notification.type === 'error'
-                ? '#fef2f2'
+                ? 'var(--color-error-bg)'
                 : notification.type === 'info'
-                  ? '#e0f2fe'
-                  : '#ecfdf3',
+                  ? 'var(--color-info-bg)'
+                  : 'var(--color-success-bg)',
             color:
               notification.type === 'error'
                 ? 'var(--color-danger)'
