@@ -944,6 +944,18 @@ body {
   margin-top: var(--spacing-sm);
 }
 
+/* Tighter layout for form elements used inside admin filter bars */
+.filter-bar .form-group {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.filter-bar .form-input,
+.filter-bar .form-select {
+  width: auto;
+}
+
 /* ==========================================
    FILTER BAR
    ========================================== */
@@ -952,7 +964,8 @@ body {
   display: flex;
   gap: var(--spacing-md);
   flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
+  justify-content: center;
   padding: var(--spacing-lg);
   background: rgba(37, 45, 61, 0.4);
   backdrop-filter: blur(10px);

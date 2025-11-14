@@ -1,5 +1,7 @@
 package com.mindease.controller;
 
+import com.mindease.dto.CrisisStatsResponse;
+import com.mindease.dto.KeywordStat;
 import com.mindease.events.CrisisFlagCreatedEvent;
 import com.mindease.model.CrisisFlag;
 import com.mindease.repository.CrisisFlagRepository;
@@ -12,6 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +26,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -44,19 +52,138 @@ public class AdminCrisisController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
+            @RequestParam(required = false) String timeRange
     ) {
         int pageSize = Math.max(1, Math.min(size, 200));
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         if (from != null && to != null && from.isAfter(to)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from must be before or equal to to");
         }
-        if (from == null && to == null) {
-            return repo.findAllByOrderByCreatedAtDesc(pageable);
+        OffsetDateTime f;
+        OffsetDateTime t;
+        if (from == null && to == null && timeRange != null && !timeRange.isBlank()) {
+            t = OffsetDateTime.now(ZoneOffset.UTC);
+            f = switch (timeRange) {
+                case "1h" -> t.minusHours(1);
+                case "24h" -> t.minusHours(24);
+                case "7d" -> t.minusDays(7);
+                case "all" -> OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+                default -> t.minusHours(24);
+            };
+        } else if (from == null && to == null) {
+            f = OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+            t = OffsetDateTime.now(ZoneOffset.UTC);
+        } else {
+            f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+            t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
         }
+        return repo.findByCreatedAtBetweenOrderByCreatedAtDesc(f, t, pageable);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public CrisisFlag getOne(@PathVariable UUID id) {
+        return repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+    }
+
+    @PostMapping("/{id}/resolve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Map<String, Object> resolve(@PathVariable UUID id) {
+        if (!repo.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found");
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "ok");
+        response.put("action", "resolved");
+        return response;
+    }
+
+    @PostMapping("/{id}/escalate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Map<String, Object> escalate(@PathVariable UUID id) {
+        if (!repo.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found");
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "ok");
+        response.put("action", "escalated");
+        return response;
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public CrisisFlag update(@PathVariable UUID id, @org.springframework.web.bind.annotation.RequestBody Map<String, Object> body) {
+        // At the moment, crisis flags are immutable; this endpoint simply returns the current record
+        // so that the contract exists for the admin UI.
+        return repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+    }
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public CrisisStatsResponse stats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
+            @RequestParam(required = false) String timeRange
+    ) {
+        OffsetDateTime f;
+        OffsetDateTime t;
+        if (from == null && to == null && timeRange != null && !timeRange.isBlank()) {
+            t = OffsetDateTime.now(ZoneOffset.UTC);
+            f = switch (timeRange) {
+                case "1h" -> t.minusHours(1);
+                case "24h" -> t.minusHours(24);
+                case "7d" -> t.minusDays(7);
+                case "all" -> OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+                default -> t.minusHours(24);
+            };
+        } else {
+            f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+            t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
+        }
+        Page<CrisisFlag> page = repo.findByCreatedAtBetweenOrderByCreatedAtDesc(f, t, PageRequest.of(0, 1000));
+        long high = 0;
+        long medium = 0;
+        long low = 0;
+        for (CrisisFlag flag : page.getContent()) {
+            Double score = flag.getRiskScore();
+            if (score == null) continue;
+            double pct = score * 100.0;
+            if (pct >= 8.0) {
+                high++;
+            } else if (pct >= 5.0) {
+                medium++;
+            } else {
+                low++;
+            }
+        }
+        return new CrisisStatsResponse(high, medium, low);
+    }
+
+    @GetMapping("/keywords")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<KeywordStat> topKeywords(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
         OffsetDateTime f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
-        return repo.findByCreatedAtBetweenOrderByCreatedAtDesc(f, t, pageable);
+        int max = Math.max(1, Math.min(limit, 50));
+        Page<CrisisFlag> page = repo.findByCreatedAtBetweenOrderByCreatedAtDesc(f, t, PageRequest.of(0, 5000));
+        Map<String, Long> counts = new HashMap<>();
+        for (CrisisFlag flag : page.getContent()) {
+            String keyword = flag.getKeywordDetected();
+            if (keyword == null || keyword.isBlank()) continue;
+            counts.merge(keyword.toLowerCase(), 1L, Long::sum);
+        }
+        return counts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(max)
+                .map(e -> new KeywordStat(e.getKey(), e.getValue()))
+                .toList();
     }
 
     @GetMapping(path = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

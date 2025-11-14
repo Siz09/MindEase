@@ -148,6 +148,23 @@ public class AnalyticsRepository {
     }
 
     /**
+     * Count users created in the given date-time range.
+     */
+    public long countUsersCreatedBetween(OffsetDateTime from, OffsetDateTime to) {
+        validateRange(from, to);
+        var sql = """
+            SELECT COUNT(*) 
+            FROM users u
+            WHERE u.created_at BETWEEN :from AND :to
+        """;
+        Object result = em.createNativeQuery(sql)
+                .setParameter("from", from)
+                .setParameter("to", to)
+                .getSingleResult();
+        return ((Number) result).longValue();
+    }
+
+    /**
      * Fallback implementation that avoids generate_series for non-Postgres databases.
      * Queries aggregated moods and chats, then stitches missing days in Java.
      */

@@ -122,6 +122,14 @@ export default function UserManagement() {
     flags: user.crisisFlags || 0,
   }));
 
+  const filteredData = displayData.filter((row) => {
+    if (filters.status === 'all') return true;
+    const status = (row.status || 'active').toLowerCase();
+    return status === filters.status.toLowerCase();
+  });
+
+  const effectiveTotal = filters.status === 'all' ? totalUsers : filteredData.length;
+
   const getBadgeType = (status) => {
     const normalized = (status || 'active').toLowerCase();
     switch (normalized) {
@@ -141,7 +149,7 @@ export default function UserManagement() {
       <div className="page-header">
         <h1 className="page-title">User Management</h1>
         <p className="page-subtitle">
-          Manage and monitor all platform users. Total: {totalUsers}
+          Manage and monitor all platform users. Total: {effectiveTotal}
         </p>
       </div>
 
@@ -173,7 +181,7 @@ export default function UserManagement() {
       <div className="bento-card" style={{ marginBottom: 'var(--spacing-lg)' }}>
         <Table
           columns={tableColumns}
-          data={displayData}
+          data={filteredData}
           loading={loading}
           onRowClick={handleUserClick}
           sortable={true}

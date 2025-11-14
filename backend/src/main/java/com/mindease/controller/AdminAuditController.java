@@ -1,7 +1,10 @@
 package com.mindease.controller;
 
+import com.mindease.dto.AuditLogSearchRequest;
 import com.mindease.model.AuditLog;
+import com.mindease.model.User;
 import com.mindease.repository.AuditLogRepository;
+import com.mindease.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.*;
@@ -22,9 +25,11 @@ public class AdminAuditController {
     private static final int MAX_SIZE = 200;
 
     private final AuditLogRepository repo;
+    private final UserRepository userRepository;
 
-    public AdminAuditController(AuditLogRepository repo) {
+    public AdminAuditController(AuditLogRepository repo, UserRepository userRepository) {
         this.repo = repo;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -46,6 +51,35 @@ public class AdminAuditController {
         } catch (Exception e) {
             log.error("Audit list failed (userId={}, actionType={}, from={}, to={}, page={}, size={})",
                     userId, actionType, from, to, page, pageSize, e);
+            throw e;
+        }
+    }
+
+    @PostMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<AuditLog> search(@RequestBody AuditLogSearchRequest request) {
+        if (request == null) {
+            return Page.empty();
+        }
+        UUID userId = null;
+        if (request.email() != null && !request.email().isBlank()) {
+            User user = userRepository.findByEmail(request.email().trim()).orElse(null);
+            if (user == null) {
+                return Page.empty();
+            }
+            userId = user.getId();
+        }
+        int page = request.page() != null ? request.page() : 0;
+        int size = request.size() != null ? request.size() : DEFAULT_SIZE;
+        int pageSize = Math.min(Math.max(1, size), MAX_SIZE);
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        try {
+            Slice<AuditLog> slice = repo.findByFilters(userId, request.actionType(), request.from(), request.to(), pageable);
+            return toPage(slice, pageable);
+        } catch (Exception e) {
+            log.error("Audit search failed (email={}, actionType={}, from={}, to={}, page={}, size={})",
+                    request.email(), request.actionType(), request.from(), request.to(), page, pageSize, e);
             throw e;
         }
     }

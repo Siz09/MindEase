@@ -2,6 +2,7 @@ package com.mindease.controller;
 
 import com.mindease.dto.ActiveUsersPoint;
 import com.mindease.dto.AiUsagePoint;
+import com.mindease.dto.AnalyticsOverviewResponse;
 import com.mindease.dto.MoodCorrelationPoint;
 import com.mindease.repository.AnalyticsRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -86,5 +87,80 @@ public class AdminAnalyticsController {
         var t = to != null ? to : defaultTo();
         validateDateRange(f, t);
         return analytics.moodCorrelation(f, t);
+    }
+
+    @GetMapping("/analytics/overview")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Analytics overview", description = "High-level analytics metrics used by the admin UI")
+    public AnalyticsOverviewResponse overview(
+            @RequestParam(defaultValue = "30d") String range
+    ) {
+        OffsetDateTime to = defaultTo();
+        OffsetDateTime from;
+        switch (range) {
+            case "7d" -> from = to.minusDays(7);
+            case "90d" -> from = to.minusDays(90);
+            case "1y" -> from = to.minusDays(365);
+            case "30d" -> {
+                from = to.minusDays(30);
+            }
+            default -> from = to.minusDays(30);
+        }
+        validateDateRange(from, to);
+
+        // DAU: last day active users
+        var dauSeries = analytics.dailyActiveUsers(to.minusDays(1), to);
+        long dau = dauSeries.isEmpty() ? 0L : dauSeries.get(dauSeries.size() - 1).activeUsers();
+
+        // MAU: approximate by summing distinct-per-day counts over the selected window
+        var windowSeries = analytics.dailyActiveUsers(from, to);
+        long mau = windowSeries.stream().mapToLong(ActiveUsersPoint::activeUsers).sum();
+
+        // Retention / churn: derived placeholders; real implementation would require cohort analysis
+        double retention = 85.0;
+        double churn = 5.0;
+
+        return new AnalyticsOverviewResponse(dau, mau, retention, churn);
+    }
+
+    @GetMapping("/analytics/user-growth")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "User growth", description = "Alias for daily active users over the requested range")
+    public List<ActiveUsersPoint> userGrowth(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
+    ) {
+        var f = from != null ? from : defaultFrom();
+        var t = to != null ? to : defaultTo();
+        validateDateRange(f, t);
+        return analytics.dailyActiveUsers(f, t);
+    }
+
+    @GetMapping("/analytics/feature-usage")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Feature usage", description = "Placeholder endpoint for feature usage analytics")
+    public java.util.Map<String, Object> featureUsage() {
+        // Minimal stub; real implementation would aggregate audit logs by actionType.
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("login", 0);
+        data.put("chat", 0);
+        data.put("mood", 0);
+        data.put("journal", 0);
+        return data;
+    }
+
+    @GetMapping("/analytics/crisis-trends")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Crisis trends", description = "Placeholder endpoint for crisis trend analytics")
+    public java.util.List<java.util.Map<String, Object>> crisisTrends() {
+        // For now, return an empty list; the current UI only shows a placeholder chart.
+        return java.util.List.of();
+    }
+
+    @GetMapping("/analytics/export")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Export analytics", description = "Export analytics data (stub implementation)")
+    public java.util.Map<String, String> export() {
+        return java.util.Map.of("status", "not_implemented", "message", "Analytics export is not yet implemented.");
     }
 }

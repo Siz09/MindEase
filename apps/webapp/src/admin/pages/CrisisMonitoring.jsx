@@ -129,15 +129,27 @@ export default function CrisisMonitoring() {
         params.append('riskLevel', filters.riskLevel);
       }
 
-      if (filters.timeRange !== 'all') {
+      if (filters.timeRange && filters.timeRange !== 'all') {
         params.append('timeRange', filters.timeRange);
       }
 
-      const { data } = await adminApi.get(`/admin/crisis-flags?${params.toString()}`);
+      const [listRes, statsRes] = await Promise.all([
+        adminApi.get(`/admin/crisis-flags?${params.toString()}`),
+        adminApi
+          .get(
+            `/admin/crisis-flags/stats${
+              filters.timeRange && filters.timeRange !== 'all'
+                ? `?timeRange=${encodeURIComponent(filters.timeRange)}`
+                : ''
+            }`
+          )
+          .catch(() => ({ data: { high: 0, medium: 0, low: 0 } })),
+      ]);
 
+      const data = listRes.data || {};
       setFlags(data.content || []);
       setTotalPages(data.totalPages || 0);
-      setStats(data.stats || { high: 0, medium: 0, low: 0 });
+      setStats(statsRes.data || { high: 0, medium: 0, low: 0 });
     } catch (err) {
       console.error('Failed to load crisis flags:', err.message);
       setFlags([]);

@@ -1,7 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Chart,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  BarController,
+  BarElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 import adminApi from '../adminApi';
+
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  BarController,
+  BarElement,
+  Tooltip,
+  Legend
+);
+
+const fmt = (d) => new Date(d).toLocaleDateString();
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -13,8 +39,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activityData, setActivityData] = useState([]);
+  const [crisisStats, setCrisisStats] = useState({ high: 0, medium: 0, low: 0 });
   const [recentAlerts, setRecentAlerts] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(null);
+
+  const activityChartRef = useRef(null);
+  const crisisChartRef = useRef(null);
+  const charts = useRef({ activity: null, crisis: null });
+  const isCanvasLive = (canvas) => !!(canvas && canvas.ownerDocument && canvas.isConnected);
 
   useEffect(() => {
     let mounted = true;
@@ -25,10 +57,11 @@ export default function Dashboard() {
         setLoading(true);
 
         // Fetch all dashboard data in parallel, allowing partial failures
-        const [statsRes, activityRes, alertsRes] = await Promise.allSettled([
+        const [statsRes, activityRes, alertsRes, crisisStatsRes] = await Promise.allSettled([
           adminApi.get('/admin/dashboard/overview'),
           adminApi.get('/admin/dashboard/activity-trend'),
           adminApi.get('/admin/dashboard/recent-alerts'),
+          adminApi.get('/admin/crisis-flags/stats?timeRange=24h'),
         ]);
 
         if (mounted) {
@@ -36,6 +69,7 @@ export default function Dashboard() {
           if (statsRes.status === 'rejected') failures.push('overview stats');
           if (activityRes.status === 'rejected') failures.push('activity data');
           if (alertsRes.status === 'rejected') failures.push('recent alerts');
+          if (crisisStatsRes.status === 'rejected') failures.push('crisis stats');
 
           if (failures.length > 0) {
             setError(`Failed to load: ${failures.join(', ')}`);
@@ -55,6 +89,13 @@ export default function Dashboard() {
               : [];
 
           setActivityData(activityPayload);
+          if (crisisStatsRes.status === 'fulfilled') {
+            setCrisisStats(
+              crisisStatsRes.value?.data || { high: 0, medium: 0, low: 0 }
+            );
+          } else {
+            setCrisisStats({ high: 0, medium: 0, low: 0 });
+          }
           setRecentAlerts(alertsPayload);
           setLastUpdated(new Date());
           // Log any API failures for debugging
@@ -66,6 +107,9 @@ export default function Dashboard() {
           }
           if (alertsRes.status === 'rejected') {
             console.error('Alerts API failed:', alertsRes.reason);
+          }
+          if (crisisStatsRes.status === 'rejected') {
+            console.error('Crisis stats API failed:', crisisStatsRes.reason);
           }
         }
       } catch (err) {
@@ -83,6 +127,108 @@ export default function Dashboard() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    // Clean up charts on unmount
+    return () => {
+      Object.values(charts.current).forEach((c) => c?.destroy?.());
+    };
+  }, []);
+
+  useEffect(() => {
+    if (error) return;
+
+    // User Activity chart (line)
+    if (activityChartRef.current) {
+      const canvas = activityChartRef.current;
+      const labels = (activityData || []).map((pt) => fmt(pt.day));
+      const values = (activityData || []).map(
+        (pt) => pt.activeUsers ?? pt.count ?? 0
+      );
+
+      if (!charts.current.activity && isCanvasLive(canvas) && activityData.length > 0) {
+        charts.current.activity = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Daily Active Users',
+                data: values,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } },
+          },
+        });
+      } else if (
+        charts.current.activity &&
+        charts.current.activity.canvas &&
+        isCanvasLive(charts.current.activity.canvas)
+      ) {
+        charts.current.activity.data.labels = labels;
+        charts.current.activity.data.datasets[0].data = values;
+        try {
+          charts.current.activity.update();
+        } catch {
+          // ignore update errors
+        }
+      }
+    }
+
+    // Crisis Flags Distribution chart (bar)
+    if (crisisChartRef.current) {
+      const canvas = crisisChartRef.current;
+      const labels = ['High', 'Medium', 'Low'];
+      const values = [
+        crisisStats?.high || 0,
+        crisisStats?.medium || 0,
+        crisisStats?.low || 0,
+      ];
+
+      if (
+        !charts.current.crisis &&
+        isCanvasLive(canvas) &&
+        (values[0] || values[1] || values[2])
+      ) {
+        charts.current.crisis = new Chart(canvas, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Crisis Flags',
+                data: values,
+                backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'],
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true } },
+          },
+        });
+      } else if (
+        charts.current.crisis &&
+        charts.current.crisis.canvas &&
+        isCanvasLive(charts.current.crisis.canvas)
+      ) {
+        charts.current.crisis.data.labels = labels;
+        charts.current.crisis.data.datasets[0].data = values;
+        try {
+          charts.current.crisis.update();
+        } catch {
+          // ignore update errors
+        }
+      }
+    }
+  }, [activityData, crisisStats, error]);
 
   const formatTrendText = (trendValue) => {
     if (trendValue == null) return 'No trend data';
@@ -170,7 +316,10 @@ export default function Dashboard() {
             <div className="chart-card-subtitle">Daily active users trend</div>
           </div>
           <div className="chart-placeholder">
-            [Activity Chart Placeholder - Will use Canvas/SVG]
+            <canvas
+              ref={activityChartRef}
+              style={{ width: '100%', height: '260px' }}
+            />
           </div>
         </div>
 
@@ -179,7 +328,12 @@ export default function Dashboard() {
             <div className="chart-card-title">Crisis Flags Distribution</div>
             <div className="chart-card-subtitle">Risk level breakdown</div>
           </div>
-          <div className="chart-placeholder">[Distribution Chart Placeholder]</div>
+          <div className="chart-placeholder">
+            <canvas
+              ref={crisisChartRef}
+              style={{ width: '100%', height: '260px' }}
+            />
+          </div>
         </div>
       </div>
 

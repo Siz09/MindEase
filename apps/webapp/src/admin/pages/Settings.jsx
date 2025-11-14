@@ -25,6 +25,35 @@ export default function Settings() {
 
   useEffect(() => {
     isMountedRef.current = true;
+
+    // Load existing settings from the backend, if available
+    const loadSettings = async () => {
+      try {
+        const { data } = await adminApi.get('/admin/settings');
+        if (!isMountedRef.current || !data) return;
+        if (typeof data.crisisThreshold === 'number') {
+          setCrisisThreshold(data.crisisThreshold);
+        }
+        if (typeof data.emailNotifications === 'string') {
+          setEmailNotifications(data.emailNotifications);
+        }
+        if (typeof data.autoArchive === 'boolean') {
+          setAutoArchive(data.autoArchive);
+        }
+        if (typeof data.autoArchiveDays === 'number') {
+          setAutoArchiveDays(data.autoArchiveDays);
+        }
+        if (typeof data.dailyReportTime === 'string') {
+          setDailyReportTime(data.dailyReportTime);
+        }
+      } catch (err) {
+        // If the endpoint is unavailable, fall back to component defaults
+        console.error('Failed to load admin settings:', err?.message || err);
+      }
+    };
+
+    loadSettings();
+
     return () => {
       isMountedRef.current = false;
     };
