@@ -41,8 +41,10 @@ export default function Dashboard() {
             setError(`Failed to load: ${failures.join(', ')}`);
           }
 
-          const statsPayload =
-            statsRes.status === 'fulfilled' ? statsRes.value.data || {} : stats;
+          if (statsRes.status === 'fulfilled') {
+            setStats(statsRes.value.data || {});
+          }
+
           const activityPayload =
             activityRes.status === 'fulfilled' && Array.isArray(activityRes.value.data)
               ? activityRes.value.data
@@ -52,21 +54,19 @@ export default function Dashboard() {
               ? alertsRes.value.data
               : [];
 
-          setStats(statsPayload);
           setActivityData(activityPayload);
           setRecentAlerts(alertsPayload);
           setLastUpdated(new Date());
-        }
-
-        // Log any API failures for debugging
-        if (statsRes.status === 'rejected') {
-          console.error('Stats API failed:', statsRes.reason);
-        }
-        if (activityRes.status === 'rejected') {
-          console.error('Activity API failed:', activityRes.reason);
-        }
-        if (alertsRes.status === 'rejected') {
-          console.error('Alerts API failed:', alertsRes.reason);
+          // Log any API failures for debugging
+          if (statsRes.status === 'rejected') {
+            console.error('Stats API failed:', statsRes.reason);
+          }
+          if (activityRes.status === 'rejected') {
+            console.error('Activity API failed:', activityRes.reason);
+          }
+          if (alertsRes.status === 'rejected') {
+            console.error('Alerts API failed:', alertsRes.reason);
+          }
         }
       } catch (err) {
         if (mounted) {
