@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -21,5 +23,6 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, UUID>, Audit
 
     Page<AuditLog> findByCreatedAtBetweenOrderByCreatedAtDesc(OffsetDateTime from, OffsetDateTime to, Pageable pageable);
 
-    java.util.List<AuditLog> findByUserIdInOrderByCreatedAtDesc(java.util.List<UUID> userIds);
+    @Query("SELECT a.userId, MAX(a.createdAt) FROM AuditLog a WHERE a.userId IN :userIds GROUP BY a.userId")
+    java.util.List<Object[]> findLastActiveByUserIds(@Param("userIds") java.util.List<UUID> userIds);
 }

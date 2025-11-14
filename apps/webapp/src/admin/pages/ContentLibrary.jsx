@@ -44,7 +44,6 @@ export default function ContentLibrary() {
         type: 'error',
         message: 'Unable to load content. Please try again.',
       });
-      setContent([]);
     } finally {
       setLoading(false);
     }

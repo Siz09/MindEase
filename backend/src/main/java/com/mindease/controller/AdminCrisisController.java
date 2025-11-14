@@ -13,6 +13,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +42,7 @@ public class AdminCrisisController {
     private final CrisisFlagRepository repo;
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     private static final int MAX_SSE_CONNECTIONS = 100;
+    private static final String STATUS_RESOLVED = "RESOLVED";
 
     public AdminCrisisController(CrisisFlagRepository repo) {
         this.repo = repo;
@@ -57,28 +59,8 @@ public class AdminCrisisController {
     ) {
         int pageSize = Math.max(1, Math.min(size, 200));
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-        if (from != null && to != null && from.isAfter(to)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from must be before or equal to to");
-        }
-        OffsetDateTime f;
-        OffsetDateTime t;
-        if (from == null && to == null && timeRange != null && !timeRange.isBlank()) {
-            t = OffsetDateTime.now(ZoneOffset.UTC);
-            f = switch (timeRange) {
-                case "1h" -> t.minusHours(1);
-                case "24h" -> t.minusHours(24);
-                case "7d" -> t.minusDays(7);
-                case "all" -> OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-                default -> t.minusHours(24);
-            };
-        } else if (from == null && to == null) {
-            f = OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-            t = OffsetDateTime.now(ZoneOffset.UTC);
-        } else {
-            f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-            t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
-        }
-        return repo.findByCreatedAtBetweenOrderByCreatedAtDesc(f, t, pageable);
+        DateWindow window = computeDateWindow(from, to, timeRange);
+        return repo.findByCreatedAtBetweenOrderByCreatedAtDesc(window.from(), window.to(), pageable);
     }
 
     @GetMapping("/{id}")
@@ -90,10 +72,14 @@ public class AdminCrisisController {
 
     @PostMapping("/{id}/resolve")
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public Map<String, Object> resolve(@PathVariable UUID id) {
         CrisisFlag flag = repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
-        flag.setStatus("RESOLVED");
+        if (STATUS_RESOLVED.equals(flag.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Flag already resolved");
+        }
+        flag.setStatus(STATUS_RESOLVED);
         repo.save(flag);
         Map<String, Object> response = new HashMap<>();
         response.put("status", "ok");
@@ -103,9 +89,13 @@ public class AdminCrisisController {
 
     @PostMapping("/{id}/escalate")
     @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
     public Map<String, Object> escalate(@PathVariable UUID id) {
         CrisisFlag flag = repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+        if (flag.isEscalated()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Flag already escalated");
+        }
         flag.setEscalated(true);
         repo.save(flag);
         Map<String, Object> response = new HashMap<>();
@@ -130,22 +120,8 @@ public class AdminCrisisController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
             @RequestParam(required = false) String timeRange
     ) {
-        OffsetDateTime f;
-        OffsetDateTime t;
-        if (from == null && to == null && timeRange != null && !timeRange.isBlank()) {
-            t = OffsetDateTime.now(ZoneOffset.UTC);
-            f = switch (timeRange) {
-                case "1h" -> t.minusHours(1);
-                case "24h" -> t.minusHours(24);
-                case "7d" -> t.minusDays(7);
-                case "all" -> OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-                default -> t.minusHours(24);
-            };
-        } else {
-            f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-            t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
-        }
-        return repo.computeStats(f, t);
+        DateWindow window = computeDateWindow(from, to, timeRange);
+        return repo.computeStats(window.from(), window.to());
     }
 
     @GetMapping("/keywords")
@@ -190,5 +166,33 @@ public class AdminCrisisController {
                 emitter.complete();
             }
         });
+    }
+
+    private record DateWindow(OffsetDateTime from, OffsetDateTime to) {
+    }
+
+    private DateWindow computeDateWindow(OffsetDateTime from, OffsetDateTime to, String timeRange) {
+        OffsetDateTime f;
+        OffsetDateTime t;
+        if (from == null && to == null && timeRange != null && !timeRange.isBlank()) {
+            t = OffsetDateTime.now(ZoneOffset.UTC);
+            f = switch (timeRange) {
+                case "1h" -> t.minusHours(1);
+                case "24h" -> t.minusHours(24);
+                case "7d" -> t.minusDays(7);
+                case "all" -> OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+                default -> t.minusHours(24);
+            };
+        } else if (from == null && to == null) {
+            f = OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+            t = OffsetDateTime.now(ZoneOffset.UTC);
+        } else {
+            f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+            t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
+        }
+        if (f.isAfter(t)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from must be before or equal to to");
+        }
+        return new DateWindow(f, t);
     }
 }

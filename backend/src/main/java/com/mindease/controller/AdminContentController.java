@@ -72,9 +72,10 @@ public class AdminContentController {
             @RequestParam(required = false) String category
     ) {
         return store.values().stream()
-                .filter(item -> type == null || type.isBlank() || type.equalsIgnoreCase(item.type()))
+                .filter(item -> type == null || type.isBlank()
+                        || (item.type() != null && type.equalsIgnoreCase(item.type())))
                 .filter(item -> category == null || category.isBlank()
-                        || category.equalsIgnoreCase(item.category()))
+                        || (item.category() != null && category.equalsIgnoreCase(item.category())))
                 .filter(item -> {
                     if (search == null || search.isBlank()) return true;
                     String q = search.toLowerCase();
@@ -189,4 +190,3 @@ public class AdminContentController {
         }
     }
 }
-

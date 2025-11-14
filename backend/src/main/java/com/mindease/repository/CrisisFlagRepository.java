@@ -53,4 +53,11 @@ public interface CrisisFlagRepository extends JpaRepository<CrisisFlag, UUID> {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
         return findAll(pageable).getContent();
     }
+
+    @Query("SELECT function('date', f.createdAt) as day, COUNT(f) as count " +
+           "FROM CrisisFlag f " +
+           "WHERE f.createdAt BETWEEN :from AND :to " +
+           "GROUP BY function('date', f.createdAt) " +
+           "ORDER BY day")
+    List<Object[]> aggregateCrisisFlagsByDay(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 }

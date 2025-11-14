@@ -32,9 +32,9 @@ public class AdminLogsController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size
     ) {
+        int validPage = Math.max(0, page);
         int pageSize = Math.max(1, Math.min(size, 200));
-        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(validPage, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         return auditLogRepository.findAllByOrderByCreatedAtDesc(pageable);
     }
 }
-

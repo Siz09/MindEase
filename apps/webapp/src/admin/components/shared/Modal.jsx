@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from 'react';
 
 export default function Modal({ isOpen, title, children, onClose, footer }) {
   const modalRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -61,12 +62,12 @@ export default function Modal({ isOpen, title, children, onClose, footer }) {
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={titleId}
         tabIndex={-1}
         ref={modalRef}
       >
         <div className="modal-header">
-          <h2 id="modal-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
           <button className="modal-close" onClick={() => onClose?.()} aria-label="Close modal">
             ✕
           </button>

@@ -186,6 +186,17 @@ public class User {
   }
 
   // Pre-update callback
+  @PrePersist
+  @PreUpdate
+  private void validateBanFields() {
+    if (banned && (bannedAt == null || bannedBy == null)) {
+      throw new IllegalStateException("bannedAt and bannedBy must be set when user is banned");
+    }
+    if (!banned && (bannedAt != null || bannedBy != null)) {
+      throw new IllegalStateException("bannedAt and bannedBy must be null when user is not banned");
+    }
+  }
+
   @PreUpdate
   public void preUpdate() {
     this.updatedAt = LocalDateTime.now();

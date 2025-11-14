@@ -15,6 +15,7 @@ export default function Slider({ label, min = 0, max = 100, value, onChange, ste
       )}
       <div style={{ display: "flex", alignItems: "center", gap: "var(--spacing-md)" }}>
         <input
+          {...props}
           id={sliderId}
           type="range"
           min={min}
@@ -24,7 +25,6 @@ export default function Slider({ label, min = 0, max = 100, value, onChange, ste
           onChange={onChange}
           aria-label={label || "Slider"}
           style={{ flex: 1 }}
-          {...props}
         />
         <span style={{ fontWeight: "600", minWidth: "40px" }}>{value}</span>
       </div>

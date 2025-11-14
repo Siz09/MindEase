@@ -124,7 +124,7 @@ public class AdminDashboardController {
     ) {
         OffsetDateTime t = to != null ? to : nowUtc();
         OffsetDateTime f = from != null ? from : t.minusDays(30);
-        long daysBetween = ChronoUnit.DAYS.between(f.toLocalDate(), t.toLocalDate());
+        long daysBetween = ChronoUnit.DAYS.between(f, t);
         if (daysBetween > 365 || daysBetween < 0) {
             throw new IllegalArgumentException("Date range must be between 0 and 365 days");
         }
@@ -150,23 +150,21 @@ public class AdminDashboardController {
     public List<Map<String, Object>> crisisHeatmap() {
         OffsetDateTime to = nowUtc();
         OffsetDateTime from = to.minusDays(90);
-        Map<LocalDate, Long> counts = new HashMap<>();
-        int pageNum = 0;
-        org.springframework.data.domain.Page<CrisisFlag> page;
-        do {
-            page = crisisFlagRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(
-                    from, to, org.springframework.data.domain.PageRequest.of(pageNum++, 1000));
-            for (CrisisFlag flag : page.getContent()) {
-                LocalDate day = flag.getCreatedAt().atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
-                counts.merge(day, 1L, Long::sum);
-            }
-        } while (page.hasNext());
-        return counts.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(e -> {
+        return crisisFlagRepository.aggregateCrisisFlagsByDay(from, to).stream()
+                .map(row -> {
+                    Object dayObj = row[0];
+                    LocalDate day;
+                    if (dayObj instanceof LocalDate d) {
+                        day = d;
+                    } else if (dayObj instanceof java.sql.Date d) {
+                        day = d.toLocalDate();
+                    } else {
+                        day = LocalDate.parse(dayObj.toString());
+                    }
+                    Long count = ((Number) row[1]).longValue();
                     Map<String, Object> m = new HashMap<>();
-                    m.put("day", e.getKey());
-                    m.put("count", e.getValue());
+                    m.put("day", day);
+                    m.put("count", count);
                     return m;
                 })
                 .toList();
@@ -189,7 +187,7 @@ public class AdminDashboardController {
         String title = "Crisis alert";
         String message = "Crisis keyword detected: " + flag.getKeywordDetected();
         return new RecentAlertDto(
-                flag.getId() != null ? flag.getId() : UUID.randomUUID(),
+                flag.getId(),
                 title,
                 message,
                 flag.getCreatedAt(),

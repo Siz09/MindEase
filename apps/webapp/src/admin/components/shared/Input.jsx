@@ -3,7 +3,8 @@
 import { useId } from "react"
 
 export default function Input({ label, placeholder, type = "text", value, onChange, error, helper, id, ...props }) {
-  const inputId = id || useId()
+  const generatedId = useId()
+  const inputId = id || generatedId
   const errorId = `${inputId}-error`
   const helperId = `${inputId}-helper`
   const describedBy = [error && errorId, helper && helperId].filter(Boolean).join(" ") || undefined

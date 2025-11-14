@@ -115,9 +115,9 @@ public class AdminAnalyticsController {
         // MAU: distinct users active at least once during the window
         long mau = analytics.distinctActiveUsers(from, to);
 
-        // Retention / churn: derived placeholders; real implementation would require cohort analysis
-        double retention = 85.0;
-        double churn = 5.0;
+        // Retention / churn: real implementation would require cohort analysis
+        Double retention = null;
+        Double churn = null;
 
         return new AnalyticsOverviewResponse(dau, mau, retention, churn);
     }
@@ -139,13 +139,10 @@ public class AdminAnalyticsController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Feature usage", description = "Placeholder endpoint for feature usage analytics")
     public java.util.Map<String, Object> featureUsage() {
-        // Minimal stub; real implementation would aggregate audit logs by actionType.
-        java.util.Map<String, Object> data = new java.util.HashMap<>();
-        data.put("login", 0);
-        data.put("chat", 0);
-        data.put("mood", 0);
-        data.put("journal", 0);
-        return data;
+        return java.util.Map.of(
+                "status", "not_implemented",
+                "message", "Feature usage analytics not yet implemented."
+        );
     }
 
     @GetMapping("/analytics/crisis-trends")

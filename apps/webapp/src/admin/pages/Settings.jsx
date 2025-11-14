@@ -180,10 +180,13 @@ export default function Settings() {
                   min="1"
                   max="365"
                   value={autoArchiveDays}
-                  onChange={(e) => {
+                  onChange={(e) => setAutoArchiveDays(Number(e.target.value))}
+                  onBlur={(e) => {
                     const val = Number(e.target.value);
-                    if (!Number.isNaN(val) && val >= 1 && val <= 365) {
-                      setAutoArchiveDays(val);
+                    if (Number.isNaN(val) || val < 1) {
+                      setAutoArchiveDays(1);
+                    } else if (val > 365) {
+                      setAutoArchiveDays(365);
                     }
                   }}
                   style={{

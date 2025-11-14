@@ -4,6 +4,7 @@ import com.mindease.dto.AdminSettingsPayload;
 import com.mindease.dto.ApiKeyInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +25,12 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequestMapping("/api/admin")
 @Tag(name = "Admin Settings")
 public class AdminSettingsController {
+
+    private static final int MIN_CRISIS_THRESHOLD = 1;
+    private static final int MAX_CRISIS_THRESHOLD = 10;
+    private static final int MIN_ARCHIVE_DAYS = 1;
+    private static final int MAX_ARCHIVE_DAYS = 365;
+    private static final String TIME_PATTERN = "^([01]\\d|2[0-3]):[0-5]\\d$";
 
     private final AtomicReference<AdminSettingsPayload> currentSettings =
             new AtomicReference<>(new AdminSettingsPayload(
@@ -50,42 +57,59 @@ public class AdminSettingsController {
     @PutMapping("/settings")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update admin settings", description = "Update admin UI settings")
-    public ResponseEntity<AdminSettingsPayload> updateSettingsPut(@RequestBody AdminSettingsPayload payload) {
+    public ResponseEntity<?> updateSettingsPut(@Valid @RequestBody AdminSettingsPayload payload) {
         return saveSettings(payload);
     }
 
     @PostMapping("/settings")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Save admin settings", description = "Create or update admin UI settings")
-    public ResponseEntity<AdminSettingsPayload> updateSettingsPost(@RequestBody AdminSettingsPayload payload) {
+    public ResponseEntity<?> updateSettingsPost(@Valid @RequestBody AdminSettingsPayload payload) {
         return saveSettings(payload);
     }
 
-    private ResponseEntity<AdminSettingsPayload> saveSettings(AdminSettingsPayload payload) {
+    private ResponseEntity<?> saveSettings(AdminSettingsPayload payload) {
         if (payload == null) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Payload cannot be null"));
         }
         // Validate crisis threshold (1-10)
-        if (payload.crisisThreshold() < 1 || payload.crisisThreshold() > 10) {
-            return ResponseEntity.badRequest().build();
+        if (payload.crisisThreshold() < MIN_CRISIS_THRESHOLD || payload.crisisThreshold() > MAX_CRISIS_THRESHOLD) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "error",
+                            "Crisis threshold must be between " + MIN_CRISIS_THRESHOLD + " and " + MAX_CRISIS_THRESHOLD
+                    ));
         }
         // Validate email notifications mode
         if (!"all".equals(payload.emailNotifications())
                 && !"critical".equals(payload.emailNotifications())
                 && !"none".equals(payload.emailNotifications())) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "error",
+                            "emailNotifications must be one of: all, critical, none"
+                    ));
         }
         // Validate auto-archive days when enabled
         if (payload.autoArchive()) {
             Integer days = payload.autoArchiveDays();
-            if (days == null || days < 1 || days > 365) {
-                return ResponseEntity.badRequest().build();
+            if (days == null || days < MIN_ARCHIVE_DAYS || days > MAX_ARCHIVE_DAYS) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of(
+                                "error",
+                                "autoArchiveDays must be between " + MIN_ARCHIVE_DAYS + " and " + MAX_ARCHIVE_DAYS
+                        ));
             }
         }
         // Validate daily report time (HH:mm)
         if (payload.dailyReportTime() != null &&
-                !payload.dailyReportTime().matches("^([01]\\d|2[0-3]):[0-5]\\d$")) {
-            return ResponseEntity.badRequest().build();
+                !payload.dailyReportTime().matches(TIME_PATTERN)) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "error",
+                            "dailyReportTime must match pattern HH:mm (00:00 - 23:59)"
+                    ));
         }
         currentSettings.set(payload);
         return ResponseEntity.ok(payload);

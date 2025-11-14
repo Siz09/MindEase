@@ -29,10 +29,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,11 +70,22 @@ public class AdminUserController {
         int pageSize = Math.max(1, Math.min(size, 200));
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
 
+        String effectiveStatus = status == null ? "all" : status.toLowerCase();
+
         Page<User> usersPage;
         if (search != null && !search.isBlank()) {
-            usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(search.trim(), pageable);
+            if ("banned".equals(effectiveStatus)) {
+                usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNullAndBannedTrue(
+                        search.trim(), pageable);
+            } else {
+                usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(search.trim(), pageable);
+            }
         } else {
-            usersPage = userRepository.findByDeletedAtIsNull(pageable);
+            if ("banned".equals(effectiveStatus)) {
+                usersPage = userRepository.findByDeletedAtIsNullAndBannedTrue(pageable);
+            } else {
+                usersPage = userRepository.findByDeletedAtIsNull(pageable);
+            }
         }
 
         List<User> users = usersPage.getContent();
@@ -92,6 +101,13 @@ public class AdminUserController {
                         crisisCountMap.getOrDefault(user.getId(), 0L),
                         true // mask email in list view
                 ))
+                .filter(summary -> {
+                    if ("all".equals(effectiveStatus)) {
+                        return true;
+                    }
+                    return summary.status() != null
+                            && summary.status().equalsIgnoreCase(effectiveStatus);
+                })
                 .collect(Collectors.toList());
 
         return new PageImpl<>(content, pageable, usersPage.getTotalElements());
@@ -132,6 +148,7 @@ public class AdminUserController {
             if (status instanceof String s) {
                 boolean banned = "banned".equalsIgnoreCase(s);
                 setBannedFlag(user.getId(), banned, authentication);
+                user = userRepository.findById(id).orElseThrow();
                 // Audit log
                 logAdminAction(authentication, banned ? "ADMIN_BAN_USER" : "ADMIN_UNBAN_USER",
                         (banned ? "Banned user: " : "Unbanned user: ") + user.getEmail());
@@ -171,7 +188,8 @@ public class AdminUserController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Bulk user action", description = "Allows applying simple actions (e.g., ban) to many users")
     public ResponseEntity<java.util.Map<String, Object>> bulkAction(
-            @RequestBody java.util.Map<String, Object> body
+            @RequestBody java.util.Map<String, Object> body,
+            Authentication authentication
     ) {
         Object actionObj = body.get("action");
         Object idsObj = body.get("userIds");
@@ -189,11 +207,15 @@ public class AdminUserController {
                     continue;
                 }
                 if ("ban".equalsIgnoreCase(action)) {
-                    setBannedFlag(id, true, null);
+                    setBannedFlag(id, true, authentication);
+                    logAdminAction(authentication, "ADMIN_BULK_BAN_USER", "Bulk banned user: " + id);
                     affected++;
                 } else if ("unban".equalsIgnoreCase(action)) {
-                    setBannedFlag(id, false, null);
+                    setBannedFlag(id, false, authentication);
+                    logAdminAction(authentication, "ADMIN_BULK_UNBAN_USER", "Bulk unbanned user: " + id);
                     affected++;
+                } else {
+                    failed.add(id.toString());
                 }
             } catch (IllegalArgumentException ex) {
                 failed.add(String.valueOf(o));
@@ -272,10 +294,11 @@ public class AdminUserController {
 
     private Map<UUID, OffsetDateTime> fetchLastActiveForUsers(List<UUID> userIds) {
         if (userIds.isEmpty()) return java.util.Collections.emptyMap();
-        List<AuditLog> logs = auditLogRepository.findByUserIdInOrderByCreatedAtDesc(userIds);
         Map<UUID, OffsetDateTime> map = new HashMap<>();
-        for (AuditLog log : logs) {
-            map.computeIfAbsent(log.getUserId(), id -> log.getCreatedAt());
+        for (Object[] row : auditLogRepository.findLastActiveByUserIds(userIds)) {
+            UUID userId = (UUID) row[0];
+            OffsetDateTime last = (OffsetDateTime) row[1];
+            map.put(userId, last);
         }
         return map;
     }

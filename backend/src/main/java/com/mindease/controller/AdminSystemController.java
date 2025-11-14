@@ -15,8 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -44,7 +43,8 @@ public class AdminSystemController {
             log.error("Database health check failed", e);
             dbStatus = "unhealthy";
         }
-        // API is up if this endpoint is reachable; AI engine is assumed running if configured
+        // API is up if this endpoint is reachable; AI engine is assumed running if
+        // configured
         return new SystemStatusResponse("operational", dbStatus, "running");
     }
 
@@ -57,15 +57,18 @@ public class AdminSystemController {
         long freeMem = rt.freeMemory();
         long usedMem = rt.totalMemory() - freeMem;
         int memoryUsage = maxMem == 0 ? 0 : (int) ((usedMem * 100L) / maxMem);
-        // Simple placeholders for CPU and disk usage; real implementation would use OS metrics
+        // Simple placeholders for CPU and disk usage; real implementation would use OS
+        // metrics
         int cpu = 30;
         int disk = 40;
         return new SystemHealthResponse(cpu, clampPercent(memoryUsage), disk);
     }
 
     private static int clampPercent(int value) {
-        if (value < 0) return 0;
-        if (value > 100) return 100;
+        if (value < 0)
+            return 0;
+        if (value > 100)
+            return 100;
         return value;
     }
 
@@ -73,7 +76,8 @@ public class AdminSystemController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Recent errors", description = "Summary of recent errors (stub; currently empty list)")
     public ResponseEntity<List<ErrorSummary>> errors() {
-        // No structured error store yet; return an empty list so the UI shows 'No errors detected'.
+        // No structured error store yet; return an empty list so the UI shows 'No
+        // errors detected'.
         return ResponseEntity.ok(Collections.emptyList());
     }
 
@@ -85,7 +89,6 @@ public class AdminSystemController {
         return java.util.Map.of(
                 "requestsPerMinute", 0,
                 "peakRequestsPerMinute", 0,
-                "totalRequestsToday", 0
-        );
+                "totalRequestsToday", 0);
     }
 }

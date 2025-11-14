@@ -17,7 +17,10 @@ export default function StatCard({
         <h3 className="stat-value">{typeof value === "number" ? value.toLocaleString() : value}</h3>
         {hasValidTrend && (
           <p className={`stat-trend ${actualTrendPositive ? "positive" : "negative"}`}>
-            {actualTrendPositive ? "↑" : "↓"} {Math.abs(trend).toFixed(1)}% vs {trendPeriod}
+            <span aria-label={actualTrendPositive ? "increase" : "decrease"}>
+              {actualTrendPositive ? "↑" : "↓"}
+            </span>{" "}
+            {Math.abs(trend).toFixed(1)}% vs {trendPeriod}
           </p>
         )}
       </div>
