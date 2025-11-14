@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Button,
   Table,
@@ -19,6 +19,7 @@ export default function UserManagement() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   const [filters, setFilters] = useState({
     search: '',
@@ -27,13 +28,12 @@ export default function UserManagement() {
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showBanConfirm, setShowBanConfirm] = useState(false);
+  const [userToBan, setUserToBan] = useState(null);
+  const [banError, setBanError] = useState(null);
 
   // Load users
-  useEffect(() => {
-    loadUsers();
-  }, [page, pageSize, filters]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -43,19 +43,24 @@ export default function UserManagement() {
       if (filters.search) params.append('search', filters.search);
       if (filters.status !== 'all') params.append('status', filters.status);
 
-      const { data } = await adminApi
-        .get(`/admin/users?${params.toString()}`)
-        .catch(() => ({ data: { content: [], totalPages: 0 } }));
+      const { data } = await adminApi.get(`/admin/users?${params.toString()}`);
 
       setUsers(data.content || []);
       setTotalPages(data.totalPages || 0);
+      setTotalUsers(data.totalElements || data.total || 0);
     } catch (err) {
-      console.error('Failed to load users:', err);
+      console.error('Failed to load users:', err.message);
+      setUsers([]);
+      setTotalPages(0);
+      setTotalUsers(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, filters]);
 
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
   const handleSearch = (value) => {
     setFilters({ ...filters, search: value });
     setPage(0);
@@ -76,15 +81,30 @@ export default function UserManagement() {
     setShowModal(true);
   };
 
-  const handleBanUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to ban this user?')) return;
+  const handleBanUser = (user) => {
+    if (!user?.id) return;
+    setUserToBan(user);
+    setShowBanConfirm(true);
+  };
+
+  const confirmBan = async () => {
+    if (!userToBan?.id) return;
+    setBanError(null);
     try {
-      await adminApi.put(`/admin/users/${userId}`, { status: 'banned' });
-      loadUsers();
+      await adminApi.put(`/admin/users/${userToBan.id}`, { status: 'banned' });
+      await loadUsers();
       setShowModal(false);
+      setShowBanConfirm(false);
+      setUserToBan(null);
     } catch (err) {
-      console.error('Failed to ban user:', err);
+      console.error('Failed to ban user:', err?.message || err);
+      setBanError(err?.message || 'Failed to ban user. Please try again.');
     }
+  };
+
+  const cancelBan = () => {
+    setShowBanConfirm(false);
+    setUserToBan(null);
   };
 
   const tableColumns = [
@@ -102,12 +122,26 @@ export default function UserManagement() {
     flags: user.crisisFlags || 0,
   }));
 
+  const getBadgeType = (status) => {
+    const normalized = (status || 'active').toLowerCase();
+    switch (normalized) {
+      case 'active':
+        return 'success';
+      case 'banned':
+        return 'danger';
+      case 'inactive':
+        return 'warning';
+      default:
+        return 'secondary';
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
         <h1 className="page-title">User Management</h1>
         <p className="page-subtitle">
-          Manage and monitor all platform users. Total: {totalPages * pageSize}+
+          Manage and monitor all platform users. Total: {totalUsers}
         </p>
       </div>
 
@@ -166,11 +200,15 @@ export default function UserManagement() {
         title="User Details"
         onClose={() => setShowModal(false)}
         footer={
-          <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end' }}>
             <Button variant="ghost" onClick={() => setShowModal(false)}>
               Close
             </Button>
-            <Button variant="danger" onClick={() => handleBanUser(selectedUser?.id)}>
+            <Button
+              variant="danger"
+              onClick={() => selectedUser?.id && handleBanUser(selectedUser)}
+              disabled={!selectedUser?.id}
+            >
               Ban User
             </Button>
           </div>
@@ -203,7 +241,7 @@ export default function UserManagement() {
             <div>
               <label style={{ fontWeight: 600, color: 'var(--gray)' }}>Status</label>
               <p style={{ margin: '4px 0 0 0' }}>
-                <Badge type={selectedUser.status === 'active' ? 'success' : 'secondary'}>
+                <Badge type={getBadgeType(selectedUser?.status)}>
                   {selectedUser.status || 'active'}
                 </Badge>
               </p>
@@ -233,6 +271,39 @@ export default function UserManagement() {
             </div>
           </div>
         )}
+      </Modal>
+      <Modal
+        isOpen={showBanConfirm}
+        title="Ban User"
+        onClose={cancelBan}
+        footer={
+          <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end' }}>
+            <Button variant="ghost" onClick={cancelBan}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={confirmBan} disabled={!userToBan?.id}>
+              Confirm Ban
+            </Button>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+          {banError && (
+            <div style={{
+              padding: 'var(--spacing-sm)',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: 'var(--color-danger)',
+              borderRadius: 'var(--radius-md)'
+            }}>
+              {banError}
+            </div>
+          )}
+          <p>
+            {userToBan?.email || 'This user'} will be banned and may require review to restore access.
+            This action can be reversed through a support request.
+          </p>
+        </div>
       </Modal>
     </div>
   );

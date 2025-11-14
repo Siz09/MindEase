@@ -17,17 +17,15 @@ export default function Analytics() {
 
   useEffect(() => {
     loadAnalytics();
-  }, [dateRange, activeTab]);
+  }, [dateRange]);
 
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      const { data } = await adminApi
-        .get(`/admin/analytics/overview?range=${dateRange}`)
-        .catch(() => ({ data: {} }));
+      const { data } = await adminApi.get(`/admin/analytics/overview?range=${dateRange}`);
       setMetrics(data);
     } catch (err) {
-      console.error('Failed to load analytics:', err);
+      console.error('Failed to load analytics:', err.message);
     } finally {
       setLoading(false);
     }

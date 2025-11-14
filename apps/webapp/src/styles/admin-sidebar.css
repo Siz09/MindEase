@@ -56,15 +56,15 @@
 }
 
 .sidebar-link:hover {
-  background-color: rgba(0, 212, 255, 0.1);
+  background-color: var(--color-accent-tint);
   color: var(--color-accent);
 }
 
 .sidebar-link.active {
-  background-color: rgba(0, 212, 255, 0.1);
+  background-color: var(--color-accent-tint);
   color: var(--color-accent);
-  border-left: 3px solid var(--color-accent);
-  padding-left: calc(var(--spacing-lg) - 3px);
+  border-left: var(--sidebar-accent-border-width) solid var(--color-accent);
+  padding-left: calc(var(--spacing-lg) - var(--sidebar-accent-border-width));
 }
 
 .sidebar-link svg {

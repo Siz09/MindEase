@@ -14,6 +14,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [activityData, setActivityData] = useState([]);
   const [recentAlerts, setRecentAlerts] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -25,20 +26,25 @@ export default function Dashboard() {
 
         // Fetch all dashboard data in parallel
         const [statsRes, activityRes, alertsRes] = await Promise.all([
-          adminApi.get('/admin/dashboard/overview').catch(() => ({ data: {} })),
-          adminApi.get('/admin/dashboard/activity-trend').catch(() => ({ data: [] })),
-          adminApi.get('/admin/dashboard/recent-alerts').catch(() => ({ data: [] })),
+          adminApi.get('/admin/dashboard/overview'),
+          adminApi.get('/admin/dashboard/activity-trend'),
+          adminApi.get('/admin/dashboard/recent-alerts'),
         ]);
 
         if (mounted) {
-          setStats(statsRes.data);
-          setActivityData(activityRes.data);
-          setRecentAlerts(alertsRes.data);
+          const statsPayload = statsRes.data || {};
+          const activityPayload = Array.isArray(activityRes.data) ? activityRes.data : [];
+          const alertsPayload = Array.isArray(alertsRes.data) ? alertsRes.data : [];
+
+          setStats(statsPayload);
+          setActivityData(activityPayload);
+          setRecentAlerts(alertsPayload);
+          setLastUpdated(new Date());
         }
       } catch (err) {
         if (mounted) {
           setError('Failed to load dashboard data');
-          console.error('Dashboard error:', err);
+          console.error('Dashboard error:', err.message);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -50,6 +56,16 @@ export default function Dashboard() {
       mounted = false;
     };
   }, []);
+
+  const formatTrendText = (trendValue) => {
+    if (trendValue == null) return 'No trend data';
+    if (typeof trendValue === 'string' && trendValue.trim().length) return trendValue;
+    if (typeof trendValue === 'number' && !Number.isNaN(trendValue)) {
+      if (trendValue === 0) return '→ 0.0% vs last week';
+      return `${trendValue > 0 ? '↑' : '↓'} ${Math.abs(trendValue).toFixed(1)}% vs last week`;
+    }
+    return 'No trend data';
+  };
 
   return (
     <div>
@@ -80,7 +96,9 @@ export default function Dashboard() {
             <div className="bento-card-icon">👥</div>
             <div className="bento-card-label">Active Users</div>
             <div className="bento-card-value">{stats.activeUsers?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">↑ 12% vs last week</div>
+            <div className="bento-card-trend">
+              {formatTrendText(stats.activeUsersTrend)}
+            </div>
           </div>
         </div>
 
@@ -89,7 +107,9 @@ export default function Dashboard() {
             <div className="bento-card-icon">📝</div>
             <div className="bento-card-label">Daily Signups</div>
             <div className="bento-card-value">{stats.dailySignups?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">↑ 8% vs last week</div>
+            <div className="bento-card-trend">
+              {formatTrendText(stats.dailySignupsTrend)}
+            </div>
           </div>
         </div>
 
@@ -98,7 +118,9 @@ export default function Dashboard() {
             <div className="bento-card-icon">🚨</div>
             <div className="bento-card-label">Crisis Flags</div>
             <div className="bento-card-value">{stats.crisisFlags?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend negative">↓ 2% vs last week</div>
+            <div className="bento-card-trend negative">
+              {formatTrendText(stats.crisisFlagsTrend)}
+            </div>
           </div>
         </div>
 
@@ -107,7 +129,9 @@ export default function Dashboard() {
             <div className="bento-card-icon">🤖</div>
             <div className="bento-card-label">AI Usage</div>
             <div className="bento-card-value">{stats.aiUsage?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">↑ 15% vs last week</div>
+            <div className="bento-card-trend">
+              {formatTrendText(stats.aiUsageTrend)}
+            </div>
           </div>
         </div>
       </div>
@@ -161,7 +185,12 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
             {recentAlerts.slice(0, 5).map((alert, idx) => (
               <div
-                key={idx}
+                key={
+                  alert.id ||
+                  alert.createdAt ||
+                  alert.timestamp ||
+                  `${alert.userId || 'alert'}-${idx}`
+                }
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -216,7 +245,7 @@ export default function Dashboard() {
         }}
       >
         <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>✓</span> All systems
-        operational • Last updated 2 minutes ago
+        operational{lastUpdated && ` • Last updated ${lastUpdated.toLocaleTimeString()}`}
       </div>
     </div>
   );

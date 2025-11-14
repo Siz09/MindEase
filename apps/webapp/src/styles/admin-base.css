@@ -20,6 +20,16 @@
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
+  --color-border-hover: #d1d5db;
+  --color-success-light: #d1fae5;
+  --color-warning-light: #fef3c7;
+  --color-danger-light: #fee2e2;
+  --color-accent-shadow: rgba(99, 102, 241, 0.2);
+  --color-accent-faint: rgba(99, 102, 241, 0.08);
+  --color-danger-hover: #dc2626;
+  --color-danger-dark: #b91c1c;
+  --color-accent-tint: rgba(99, 102, 241, 0.12);
+  --sidebar-accent-border-width: 3px;
 
   /* Spacing - 4px base unit */
   --spacing-xs: 4px;

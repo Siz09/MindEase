@@ -1,29 +1,42 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 export default function Toast({ message, type = "info", duration = 3000, onClose }) {
   const [isVisible, setIsVisible] = useState(true)
+  const onCloseRef = useRef(onClose)
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false)
-      onClose && onClose()
+      onCloseRef.current?.()
     }, duration)
     return () => clearTimeout(timer)
-  }, [duration, onClose])
+  }, [duration])
 
   if (!isVisible) return null
 
-  const bgColor = {
-    success: "var(--success)",
-    error: "var(--danger)",
-    warning: "var(--warning)",
-    info: "var(--info)",
-  }[type]
+  const bgColor =
+    {
+      success: "var(--success)",
+      error: "var(--danger)",
+      warning: "var(--warning)",
+      info: "var(--info)",
+    }[type] || "var(--info)"
+
+  const accessibilityProps =
+    type === "error"
+      ? { role: "alert", "aria-live": "assertive" }
+      : { role: "status", "aria-live": "polite" }
 
   return (
     <div
+      {...accessibilityProps}
+      aria-atomic="true"
       style={{
         position: "fixed",
         bottom: "20px",

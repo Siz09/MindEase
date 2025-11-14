@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import {
   Button,
@@ -12,7 +10,6 @@ import {
   Card,
 } from '../components/shared';
 import adminApi from '../adminApi';
-import { useAdminAuth } from '../AdminAuthContext';
 
 const getRiskColor = (score) => {
   if (score >= 8) return 'danger';
@@ -27,7 +24,6 @@ const getRiskLevel = (score) => {
 };
 
 export default function CrisisMonitoring() {
-  const { adminToken } = useAdminAuth();
   const [flags, setFlags] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -75,16 +71,18 @@ export default function CrisisMonitoring() {
         clearTimeout(fallbackTimer);
       };
 
-      const onFlag = (ev) => {
-        try {
-          const flag = JSON.parse(ev.data);
-          if (page === 0) {
-            setFlags((prev) => [flag, ...prev].slice(0, pageSize));
-          }
-        } catch {
-          return;
+    const onFlag = (ev) => {
+      try {
+        const flag = JSON.parse(ev.data);
+        const flagLevel = getRiskLevel(flag.riskScore * 100).toLowerCase();
+        const matchesFilter = filters.riskLevel === 'all' || filters.riskLevel === flagLevel;
+        if (page === 0 && matchesFilter) {
+          setFlags((prev) => [flag, ...prev].slice(0, pageSize));
         }
-      };
+      } catch {
+        return;
+      }
+    };
 
       es.onmessage = onFlag;
       es.addEventListener('flag', onFlag);
@@ -102,7 +100,7 @@ export default function CrisisMonitoring() {
         esRef.current.close();
       }
     };
-  }, [adminToken, pageSize]);
+  }, [pageSize, page, filters.riskLevel]);
 
   const loadFlags = async () => {
     if (inFlightRef.current) return;
@@ -119,15 +117,20 @@ export default function CrisisMonitoring() {
         params.append('riskLevel', filters.riskLevel);
       }
 
-      const { data } = await adminApi
-        .get(`/admin/crisis-flags?${params.toString()}`)
-        .catch(() => ({ data: { content: [], totalPages: 0, stats: {} } }));
+      if (filters.timeRange !== 'all') {
+        params.append('timeRange', filters.timeRange);
+      }
+
+      const { data } = await adminApi.get(`/admin/crisis-flags?${params.toString()}`);
 
       setFlags(data.content || []);
       setTotalPages(data.totalPages || 0);
       setStats(data.stats || { high: 0, medium: 0, low: 0 });
     } catch (err) {
-      console.error('Failed to load crisis flags:', err);
+      console.error('Failed to load crisis flags:', err.message);
+      setFlags([]);
+      setTotalPages(0);
+      setStats({ high: 0, medium: 0, low: 0 });
     } finally {
       setLoading(false);
       inFlightRef.current = false;

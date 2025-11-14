@@ -1,13 +1,37 @@
 "use client"
 
-export default function Select({ label, value, onChange, options, error, helper, className = "", ...props }) {
+import { useId } from "react"
+
+export default function Select({
+  label,
+  value,
+  onChange,
+  options = [],
+  error,
+  helper,
+  className = "",
+  id,
+  ...props
+}) {
+  const selectId = id || useId()
+  const errorId = `${selectId}-error`
+  const helperId = `${selectId}-helper`
+  const describedBy = [error && errorId, helper && helperId].filter(Boolean).join(" ") || undefined
+
   return (
     <div className="form-group">
-      {label && <label className="form-label">{label}</label>}
+      {label && (
+        <label htmlFor={selectId} className="form-label">
+          {label}
+        </label>
+      )}
       <select
+        id={selectId}
         value={value}
         onChange={onChange}
         className={`form-select select-field ${className}`.trim()}
+        aria-invalid={error ? "true" : "false"}
+        aria-describedby={describedBy}
         {...props}
       >
         {options.map((opt) => (
@@ -17,11 +41,15 @@ export default function Select({ label, value, onChange, options, error, helper,
         ))}
       </select>
       {error && (
-        <div className="form-helper" style={{ color: "var(--danger)" }}>
+        <div id={errorId} className="form-helper" style={{ color: "var(--danger)" }}>
           {error}
         </div>
       )}
-      {helper && <div className="form-helper">{helper}</div>}
+      {helper && (
+        <div id={helperId} className="form-helper">
+          {helper}
+        </div>
+      )}
     </div>
   )
 }

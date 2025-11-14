@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 
 export default function Table({
   columns,
@@ -42,16 +42,19 @@ export default function Table({
     setSelectedRows(newSelected)
   }
 
-  const sortedData = [...data]
-  if (sortConfig.key) {
-    sortedData.sort((a, b) => {
-      const aVal = a[sortConfig.key]
-      const bVal = b[sortConfig.key]
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1
-      return 0
-    })
-  }
+  const sortedData = useMemo(() => {
+    const sorted = [...data]
+    if (sortConfig.key) {
+      sorted.sort((a, b) => {
+        const aVal = a[sortConfig.key]
+        const bVal = b[sortConfig.key]
+        if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1
+        if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1
+        return 0
+      })
+    }
+    return sorted
+  }, [data, sortConfig])
 
   return (
     <div className="table-container">
@@ -97,12 +100,14 @@ export default function Table({
             </tr>
           )}
           {!loading &&
-            sortedData.map((row, idx) => (
-              <tr
-                key={idx}
-                onClick={() => onRowClick && onRowClick(row)}
-                style={{ cursor: onRowClick ? "pointer" : "default" }}
-              >
+            sortedData.map((row, idx) => {
+              const rowKey = row.id || row.key || `row-${idx}`
+              return (
+                <tr
+                  key={rowKey}
+                  onClick={() => onRowClick && onRowClick(row)}
+                  style={{ cursor: onRowClick ? "pointer" : "default" }}
+                >
                 {selectable && (
                   <td onClick={(e) => handleSelectRow(idx, e)}>
                     <input type="checkbox" checked={selectedRows.has(idx)} readOnly />
@@ -111,8 +116,9 @@ export default function Table({
                 {columns.map((col) => (
                   <td key={col.key}>{row[col.key]}</td>
                 ))}
-              </tr>
-            ))}
+                </tr>
+              )
+            })}
         </tbody>
       </table>
     </div>

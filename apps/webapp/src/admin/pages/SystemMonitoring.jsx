@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Card } from '../components/shared';
 import adminApi from '../adminApi';
 
@@ -20,13 +20,8 @@ export default function SystemMonitoring() {
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadSystemStatus();
-    const interval = setInterval(loadSystemStatus, 30000); // Update every 30s
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadSystemStatus = async () => {
+  const loadSystemStatus = useCallback(async () => {
+    setLoading(true);
     try {
       const [statusRes, healthRes, errorsRes] = await Promise.all([
         adminApi.get('/admin/system/status').catch(() => ({ data: {} })),
@@ -39,8 +34,16 @@ export default function SystemMonitoring() {
       setErrors(Array.isArray(errorsRes.data) ? errorsRes.data : []);
     } catch (err) {
       console.error('Failed to load system status:', err);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSystemStatus();
+    const interval = setInterval(loadSystemStatus, 30000); // Update every 30s
+    return () => clearInterval(interval);
+  }, [loadSystemStatus]);
 
   const HealthBar = ({ label, value }) => (
     <div style={{ marginBottom: 'var(--spacing-lg)' }}>
@@ -82,6 +85,19 @@ export default function SystemMonitoring() {
         <h1 className="page-title">System Health & Monitoring</h1>
         <p className="page-subtitle">Real-time system performance and diagnostics</p>
       </div>
+
+      {loading && (
+        <div style={{
+          marginBottom: 'var(--spacing-lg)',
+          padding: 'var(--spacing-sm) var(--spacing-md)',
+          backgroundColor: 'var(--color-bg-tertiary)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--color-text-secondary)'
+        }}>
+          Loading system status…
+        </div>
+      )}
 
       <div
         style={{

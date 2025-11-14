@@ -30,13 +30,13 @@ export default function ContentLibrary() {
       if (filters.search) params.append('search', filters.search);
       if (filters.category !== 'all') params.append('category', filters.category);
 
-      const { data } = await adminApi
-        .get(`/admin/content?${params.toString()}`)
-        .catch(() => ({ data: [] }));
+      const { data } = await adminApi.get(`/admin/content?${params.toString()}`);
 
       setContent(Array.isArray(data) ? data : data.content || []);
     } catch (err) {
-      console.error('Failed to load content:', err);
+      console.error('Failed to load content:', err.message);
+      // TODO: Show user-facing error notification
+      setContent([]);
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ export default function ContentLibrary() {
       loadContent();
       setShowModal(false);
     } catch (err) {
-      console.error('Failed to delete content:', err);
+      console.error('Failed to delete content:', err.message);
     }
   };
 
@@ -180,16 +180,16 @@ export default function ContentLibrary() {
                 onClick={() => handleContentClick(item)}
               >
                 {item.imageUrl && (
-                  <div
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title || 'Content image'}
                     style={{
                       width: '100%',
                       height: '150px',
                       backgroundColor: 'var(--gray-lighter)',
                       borderRadius: 'var(--radius-md)',
                       marginBottom: 'var(--spacing-md)',
-                      backgroundImage: `url(${item.imageUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
+                      objectFit: 'cover',
                     }}
                   />
                 )}

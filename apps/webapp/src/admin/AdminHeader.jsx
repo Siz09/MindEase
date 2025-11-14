@@ -2,24 +2,12 @@
 
 import { useAdminAuth } from "./AdminAuthContext"
 
-export default function AdminHeader({ sidebarOpen, setSidebarOpen }) {
+export default function AdminHeader() {
   const { adminUser, logout } = useAdminAuth()
-
-  const handleLogout = () => {
-    logout()
-  }
 
   return (
     <header className="admin-header">
       <div className="admin-header-left">
-        <button
-          className="btn btn-ghost"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          style={{ display: "none" }}
-          id="sidebar-toggle"
-        >
-          ☰
-        </button>
         <div className="admin-header-logo">
           <span>🧠</span>
           <span>MindEase</span>
@@ -44,6 +32,17 @@ export default function AdminHeader({ sidebarOpen, setSidebarOpen }) {
               <div className="admin-user-info-role">Administrator</div>
             </div>
             <div className="admin-user-avatar">{(adminUser?.email || "A").charAt(0).toUpperCase()}</div>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                logout()
+                window.location.href = "/login"
+              }}
+              style={{ marginLeft: "var(--spacing-lg)" }}
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

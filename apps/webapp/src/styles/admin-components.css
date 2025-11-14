@@ -43,8 +43,8 @@
 }
 
 .btn-danger:hover {
-  background-color: #dc2626;
-  border-color: #dc2626;
+  background-color: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
 }
 
 .btn-ghost {
@@ -125,17 +125,17 @@
 }
 
 .badge-success {
-  background-color: #d1fae5;
+  background-color: var(--color-success-light);
   color: var(--color-success);
 }
 
 .badge-warning {
-  background-color: #fef3c7;
+  background-color: var(--color-warning-light);
   color: var(--color-warning);
 }
 
 .badge-danger {
-  background-color: #fee2e2;
+  background-color: var(--color-danger-light);
   color: var(--color-danger);
 }
 
@@ -155,7 +155,7 @@
 
 .input-field:hover,
 .form-input:hover {
-  border-color: var(--color-border);
+  border-color: var(--color-border-hover);
 }
 
 .input-field:focus,

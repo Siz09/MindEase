@@ -72,7 +72,7 @@
   transition: transform var(--transition);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .admin-sidebar {
     transform: translateX(-100%);
   }
@@ -108,7 +108,7 @@
   flex: 1;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .admin-main {
     margin-left: 0;
   }
