@@ -15,23 +15,29 @@ import com.mindease.model.Role;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-  Optional<User> findByEmail(String email);
+    Optional<User> findByEmail(String email);
 
-  Optional<User> findByFirebaseUid(String firebaseUid);
+    Optional<User> findByFirebaseUid(String firebaseUid);
 
-  boolean existsByEmail(String email);
+    boolean existsByEmail(String email);
 
-  boolean existsByFirebaseUid(String firebaseUid);
+    boolean existsByFirebaseUid(String firebaseUid);
 
-  List<User> findByRole(Role role);
+    List<User> findByRole(Role role);
 
-  Page<User> findByEmailContainingIgnoreCaseAndDeletedAtIsNull(String email, Pageable pageable);
+    Page<User> findByEmailContainingIgnoreCaseAndDeletedAtIsNull(String email, Pageable pageable);
 
-  Page<User> findByDeletedAtIsNull(Pageable pageable);
+    Page<User> findByDeletedAtIsNull(Pageable pageable);
 
-  Page<User> findByEmailContainingIgnoreCaseAndDeletedAtIsNullAndBannedTrue(String email, Pageable pageable);
+    Page<User> findByEmailContainingIgnoreCaseAndDeletedAtIsNullAndBannedTrue(String email, Pageable pageable);
 
-  Page<User> findByDeletedAtIsNullAndBannedTrue(Pageable pageable);
+    Page<User> findByDeletedAtIsNullAndBannedTrue(Pageable pageable);
 
-  Optional<User> findByEmailIgnoreCase(String email);
+    Optional<User> findByEmailIgnoreCase(String email);
+
+    long countByDeletedAtIsNull();
+
+    long countByDeletedAtIsNullAndBannedTrue();
+
+    List<User> findByDeletedAtIsNullAndBannedFalse();
 }

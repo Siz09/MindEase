@@ -9,7 +9,7 @@ BEGIN
     FROM information_schema.columns
     WHERE table_name = 'users' AND column_name = 'banned'
   ) THEN
-    -- Add column as nullable first with default
+    -- Add non-nullable boolean column with default value
     ALTER TABLE users
       ADD COLUMN banned BOOLEAN NOT NULL DEFAULT FALSE;
   END IF;
@@ -37,7 +37,9 @@ BEGIN
     WHERE table_name = 'users' AND column_name = 'banned_by'
   ) THEN
     ALTER TABLE users
-      ADD COLUMN banned_by UUID NULL;
+      ADD COLUMN banned_by UUID NULL,
+      ADD CONSTRAINT fk_banned_by_user_id
+        FOREIGN KEY (banned_by) REFERENCES users(id) ON DELETE SET NULL;
   END IF;
 END$$;
 
@@ -49,7 +51,7 @@ BEGIN
     FROM information_schema.columns
     WHERE table_name = 'crisis_flags' AND column_name = 'escalated'
   ) THEN
-    -- Add column as nullable first with default
+    -- Add non-nullable boolean column with default value
     ALTER TABLE crisis_flags
       ADD COLUMN escalated BOOLEAN NOT NULL DEFAULT FALSE;
   END IF;

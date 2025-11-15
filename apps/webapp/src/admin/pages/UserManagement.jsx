@@ -48,14 +48,12 @@ export default function UserManagement() {
   });
   const [formErrors, setFormErrors] = useState({});
   const [formLoading, setFormLoading] = useState(false);
-
-  // Calculate stats
-  const stats = {
-    total: totalUsers,
-    active: users.filter((u) => u.status === 'active').length,
-    banned: users.filter((u) => u.status === 'banned').length,
-    inactive: users.filter((u) => u.status === 'inactive').length,
-  };
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    banned: 0,
+    inactive: 0,
+  });
 
   // Load users
   const loadUsers = useCallback(async () => {
@@ -83,9 +81,25 @@ export default function UserManagement() {
     }
   }, [page, pageSize, filters]);
 
+  // Load stats
+  const loadStats = useCallback(async () => {
+    try {
+      const { data } = await adminApi.get('/admin/users/stats');
+      setStats({
+        total: data.total || 0,
+        active: data.active || 0,
+        banned: data.banned || 0,
+        inactive: data.inactive || 0,
+      });
+    } catch (err) {
+      console.error('Failed to load stats:', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadUsers();
-  }, [loadUsers]);
+    loadStats();
+  }, [loadUsers, loadStats]);
 
   // Auto-dismiss notifications
   useEffect(() => {

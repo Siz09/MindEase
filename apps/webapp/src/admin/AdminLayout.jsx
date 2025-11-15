@@ -10,10 +10,21 @@ import '../styles/admin-responsive.css';
 // Ensure core component styles are loaded for buttons, inputs, selects, and tables
 import '../styles/admin-components.css';
 import '../styles/admin-tables.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Close sidebar on Escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [sidebarOpen]);
 
   return (
     <div className="admin-shell">
@@ -22,6 +33,7 @@ export default function AdminLayout() {
         className="admin-mobile-menu-btn"
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label="Toggle menu"
+        aria-expanded={sidebarOpen}
       >
         <svg
           width="24"
@@ -39,7 +51,13 @@ export default function AdminLayout() {
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
-        <div className="admin-sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="admin-sidebar-overlay"
+          onClick={() => setSidebarOpen(false)}
+          role="button"
+          tabIndex={0}
+          aria-label="Close menu"
+        />
       )}
 
       <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />

@@ -76,7 +76,7 @@ public class User {
         return id;
     }
 
-    public void setId(UUID id) {
+    void setId(UUID id) { // package-private for testing only
         this.id = id;
     }
 
@@ -116,7 +116,7 @@ public class User {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    void setCreatedAt(LocalDateTime createdAt) { // package-private if needed for testing
         this.createdAt = createdAt;
     }
 
@@ -165,6 +165,12 @@ public class User {
     }
 
     public void setBanned(boolean banned) {
+        if (banned && (bannedAt == null || bannedBy == null)) {
+            throw new IllegalStateException("bannedAt and bannedBy must be set before setting banned=true");
+        }
+        if (!banned && (bannedAt != null || bannedBy != null)) {
+            throw new IllegalStateException("bannedAt and bannedBy must be cleared before setting banned=false");
+        }
         this.banned = banned;
     }
 
@@ -184,9 +190,7 @@ public class User {
         this.bannedBy = bannedBy;
     }
 
-    // Pre-persist callback
-    @PrePersist
-    private void validateBanFields() {
+    private void validateBanFieldConsistency() {
         if (banned && (bannedAt == null || bannedBy == null)) {
             throw new IllegalStateException("bannedAt and bannedBy must be set when user is banned");
         }
@@ -195,17 +199,22 @@ public class User {
         }
     }
 
+    // Pre-persist callback
+    @PrePersist
+    private void validateBanFields() {
+        validateBanFieldConsistency();
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
     // Pre-update callback
     @PreUpdate
     private void preUpdate() {
-        // Validate ban fields
-        if (banned && (bannedAt == null || bannedBy == null)) {
-            throw new IllegalStateException("bannedAt and bannedBy must be set when user is banned");
-        }
-        if (!banned && (bannedAt != null || bannedBy != null)) {
-            throw new IllegalStateException("bannedAt and bannedBy must be null when user is not banned");
-        }
-        // Update timestamp
+        validateBanFieldConsistency();
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -213,12 +222,12 @@ public class User {
     public String toString() {
         return "User{" +
                 "id=" + id +
-                ", email='" + email + '\'' +
+                ", email='[REDACTED]'" +
                 ", role=" + role +
                 ", anonymousMode=" + anonymousMode +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
-                ", firebaseUid='" + firebaseUid + '\'' +
+                ", firebaseUid='[REDACTED]'" +
                 '}';
     }
 }

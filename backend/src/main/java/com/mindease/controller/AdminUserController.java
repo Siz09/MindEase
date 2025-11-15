@@ -49,9 +49,9 @@ public class AdminUserController {
     private final AuditService auditService;
 
     public AdminUserController(UserRepository userRepository,
-                               AuditLogRepository auditLogRepository,
-                               CrisisFlagRepository crisisFlagRepository,
-                               AuditService auditService) {
+            AuditLogRepository auditLogRepository,
+            CrisisFlagRepository crisisFlagRepository,
+            AuditService auditService) {
         this.userRepository = userRepository;
         this.auditLogRepository = auditLogRepository;
         this.crisisFlagRepository = crisisFlagRepository;
@@ -65,8 +65,7 @@ public class AdminUserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false, defaultValue = "all") String status
-    ) {
+            @RequestParam(required = false, defaultValue = "all") String status) {
         int pageSize = Math.max(1, Math.min(size, 200));
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -135,8 +134,7 @@ public class AdminUserController {
     public ResponseEntity<UserAdminSummary> updateStatus(
             @PathVariable UUID id,
             @RequestBody(required = false) java.util.Map<String, Object> body,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         Optional<User> userOpt = userRepository.findById(id);
         if (userOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -159,8 +157,7 @@ public class AdminUserController {
                 user,
                 findLastActive(user.getId()),
                 crisisFlagRepository.countByUserId(user.getId()),
-                false
-        ));
+                false));
     }
 
     @Transactional
@@ -189,8 +186,7 @@ public class AdminUserController {
     @Operation(summary = "Bulk user action", description = "Allows applying simple actions (e.g., ban) to many users")
     public ResponseEntity<java.util.Map<String, Object>> bulkAction(
             @RequestBody java.util.Map<String, Object> body,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         Object actionObj = body.get("action");
         Object idsObj = body.get("userIds");
         if (!(actionObj instanceof String action) || !(idsObj instanceof List<?> rawIds)) {
@@ -233,29 +229,63 @@ public class AdminUserController {
     public Page<UserAdminSummary> search(
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "25") int size
-    ) {
+            @RequestParam(defaultValue = "25") int size) {
         return list(page, size, q, "all");
+    }
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get user statistics", description = "Returns aggregated counts of total, active, banned, and inactive users")
+    public ResponseEntity<Map<String, Long>> getStats() {
+        long total = userRepository.countByDeletedAtIsNull();
+        long banned = userRepository.countByDeletedAtIsNullAndBannedTrue();
+
+        // Get all non-deleted, non-banned users to check their activity
+        List<User> nonBannedUsers = userRepository.findByDeletedAtIsNullAndBannedFalse();
+        List<UUID> userIds = nonBannedUsers.stream().map(User::getId).collect(Collectors.toList());
+        Map<UUID, OffsetDateTime> lastActiveMap = fetchLastActiveForUsers(userIds);
+
+        OffsetDateTime thirtyDaysAgo = OffsetDateTime.now(ZoneOffset.UTC).minusDays(30);
+        long active = 0;
+        long inactive = 0;
+
+        for (User user : nonBannedUsers) {
+            OffsetDateTime lastActive = lastActiveMap.get(user.getId());
+            if (lastActive == null || lastActive.isBefore(thirtyDaysAgo)) {
+                inactive++;
+            } else {
+                active++;
+            }
+        }
+
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("total", total);
+        stats.put("active", active);
+        stats.put("banned", banned);
+        stats.put("inactive", inactive);
+
+        return ResponseEntity.ok(stats);
     }
 
     private void setBannedFlag(UUID userId, boolean banned, Authentication authentication) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
-        user.setBanned(banned);
         if (banned) {
             user.setBannedAt(OffsetDateTime.now(ZoneOffset.UTC));
             user.setBannedBy(resolveAdminId(authentication));
+            user.setBanned(true);
         } else {
             user.setBannedAt(null);
             user.setBannedBy(null);
+            user.setBanned(false);
         }
         userRepository.save(user);
     }
 
     private UserAdminSummary toSummary(User user,
-                                       OffsetDateTime lastActive,
-                                       long crisisCount,
-                                       boolean maskEmail) {
+            OffsetDateTime lastActive,
+            long crisisCount,
+            boolean maskEmail) {
         String status = resolveStatus(user, lastActive);
         String email = user.getEmail();
         if (maskEmail && email != null) {
@@ -269,15 +299,13 @@ public class AdminUserController {
                         ? user.getCreatedAt().atOffset(ZoneOffset.UTC)
                         : null,
                 lastActive,
-                crisisCount
-        );
+                crisisCount);
     }
 
     private OffsetDateTime findLastActive(UUID userId) {
         Page<AuditLog> page = auditLogRepository.findByUserIdOrderByCreatedAtDesc(
                 userId,
-                PageRequest.of(0, 1)
-        );
+                PageRequest.of(0, 1));
         return page.isEmpty() ? null : page.getContent().get(0).getCreatedAt();
     }
 
@@ -293,7 +321,8 @@ public class AdminUserController {
     }
 
     private Map<UUID, OffsetDateTime> fetchLastActiveForUsers(List<UUID> userIds) {
-        if (userIds.isEmpty()) return java.util.Collections.emptyMap();
+        if (userIds.isEmpty())
+            return java.util.Collections.emptyMap();
         Map<UUID, OffsetDateTime> map = new HashMap<>();
         for (Object[] row : auditLogRepository.findLastActiveByUserIds(userIds)) {
             UUID userId = (UUID) row[0];
@@ -304,7 +333,8 @@ public class AdminUserController {
     }
 
     private Map<UUID, Long> fetchCrisisCounts(List<UUID> userIds) {
-        if (userIds.isEmpty()) return java.util.Collections.emptyMap();
+        if (userIds.isEmpty())
+            return java.util.Collections.emptyMap();
         List<Object[]> rows = crisisFlagRepository.countByUserIdIn(userIds);
         Map<UUID, Long> map = new HashMap<>();
         for (Object[] row : rows) {
