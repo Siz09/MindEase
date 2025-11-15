@@ -240,23 +240,11 @@ public class AdminUserController {
         long total = userRepository.countByDeletedAtIsNull();
         long banned = userRepository.countByDeletedAtIsNullAndBannedTrue();
 
-        // Get all non-deleted, non-banned users to check their activity
-        List<User> nonBannedUsers = userRepository.findByDeletedAtIsNullAndBannedFalse();
-        List<UUID> userIds = nonBannedUsers.stream().map(User::getId).collect(Collectors.toList());
-        Map<UUID, OffsetDateTime> lastActiveMap = fetchLastActiveForUsers(userIds);
-
         OffsetDateTime thirtyDaysAgo = OffsetDateTime.now(ZoneOffset.UTC).minusDays(30);
-        long active = 0;
-        long inactive = 0;
 
-        for (User user : nonBannedUsers) {
-            OffsetDateTime lastActive = lastActiveMap.get(user.getId());
-            if (lastActive == null || lastActive.isBefore(thirtyDaysAgo)) {
-                inactive++;
-            } else {
-                active++;
-            }
-        }
+        // Count active users via a custom repository query that joins with audit logs
+        long active = userRepository.countActiveNonBannedUsers(thirtyDaysAgo);
+        long inactive = (total - banned) - active;
 
         Map<String, Long> stats = new HashMap<>();
         stats.put("total", total);

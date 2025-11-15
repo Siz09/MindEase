@@ -54,6 +54,12 @@ export default function AdminLayout() {
         <div
           className="admin-sidebar-overlay"
           onClick={() => setSidebarOpen(false)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setSidebarOpen(false);
+            }
+          }}
           role="button"
           tabIndex={0}
           aria-label="Close menu"

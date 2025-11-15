@@ -165,12 +165,6 @@ public class User {
     }
 
     public void setBanned(boolean banned) {
-        if (banned && (bannedAt == null || bannedBy == null)) {
-            throw new IllegalStateException("bannedAt and bannedBy must be set before setting banned=true");
-        }
-        if (!banned && (bannedAt != null || bannedBy != null)) {
-            throw new IllegalStateException("bannedAt and bannedBy must be cleared before setting banned=false");
-        }
         this.banned = banned;
     }
 

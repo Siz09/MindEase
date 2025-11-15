@@ -147,6 +147,7 @@ export default function UserManagement() {
         message: `User ${status === 'banned' ? 'banned' : 'unbanned'} successfully.`,
       });
       await loadUsers();
+      await loadStats();
       setShowBanConfirm(false);
       setUserToBan(null);
     } catch (err) {
@@ -178,6 +179,7 @@ export default function UserManagement() {
         message: 'User deleted successfully.',
       });
       await loadUsers();
+      await loadStats();
       setShowDeleteConfirm(false);
       setUserToDelete(null);
     } catch (err) {
@@ -254,6 +256,7 @@ export default function UserManagement() {
         });
         setShowEditModal(false);
         await loadUsers();
+        await loadStats();
         setFormData({
           email: '',
           password: '',

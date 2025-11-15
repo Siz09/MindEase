@@ -46,6 +46,12 @@ export default function CrisisMonitoring() {
 
   const esRef = useRef(null);
   const inFlightRef = useRef(false);
+  const pageRef = useRef(page);
+
+  // Keep pageRef in sync with page state
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
 
   // Load crisis flags
   useEffect(() => {
@@ -87,7 +93,8 @@ export default function CrisisMonitoring() {
           }
           const flagLevel = getRiskLevel(flag.riskScore * 100).toLowerCase();
           const matchesFilter = filters.riskLevel === 'all' || filters.riskLevel === flagLevel;
-          if (page === 0 && matchesFilter) {
+          // Use pageRef to get current page value without causing reconnections
+          if (pageRef.current === 0 && matchesFilter) {
             setFlags((prev) => [flag, ...prev].slice(0, pageSize));
           }
         } catch (error) {
@@ -112,7 +119,7 @@ export default function CrisisMonitoring() {
         esRef.current.close();
       }
     };
-  }, [pageSize, page, filters.riskLevel]);
+  }, [pageSize, filters.riskLevel]);
 
   const loadFlags = async () => {
     if (inFlightRef.current) return;
