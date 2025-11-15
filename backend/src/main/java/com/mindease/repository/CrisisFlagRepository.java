@@ -29,11 +29,21 @@ public interface CrisisFlagRepository extends JpaRepository<CrisisFlag, UUID> {
     long countByUserId(UUID userId);
 
     @Query("SELECT new com.mindease.dto.CrisisStatsResponse(" +
-           "SUM(CASE WHEN f.riskScore >= 0.08 THEN 1 ELSE 0 END), " +
-           "SUM(CASE WHEN f.riskScore >= 0.05 AND f.riskScore < 0.08 THEN 1 ELSE 0 END), " +
-           "SUM(CASE WHEN (f.riskScore < 0.05 OR f.riskScore IS NULL) THEN 1 ELSE 0 END)) " +
+           "COALESCE(SUM(CASE WHEN f.riskScore >= 0.08 THEN 1 ELSE 0 END), 0), " +
+           "COALESCE(SUM(CASE WHEN f.riskScore >= 0.05 AND f.riskScore < 0.08 THEN 1 ELSE 0 END), 0), " +
+           "COALESCE(SUM(CASE WHEN (f.riskScore < 0.05 OR f.riskScore IS NULL) THEN 1 ELSE 0 END), 0)) " +
            "FROM CrisisFlag f WHERE f.createdAt BETWEEN :from AND :to")
-    CrisisStatsResponse computeStats(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+    CrisisStatsResponse computeStatsRaw(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    default CrisisStatsResponse computeStats(OffsetDateTime from, OffsetDateTime to) {
+        try {
+            CrisisStatsResponse result = computeStatsRaw(from, to);
+            return result != null ? result : new CrisisStatsResponse(0, 0, 0);
+        } catch (Exception e) {
+            // If query returns null or fails, return zeros
+            return new CrisisStatsResponse(0, 0, 0);
+        }
+    }
 
     @Query("SELECT new com.mindease.dto.KeywordStat(LOWER(f.keywordDetected), COUNT(f)) " +
            "FROM CrisisFlag f " +

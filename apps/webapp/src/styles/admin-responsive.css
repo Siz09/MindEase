@@ -14,24 +14,6 @@
 }
 
 @media (max-width: 768px) {
-  .admin-header {
-    padding: 0 var(--spacing-md);
-    gap: var(--spacing-md);
-  }
-
-  .admin-header-logo {
-    gap: var(--spacing-xs);
-    font-size: 14px;
-  }
-
-  .admin-header-right {
-    gap: var(--spacing-md);
-  }
-
-  #sidebar-toggle {
-    display: block !important;
-  }
-
   .admin-content {
     padding: var(--spacing-lg);
   }
@@ -66,29 +48,6 @@
 }
 
 @media (max-width: 640px) {
-  .admin-header {
-    height: 56px;
-    padding: 0 var(--spacing-md);
-  }
-
-  .admin-header-left {
-    gap: var(--spacing-md);
-  }
-
-  .admin-header-logo span:last-child {
-    display: none;
-  }
-
-  .admin-header-right {
-    gap: var(--spacing-sm);
-  }
-
-  .admin-user-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 11px;
-  }
-
   .admin-content {
     padding: var(--spacing-md);
   }

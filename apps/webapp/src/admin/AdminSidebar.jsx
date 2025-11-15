@@ -1,5 +1,6 @@
-import { NavLink } from "react-router-dom"
-import { useAdminAuth } from "./AdminAuthContext"
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAdminAuth } from './AdminAuthContext';
+import { useState, useRef, useEffect } from 'react';
 
 const navIcons = {
   dashboard: (
@@ -153,48 +154,82 @@ const navIcons = {
       <circle cx="16.5" cy="17" r="2" />
     </svg>
   ),
-}
+};
 
 const navItems = [
   {
-    section: "Main",
+    section: 'Main',
     items: [
-      { to: "/admin", label: "Dashboard", icon: navIcons.dashboard, end: true },
-      { to: "/admin/users", label: "User Management", icon: navIcons.users },
+      { to: '/admin', label: 'Dashboard', icon: navIcons.dashboard, end: true },
+      { to: '/admin/users', label: 'User Management', icon: navIcons.users },
     ],
   },
   {
-    section: "Operations",
+    section: 'Operations',
     items: [
-      { to: "/admin/crisis-monitoring", label: "Crisis Monitoring", icon: navIcons.crisis },
-      { to: "/admin/content", label: "Content Library", icon: navIcons.content },
+      { to: '/admin/crisis-monitoring', label: 'Crisis Monitoring', icon: navIcons.crisis },
+      { to: '/admin/content', label: 'Content Library', icon: navIcons.content },
     ],
   },
   {
-    section: "System",
+    section: 'System',
     items: [
-      { to: "/admin/analytics", label: "Analytics", icon: navIcons.analytics },
-      { to: "/admin/system", label: "System Health", icon: navIcons.system },
-      { to: "/admin/audit-logs", label: "Audit Logs", icon: navIcons.audit },
+      { to: '/admin/analytics', label: 'Analytics', icon: navIcons.analytics },
+      { to: '/admin/system', label: 'System Health', icon: navIcons.system },
+      { to: '/admin/audit-logs', label: 'Audit Logs', icon: navIcons.audit },
     ],
   },
-  {
-    section: "Configuration",
-    items: [{ to: "/admin/settings", label: "Settings", icon: navIcons.settings }],
-  },
-]
+];
 
 export default function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
-  const { logout } = useAdminAuth()
+  const { logout, adminUser } = useAdminAuth();
+  const navigate = useNavigate();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
   const handleNavClick = () => {
     if (window.innerWidth <= 768) {
-      setSidebarOpen(false)
+      setSidebarOpen(false);
     }
-  }
+  };
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userMenuOpen]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const handleSettings = () => {
+    navigate('/admin/settings');
+    setUserMenuOpen(false);
+    handleNavClick();
+  };
+
+  const userInitial = (adminUser?.email || 'A').charAt(0).toUpperCase();
+  const userEmail = adminUser?.email || 'Admin';
 
   return (
-    <aside className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}>
+    <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
       <div className="admin-sidebar-brand">MindEase Admin</div>
 
       <nav className="admin-nav">
@@ -206,7 +241,7 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
                 key={to}
                 to={to}
                 end={end}
-                className={({ isActive }) => `admin-nav-link ${isActive ? "active" : ""}`}
+                className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}
                 onClick={handleNavClick}
               >
                 <span className="admin-nav-icon" aria-hidden="true">
@@ -219,19 +254,66 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
         ))}
       </nav>
 
-      <div className="admin-sidebar-footer">
+      {/* ChatGPT-like User Profile */}
+      <div className="admin-user-profile" ref={userMenuRef}>
         <button
-          className="btn btn-ghost"
-          onClick={() => {
-            logout()
-            window.location.href = "/login"
-          }}
-          style={{ width: "100%" }}
+          className="admin-user-profile-button"
+          onClick={() => setUserMenuOpen(!userMenuOpen)}
+          aria-label="User menu"
         >
-          Sign Out
+          <div className="admin-user-profile-avatar">{userInitial}</div>
+          <div className="admin-user-profile-info">
+            <div className="admin-user-profile-name">{userEmail}</div>
+            <div className="admin-user-profile-role">Administrator</div>
+          </div>
+          <svg
+            className={`admin-user-profile-chevron ${userMenuOpen ? 'open' : ''}`}
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M4 6l4 4 4-4" />
+          </svg>
         </button>
-        <div style={{ marginTop: "var(--spacing-md)", textAlign: "center" }}>v1.0 • Admin Only</div>
+
+        {userMenuOpen && (
+          <div className="admin-user-menu-dropdown">
+            <button className="admin-user-menu-item" onClick={handleSettings}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24" />
+              </svg>
+              <span>Settings</span>
+            </button>
+            <div className="admin-user-menu-divider" />
+            <button className="admin-user-menu-item" onClick={handleLogout}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span>Log out</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
-  )
+  );
 }
