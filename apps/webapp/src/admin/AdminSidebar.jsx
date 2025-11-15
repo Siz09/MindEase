@@ -188,7 +188,7 @@ export default function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
   const userMenuRef = useRef(null);
 
   const handleNavClick = () => {
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 767) {
       setSidebarOpen(false);
     }
   };
