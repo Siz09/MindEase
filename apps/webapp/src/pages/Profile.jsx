@@ -37,7 +37,7 @@ export default function Profile() {
               </div>
               <div className="profile-info">
                 <h2>{currentUser?.email || t('profile.anonymousUser', 'Anonymous User')}</h2>
-                {currentUser?.createdAt && (
+                {currentUser?.createdAt && !isNaN(new Date(currentUser.createdAt).getTime()) && (
                   <p className="profile-member-since">
                     {t('profile.memberSince', 'Member since {{date}}', {
                       date: new Date(currentUser.createdAt).toLocaleDateString(),
@@ -69,14 +69,21 @@ export default function Profile() {
               </div>
               <div className="detail-item">
                 <span className="detail-label">{t('settings.account.role')}:</span>
-                <span className="detail-value">
-                  {currentUser.role || t('profile.defaultRole', 'USER')}
-                </span>
+                <span className="detail-value">{currentUser.role || '—'}</span>
               </div>
-              <div className="detail-item">
-                <span className="detail-label">{t('profile.status', 'Status')}:</span>
-                <span className="detail-value status-active">{t('profile.active', 'Active')}</span>
-              </div>
+              {currentUser.status && (
+                <div className="detail-item">
+                  <span className="detail-label">{t('profile.status', 'Status')}:</span>
+                  <span
+                    className={`detail-value status-${(currentUser.status || 'active').toLowerCase()}`}
+                  >
+                    {t(
+                      `profile.status.${currentUser.status || 'active'}`,
+                      currentUser.status || 'Active'
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

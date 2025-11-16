@@ -88,7 +88,7 @@ const useTextToSpeech = ({
           currentUtteranceRef.current = null;
 
           setTimeout(() => {
-            processQueue();  
+            processQueue();
             // processQueue uses speakRef to avoid circular dependency
           }, 100);
         };

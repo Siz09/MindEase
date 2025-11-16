@@ -631,6 +631,7 @@ const Chat = () => {
         return;
       }
       setIsVoiceConversationActive(true);
+      retryCountRef.current = 0; // Reset retry counter for new conversation
       userCancelledRecordingRef.current = false;
       manuallyStoppedTTSRef.current = false;
       isStartingRecordingRef.current = true;
