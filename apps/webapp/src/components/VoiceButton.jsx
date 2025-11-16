@@ -19,6 +19,7 @@ const VoiceButton = ({
         className="voice-button voice-button--disabled"
         disabled
         title={t('chat.voiceNotSupported')}
+        aria-label={t('chat.voiceNotSupported')}
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
           <path
@@ -70,6 +71,7 @@ const VoiceButton = ({
         onClick={handleClick}
         disabled={isTranscribing}
         title={isRecording ? t('chat.stopRecording') : t('chat.speakNow')}
+        aria-label={isRecording ? t('chat.stopRecording') : t('chat.speakNow')}
         type="button"
       >
         {isTranscribing ? (
@@ -103,18 +105,28 @@ const VoiceButton = ({
             />
           </svg>
         )}
-        {isRecording && <span className="voice-button__pulse"></span>}
+        {isRecording && <span className="voice-button__pulse" aria-hidden="true"></span>}
       </button>
-      {getStatusText() && (
-        <span className={`voice-button__status ${error ? 'voice-button__status--error' : ''}`}>
-          {getStatusText()}
-        </span>
-      )}
+      {(() => {
+        const statusText = getStatusText();
+        return (
+          statusText && (
+            <span
+              className={`voice-button__status ${error ? 'voice-button__status--error' : ''}`}
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {statusText}
+            </span>
+          )
+        );
+      })()}
       {isRecording && (
         <button
           className="voice-button__cancel"
           onClick={onCancel}
           title={t('chat.cancelRecording')}
+          aria-label={t('chat.cancelRecording')}
           type="button"
         >
           ✕

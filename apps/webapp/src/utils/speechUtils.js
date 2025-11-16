@@ -40,15 +40,18 @@ export const loadVoices = (callback) => {
   if (voices.length > 0) {
     callback(voices);
   } else {
-    window.speechSynthesis.onvoiceschanged = () => {
+    const handler = () => {
       voices = window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = null; // Clean up handler
       callback(voices);
     };
+    window.speechSynthesis.onvoiceschanged = handler;
   }
 };
 
 export const filterVoicesByLang = (voices, langCode) => {
   if (!voices || voices.length === 0) return [];
+  if (!langCode) return [];
 
   const baseLang = langCode.split('-')[0].toLowerCase();
 

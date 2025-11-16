@@ -105,8 +105,12 @@
     "trendUp": "Trend up",
     "trendDown": "Trend down",
     "trendStable": "Trend stable",
-    "success": { "saved": "Mood entry saved!" },
-    "errors": { "saveFailed": "Failed to save mood entry" },
+    "success": {
+      "saved": "Mood entry saved!"
+    },
+    "errors": {
+      "saveFailed": "Failed to save mood entry"
+    },
     "tip1Title": "Practice Mindfulness",
     "tip1Description": "Take a few minutes each day to focus on the present moment.",
     "tip2Title": "Stay Active",
@@ -282,7 +286,8 @@
     "stopVoiceConversation": "Stop Voice Conversation",
     "voiceConversationStarted": "Voice conversation mode started",
     "voiceConversationStopped": "Voice conversation mode stopped",
-    "enableVoiceInSettings": "Please enable both voice input and output in Settings to use voice conversation mode"
+    "enableVoiceInSettings": "Please enable both voice input and output in Settings to use voice conversation mode",
+    "voiceRecordingFailed": "Voice recording failed after multiple attempts. Please check your microphone permissions."
   },
   "settings": {
     "title": "Settings",
@@ -336,6 +341,16 @@
         "startTimeLabel": "Start Time",
         "endTimeLabel": "End Time"
       }
+    },
+    "voice": {
+      "inputDescription": "Enable voice input to dictate messages using your microphone",
+      "outputDescription": "Enable voice output to hear bot responses spoken aloud",
+      "conversationModeTitle": "Voice Conversation Mode",
+      "conversationModeDescription": "When both voice input and output are enabled, you can have a continuous conversation - your messages will auto-send and bot responses will auto-play.",
+      "inputEnabled": "Voice input enabled",
+      "inputDisabled": "Voice input disabled",
+      "outputEnabled": "Voice output enabled",
+      "outputDisabled": "Voice output disabled"
     }
   },
   "mindfulness": {

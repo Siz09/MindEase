@@ -24,12 +24,20 @@ const Settings = () => {
   const [quietHoursLoading, setQuietHoursLoading] = useState(false);
 
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(() => {
-    const saved = localStorage.getItem('voiceSettings');
-    return saved ? JSON.parse(saved).voiceInputEnabled !== false : true;
+    try {
+      const saved = localStorage.getItem('voiceSettings');
+      return saved ? JSON.parse(saved).voiceInputEnabled !== false : true;
+    } catch {
+      return true;
+    }
   });
   const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(() => {
-    const saved = localStorage.getItem('voiceSettings');
-    return saved ? JSON.parse(saved).voiceOutputEnabled === true : false;
+    try {
+      const saved = localStorage.getItem('voiceSettings');
+      return saved ? JSON.parse(saved).voiceOutputEnabled === true : false;
+    } catch {
+      return false;
+    }
   });
 
   const isVoiceInputSupported = isSpeechRecognitionSupported();
@@ -39,12 +47,20 @@ const Settings = () => {
     useTextToSpeech({
       language: mapI18nToSpeechLang(i18n.language),
       defaultRate: (() => {
-        const saved = localStorage.getItem('voiceSettings');
-        return saved ? JSON.parse(saved).speechRate || 1.0 : 1.0;
+        try {
+          const saved = localStorage.getItem('voiceSettings');
+          return saved ? JSON.parse(saved).speechRate || 1.0 : 1.0;
+        } catch {
+          return 1.0;
+        }
       })(),
       defaultVolume: (() => {
-        const saved = localStorage.getItem('voiceSettings');
-        return saved ? JSON.parse(saved).volume || 1.0 : 1.0;
+        try {
+          const saved = localStorage.getItem('voiceSettings');
+          return saved ? JSON.parse(saved).volume || 1.0 : 1.0;
+        } catch {
+          return 1.0;
+        }
       })(),
     });
 
@@ -133,7 +149,13 @@ const Settings = () => {
   };
 
   const saveVoiceSettings = (settings) => {
-    const currentSettings = JSON.parse(localStorage.getItem('voiceSettings') || '{}');
+    let currentSettings = {};
+    try {
+      const saved = localStorage.getItem('voiceSettings');
+      if (saved) currentSettings = JSON.parse(saved);
+    } catch {
+      // If parse fails, start with empty settings
+    }
     const newSettings = { ...currentSettings, ...settings };
     localStorage.setItem('voiceSettings', JSON.stringify(newSettings));
   };
@@ -141,13 +163,13 @@ const Settings = () => {
   const handleVoiceInputToggle = (enabled) => {
     setVoiceInputEnabled(enabled);
     saveVoiceSettings({ voiceInputEnabled: enabled });
-    toast.success(enabled ? 'Voice input enabled' : 'Voice input disabled');
+    toast.success(enabled ? t('settings.voice.inputEnabled') : t('settings.voice.inputDisabled'));
   };
 
   const handleVoiceOutputToggle = (enabled) => {
     setVoiceOutputEnabled(enabled);
     saveVoiceSettings({ voiceOutputEnabled: enabled });
-    toast.success(enabled ? 'Voice output enabled' : 'Voice output disabled');
+    toast.success(enabled ? t('settings.voice.outputEnabled') : t('settings.voice.outputDisabled'));
   };
 
   const handleVoiceChange = (voice) => {
@@ -346,9 +368,7 @@ const Settings = () => {
                   <label className="form-label toggle-label">
                     <div className="toggle-info">
                       <span className="toggle-title">{t('chat.enableVoiceInput')}</span>
-                      <p className="setting-description">
-                        Enable voice input to dictate messages using your microphone
-                      </p>
+                      <p className="setting-description">{t('settings.voice.inputDescription')}</p>
                     </div>
                     <div className="toggle-switch">
                       <input
@@ -369,7 +389,7 @@ const Settings = () => {
                       <div className="toggle-info">
                         <span className="toggle-title">{t('chat.enableVoiceOutput')}</span>
                         <p className="setting-description">
-                          Enable voice output to hear bot responses spoken aloud
+                          {t('settings.voice.outputDescription')}
                         </p>
                       </div>
                       <div className="toggle-switch">
@@ -452,9 +472,8 @@ const Settings = () => {
               {voiceInputEnabled && voiceOutputEnabled && (
                 <div className="voice-conversation-info">
                   <p className="setting-description">
-                    <strong>Voice Conversation Mode:</strong> When both voice input and output are
-                    enabled, you can have a continuous conversation - your messages will auto-send
-                    and bot responses will auto-play.
+                    <strong>{t('settings.voice.conversationModeTitle')}:</strong>{' '}
+                    {t('settings.voice.conversationModeDescription')}
                   </p>
                 </div>
               )}

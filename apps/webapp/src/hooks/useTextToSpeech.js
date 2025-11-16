@@ -3,7 +3,6 @@ import { isSpeechSynthesisSupported, loadVoices, filterVoicesByLang } from '../u
 
 const useTextToSpeech = ({
   language = 'en-US',
-  autoPlay = false,
   defaultRate = 1.0,
   defaultVolume = 1.0,
   defaultPitch = 1.0,
@@ -22,6 +21,7 @@ const useTextToSpeech = ({
   const [isSupported] = useState(isSpeechSynthesisSupported());
 
   const currentUtteranceRef = useRef(null);
+  const speakRef = useRef(null);
 
   useEffect(() => {
     if (!isSupported) return;
@@ -39,19 +39,24 @@ const useTextToSpeech = ({
   }, [isSupported, language, selectedVoice]);
 
   const processQueue = useCallback(() => {
-    if (queue.length === 0) {
-      setCurrentText('');
-      onComplete();
-      return;
-    }
+    setQueue((prevQueue) => {
+      if (prevQueue.length === 0) {
+        setCurrentText('');
+        onComplete();
+        return prevQueue;
+      }
 
-    const nextItem = queue[0];
-    setQueue((prev) => prev.slice(1));
+      const nextItem = prevQueue[0];
+      const remainingQueue = prevQueue.slice(1);
 
-    if (nextItem?.text) {
-      speak(nextItem.text, nextItem.options);
-    }
-  }, [queue, onComplete]);
+      if (nextItem?.text && speakRef.current) {
+        // Use ref to call speak, breaking circular dependency
+        speakRef.current(nextItem.text, nextItem.options);
+      }
+
+      return remainingQueue;
+    });
+  }, [onComplete]);
 
   const speak = useCallback(
     (text, options = {}) => {
@@ -83,7 +88,8 @@ const useTextToSpeech = ({
           currentUtteranceRef.current = null;
 
           setTimeout(() => {
-            processQueue();
+            processQueue();  
+            // processQueue uses speakRef to avoid circular dependency
           }, 100);
         };
 
@@ -105,8 +111,13 @@ const useTextToSpeech = ({
         onError(err);
       }
     },
-    [isSupported, selectedVoice, rate, volume, pitch, language, onError, processQueue]
+    [isSupported, selectedVoice, rate, volume, pitch, language, onError]
   );
+
+  // Store speak in ref so processQueue can call it without circular dependency
+  useEffect(() => {
+    speakRef.current = speak;
+  }, [speak]);
 
   const stop = useCallback(() => {
     if (!isSupported) return;

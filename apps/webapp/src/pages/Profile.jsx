@@ -13,8 +13,8 @@ export default function Profile() {
       <div className="profile-page">
         <div className="profile-container">
           <div className="profile-header">
-            <h1>Profile</h1>
-            <p>Please log in to view your profile</p>
+            <h1>{t('profile.title', 'Profile')}</h1>
+            <p>{t('profile.pleaseLogin', 'Please log in to view your profile')}</p>
           </div>
         </div>
       </div>
@@ -25,33 +25,39 @@ export default function Profile() {
     <div className="profile-page">
       <div className="profile-container">
         <div className="profile-header">
-          <h1>Profile</h1>
-          <p>Your personal information</p>
+          <h1>{t('profile.title', 'Profile')}</h1>
+          <p>{t('profile.personalInfo', 'Your personal information')}</p>
         </div>
 
         <div className="profile-content">
           <div className="profile-card">
             <div className="profile-avatar-section">
               <div className="profile-avatar-large">
-                {currentUser?.email?.charAt(0).toUpperCase() || 'U'}
+                {(currentUser?.email?.charAt(0) || 'U').toUpperCase()}
               </div>
               <div className="profile-info">
-                <h2>{currentUser?.email || 'Anonymous User'}</h2>
-                <p className="profile-member-since">
-                  Member since {new Date(currentUser?.createdAt || Date.now()).toLocaleDateString()}
-                </p>
+                <h2>{currentUser?.email || t('profile.anonymousUser', 'Anonymous User')}</h2>
+                {currentUser?.createdAt && (
+                  <p className="profile-member-since">
+                    {t('profile.memberSince', 'Member since {{date}}', {
+                      date: new Date(currentUser.createdAt).toLocaleDateString(),
+                    })}
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
           <div className="profile-details-card">
             <div className="card-header">
-              <h3>Account Information</h3>
+              <h3>{t('profile.accountInformation', 'Account Information')}</h3>
             </div>
             <div className="profile-details">
               <div className="detail-item">
                 <span className="detail-label">{t('settings.account.email')}:</span>
-                <span className="detail-value">{currentUser.email || 'Anonymous User'}</span>
+                <span className="detail-value">
+                  {currentUser.email || t('profile.anonymousUser', 'Anonymous User')}
+                </span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">{t('settings.account.accountType')}:</span>
@@ -63,11 +69,13 @@ export default function Profile() {
               </div>
               <div className="detail-item">
                 <span className="detail-label">{t('settings.account.role')}:</span>
-                <span className="detail-value">{currentUser.role || 'USER'}</span>
+                <span className="detail-value">
+                  {currentUser.role || t('profile.defaultRole', 'USER')}
+                </span>
               </div>
               <div className="detail-item">
-                <span className="detail-label">Status:</span>
-                <span className="detail-value status-active">Active</span>
+                <span className="detail-label">{t('profile.status', 'Status')}:</span>
+                <span className="detail-value status-active">{t('profile.active', 'Active')}</span>
               </div>
             </div>
           </div>

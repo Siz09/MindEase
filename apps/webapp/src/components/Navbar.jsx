@@ -164,7 +164,7 @@ const Navbar = () => {
                         strokeWidth="2"
                       />
                     </svg>
-                    Settings
+                    {t('navigation.settings', 'Settings')}
                   </button>
                   <button className="dropdown-item" onClick={() => handleNavClick('/subscription')}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -258,7 +258,7 @@ const Navbar = () => {
                           strokeWidth="2"
                         />
                       </svg>
-                      Settings
+                      {t('navigation.settings', 'Settings')}
                     </button>
                     <button
                       className="mobile-menu-item"

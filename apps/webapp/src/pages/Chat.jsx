@@ -13,6 +13,11 @@ import useTextToSpeech from '../hooks/useTextToSpeech';
 import VoicePlayer from '../components/VoicePlayer';
 import { mapI18nToSpeechLang } from '../utils/speechUtils';
 
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(
+  /\/$/,
+  ''
+);
+
 const Chat = () => {
   const { t, i18n } = useTranslation();
   const { token, currentUser } = useAuth();
@@ -43,6 +48,9 @@ const Chat = () => {
   const userCancelledRecordingRef = useRef(false);
   const manuallyStoppedTTSRef = useRef(false);
   const isStartingRecordingRef = useRef(false);
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 3;
+  const ttsStateRef = useRef({ isPlaying: false, stopSpeech: null });
 
   const stompClientRef = useRef(null);
   const isConnectingRef = useRef(false);
@@ -52,24 +60,25 @@ const Chat = () => {
   const preventAutoScrollRef = useRef(false);
   const prevScrollHeightRef = useRef(null);
 
-  const sendVoiceMessage = async (text) => {
-    if (!text.trim()) return;
+  // Shared function to send messages to the server
+  const sendMessageToServer = async (messageText) => {
+    if (!messageText.trim()) return false;
     if (!stompClientRef.current || !isConnected) {
       toast.error('Not connected to chat. Please refresh the page.');
-      return;
+      return false;
     }
 
     setIsTyping(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/chat/send', {
+      const response = await fetch(`${API_BASE_URL}/api/chat/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          message: text,
+          message: messageText,
         }),
       });
 
@@ -79,15 +88,37 @@ const Chat = () => {
         throw new Error(result.message || 'Failed to send message');
       }
 
-      setInputValue('');
-      setIsVoiceTranscribed(false);
+      return true;
     } catch (error) {
-      console.error('Error sending voice message:', error);
+      console.error('Error sending message:', error);
       toast.error('Failed to send message: ' + error.message);
+      return false;
     } finally {
       setTimeout(() => {
         setIsTyping(false);
       }, 1500);
+    }
+  };
+
+  const sendVoiceMessage = async (text) => {
+    const success = await sendMessageToServer(text);
+    if (success) {
+      setInputValue('');
+      setIsVoiceTranscribed(false);
+    }
+  };
+
+  // Helper function to interrupt TTS when user starts speaking
+  const interruptTTS = () => {
+    const { isPlaying, stopSpeech } = ttsStateRef.current;
+    if (isVoiceConversationActive && (isPlaying || window.speechSynthesis?.speaking)) {
+      if (stopSpeech) stopSpeech();
+      setCurrentPlayingMessageId(null);
+      setMessageQueue([]);
+      // Force cancel any pending TTS synchronously
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
     }
   };
 
@@ -103,35 +134,18 @@ const Chat = () => {
       // Recording has actually started - reset the flag
       isStartingRecordingRef.current = false;
       // User started speaking - interrupt TTS immediately (user has priority)
-      // Check browser API directly for more reliable state
-      if (isVoiceConversationActive && (isPlaying || window.speechSynthesis?.speaking)) {
-        stopSpeech();
-        setCurrentPlayingMessageId(null);
-        setMessageQueue([]);
-        // Force cancel any pending TTS synchronously
-        if (window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-        }
-      }
+      interruptTTS();
     },
     onInterimResult: () => {
       // User is speaking - interrupt TTS as soon as we detect speech (even interim)
       // This is more responsive than waiting for onStart
-      // Check browser API directly for more reliable state
-      if (isVoiceConversationActive && (isPlaying || window.speechSynthesis?.speaking)) {
-        stopSpeech();
-        setCurrentPlayingMessageId(null);
-        setMessageQueue([]);
-        // Force cancel any pending TTS synchronously
-        if (window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-        }
-      }
+      interruptTTS();
     },
     onTranscriptionComplete: (text) => {
       setInputValue(text);
       setIsVoiceTranscribed(true);
       setVoiceStatusText('');
+      retryCountRef.current = 0; // Reset retry counter on successful transcription
 
       if (isVoiceConversationActive) {
         sendVoiceMessage(text);
@@ -165,6 +179,13 @@ const Chat = () => {
 
       // Restart listening after error in conversation mode (except for aborted/cancelled)
       if (isVoiceConversationActive && err && !err.includes('cancelled')) {
+        if (retryCountRef.current >= MAX_RETRIES) {
+          toast.error(t('chat.voiceRecordingFailed'));
+          setIsVoiceConversationActive(false);
+          retryCountRef.current = 0;
+          return;
+        }
+        retryCountRef.current += 1;
         setTimeout(() => {
           if (!isRecording && !isTranscribing && !isStartingRecordingRef.current) {
             isStartingRecordingRef.current = true;
@@ -225,6 +246,11 @@ const Chat = () => {
 
   const isVoiceConversationMode =
     voiceInputEnabled && voiceOutputEnabled && isVoiceSupported && isTTSSupported;
+
+  // Update TTS state ref so interruptTTS can access current values
+  useEffect(() => {
+    ttsStateRef.current = { isPlaying, stopSpeech };
+  }, [isPlaying, stopSpeech]);
 
   // Limit memory growth of processed IDs
   const MAX_PROCESSED_IDS = 1000;
@@ -318,7 +344,7 @@ const Chat = () => {
       isIntentionallyDisconnectingRef.current = false; // Reset flag when connecting
       isConnectingRef.current = true;
 
-      const socket = new SockJS('http://localhost:8080/ws');
+      const socket = new SockJS(`${API_BASE_URL}/ws`);
       const client = new Client({
         webSocketFactory: () => socket,
         connectHeaders: {
@@ -362,7 +388,13 @@ const Chat = () => {
 
               setMessages((prev) => [...prev, normalizedMessage]);
 
-              if (!normalizedMessage.isUserMessage && voiceOutputEnabled && isTTSSupported) {
+              // Only auto-play in voice conversation mode to respect accessibility guidelines
+              if (
+                !normalizedMessage.isUserMessage &&
+                voiceOutputEnabled &&
+                isTTSSupported &&
+                isVoiceConversationActive
+              ) {
                 const container = messagesContainerRef.current;
                 const isNearBottom = container
                   ? container.scrollHeight - container.scrollTop - container.clientHeight < 100
@@ -609,45 +641,11 @@ const Chat = () => {
   };
 
   const sendMessage = async () => {
-    if (!inputValue.trim()) {
-      return;
-    }
-
-    if (!stompClientRef.current || !isConnected) {
-      toast.error('Not connected to chat. Please refresh the page.');
-      return;
-    }
-
-    setIsTyping(true);
-
-    try {
-      const response = await fetch('http://localhost:8080/api/chat/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          message: inputValue,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to send message');
-      }
-
+    const success = await sendMessageToServer(inputValue);
+    if (success) {
       setInputValue('');
       setIsVoiceTranscribed(false);
       toast.success('Message sent successfully');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message: ' + error.message);
-    } finally {
-      setTimeout(() => {
-        setIsTyping(false);
-      }, 1500);
     }
   };
 

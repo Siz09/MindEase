@@ -14,7 +14,7 @@ const useVoiceRecorder = ({
   onTranscriptionComplete = () => {},
   onInterimResult = () => {},
   onError = () => {},
-  onEnd = () => {},
+  onEnd = (_info) => {},
   silenceTimeoutMs = 5000,
   maxDurationMs = 60000,
 } = {}) => {
@@ -88,15 +88,13 @@ const useVoiceRecorder = ({
         setError(null);
         onStart(); // Notify that recording has started
 
-        if (silenceTimeoutMs > 0) {
-          silenceTimerRef.current = setTimeout(() => {
-            stopRecording();
-          }, silenceTimeoutMs);
-        }
-
+        // Don't start silence timer here - wait for first speech detection
+        // Max duration timer can start immediately
         if (maxDurationMs > 0) {
           maxDurationTimerRef.current = setTimeout(() => {
-            stopRecording();
+            if (recognitionRef.current) {
+              recognitionRef.current.stop();
+            }
           }, maxDurationMs);
         }
       };
@@ -116,16 +114,21 @@ const useVoiceRecorder = ({
           }
         }
 
+        // Reset or start silence timer on any speech (interim or final)
+        if (silenceTimeoutMs > 0 && (finalText || interimText)) {
+          if (silenceTimerRef.current) {
+            clearTimeout(silenceTimerRef.current);
+          }
+          silenceTimerRef.current = setTimeout(() => {
+            if (recognitionRef.current) {
+              recognitionRef.current.stop();
+            }
+          }, silenceTimeoutMs);
+        }
+
         if (finalText) {
           finalTranscriptRef.current += finalText;
           setTranscript(finalTranscriptRef.current.trim());
-
-          if (silenceTimerRef.current) {
-            clearTimeout(silenceTimerRef.current);
-            silenceTimerRef.current = setTimeout(() => {
-              stopRecording();
-            }, silenceTimeoutMs);
-          }
         }
 
         if (interimText) {
@@ -203,7 +206,6 @@ const useVoiceRecorder = ({
     onInterimResult,
     onError,
     onEnd,
-    stopRecording,
     clearTimers,
   ]);
 
@@ -228,12 +230,16 @@ const useVoiceRecorder = ({
   }, [clearTimers, onEnd]);
 
   const reset = useCallback(() => {
+    if (isRecording) {
+      cancelRecording();
+      return;
+    }
     setTranscript('');
     setInterimTranscript('');
     setError(null);
     setIsTranscribing(false);
     finalTranscriptRef.current = '';
-  }, []);
+  }, [isRecording, cancelRecording]);
 
   useEffect(() => {
     return () => {
