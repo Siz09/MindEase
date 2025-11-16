@@ -1,0 +1,237 @@
+.voice-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.voice-settings-panel {
+  background: var(--bg-card, white);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+.voice-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.voice-settings-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+.voice-settings-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.voice-settings-close:hover {
+  background: var(--bg-tertiary, #e5e7eb);
+  color: var(--text-primary, #111827);
+}
+
+.voice-settings-content {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.voice-settings-section {
+  margin-bottom: 24px;
+}
+
+.voice-settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.voice-settings-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.voice-settings-toggle input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary-green, #10b981);
+}
+
+.voice-settings-toggle span {
+  font-size: 15px;
+  color: var(--text-primary, #111827);
+  font-weight: 500;
+}
+
+.voice-settings-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+  margin-bottom: 8px;
+}
+
+.voice-settings-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, #111827);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-settings-select:hover {
+  border-color: var(--primary-green, #10b981);
+}
+
+.voice-settings-select:focus {
+  outline: none;
+  border-color: var(--primary-green, #10b981);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.voice-settings-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-secondary, #f3f4f6);
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.voice-settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-green, #10b981);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-settings-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.voice-settings-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-green, #10b981);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-settings-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.voice-settings-range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted, #9ca3af);
+}
+
+.voice-settings-test-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-green, #10b981);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.voice-settings-test-btn:hover {
+  background: var(--primary-green-dark, #059669);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.voice-settings-test-btn:active {
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .voice-settings-panel {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .voice-settings-header {
+    padding: 16px;
+  }
+
+  .voice-settings-content {
+    padding: 16px;
+  }
+
+  .voice-settings-section {
+    margin-bottom: 20px;
+  }
+}

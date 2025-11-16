@@ -13,6 +13,7 @@ spring:
     password: secret
     driver-class-name: org.postgresql.Driver
     hikari:
+      connection-init-sql: SET TIME ZONE 'UTC'
       data-source-properties:
         ApplicationName: mindease-backend
   jpa:

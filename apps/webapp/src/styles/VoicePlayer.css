@@ -1,0 +1,159 @@
+.voice-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-player--compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.voice-player__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.voice-player__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.voice-player--compact .voice-player__btn {
+  width: 24px;
+  height: 24px;
+}
+
+.voice-player__btn:hover {
+  background: var(--bg-tertiary, #e5e7eb);
+  color: var(--text-primary, #111827);
+  transform: scale(1.05);
+}
+
+.voice-player__btn:active {
+  transform: scale(0.95);
+}
+
+.voice-player__btn--play {
+  background: var(--primary-green, #10b981);
+  color: white;
+}
+
+.voice-player__btn--play:hover {
+  background: var(--primary-green-dark, #059669);
+  color: white;
+}
+
+.voice-player__btn--pause {
+  background: var(--primary-green, #10b981);
+  color: white;
+}
+
+.voice-player__btn--pause:hover {
+  background: var(--primary-green-dark, #059669);
+  color: white;
+}
+
+.voice-player__btn--stop {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.voice-player__btn--stop:hover {
+  background: #fecaca;
+}
+
+.voice-player__indicator {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 16px;
+}
+
+.voice-player__indicator--large {
+  height: 20px;
+}
+
+.voice-player__indicator span {
+  width: 3px;
+  background: var(--primary-green, #10b981);
+  border-radius: 2px;
+  animation: sound-wave 1s ease-in-out infinite;
+}
+
+.voice-player__indicator--large span {
+  width: 4px;
+}
+
+.voice-player__indicator span:nth-child(1) {
+  animation-delay: 0s;
+  height: 8px;
+}
+
+.voice-player__indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+  height: 12px;
+}
+
+.voice-player__indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+  height: 10px;
+}
+
+.voice-player__indicator--large span:nth-child(1) {
+  height: 10px;
+}
+
+.voice-player__indicator--large span:nth-child(2) {
+  height: 16px;
+}
+
+.voice-player__indicator--large span:nth-child(3) {
+  height: 14px;
+}
+
+@keyframes sound-wave {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .voice-player__btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .voice-player--compact .voice-player__btn {
+    width: 22px;
+    height: 22px;
+  }
+
+  .voice-player__btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .voice-player--compact .voice-player__btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}

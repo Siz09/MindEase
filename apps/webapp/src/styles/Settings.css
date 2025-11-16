@@ -451,3 +451,86 @@ input:disabled + .toggle-slider {
   outline: 2px solid var(--primary-green);
   outline-offset: 2px;
 }
+
+/* Voice Settings Styles */
+.form-range {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-secondary);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-green);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.form-range::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.1);
+}
+
+.form-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-green);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.form-range::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.1);
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.voice-conversation-info {
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: rgba(16, 185, 129, 0.05);
+  border-left: 3px solid var(--primary-green);
+  border-radius: 4px;
+}
+
+.voice-conversation-info .setting-description {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--primary-green);
+  color: white;
+  border-color: var(--primary-green);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}

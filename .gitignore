@@ -19,3 +19,6 @@ backend/src/main/resources/firebase-service-account.json
 
 .github/instructions/kluster-code-verify.instructions.md
 .kluster
+
+
+.cursor/rules/kluster-code-verify.mdc

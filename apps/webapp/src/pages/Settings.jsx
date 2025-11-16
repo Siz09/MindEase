@@ -5,6 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { patchQuietHours } from '../utils/api';
 import { toast } from 'react-toastify';
+import useTextToSpeech from '../hooks/useTextToSpeech';
+import {
+  mapI18nToSpeechLang,
+  isSpeechRecognitionSupported,
+  isSpeechSynthesisSupported,
+} from '../utils/speechUtils';
 import '../styles/Settings.css';
 
 const Settings = () => {
@@ -16,6 +22,31 @@ const Settings = () => {
   const [quietStart, setQuietStart] = useState('22:00');
   const [quietEnd, setQuietEnd] = useState('07:00');
   const [quietHoursLoading, setQuietHoursLoading] = useState(false);
+
+  const [voiceInputEnabled, setVoiceInputEnabled] = useState(() => {
+    const saved = localStorage.getItem('voiceSettings');
+    return saved ? JSON.parse(saved).voiceInputEnabled !== false : true;
+  });
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(() => {
+    const saved = localStorage.getItem('voiceSettings');
+    return saved ? JSON.parse(saved).voiceOutputEnabled === true : false;
+  });
+
+  const isVoiceInputSupported = isSpeechRecognitionSupported();
+  const isVoiceOutputSupported = isSpeechSynthesisSupported();
+
+  const { speak, availableVoices, selectedVoice, setVoice, rate, setRate, volume, setVolume } =
+    useTextToSpeech({
+      language: mapI18nToSpeechLang(i18n.language),
+      defaultRate: (() => {
+        const saved = localStorage.getItem('voiceSettings');
+        return saved ? JSON.parse(saved).speechRate || 1.0 : 1.0;
+      })(),
+      defaultVolume: (() => {
+        const saved = localStorage.getItem('voiceSettings');
+        return saved ? JSON.parse(saved).volume || 1.0 : 1.0;
+      })(),
+    });
 
   useEffect(() => {
     if (currentUser) {
@@ -101,6 +132,43 @@ const Settings = () => {
     }
   };
 
+  const saveVoiceSettings = (settings) => {
+    const currentSettings = JSON.parse(localStorage.getItem('voiceSettings') || '{}');
+    const newSettings = { ...currentSettings, ...settings };
+    localStorage.setItem('voiceSettings', JSON.stringify(newSettings));
+  };
+
+  const handleVoiceInputToggle = (enabled) => {
+    setVoiceInputEnabled(enabled);
+    saveVoiceSettings({ voiceInputEnabled: enabled });
+    toast.success(enabled ? 'Voice input enabled' : 'Voice input disabled');
+  };
+
+  const handleVoiceOutputToggle = (enabled) => {
+    setVoiceOutputEnabled(enabled);
+    saveVoiceSettings({ voiceOutputEnabled: enabled });
+    toast.success(enabled ? 'Voice output enabled' : 'Voice output disabled');
+  };
+
+  const handleVoiceChange = (voice) => {
+    setVoice(voice);
+    saveVoiceSettings({ selectedVoice: voice.name });
+  };
+
+  const handleRateChange = (newRate) => {
+    setRate(newRate);
+    saveVoiceSettings({ speechRate: newRate });
+  };
+
+  const handleVolumeChange = (newVolume) => {
+    setVolume(newVolume);
+    saveVoiceSettings({ volume: newVolume });
+  };
+
+  const handleTestVoice = () => {
+    speak(t('chat.testVoiceSample'));
+  };
+
   if (!currentUser) {
     return (
       <div className="page settings-page">
@@ -123,51 +191,6 @@ const Settings = () => {
         </div>
 
         <div className="settings-content">
-          {/* Profile Information */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">Profile Information</h2>
-            </div>
-
-            <div className="profile-section">
-              <div className="profile-avatar-large">
-                {currentUser?.email?.charAt(0).toUpperCase() || 'U'}
-              </div>
-              <div className="profile-info">
-                <h3>{currentUser?.email}</h3>
-                <p className="profile-member-since">
-                  Member since {new Date(currentUser?.createdAt || Date.now()).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Information */}
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">{t('settings.account.title')}</h2>
-            </div>
-
-            <div className="account-info">
-              <div className="info-item">
-                <span className="info-label">{t('settings.account.email')}:</span>
-                <span className="info-value">{currentUser.email || 'Anonymous User'}</span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t('settings.account.accountType')}:</span>
-                <span className="info-value">
-                  {currentUser.anonymousMode
-                    ? t('settings.account.anonymous')
-                    : t('settings.account.registered')}
-                </span>
-              </div>
-              <div className="info-item">
-                <span className="info-label">{t('settings.account.role')}:</span>
-                <span className="info-value">{currentUser.role || 'USER'}</span>
-              </div>
-            </div>
-          </div>
-
           {/* Privacy Settings */}
           <div className="card">
             <div className="card-header">
@@ -310,6 +333,133 @@ const Settings = () => {
               </div>
             </div>
           </div>
+
+          {/* Voice Settings */}
+          {(isVoiceInputSupported || isVoiceOutputSupported) && (
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">{t('chat.voiceSettings')}</h2>
+              </div>
+
+              {isVoiceInputSupported && (
+                <div className="form-group">
+                  <label className="form-label toggle-label">
+                    <div className="toggle-info">
+                      <span className="toggle-title">{t('chat.enableVoiceInput')}</span>
+                      <p className="setting-description">
+                        Enable voice input to dictate messages using your microphone
+                      </p>
+                    </div>
+                    <div className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={voiceInputEnabled}
+                        onChange={(e) => handleVoiceInputToggle(e.target.checked)}
+                      />
+                      <span className="toggle-slider"></span>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {isVoiceOutputSupported && (
+                <>
+                  <div className="form-group">
+                    <label className="form-label toggle-label">
+                      <div className="toggle-info">
+                        <span className="toggle-title">{t('chat.enableVoiceOutput')}</span>
+                        <p className="setting-description">
+                          Enable voice output to hear bot responses spoken aloud
+                        </p>
+                      </div>
+                      <div className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={voiceOutputEnabled}
+                          onChange={(e) => handleVoiceOutputToggle(e.target.checked)}
+                        />
+                        <span className="toggle-slider"></span>
+                      </div>
+                    </label>
+                  </div>
+
+                  {voiceOutputEnabled && (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label">{t('chat.selectVoice')}</label>
+                        <select
+                          className="form-input"
+                          value={selectedVoice?.name || ''}
+                          onChange={(e) => {
+                            const voice = availableVoices.find((v) => v.name === e.target.value);
+                            if (voice) handleVoiceChange(voice);
+                          }}
+                        >
+                          {availableVoices.map((voice) => (
+                            <option key={voice.name} value={voice.name}>
+                              {voice.name} ({voice.lang})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">
+                          {t('chat.speechRate')}: {rate.toFixed(1)}x
+                        </label>
+                        <input
+                          type="range"
+                          className="form-range"
+                          min="0.5"
+                          max="2"
+                          step="0.1"
+                          value={rate}
+                          onChange={(e) => handleRateChange(parseFloat(e.target.value))}
+                        />
+                        <div className="range-labels">
+                          <span>0.5x</span>
+                          <span>2.0x</span>
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">
+                          {t('chat.volume')}: {Math.round(volume * 100)}%
+                        </label>
+                        <input
+                          type="range"
+                          className="form-range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={volume}
+                          onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                        />
+                        <div className="range-labels">
+                          <span>0%</span>
+                          <span>100%</span>
+                        </div>
+                      </div>
+
+                      <button className="btn btn-secondary" onClick={handleTestVoice}>
+                        {t('chat.testVoice')}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+
+              {voiceInputEnabled && voiceOutputEnabled && (
+                <div className="voice-conversation-info">
+                  <p className="setting-description">
+                    <strong>Voice Conversation Mode:</strong> When both voice input and output are
+                    enabled, you can have a continuous conversation - your messages will auto-send
+                    and bot responses will auto-play.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Account Actions */}
           <div className="card">

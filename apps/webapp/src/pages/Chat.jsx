@@ -8,27 +8,223 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import '../styles/Chat.css';
 import { apiGet } from '../lib/api';
+import useVoiceRecorder from '../hooks/useVoiceRecorder';
+import useTextToSpeech from '../hooks/useTextToSpeech';
+import VoicePlayer from '../components/VoicePlayer';
+import { mapI18nToSpeechLang } from '../utils/speechUtils';
 
 const Chat = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token, currentUser } = useAuth();
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [historyPage, setHistoryPage] = useState(null); // current loaded page index (ascending sort)
+  const [historyPage, setHistoryPage] = useState(null);
   const [hasMoreHistory, setHasMoreHistory] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  // Use refs to track connection state
+  const [voiceInputEnabled] = useState(() => {
+    const saved = localStorage.getItem('voiceSettings');
+    return saved ? JSON.parse(saved).voiceInputEnabled !== false : true;
+  });
+  const [voiceOutputEnabled] = useState(() => {
+    const saved = localStorage.getItem('voiceSettings');
+    return saved ? JSON.parse(saved).voiceOutputEnabled === true : false;
+  });
+  const [_voiceStatusText, setVoiceStatusText] = useState(''); // Used in voice conversation mode
+  const [isVoiceTranscribed, setIsVoiceTranscribed] = useState(false);
+  const [currentPlayingMessageId, setCurrentPlayingMessageId] = useState(null);
+  const [messageQueue, setMessageQueue] = useState([]);
+  const [isVoiceConversationActive, setIsVoiceConversationActive] = useState(false);
+  const inputRef = useRef(null);
+  const userCancelledRecordingRef = useRef(false);
+  const manuallyStoppedTTSRef = useRef(false);
+  const isStartingRecordingRef = useRef(false);
+
   const stompClientRef = useRef(null);
   const isConnectingRef = useRef(false);
-  const processedMessageIds = useRef(new Map()); // Map<id, timestamp>
+  const isIntentionallyDisconnectingRef = useRef(false);
+  const processedMessageIds = useRef(new Map());
   const messagesContainerRef = useRef(null);
   const preventAutoScrollRef = useRef(false);
   const prevScrollHeightRef = useRef(null);
+
+  const sendVoiceMessage = async (text) => {
+    if (!text.trim()) return;
+    if (!stompClientRef.current || !isConnected) {
+      toast.error('Not connected to chat. Please refresh the page.');
+      return;
+    }
+
+    setIsTyping(true);
+
+    try {
+      const response = await fetch('http://localhost:8080/api/chat/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: text,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to send message');
+      }
+
+      setInputValue('');
+      setIsVoiceTranscribed(false);
+    } catch (error) {
+      console.error('Error sending voice message:', error);
+      toast.error('Failed to send message: ' + error.message);
+    } finally {
+      setTimeout(() => {
+        setIsTyping(false);
+      }, 1500);
+    }
+  };
+
+  const {
+    startRecording,
+    cancelRecording,
+    isRecording,
+    isSupported: isVoiceSupported,
+    isTranscribing,
+  } = useVoiceRecorder({
+    language: mapI18nToSpeechLang(i18n.language),
+    onStart: () => {
+      // Recording has actually started - reset the flag
+      isStartingRecordingRef.current = false;
+      // User started speaking - interrupt TTS immediately (user has priority)
+      // Check browser API directly for more reliable state
+      if (isVoiceConversationActive && (isPlaying || window.speechSynthesis?.speaking)) {
+        stopSpeech();
+        setCurrentPlayingMessageId(null);
+        setMessageQueue([]);
+        // Force cancel any pending TTS synchronously
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+      }
+    },
+    onInterimResult: () => {
+      // User is speaking - interrupt TTS as soon as we detect speech (even interim)
+      // This is more responsive than waiting for onStart
+      // Check browser API directly for more reliable state
+      if (isVoiceConversationActive && (isPlaying || window.speechSynthesis?.speaking)) {
+        stopSpeech();
+        setCurrentPlayingMessageId(null);
+        setMessageQueue([]);
+        // Force cancel any pending TTS synchronously
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+        }
+      }
+    },
+    onTranscriptionComplete: (text) => {
+      setInputValue(text);
+      setIsVoiceTranscribed(true);
+      setVoiceStatusText('');
+
+      if (isVoiceConversationActive) {
+        sendVoiceMessage(text);
+        // Immediately restart listening after sending message
+        setTimeout(() => {
+          if (
+            !isRecording &&
+            !isTranscribing &&
+            isVoiceConversationActive &&
+            !isStartingRecordingRef.current
+          ) {
+            isStartingRecordingRef.current = true;
+            startRecording();
+            setVoiceStatusText(t('chat.listening'));
+          }
+        }, 100);
+      } else {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }
+    },
+    onError: (err) => {
+      // Don't show toast for 'aborted' errors - they're expected when canceling
+      // Also don't show for 'no-speech' errors - they're normal
+      if (err && !err.includes('cancelled') && !err.includes('no-speech')) {
+        toast.error(err);
+      }
+      setVoiceStatusText('');
+      isStartingRecordingRef.current = false;
+
+      // Restart listening after error in conversation mode (except for aborted/cancelled)
+      if (isVoiceConversationActive && err && !err.includes('cancelled')) {
+        setTimeout(() => {
+          if (!isRecording && !isTranscribing && !isStartingRecordingRef.current) {
+            isStartingRecordingRef.current = true;
+            startRecording();
+            setVoiceStatusText(t('chat.listening'));
+          }
+        }, 500);
+      }
+    },
+    silenceTimeoutMs: 5000,
+    maxDurationMs: 60000,
+  });
+
+  const {
+    speak,
+    stop: stopSpeech,
+    pause: pauseSpeech,
+    resume: resumeSpeech,
+    isPlaying,
+    isPaused,
+    isSupported: isTTSSupported,
+  } = useTextToSpeech({
+    language: mapI18nToSpeechLang(i18n.language),
+    defaultRate: (() => {
+      const saved = localStorage.getItem('voiceSettings');
+      return saved ? JSON.parse(saved).speechRate || 1.0 : 1.0;
+    })(),
+    defaultVolume: (() => {
+      const saved = localStorage.getItem('voiceSettings');
+      return saved ? JSON.parse(saved).volume || 1.0 : 1.0;
+    })(),
+    onComplete: () => {
+      setCurrentPlayingMessageId(null);
+
+      // Play next message in queue if available
+      if (messageQueue.length > 0) {
+        const nextMessage = messageQueue[0];
+        setMessageQueue((prev) => prev.slice(1));
+        setCurrentPlayingMessageId(nextMessage.id);
+        speak(nextMessage.content);
+      }
+      // Note: Listening is handled continuously, no need to restart here
+    },
+    onError: (err) => {
+      if (err?.error !== 'interrupted' && err?.error !== 'canceled') {
+        console.error('TTS error:', err);
+      }
+      setCurrentPlayingMessageId(null);
+
+      if (messageQueue.length > 0) {
+        const nextMessage = messageQueue[0];
+        setMessageQueue((prev) => prev.slice(1));
+        setCurrentPlayingMessageId(nextMessage.id);
+        speak(nextMessage.content);
+      }
+    },
+  });
+
+  const isVoiceConversationMode =
+    voiceInputEnabled && voiceOutputEnabled && isVoiceSupported && isTTSSupported;
 
   // Limit memory growth of processed IDs
   const MAX_PROCESSED_IDS = 1000;
@@ -94,11 +290,21 @@ const Chat = () => {
     }
 
     return () => {
+      // Set flag first to prevent any error handlers from logging
+      isIntentionallyDisconnectingRef.current = true;
+
       if (stompClientRef.current) {
-        stompClientRef.current.deactivate();
+        const client = stompClientRef.current;
+        // Set ref to null BEFORE deactivating so error handlers see it's null
         stompClientRef.current = null;
         isConnectingRef.current = false;
         setIsConnected(false);
+
+        try {
+          client.deactivate();
+        } catch {
+          // Ignore errors during cleanup
+        }
       }
     };
   }, [token, currentUser]);
@@ -109,6 +315,7 @@ const Chat = () => {
     }
 
     try {
+      isIntentionallyDisconnectingRef.current = false; // Reset flag when connecting
       isConnectingRef.current = true;
 
       const socket = new SockJS('http://localhost:8080/ws');
@@ -124,6 +331,7 @@ const Chat = () => {
           setIsConnected(true);
           toast.success('Connected to chat');
           isConnectingRef.current = false;
+          isIntentionallyDisconnectingRef.current = false; // Reset flag on successful connection
 
           const userTopic = `/topic/user/${currentUser.id}`;
 
@@ -153,6 +361,25 @@ const Chat = () => {
               };
 
               setMessages((prev) => [...prev, normalizedMessage]);
+
+              if (!normalizedMessage.isUserMessage && voiceOutputEnabled && isTTSSupported) {
+                const container = messagesContainerRef.current;
+                const isNearBottom = container
+                  ? container.scrollHeight - container.scrollTop - container.clientHeight < 100
+                  : true;
+
+                if (isNearBottom) {
+                  if (isPlaying || currentPlayingMessageId) {
+                    setMessageQueue((prev) => [
+                      ...prev,
+                      { id: normalizedMessage.id, content: normalizedMessage.content },
+                    ]);
+                  } else {
+                    setCurrentPlayingMessageId(normalizedMessage.id);
+                    speak(normalizedMessage.content);
+                  }
+                }
+              }
             } catch (error) {
               console.error('Error parsing message:', error);
             }
@@ -173,14 +400,26 @@ const Chat = () => {
         onDisconnect: () => {
           setIsConnected(false);
           isConnectingRef.current = false;
-          toast.info('Disconnected from chat');
+          // Don't show toast during intentional disconnection (cleanup/unmount)
+          if (!isIntentionallyDisconnectingRef.current) {
+            toast.info('Disconnected from chat');
+          }
         },
 
         onWebSocketError: (event) => {
-          console.error('WebSocket error:', event);
+          // Don't log errors during intentional disconnection (cleanup/unmount)
+          // Check flag, if client is null (already cleaned up), or if it's a generic error event
+          const isCleanup =
+            isIntentionallyDisconnectingRef.current ||
+            !stompClientRef.current ||
+            (event && event.type === 'error' && !event.message && !event.reason);
+
+          if (!isCleanup) {
+            console.error('WebSocket error:', event);
+          }
           isConnectingRef.current = false;
-          // Fallback: ensure history loads even if WS fails
-          if (token && currentUser && historyPage === null) {
+          // Fallback: ensure history loads even if WS fails (only if not disconnecting)
+          if (!isCleanup && token && currentUser && historyPage === null) {
             loadHistory();
           }
         },
@@ -231,6 +470,35 @@ const Chat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, currentUser]);
 
+  // Continuous listening in voice conversation mode
+  // This ensures we're always listening when not recording/transcribing
+  useEffect(() => {
+    if (
+      isVoiceConversationActive &&
+      isConnected &&
+      !isRecording &&
+      !isTranscribing &&
+      !userCancelledRecordingRef.current &&
+      !manuallyStoppedTTSRef.current &&
+      !isStartingRecordingRef.current
+    ) {
+      // Small delay to ensure state is settled
+      const timer = setTimeout(() => {
+        if (
+          !isRecording &&
+          !isTranscribing &&
+          isVoiceConversationActive &&
+          !isStartingRecordingRef.current
+        ) {
+          isStartingRecordingRef.current = true;
+          startRecording();
+          setVoiceStatusText(t('chat.listening'));
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isVoiceConversationActive, isConnected, isRecording, isTranscribing, startRecording, t]);
+
   const handleScroll = async () => {
     const el = messagesContainerRef.current;
     if (!el || loadingHistory || !hasMoreHistory) return;
@@ -276,6 +544,70 @@ const Chat = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+
+    if (isRecording && newValue !== inputValue) {
+      cancelRecording();
+      setVoiceStatusText('');
+    }
+
+    if (isVoiceTranscribed) {
+      setIsVoiceTranscribed(false);
+    }
+  };
+
+  const handlePlayMessage = (messageId, messageText) => {
+    if (currentPlayingMessageId === messageId) {
+      if (isPaused) {
+        resumeSpeech();
+      } else {
+        pauseSpeech();
+      }
+    } else {
+      stopSpeech();
+      setCurrentPlayingMessageId(messageId);
+      speak(messageText);
+    }
+  };
+
+  const handleStopMessage = () => {
+    manuallyStoppedTTSRef.current = true;
+    stopSpeech();
+    setCurrentPlayingMessageId(null);
+    setMessageQueue([]);
+  };
+
+  const handleToggleVoiceConversation = () => {
+    if (isVoiceConversationActive) {
+      setIsVoiceConversationActive(false);
+      isStartingRecordingRef.current = false;
+      if (isRecording) {
+        cancelRecording();
+      }
+      if (isPlaying) {
+        stopSpeech();
+        setCurrentPlayingMessageId(null);
+      }
+      setMessageQueue([]);
+      setVoiceStatusText('');
+      toast.info(t('chat.voiceConversationStopped'));
+    } else {
+      if (!isVoiceConversationMode) {
+        toast.error(t('chat.enableVoiceInSettings'));
+        return;
+      }
+      setIsVoiceConversationActive(true);
+      userCancelledRecordingRef.current = false;
+      manuallyStoppedTTSRef.current = false;
+      isStartingRecordingRef.current = true;
+      startRecording();
+      setVoiceStatusText(t('chat.listening'));
+      toast.success(t('chat.voiceConversationStarted'));
+    }
+  };
+
   const sendMessage = async () => {
     if (!inputValue.trim()) {
       return;
@@ -307,6 +639,7 @@ const Chat = () => {
       }
 
       setInputValue('');
+      setIsVoiceTranscribed(false);
       toast.success('Message sent successfully');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -418,6 +751,16 @@ const Chat = () => {
                           </svg>
                         </span>
                       )}
+                      {!message.isUserMessage && voiceOutputEnabled && isTTSSupported && (
+                        <VoicePlayer
+                          compact
+                          isPlaying={currentPlayingMessageId === message.id && isPlaying}
+                          isPaused={currentPlayingMessageId === message.id && isPaused}
+                          onPlay={() => handlePlayMessage(message.id, message.content)}
+                          onPause={() => pauseSpeech()}
+                          onStop={handleStopMessage}
+                        />
+                      )}
                     </div>
                   </div>
                   {message.isCrisisFlagged && (
@@ -473,18 +816,52 @@ const Chat = () => {
                   />
                 </svg>
               </button>
+              {isVoiceConversationMode && (
+                <button
+                  className={`voice-conversation-toggle ${isVoiceConversationActive ? 'active' : ''}`}
+                  onClick={handleToggleVoiceConversation}
+                  title={
+                    isVoiceConversationActive
+                      ? t('chat.stopVoiceConversation')
+                      : t('chat.startVoiceConversation')
+                  }
+                >
+                  {isVoiceConversationActive ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <rect x="6" y="6" width="12" height="12" fill="currentColor" rx="2" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        fill="none"
+                      />
+                      <path
+                        d="M19 10v2a7 7 0 0 1-14 0v-2"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        fill="none"
+                      />
+                      <path d="M12 19v3m-4 0h8" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  )}
+                </button>
+              )}
               <textarea
+                ref={inputRef}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 placeholder={t('chat.inputPlaceholder')}
-                className="chat-input"
+                className={`chat-input ${isVoiceTranscribed ? 'chat-input--voice-transcribed' : ''}`}
                 rows="1"
-                disabled={!isConnected}
+                disabled={!isConnected || isTranscribing}
               />
               <button
                 onClick={sendMessage}
-                disabled={!inputValue.trim() || !isConnected}
+                disabled={!inputValue.trim() || !isConnected || isTranscribing}
                 className={`send-button ${inputValue.trim() ? 'active' : ''}`}
               >
                 <svg

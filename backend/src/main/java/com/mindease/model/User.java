@@ -76,7 +76,7 @@ public class User {
         return id;
     }
 
-    void setId(UUID id) { // package-private for testing only
+    public void setId(UUID id) {
         this.id = id;
     }
 
