@@ -129,6 +129,7 @@
     "entryTitleLabel": "Entry Title",
     "entryTitlePlaceholder": "Give your entry a short, descriptive title",
     "titleRequired": "Please add a title to your journal entry.",
+    "contentRequired": "Write something first!",
     "howAreYouFeeling": "How are you feeling?",
     "placeholder": "Write about your day, your feelings, or anything on your mind...",
     "saveEntry": "Save Entry",
