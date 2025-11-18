@@ -309,14 +309,19 @@
 }
 
 /* Responsive Design */
-@media (max-width: 968px) {
+@media (max-width: 1050px) {
   .auth-content {
     grid-template-columns: 1fr;
     gap: 0;
+    min-height: auto;
   }
 
   .auth-welcome {
-    padding: var(--spacing-xl);
+    display: none;
+  }
+
+  .auth-form-section {
+    order: 2;
   }
 
   .welcome-title {
@@ -325,6 +330,7 @@
 
   .welcome-subtitle {
     font-size: var(--font-size-base);
+    margin-bottom: var(--spacing-xl);
   }
 
   .benefits-list {
@@ -339,14 +345,27 @@
     width: 32px;
     height: 32px;
   }
+
+  .features-list {
+    gap: var(--spacing-sm);
+  }
 }
 
 @media (max-width: 768px) {
   .auth-page {
     padding: var(--spacing-md);
+    min-height: 100vh;
   }
 
-  .auth-welcome,
+  .auth-container {
+    max-width: 100%;
+  }
+
+  .auth-content {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+
   .auth-form-section {
     padding: var(--spacing-lg);
   }
@@ -355,36 +374,218 @@
     max-width: 100%;
   }
 
+  .welcome-icon svg {
+    width: 60px;
+    height: 60px;
+  }
+
+  .welcome-title {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .welcome-subtitle {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-lg);
+  }
+
   .form-title {
     font-size: var(--font-size-xl);
   }
 
+  .form-subtitle {
+    font-size: var(--font-size-sm);
+  }
+
   .auth-form-container {
     max-width: 100%;
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-input {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-base);
+  }
+
+  .benefit-text h4 {
+    font-size: var(--font-size-sm);
+  }
+
+  .benefit-text p {
+    font-size: var(--font-size-xs);
   }
 }
 
 @media (max-width: 480px) {
   .auth-page {
     padding: var(--spacing-sm);
+    align-items: flex-start;
+    padding-top: var(--spacing-md);
   }
 
   .auth-content {
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
+    min-height: auto;
   }
 
-  .auth-welcome,
   .auth-form-section {
     padding: var(--spacing-md);
   }
 
+  .welcome-icon {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .welcome-icon svg {
+    width: 50px;
+    height: 50px;
+  }
+
   .welcome-title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .welcome-subtitle {
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--spacing-md);
   }
 
   .features-list,
   .benefits-list {
+    gap: var(--spacing-xs);
+  }
+
+  .feature-item {
+    font-size: var(--font-size-sm);
     gap: var(--spacing-sm);
+  }
+
+  .benefit-item {
+    gap: var(--spacing-xs);
+  }
+
+  .benefit-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .benefit-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .benefit-text h4 {
+    font-size: var(--font-size-xs);
+    margin-bottom: 2px;
+  }
+
+  .benefit-text p {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .form-header {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .form-title {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .form-subtitle {
+    font-size: var(--font-size-xs);
+  }
+
+  .form-label {
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .form-input {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+
+  .form-group {
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .error-message {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--spacing-md);
+  }
+
+  .error-message svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-sm);
+  }
+
+  .form-divider {
+    margin: var(--spacing-md) 0;
+  }
+
+  .form-divider span {
+    font-size: var(--font-size-xs);
+    padding: 0 var(--spacing-sm);
+  }
+
+  .form-footer {
+    margin-top: var(--spacing-md);
+  }
+
+  .form-footer p {
+    font-size: var(--font-size-xs);
+  }
+
+  .password-requirements {
+    padding: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+  }
+
+  .requirement {
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--spacing-xs);
+    gap: var(--spacing-xs);
+  }
+
+  .requirement svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .validation-error-text {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 360px) {
+  .auth-page {
+    padding: var(--spacing-xs);
+    padding-top: var(--spacing-sm);
+  }
+
+  .auth-form-section {
+    padding: var(--spacing-sm);
+  }
+
+  .welcome-title {
+    font-size: var(--font-size-base);
+  }
+
+  .form-title {
+    font-size: var(--font-size-base);
   }
 }
 

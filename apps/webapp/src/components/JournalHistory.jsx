@@ -28,13 +28,17 @@ const JournalHistory = ({
     }).format(date);
   };
 
-  const stripLeadingEmoji = (content) => {
-    if (!content) return '';
+  const extractEntryParts = (content) => {
+    if (!content) return { emoji: '', text: '' };
     const s = String(content);
     const match = s.match(
       /^(?:\p{Extended_Pictographic}(?:\u200d\p{Extended_Pictographic})*(?:\ufe0f)?)+\s?/u
     );
-    return match ? s.slice(match[0].length) : s;
+    if (match) {
+      const emoji = match[0].trim();
+      return { emoji, text: s.slice(match[0].length) };
+    }
+    return { emoji: '', text: s };
   };
 
   if (isLoading && entries.length === 0) {
@@ -77,19 +81,38 @@ const JournalHistory = ({
       </div>
 
       <div className="entries-list">
-        {entries.map((entry, idx) => (
-          <div key={entry.id ?? idx} className="journal-entry-card">
-            <div className="entry-header">
-              <div className="entry-meta">
-                <span className="entry-date">{formatDate(entry.createdAt)}</span>
+        {entries.map((entry, idx) => {
+          const { emoji, text } = extractEntryParts(entry.content);
+          return (
+            <div key={entry.id ?? idx} className="journal-entry-card">
+              <div className="entry-header">
+                <div className="entry-meta">
+                  {emoji && (
+                    <span className="entry-emoji" aria-hidden="true">
+                      {emoji}
+                    </span>
+                  )}
+                  <div className="entry-meta-text">
+                    <h3 className="entry-title">{entry.title || t('journal.entry')}</h3>
+                    <span className="entry-date">{formatDate(entry.createdAt)}</span>
+                  </div>
+                </div>
+                {emoji && (
+                  <span className="entry-mood-pill">
+                    <span className="pill-emoji" aria-hidden="true">
+                      {emoji}
+                    </span>
+                    <span className="pill-label">{t('journal.moodBadge')}</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="entry-content">
+                <p>{text}</p>
               </div>
             </div>
-
-            <div className="entry-content">
-              <p>{stripLeadingEmoji(entry.content)}</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {totalPages > 1 && (

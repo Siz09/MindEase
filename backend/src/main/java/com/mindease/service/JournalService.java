@@ -27,8 +27,9 @@ public class JournalService {
     @Autowired
     private OpenAIService openAIService;
 
-    @Transactional
-    public JournalEntry saveJournalEntry(UUID userId, String content) {
+    private static final int MAX_TITLE_LENGTH = 150;
+
+    public JournalEntry saveJournalEntry(UUID userId, String title, String content) {
         if (userId == null) {
             throw new IllegalArgumentException("User ID cannot be null");
         }
@@ -36,52 +37,66 @@ public class JournalService {
             throw new IllegalArgumentException("Content cannot be empty");
         }
 
-        JournalEntry entry = new JournalEntry(userId, content.trim());
+        String normalizedContent = content.trim();
+        String normalizedTitle = normalizeTitle(title);
+
+        JournalEntry entry = new JournalEntry(userId, normalizedTitle, normalizedContent);
         JournalEntry savedEntry = journalEntryRepository.save(entry);
-        
+
         // Generate AI summary asynchronously
         generateAndSaveAISummary(savedEntry);
-        
+
         return savedEntry;
     }
 
     @Transactional
-    public JournalEntry saveJournalEntryWithSummary(UUID userId, String content, String aiSummary, String moodInsight) {
-        JournalEntry entry = new JournalEntry(userId, content);
+    public JournalEntry saveJournalEntryWithSummary(UUID userId, String title, String content, String aiSummary, String moodInsight) {
+        JournalEntry entry = new JournalEntry(userId, normalizeTitle(title), content);
         entry.setAiSummary(aiSummary);
         entry.setMoodInsight(moodInsight);
         return journalEntryRepository.save(entry);
+    }
+
+    private String normalizeTitle(String title) {
+        if (title == null) {
+            return null;
+        }
+        String trimmed = title.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        return trimmed.length() > MAX_TITLE_LENGTH ? trimmed.substring(0, MAX_TITLE_LENGTH) : trimmed;
     }
 
     @Async
     public CompletableFuture<Void> generateAndSaveAISummary(JournalEntry entry) {
         try {
             logger.info("Generating AI summary for journal entry: {}", entry.getId());
-            
+
             // Generate summary
             var summaryFuture = openAIService.generateJournalSummary(entry.getContent());
             var insightFuture = openAIService.generateMoodInsight(entry.getContent());
-            
+
             String summary = summaryFuture.orElse("Summary unavailable at this time.");
             String insight = insightFuture.orElse("Mood insight unavailable at this time.");
-            
+
             // Update the entry with AI-generated content
             entry.setAiSummary(summary);
             entry.setMoodInsight(insight);
             journalEntryRepository.save(entry);
-            
+
             logger.info("Successfully saved AI summary for journal entry: {}", entry.getId());
-            
+
         } catch (Exception e) {
-            logger.error("Failed to generate AI summary for journal entry {}: {}", 
+            logger.error("Failed to generate AI summary for journal entry {}: {}",
                         entry.getId(), e.getMessage(), e);
-            
+
             // Set fallback messages
             entry.setAiSummary("Summary unavailable due to technical issues.");
             entry.setMoodInsight("Mood insight unavailable.");
             journalEntryRepository.save(entry);
         }
-        
+
         return CompletableFuture.completedFuture(null);
     }
 

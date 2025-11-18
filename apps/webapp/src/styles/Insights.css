@@ -239,6 +239,13 @@
   font-weight: 600;
 }
 
+.summary-entry-title {
+  margin: 0.5rem 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
 .entry-content-wrapper {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
@@ -51,6 +51,8 @@ const Chat = () => {
   const retryCountRef = useRef(0);
   const MAX_RETRIES = 3;
   const ttsStateRef = useRef({ isPlaying: false, stopSpeech: null });
+  const isVoiceConversationActiveRef = useRef(false);
+  const lastRecordingStartRef = useRef(0);
 
   const stompClientRef = useRef(null);
   const isConnectingRef = useRef(false);
@@ -101,10 +103,51 @@ const Chat = () => {
   };
 
   const sendVoiceMessage = async (text) => {
-    const success = await sendMessageToServer(text);
-    if (success) {
-      setInputValue('');
-      setIsVoiceTranscribed(false);
+    if (!text || !text.trim()) {
+      console.warn('sendVoiceMessage called with empty text');
+      return false;
+    }
+
+    // Wait for connection if not ready yet (with timeout)
+    // Check both state and ref to ensure we have a valid connection
+    let attempts = 0;
+    const maxAttempts = 20; // Wait up to 4 seconds (20 * 200ms)
+    while ((!isConnected || !stompClientRef.current) && attempts < maxAttempts) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      attempts++;
+    }
+
+    // Final check before sending
+    if (!stompClientRef.current || !isConnected) {
+      console.warn('Voice message not sent: connection not ready after waiting', {
+        isConnected,
+        hasStompClient: !!stompClientRef.current,
+        attempts,
+      });
+      // Keep text in input for retry
+      setInputValue(text);
+      setIsVoiceTranscribed(true);
+      return false;
+    }
+
+    try {
+      const success = await sendMessageToServer(text);
+      if (success) {
+        setInputValue('');
+        setIsVoiceTranscribed(false);
+        return true;
+      } else {
+        // If sending failed, keep the text in input so user can retry
+        console.warn('sendMessageToServer returned false');
+        setInputValue(text);
+        setIsVoiceTranscribed(true);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error in sendVoiceMessage:', error);
+      setInputValue(text);
+      setIsVoiceTranscribed(true);
+      return false;
     }
   };
 
@@ -133,28 +176,60 @@ const Chat = () => {
     onStart: () => {
       // Recording has actually started - reset the flag
       isStartingRecordingRef.current = false;
-      // User started speaking - interrupt TTS immediately (user has priority)
-      interruptTTS();
     },
-    onInterimResult: () => {
-      // User is speaking - interrupt TTS as soon as we detect speech (even interim)
-      // This is more responsive than waiting for onStart
-      interruptTTS();
+    onInterimResult: (interimText) => {
+      // Interrupt TTS as soon as we detect any speech (speech recognition already filters noise)
+      if (interimText && interimText.trim().length > 0) {
+        interruptTTS();
+      }
     },
     onTranscriptionComplete: (text) => {
+      if (!text || !text.trim()) {
+        // If no text transcribed, just restart listening in voice conversation mode
+        // Use ref to get current value
+        if (isVoiceConversationActiveRef.current) {
+          setTimeout(() => {
+            if (
+              !isRecording &&
+              !isTranscribing &&
+              isVoiceConversationActiveRef.current &&
+              !isStartingRecordingRef.current
+            ) {
+              isStartingRecordingRef.current = true;
+              startRecording();
+              setVoiceStatusText(t('chat.listening'));
+            }
+          }, 100);
+        }
+        return;
+      }
+
       setInputValue(text);
       setIsVoiceTranscribed(true);
       setVoiceStatusText('');
       retryCountRef.current = 0; // Reset retry counter on successful transcription
 
-      if (isVoiceConversationActive) {
-        sendVoiceMessage(text);
-        // Immediately restart listening after sending message
+      // Use ref to get current value instead of captured state
+      if (isVoiceConversationActiveRef.current) {
+        // Send the message (non-blocking) and immediately restart listening
+        sendVoiceMessage(text)
+          .then((success) => {
+            if (!success) {
+              console.warn('Voice message sending may have failed, but continuing...');
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to send voice message:', err);
+            // Keep text in input for retry
+            setInputValue(text);
+            setIsVoiceTranscribed(true);
+          });
+        // Restart listening immediately after transcription
         setTimeout(() => {
           if (
             !isRecording &&
             !isTranscribing &&
-            isVoiceConversationActive &&
+            isVoiceConversationActiveRef.current &&
             !isStartingRecordingRef.current
           ) {
             isStartingRecordingRef.current = true;
@@ -252,6 +327,11 @@ const Chat = () => {
     ttsStateRef.current = { isPlaying, stopSpeech };
   }, [isPlaying, stopSpeech]);
 
+  // Update voice conversation active ref so WebSocket callback can access current value
+  useEffect(() => {
+    isVoiceConversationActiveRef.current = isVoiceConversationActive;
+  }, [isVoiceConversationActive]);
+
   // Limit memory growth of processed IDs
   const MAX_PROCESSED_IDS = 1000;
   const trimProcessedIds = () => {
@@ -309,33 +389,7 @@ const Chat = () => {
     }
   }, [initialLoadComplete]);
 
-  // Single WebSocket connection effect
-  useEffect(() => {
-    if (token && currentUser && !stompClientRef.current && !isConnectingRef.current) {
-      connectWebSocket();
-    }
-
-    return () => {
-      // Set flag first to prevent any error handlers from logging
-      isIntentionallyDisconnectingRef.current = true;
-
-      if (stompClientRef.current) {
-        const client = stompClientRef.current;
-        // Set ref to null BEFORE deactivating so error handlers see it's null
-        stompClientRef.current = null;
-        isConnectingRef.current = false;
-        setIsConnected(false);
-
-        try {
-          client.deactivate();
-        } catch {
-          // Ignore errors during cleanup
-        }
-      }
-    };
-  }, [token, currentUser]);
-
-  const connectWebSocket = () => {
+  const connectWebSocket = useCallback(() => {
     if (isConnectingRef.current || stompClientRef.current) {
       return;
     }
@@ -355,7 +409,6 @@ const Chat = () => {
         heartbeatOutgoing: 4000,
         onConnect: () => {
           setIsConnected(true);
-          toast.success('Connected to chat');
           isConnectingRef.current = false;
           isIntentionallyDisconnectingRef.current = false; // Reset flag on successful connection
 
@@ -389,27 +442,33 @@ const Chat = () => {
               setMessages((prev) => [...prev, normalizedMessage]);
 
               // Only auto-play in voice conversation mode to respect accessibility guidelines
+              // Use ref to get current value since this callback captures old values
               if (
                 !normalizedMessage.isUserMessage &&
                 voiceOutputEnabled &&
                 isTTSSupported &&
-                isVoiceConversationActive
+                isVoiceConversationActiveRef.current
               ) {
-                const container = messagesContainerRef.current;
-                const isNearBottom = container
-                  ? container.scrollHeight - container.scrollTop - container.clientHeight < 100
-                  : true;
+                // Reset manually stopped flag when new bot message arrives in voice conversation
+                // This allows TTS to play for new messages even if user manually stopped previous one
+                manuallyStoppedTTSRef.current = false;
 
-                if (isNearBottom) {
-                  if (isPlaying || currentPlayingMessageId) {
-                    setMessageQueue((prev) => [
-                      ...prev,
-                      { id: normalizedMessage.id, content: normalizedMessage.content },
-                    ]);
-                  } else {
-                    setCurrentPlayingMessageId(normalizedMessage.id);
-                    speak(normalizedMessage.content);
+                // In voice conversation mode, always play TTS regardless of scroll position
+                // This ensures the user hears the response even if they scrolled up
+                const messageContent = normalizedMessage.content?.trim();
+                if (messageContent) {
+                  // Cancel any currently playing TTS to play the new message
+                  if (isPlaying || currentPlayingMessageId || window.speechSynthesis?.speaking) {
+                    if (stopSpeech) stopSpeech();
+                    if (window.speechSynthesis) {
+                      window.speechSynthesis.cancel();
+                    }
+                    setCurrentPlayingMessageId(null);
+                    setMessageQueue([]);
                   }
+                  // Play the new message immediately
+                  setCurrentPlayingMessageId(normalizedMessage.id);
+                  speak(messageContent);
                 }
               }
             } catch (error) {
@@ -464,7 +523,46 @@ const Chat = () => {
       toast.error('Failed to connect to chat');
       isConnectingRef.current = false;
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    token,
+    currentUser,
+    voiceOutputEnabled,
+    isTTSSupported,
+    isPlaying,
+    currentPlayingMessageId,
+    stopSpeech,
+    speak,
+    historyPage,
+    loadingHistory,
+  ]);
+
+  // Single WebSocket connection effect
+  useEffect(() => {
+    if (token && currentUser && !stompClientRef.current && !isConnectingRef.current) {
+      connectWebSocket();
+    }
+
+    return () => {
+      // Set flag first to prevent any error handlers from logging
+      isIntentionallyDisconnectingRef.current = true;
+
+      if (stompClientRef.current) {
+        const client = stompClientRef.current;
+        // Set ref to null BEFORE deactivating so error handlers see it's null
+        stompClientRef.current = null;
+        isConnectingRef.current = false;
+        setIsConnected(false);
+
+        try {
+          client.deactivate();
+        } catch {
+          // Ignore errors during cleanup
+        }
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, currentUser]);
 
   const loadHistory = async () => {
     if (loadingHistory) return;
@@ -504,6 +602,7 @@ const Chat = () => {
 
   // Continuous listening in voice conversation mode
   // This ensures we're always listening when not recording/transcribing
+  // Use cooldown to prevent rapid restarts while allowing interruption
   useEffect(() => {
     if (
       isVoiceConversationActive &&
@@ -514,22 +613,46 @@ const Chat = () => {
       !manuallyStoppedTTSRef.current &&
       !isStartingRecordingRef.current
     ) {
-      // Small delay to ensure state is settled
+      // Add cooldown to prevent rapid restarts
+      const now = Date.now();
+      const timeSinceLastStart = now - lastRecordingStartRef.current;
+      const cooldownPeriod = 800; // 800ms minimum between recordings to prevent echo/feedback
+
+      if (timeSinceLastStart < cooldownPeriod) {
+        return;
+      }
+
+      // Use longer delay if TTS is playing to reduce chance of audio feedback
+      const delay = isPlaying ? 500 : 100;
+
       const timer = setTimeout(() => {
+        // Only start if conditions are still met
         if (
           !isRecording &&
           !isTranscribing &&
           isVoiceConversationActive &&
           !isStartingRecordingRef.current
         ) {
-          isStartingRecordingRef.current = true;
-          startRecording();
-          setVoiceStatusText(t('chat.listening'));
+          const timeSinceLastCheck = Date.now() - lastRecordingStartRef.current;
+          if (timeSinceLastCheck >= cooldownPeriod) {
+            lastRecordingStartRef.current = Date.now();
+            isStartingRecordingRef.current = true;
+            startRecording();
+            setVoiceStatusText(t('chat.listening'));
+          }
         }
-      }, 100);
+      }, delay);
       return () => clearTimeout(timer);
     }
-  }, [isVoiceConversationActive, isConnected, isRecording, isTranscribing, startRecording, t]);
+  }, [
+    isVoiceConversationActive,
+    isConnected,
+    isRecording,
+    isTranscribing,
+    isPlaying,
+    startRecording,
+    t,
+  ]);
 
   const handleScroll = async () => {
     const el = messagesContainerRef.current;
@@ -630,6 +753,10 @@ const Chat = () => {
         toast.error(t('chat.enableVoiceInSettings'));
         return;
       }
+      if (!isConnected) {
+        toast.error('Please wait for connection before starting voice conversation');
+        return;
+      }
       setIsVoiceConversationActive(true);
       retryCountRef.current = 0; // Reset retry counter for new conversation
       userCancelledRecordingRef.current = false;
@@ -641,12 +768,19 @@ const Chat = () => {
     }
   };
 
-  const sendMessage = async () => {
-    const success = await sendMessageToServer(inputValue);
+  const sendMessage = async (messageOverride) => {
+    const textToSend = (messageOverride ?? inputValue)?.trim();
+    if (!textToSend) {
+      return;
+    }
+
+    const success = await sendMessageToServer(textToSend);
     if (success) {
       setInputValue('');
       setIsVoiceTranscribed(false);
       toast.success('Message sent successfully');
+    } else if (messageOverride) {
+      setInputValue(messageOverride);
     }
   };
 
@@ -693,19 +827,19 @@ const Chat = () => {
                   <div className="suggested-messages">
                     <button
                       className="suggested-message"
-                      onClick={() => setInputValue(t('chat.quickResponses.anxiety'))}
+                      onClick={() => sendMessage(t('chat.quickResponses.anxiety'))}
                     >
                       {t('chat.quickResponses.anxiety')}
                     </button>
                     <button
                       className="suggested-message"
-                      onClick={() => setInputValue(t('chat.quickResponses.relax'))}
+                      onClick={() => sendMessage(t('chat.quickResponses.relax'))}
                     >
                       {t('chat.quickResponses.relax')}
                     </button>
                     <button
                       className="suggested-message"
-                      onClick={() => setInputValue(t('chat.quickResponses.motivation'))}
+                      onClick={() => sendMessage(t('chat.quickResponses.motivation'))}
                     >
                       {t('chat.quickResponses.motivation')}
                     </button>

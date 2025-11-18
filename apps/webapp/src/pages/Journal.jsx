@@ -12,6 +12,7 @@ const Journal = () => {
 
   const [entries, setEntries] = useState([]);
   const [newEntry, setNewEntry] = useState('');
+  const [entryTitle, setEntryTitle] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState('😊');
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -22,7 +23,9 @@ const Journal = () => {
 
   // Kept state for API flow (no inline summary card rendered anymore)
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const pollingMapRef = useRef(new Map());
+  const progressTimerRef = useRef(null);
 
   const emojiPickerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -117,10 +120,48 @@ const Journal = () => {
     setShowEmojiPicker(false);
   };
 
+  useEffect(() => {
+    if (!loading) {
+      setUploadProgress(0);
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+      return;
+    }
+
+    setUploadProgress(20);
+    progressTimerRef.current = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 95) return prev;
+        return Math.min(95, prev + Math.random() * 10 + 5);
+      });
+    }, 300);
+
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+    };
+  }, []);
+
   // Submit new entry
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!entryTitle.trim()) {
+      toast.info(t('journal.titleRequired'));
+      return;
+    }
     if (!newEntry.trim()) {
       toast.info('Write something first!');
       return;
@@ -137,7 +178,10 @@ const Journal = () => {
     setLoading(true);
 
     try {
-      const res = await api.post('/journal/add', { content: `${selectedEmoji} ${newEntry}` });
+      const res = await api.post('/journal/add', {
+        title: entryTitle.trim(),
+        content: `${selectedEmoji} ${newEntry.trim()}`,
+      });
       const data = res.data || {};
 
       const returnedEntry = data.entry || null;
@@ -147,6 +191,7 @@ const Journal = () => {
         setEntries((prev) => [returnedEntry, ...prev]);
       }
       setNewEntry('');
+      setEntryTitle('');
       setSelectedEmoji('😊');
 
       // Poll briefly for AI summary completion and refresh the entry in the list
@@ -258,6 +303,20 @@ const Journal = () => {
         <div className="journal-form-section">
           <form onSubmit={handleSubmit} className="journal-form">
             <div className="form-group">
+              <label htmlFor="journal-title" className="form-label">
+                {t('journal.entryTitleLabel')}
+              </label>
+              <input
+                id="journal-title"
+                type="text"
+                className="journal-title-input"
+                placeholder={t('journal.entryTitlePlaceholder')}
+                value={entryTitle}
+                onChange={(e) => setEntryTitle(e.target.value)}
+                maxLength={150}
+                disabled={loading}
+              />
+
               <label htmlFor="journal-entry" className="form-label">
                 {t('journal.newEntry')}
               </label>
@@ -301,7 +360,11 @@ const Journal = () => {
 
               <div className="form-actions">
                 <div className="char-count">{newEntry.length} / 1000</div>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading || !entryTitle.trim() || !newEntry.trim()}
+                >
                   {loading ? t('journal.saving') : t('journal.saveEntry')}
                 </button>
               </div>
@@ -316,10 +379,13 @@ const Journal = () => {
 
           {/* Loading Overlay */}
           {loading && (
-            <div className="loader-overlay">
-              <div className="loading-spinner">
-                <div className="spinner"></div>
-                <p>AI is analyzing your entry...</p>
+            <div className="loader-overlay" role="dialog" aria-live="assertive">
+              <div className="loader-card">
+                <p className="loader-title">{t('journal.progress.saving')}</p>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{ width: `${uploadProgress}%` }} />
+                </div>
+                <p className="loader-subtext">{t('journal.progress.analyzing')}</p>
               </div>
             </div>
           )}
@@ -355,9 +421,22 @@ const Journal = () => {
                     <div key={entry.id} className="journal-entry-card">
                       <div className="entry-header">
                         <div className="entry-meta">
-                          <span className="entry-emoji">{emoji}</span>
-                          <span className="entry-date">{formatDate(entry.createdAt)}</span>
+                          <span className="entry-emoji" aria-hidden="true">
+                            {emoji}
+                          </span>
+                          <div className="entry-meta-text">
+                            <h3 className="entry-title">{entry.title || t('journal.entry')}</h3>
+                            <span className="entry-date">{formatDate(entry.createdAt)}</span>
+                          </div>
                         </div>
+                        {emoji && (
+                          <span className="entry-mood-pill">
+                            <span className="pill-emoji" aria-hidden="true">
+                              {emoji}
+                            </span>
+                            <span className="pill-label">{t('journal.moodBadge')}</span>
+                          </span>
+                        )}
                       </div>
 
                       <div className="entry-content">

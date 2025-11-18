@@ -45,6 +45,7 @@ public class JournalController {
         Map<String, Object> response = new HashMap<>();
         try {
             String content = request.getContent();
+            String title = request.getTitle();
             if (content == null || content.trim().isEmpty()) {
                 response.put("success", false);
                 response.put("message", "Journal content cannot be empty");
@@ -62,7 +63,7 @@ public class JournalController {
             }
 
             // Save journal entry
-            JournalEntry savedEntry = journalService.saveJournalEntry(userId, content);
+            JournalEntry savedEntry = journalService.saveJournalEntry(userId, title, content);
 
             response.put("success", true);
             response.put("message", "Journal entry saved successfully");

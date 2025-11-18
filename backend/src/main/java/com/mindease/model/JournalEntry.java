@@ -18,6 +18,9 @@ public class JournalEntry {
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
+  @Column(name = "title", length = 150)
+  private String title;
+
   @Column(columnDefinition = "TEXT", nullable = false)
   private String content;
 
@@ -35,7 +38,12 @@ public class JournalEntry {
   public JournalEntry() {}
 
   public JournalEntry(UUID userId, String content) {
+    this(userId, null, content);
+  }
+
+  public JournalEntry(UUID userId, String title, String content) {
     this.userId = userId;
+    this.title = title;
     this.content = content;
   }
 
@@ -45,6 +53,9 @@ public class JournalEntry {
 
   public UUID getUserId() { return userId; }
   public void setUserId(UUID userId) { this.userId = userId; }
+
+  public String getTitle() { return title; }
+  public void setTitle(String title) { this.title = title; }
 
   public String getContent() { return content; }
   public void setContent(String content) { this.content = content; }

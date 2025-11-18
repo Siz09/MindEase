@@ -116,12 +116,19 @@
     "tip2Title": "Stay Active",
     "tip2Description": "Regular exercise can significantly improve your mood and energy.",
     "tip3Title": "Connect with Others",
-    "tip3Description": "Maintain social connections for better mental health."
+    "tip3Description": "Maintain social connections for better mental health.",
+    "replyToast": {
+      "title": "Thanks for checking in",
+      "message": "We'll tailor insights for your {{mood}} mood."
+    }
   },
   "journal": {
     "title": "Journal",
     "subtitle": "Express your thoughts and feelings with emojis. AI will help you gain insights.",
     "newEntry": "New Journal Entry",
+    "entryTitleLabel": "Entry Title",
+    "entryTitlePlaceholder": "Give your entry a short, descriptive title",
+    "titleRequired": "Please add a title to your journal entry.",
     "howAreYouFeeling": "How are you feeling?",
     "placeholder": "Write about your day, your feelings, or anything on your mind...",
     "saveEntry": "Save Entry",
@@ -162,7 +169,12 @@
       "keep": "Keep mood",
       "update": "Update mood",
       "updateRequired": "Please update your mood first or choose Keep mood."
-    }
+    },
+    "progress": {
+      "saving": "Saving your entry...",
+      "analyzing": "AI is analyzing your entry"
+    },
+    "moodBadge": "Mood selected"
   },
   "charts": {
     "moodTrendOverTime": "Mood Trend Over Time",

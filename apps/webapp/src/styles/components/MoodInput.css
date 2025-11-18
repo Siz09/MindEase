@@ -71,6 +71,41 @@
   gap: 1.5rem;
 }
 
+.selected-mood-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(21, 128, 61, 0.08);
+  border: 1px solid rgba(21, 128, 61, 0.2);
+}
+
+.preview-emoji {
+  font-size: 2rem;
+}
+
+.preview-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.preview-label {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #15803d;
+}
+
+.preview-value {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #065f46;
+}
+
 .mood-scale {
   display: flex;
   flex-direction: column;

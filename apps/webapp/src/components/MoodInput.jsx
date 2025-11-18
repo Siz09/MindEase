@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../styles/components/MoodInput.css';
 
-const MoodInput = ({ onSubmit, loading }) => {
+const MoodInput = ({ onSubmit, loading, currentMood }) => {
   const { t } = useTranslation();
   const [selectedMood, setSelectedMood] = useState(null);
   const [quickSelectedId, setQuickSelectedId] = useState(null);
@@ -49,6 +49,14 @@ const MoodInput = ({ onSubmit, loading }) => {
     { value: 9, emoji: '😁', label: t('mood.great'), color: '#16a34a' },
     { value: 10, emoji: '🤩', label: t('mood.amazing'), color: '#15803d' },
   ];
+
+  useEffect(() => {
+    if (!showForm || !currentMood) return;
+    const preset = detailedMoods.find((m) => m.value === currentMood.value);
+    if (preset) {
+      setSelectedMood(preset);
+    }
+  }, [showForm, currentMood]);
 
   const handleQuickMoodSubmit = async (moodData) => {
     try {
@@ -130,6 +138,15 @@ const MoodInput = ({ onSubmit, loading }) => {
           </div>
         ) : (
           <div className="detailed-mood-form">
+            {currentMood && (
+              <div className="selected-mood-preview" aria-live="polite">
+                <div className="preview-emoji">{currentMood.emoji || '🙂'}</div>
+                <div className="preview-copy">
+                  <p className="preview-label">{t('journal.moodBadge') || 'Mood selected'}</p>
+                  <p className="preview-value">{currentMood.label || t('mood.howAreYouFeeling')}</p>
+                </div>
+              </div>
+            )}
             <div className="mood-scale">
               <h3>{t('mood.rateYourMood')}</h3>
               <div className="mood-scale-options">

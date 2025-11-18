@@ -316,6 +316,8 @@ const Insights = () => {
                             </span>
                           </div>
 
+                          {entry.title && <h4 className="summary-entry-title">{entry.title}</h4>}
+
                           <div className="entry-content-wrapper">
                             {/* Original Entry */}
                             <div className="entry-original">

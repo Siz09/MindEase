@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { auth } from '../firebase';
@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const location = useLocation();
+  const welcomeToastShownRef = useRef(false);
 
   // Configure axios defaults
   useEffect(() => {
@@ -53,11 +54,15 @@ export const AuthProvider = ({ children }) => {
           const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
           setCurrentUser(response.data.user);
           setToken(storedToken);
-          toast.success('Welcome back!');
+          if (!welcomeToastShownRef.current) {
+            toast.success('Welcome back!');
+            welcomeToastShownRef.current = true;
+          }
         } catch (error) {
           console.error('Auth check failed:', error);
           localStorage.removeItem('token');
           setToken(null);
+          welcomeToastShownRef.current = false;
           // Suppress toast on login route to reduce flicker
           if (!location.pathname.startsWith('/login')) {
             toast.error('Session expired. Please log in again.');
@@ -74,6 +79,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', jwtToken);
     setToken(jwtToken);
     setCurrentUser(userData);
+    welcomeToastShownRef.current = true;
 
     if (toastId) {
       toast.update(toastId, {
@@ -266,6 +272,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('token');
       setToken(null);
       setCurrentUser(null);
+      welcomeToastShownRef.current = false;
 
       toast.update(toastId, {
         render: 'Account created! Please log in.',
@@ -337,6 +344,7 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
     delete axios.defaults.headers.common['Authorization'];
     auth.signOut();
+    welcomeToastShownRef.current = false;
     toast.info('You have been logged out');
   };
 

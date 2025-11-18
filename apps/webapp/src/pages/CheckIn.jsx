@@ -12,6 +12,28 @@ import '../styles/EmojiPicker.css';
 const CheckIn = () => {
   const { t } = useTranslation();
   const { token } = useAuth();
+  const showMoodReplyToast = (moodData) => {
+    if (!moodData) return;
+    toast.dismiss('mood-reply-toast');
+    toast(
+      <div className="reply-toast">
+        <div className="reply-toast-emoji">{moodData.emoji || '🙂'}</div>
+        <div className="reply-toast-body">
+          <p className="reply-toast-title">{t('mood.replyToast.title')}</p>
+          <p className="reply-toast-text">
+            {t('mood.replyToast.message', { mood: moodData.label || t('mood.howAreYouFeeling') })}
+          </p>
+        </div>
+      </div>,
+      {
+        toastId: 'mood-reply-toast',
+        className: 'reply-toast-shell',
+        icon: false,
+        closeButton: false,
+        autoClose: 3500,
+      }
+    );
+  };
 
   // Mood state
   const [moodLoading, setMoodLoading] = useState(false);
@@ -77,6 +99,7 @@ const CheckIn = () => {
       });
       if (response.data.status === 'success' || response.data.success) {
         toast.success(t('mood.success.saved') || 'Mood entry saved!');
+        showMoodReplyToast(moodData);
         // Update shared current mood for cross-component sync
         setCurrentMood({
           value: moodData.value,
@@ -92,10 +115,10 @@ const CheckIn = () => {
     }
   };
 
-  const handleJournalSubmit = async (content) => {
+  const handleJournalSubmit = async ({ title, content }) => {
     try {
       setJournalSubmitting(true);
-      const res = await api.post('/journal/add', { content });
+      const res = await api.post('/journal/add', { title, content });
       const data = res.data || {};
 
       if (data.success || data.status === 'success') {
@@ -132,7 +155,11 @@ const CheckIn = () => {
         <div className="check-in-content">
           {/* Mood Input Section */}
           <section className="check-in-section">
-            <MoodInput onSubmit={handleMoodSubmit} loading={moodLoading} />
+            <MoodInput
+              onSubmit={handleMoodSubmit}
+              loading={moodLoading}
+              currentMood={currentMood}
+            />
           </section>
 
           {/* Journal Form Section */}

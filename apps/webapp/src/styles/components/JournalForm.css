@@ -96,6 +96,32 @@
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
+.journal-title-input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.journal-title-input:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.journal-title-input.has-error {
+  border-color: #dc2626;
+}
+
+.form-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #dc2626;
+}
+
 .char-count {
   font-size: 0.75rem;
   color: #999;
@@ -113,6 +139,34 @@
 
 .ai-info p {
   margin: 0;
+}
+
+.journal-progress {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.journal-progress .progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(22, 163, 74, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.journal-progress .progress-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #86efac, #16a34a);
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+.journal-progress .progress-text {
+  font-size: 0.8rem;
+  color: #4b5563;
 }
 
 /* Contrast notice between selected mood and journal content */

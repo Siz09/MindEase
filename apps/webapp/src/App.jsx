@@ -24,6 +24,7 @@ import SystemMonitoring from './admin/pages/SystemMonitoring';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/App.css';
+import './styles/ToastOverrides.css';
 import Chat from './pages/Chat';
 import Testing from './pages/Testing';
 import Notifications from './pages/Notifications';
