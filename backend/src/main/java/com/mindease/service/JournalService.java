@@ -50,8 +50,10 @@ public class JournalService {
     }
 
     @Transactional
-    public JournalEntry saveJournalEntryWithSummary(UUID userId, String title, String content, String aiSummary, String moodInsight) {
-        JournalEntry entry = new JournalEntry(userId, normalizeTitle(title), content);
+    public JournalEntry saveJournalEntryWithSummary(UUID userId, String title, String content, String aiSummary,
+            String moodInsight) {
+        JournalEntry entry = new JournalEntry(userId, normalizeTitle(title),
+                content != null ? content.trim() : content);
         entry.setAiSummary(aiSummary);
         entry.setMoodInsight(moodInsight);
         return journalEntryRepository.save(entry);
@@ -89,7 +91,7 @@ public class JournalService {
 
         } catch (Exception e) {
             logger.error("Failed to generate AI summary for journal entry {}: {}",
-                        entry.getId(), e.getMessage(), e);
+                    entry.getId(), e.getMessage(), e);
 
             // Set fallback messages
             entry.setAiSummary("Summary unavailable due to technical issues.");

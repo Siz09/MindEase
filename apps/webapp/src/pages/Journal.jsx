@@ -55,12 +55,13 @@ const Journal = () => {
 
   // Cleanup any pending polling on unmount
   useEffect(() => {
+    const pollingMap = pollingMapRef.current;
     return () => {
-      if (pollingMapRef.current) {
-        for (const id of pollingMapRef.current.values()) {
+      if (pollingMap) {
+        for (const id of pollingMap.values()) {
           clearInterval(id);
         }
-        pollingMapRef.current.clear();
+        pollingMap.clear();
       }
     };
   }, []);
@@ -146,14 +147,6 @@ const Journal = () => {
     };
   }, [loading]);
 
-  useEffect(() => {
-    return () => {
-      if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
-      }
-    };
-  }, []);
-
   // Submit new entry
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -163,7 +156,7 @@ const Journal = () => {
       return;
     }
     if (!newEntry.trim()) {
-      toast.info('Write something first!');
+      toast.info(t('journal.contentRequired'));
       return;
     }
     if (newEntry.length > 1000) {
@@ -429,7 +422,7 @@ const Journal = () => {
                             <span className="entry-date">{formatDate(entry.createdAt)}</span>
                           </div>
                         </div>
-                        {emoji && (
+                        {emoji && emoji !== '📝' && (
                           <span className="entry-mood-pill">
                             <span className="pill-emoji" aria-hidden="true">
                               {emoji}

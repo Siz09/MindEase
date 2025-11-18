@@ -1,6 +1,11 @@
 package com.mindease.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class JournalRequest {
+    @NotBlank(message = "Title is required")
+    @Size(max = 200, message = "Title must not exceed 200 characters")
     private String title;
     private String content;
 

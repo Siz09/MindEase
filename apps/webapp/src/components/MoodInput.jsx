@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../styles/components/MoodInput.css';
 
@@ -37,26 +37,29 @@ const MoodInput = ({ onSubmit, loading, currentMood }) => {
     { id: 5, emoji: '🤩', label: t('mood.excellent'), color: '#16a34a', value: 5 },
   ];
 
-  const detailedMoods = [
-    { value: 1, emoji: '😭', label: t('mood.terrible'), color: '#dc2626' },
-    { value: 2, emoji: '😢', label: t('mood.veryBad'), color: '#ea580c' },
-    { value: 3, emoji: '😔', label: t('mood.bad'), color: '#f97316' },
-    { value: 4, emoji: '😕', label: t('mood.poor'), color: '#fb923c' },
-    { value: 5, emoji: '😐', label: t('mood.neutral'), color: '#eab308' },
-    { value: 6, emoji: '🙂', label: t('mood.okay'), color: '#a3e635' },
-    { value: 7, emoji: '😊', label: t('mood.good'), color: '#84cc16' },
-    { value: 8, emoji: '😄', label: t('mood.veryGood'), color: '#65a30d' },
-    { value: 9, emoji: '😁', label: t('mood.great'), color: '#16a34a' },
-    { value: 10, emoji: '🤩', label: t('mood.amazing'), color: '#15803d' },
-  ];
+  const detailedMoods = useMemo(
+    () => [
+      { value: 1, emoji: '😭', label: t('mood.terrible'), color: '#dc2626' },
+      { value: 2, emoji: '😢', label: t('mood.veryBad'), color: '#ea580c' },
+      { value: 3, emoji: '😔', label: t('mood.bad'), color: '#f97316' },
+      { value: 4, emoji: '😕', label: t('mood.poor'), color: '#fb923c' },
+      { value: 5, emoji: '😐', label: t('mood.neutral'), color: '#eab308' },
+      { value: 6, emoji: '🙂', label: t('mood.okay'), color: '#a3e635' },
+      { value: 7, emoji: '😊', label: t('mood.good'), color: '#84cc16' },
+      { value: 8, emoji: '😄', label: t('mood.veryGood'), color: '#65a30d' },
+      { value: 9, emoji: '😁', label: t('mood.great'), color: '#16a34a' },
+      { value: 10, emoji: '🤩', label: t('mood.amazing'), color: '#15803d' },
+    ],
+    [t]
+  );
 
   useEffect(() => {
-    if (!showForm || !currentMood) return;
+    if (!showForm || !currentMood || selectedMood !== null) return;
     const preset = detailedMoods.find((m) => m.value === currentMood.value);
     if (preset) {
       setSelectedMood(preset);
     }
-  }, [showForm, currentMood]);
+  }, [showForm, currentMood, detailedMoods, selectedMood]);
 
   const handleQuickMoodSubmit = async (moodData) => {
     try {

@@ -250,12 +250,6 @@
   margin-bottom: 1rem;
 }
 
-.entry-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
 .entry-meta-text {
   display: flex;
   flex-direction: column;
@@ -279,8 +273,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  background: rgba(16, 185, 129, 0.15);
-  color: #047857;
+  background: rgba(var(--primary-color-rgb, 16 185 129) / 0.15);
+  color: var(--primary-color, #047857);
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
   font-size: 0.8rem;

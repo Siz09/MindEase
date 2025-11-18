@@ -31,6 +31,9 @@ const JournalHistory = ({
   const extractEntryParts = (content) => {
     if (!content) return { emoji: '', text: '' };
     const s = String(content);
+    // Note: This regex pattern may not match all emoji types (skin tones, flags, keycaps).
+    // For production, consider using a dedicated emoji library (e.g., emoji-test-regex-pattern)
+    // or upgrading to ES2024 with /v flag for full UTS#51 support.
     const match = s.match(
       /^(?:\p{Extended_Pictographic}(?:\u200d\p{Extended_Pictographic})*(?:\ufe0f)?)+\s?/u
     );

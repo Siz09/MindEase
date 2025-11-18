@@ -109,20 +109,30 @@ const Chat = () => {
     }
 
     // Wait for connection if not ready yet (with timeout)
-    // Check both state and ref to ensure we have a valid connection
-    let attempts = 0;
-    const maxAttempts = 20; // Wait up to 4 seconds (20 * 200ms)
-    while ((!isConnected || !stompClientRef.current) && attempts < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      attempts++;
-    }
+    const waitForConnection = (timeoutMs = 4000) => {
+      return new Promise((resolve) => {
+        const startTime = Date.now();
+        const checkConnection = () => {
+          if (isConnected && stompClientRef.current) {
+            resolve(true);
+          } else if (Date.now() - startTime >= timeoutMs) {
+            resolve(false);
+          } else {
+            setTimeout(checkConnection, 200);
+          }
+        };
+        checkConnection();
+      });
+    };
+
+    const connected = await waitForConnection();
 
     // Final check before sending
-    if (!stompClientRef.current || !isConnected) {
+    if (!connected || !stompClientRef.current || !isConnected) {
       console.warn('Voice message not sent: connection not ready after waiting', {
         isConnected,
         hasStompClient: !!stompClientRef.current,
-        attempts,
+        connected,
       });
       // Keep text in input for retry
       setInputValue(text);
