@@ -15,7 +15,7 @@ const isCI =
   process.env.JENKINS_URL !== undefined;
 
 if (isCI && process.env.CYPRESS_INSTALL_BINARY === '0') {
-  console.log('✅ Cypress binary installation skipped (CI environment)');
+  console.log('✅ Cypress binary installation was skipped (CI environment)');
   console.log('   To install Cypress binary later, run: npx cypress install');
 }
 
