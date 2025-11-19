@@ -22,3 +22,5 @@ backend/src/main/resources/firebase-service-account.json
 
 
 .cursor/rules/kluster-code-verify.mdc
+.cursor/.cursorrules
+testsprite_tests
