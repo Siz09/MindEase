@@ -48,7 +48,7 @@ public class MoodController {
             @ApiResponse(responseCode = "400", description = "Invalid mood value or user not found"),
             @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
-    @PostMapping("/add")
+    @PostMapping({"/add", "/checkin"}) // Support both /add and /checkin for backwards compatibility
     @AuditMoodAdded
     public ResponseEntity<?> addMoodEntry(@RequestBody MoodEntryRequest request, Authentication authentication) {
         try {

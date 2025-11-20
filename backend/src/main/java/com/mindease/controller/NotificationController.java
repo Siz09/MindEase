@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,9 @@ public class NotificationController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private com.mindease.repository.UserRepository userRepository;
 
     @Operation(summary = "List notifications (paginated)", description = "Get paginated list of notifications for the authenticated user")
     @ApiResponses(value = {
@@ -172,20 +176,20 @@ public class NotificationController {
     public ResponseEntity<?> deleteNotification(
             @PathVariable UUID notificationId,
             Authentication authentication) {
-        
+
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
             Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
-            
+
             if (notificationOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
             Notification notification = notificationOpt.get();
-            
+
             // Verify the notification belongs to the authenticated user
             if (!notification.getUser().getId().equals(user.getId())) {
                 return ResponseEntity.notFound().build();
@@ -206,6 +210,92 @@ public class NotificationController {
         Map<String, Object> response = new HashMap<>();
         response.put("error", message);
         return response;
+    }
+
+    @Operation(summary = "Get notification preferences", description = "Get notification preferences for the authenticated user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Preferences retrieved successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+    })
+    @GetMapping("/preferences")
+    public ResponseEntity<?> getPreferences(Authentication authentication) {
+        String principalEmail = authentication != null ? authentication.getName() : "unknown";
+        try {
+            User user = userService.findByEmail(principalEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+
+            Map<String, Object> preferences = new HashMap<>();
+            preferences.put("quietHoursStart", user.getQuietHoursStart() != null ? user.getQuietHoursStart().toString() : null);
+            preferences.put("quietHoursEnd", user.getQuietHoursEnd() != null ? user.getQuietHoursEnd().toString() : null);
+            preferences.put("emailNotifications", true); // Default to true, can be extended
+            preferences.put("pushNotifications", true); // Default to true, can be extended
+
+            response.put("preferences", preferences);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Failed to get notification preferences for user: {}", principalEmail, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(createErrorResponse("Failed to get notification preferences: " + e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Update notification preferences", description = "Update notification preferences for the authenticated user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Preferences updated successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+    })
+    @PutMapping("/preferences")
+    @PatchMapping("/preferences")
+    public ResponseEntity<?> updatePreferences(
+            @RequestBody Map<String, Object> preferences,
+            Authentication authentication) {
+        String principalEmail = authentication != null ? authentication.getName() : "unknown";
+        try {
+            User user = userService.findByEmail(principalEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Update quiet hours if provided
+            if (preferences.containsKey("quietHoursStart") && preferences.containsKey("quietHoursEnd")) {
+                java.time.LocalTime startTime = null;
+                java.time.LocalTime endTime = null;
+
+                Object startObj = preferences.get("quietHoursStart");
+                Object endObj = preferences.get("quietHoursEnd");
+
+                if (startObj instanceof String) {
+                    startTime = java.time.LocalTime.parse((String) startObj);
+                }
+                if (endObj instanceof String) {
+                    endTime = java.time.LocalTime.parse((String) endObj);
+                }
+
+                if (startTime != null && endTime != null) {
+                    user.setQuietHoursStart(startTime);
+                    user.setQuietHoursEnd(endTime);
+                    userRepository.save(user);
+                }
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Notification preferences updated successfully");
+
+            Map<String, Object> updatedPreferences = new HashMap<>();
+            updatedPreferences.put("quietHoursStart", user.getQuietHoursStart() != null ? user.getQuietHoursStart().toString() : null);
+            updatedPreferences.put("quietHoursEnd", user.getQuietHoursEnd() != null ? user.getQuietHoursEnd().toString() : null);
+
+            response.put("preferences", updatedPreferences);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Failed to update notification preferences for user: {}", principalEmail, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(createErrorResponse("Failed to update notification preferences: " + e.getMessage()));
+        }
     }
 
     private Map<String, Object> createSuccessResponse(String message) {

@@ -38,7 +38,7 @@ public class SubscriptionController {
     }
 
     @PreAuthorize("isAuthenticated()")
-    @PostMapping("/create")
+    @PostMapping({"/create", ""}) // Support both /create and root path
     public ResponseEntity<?> create(@RequestBody @Valid SubscriptionCreateRequest body) throws StripeException {
 
         // Simplified two-price mode: always treat as PREMIUM tier.

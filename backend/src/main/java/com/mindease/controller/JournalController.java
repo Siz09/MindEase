@@ -36,7 +36,8 @@ public class JournalController {
     @Autowired
     private AuthUtil authUtil;
 
-    @PostMapping("/add")
+    // Support both /add and root path for backwards compatibility
+    @PostMapping({"/add", "", "/"})
     @AuditJournalAdded
     public ResponseEntity<Map<String, Object>> addJournalEntry(
             @RequestBody JournalRequest request,

@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -88,5 +90,103 @@ public class UserController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(e.getMessage());
         }
+    }
+
+    // GET /api/user/profile - Get current user profile
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        try {
+            if (authentication == null || authentication.getName() == null) {
+                return ResponseEntity.status(401).body(createErrorResponse("Authentication required"));
+            }
+
+            String email = authentication.getName();
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", user.getId());
+            userInfo.put("email", user.getEmail());
+            userInfo.put("role", user.getRole());
+            userInfo.put("anonymousMode", user.getAnonymousMode());
+
+            // Include quiet hours if available
+            if (user.getQuietHoursStart() != null && user.getQuietHoursEnd() != null) {
+                userInfo.put("quietHoursStart", user.getQuietHoursStart());
+                userInfo.put("quietHoursEnd", user.getQuietHoursEnd());
+            }
+
+            response.put("user", userInfo);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(createErrorResponse("Failed to get profile: " + e.getMessage()));
+        }
+    }
+
+    // PUT/PATCH /api/user/profile - Update user profile
+    @PutMapping("/profile")
+    @PatchMapping("/profile")
+    public ResponseEntity<?> updateProfile(
+            @RequestBody Map<String, Object> updates,
+            Authentication authentication) {
+        try {
+            if (authentication == null || authentication.getName() == null) {
+                return ResponseEntity.status(401).body(createErrorResponse("Authentication required"));
+            }
+
+            String email = authentication.getName();
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Update allowed fields
+            if (updates.containsKey("quietHoursStart") && updates.containsKey("quietHoursEnd")) {
+                QuietHoursRequest quietHours = new QuietHoursRequest();
+                // Handle conversion from String or LocalTime
+                Object startObj = updates.get("quietHoursStart");
+                Object endObj = updates.get("quietHoursEnd");
+
+                LocalTime startTime = startObj instanceof String ? LocalTime.parse((String) startObj) : (LocalTime) startObj;
+                LocalTime endTime = endObj instanceof String ? LocalTime.parse((String) endObj) : (LocalTime) endObj;
+
+                quietHours.setQuietHoursStart(startTime);
+                quietHours.setQuietHoursEnd(endTime);
+                user = userService.updateQuietHours(email, quietHours);
+            }
+
+            // Anonymous mode update
+            if (updates.containsKey("anonymousMode")) {
+                Object anonymousModeObj = updates.get("anonymousMode");
+                if (anonymousModeObj instanceof Boolean) {
+                    user = userService.toggleAnonymousMode(user.getId(), (Boolean) anonymousModeObj);
+                }
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Profile updated successfully");
+
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("id", user.getId());
+            userInfo.put("email", user.getEmail());
+            userInfo.put("role", user.getRole());
+            userInfo.put("anonymousMode", user.getAnonymousMode());
+
+            response.put("user", userInfo);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(createErrorResponse("Failed to update profile: " + e.getMessage()));
+        }
+    }
+
+    private Map<String, Object> createErrorResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", message);
+        return response;
     }
 }

@@ -34,7 +34,7 @@ public class AdminAuditController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<AuditLog> list(
+    public org.springframework.http.ResponseEntity<?> list(
             @RequestParam(required = false) UUID userId,
             @RequestParam(required = false) String actionType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
@@ -47,25 +47,52 @@ public class AdminAuditController {
 
         try {
             Slice<AuditLog> slice = repo.findByFilters(userId, actionType, from, to, pageable);
-            return toPage(slice, pageable);
+            Page<AuditLog> result = toPage(slice, pageable);
+
+            // Wrap response in consistent format
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("status", "success");
+            response.put("data", result.getContent());
+            response.put("currentPage", result.getNumber());
+            response.put("totalItems", result.getTotalElements());
+            response.put("totalPages", result.getTotalPages());
+            response.put("hasNext", result.hasNext());
+            response.put("hasPrevious", result.hasPrevious());
+
+            return org.springframework.http.ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Audit list failed (userId={}, actionType={}, from={}, to={}, page={}, size={})",
                     userId, actionType, from, to, page, pageSize, e);
-            throw e;
+            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Failed to retrieve audit logs: " + e.getMessage());
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
     @PostMapping("/search")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<AuditLog> search(@RequestBody AuditLogSearchRequest request) {
+    public org.springframework.http.ResponseEntity<?> search(@RequestBody AuditLogSearchRequest request) {
         if (request == null) {
-            return Page.empty();
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("status", "success");
+            response.put("data", java.util.Collections.emptyList());
+            response.put("currentPage", 0);
+            response.put("totalItems", 0);
+            response.put("totalPages", 0);
+            return org.springframework.http.ResponseEntity.ok(response);
         }
         UUID userId = null;
         if (request.email() != null && !request.email().isBlank()) {
             User user = userRepository.findByEmail(request.email().trim()).orElse(null);
             if (user == null) {
-                return Page.empty();
+                java.util.Map<String, Object> response = new java.util.HashMap<>();
+                response.put("status", "success");
+                response.put("data", java.util.Collections.emptyList());
+                response.put("currentPage", 0);
+                response.put("totalItems", 0);
+                response.put("totalPages", 0);
+                return org.springframework.http.ResponseEntity.ok(response);
             }
             userId = user.getId();
         }
@@ -76,11 +103,26 @@ public class AdminAuditController {
 
         try {
             Slice<AuditLog> slice = repo.findByFilters(userId, request.actionType(), request.from(), request.to(), pageable);
-            return toPage(slice, pageable);
+            Page<AuditLog> result = toPage(slice, pageable);
+
+            // Wrap response in consistent format
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("status", "success");
+            response.put("data", result.getContent());
+            response.put("currentPage", result.getNumber());
+            response.put("totalItems", result.getTotalElements());
+            response.put("totalPages", result.getTotalPages());
+            response.put("hasNext", result.hasNext());
+            response.put("hasPrevious", result.hasPrevious());
+
+            return org.springframework.http.ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Audit search failed (email={}, actionType={}, from={}, to={}, page={}, size={})",
                     request.email(), request.actionType(), request.from(), request.to(), page, pageSize, e);
-            throw e;
+            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("message", "Failed to search audit logs: " + e.getMessage());
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
