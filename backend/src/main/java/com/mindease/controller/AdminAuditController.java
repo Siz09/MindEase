@@ -65,7 +65,7 @@ public class AdminAuditController {
                     userId, actionType, from, to, page, pageSize, e);
             java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
             errorResponse.put("status", "error");
-            errorResponse.put("message", "Failed to retrieve audit logs: " + e.getMessage());
+            errorResponse.put("message", "Failed to retrieve audit logs");
             return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
@@ -121,7 +121,7 @@ public class AdminAuditController {
                     request.email(), request.actionType(), request.from(), request.to(), page, pageSize, e);
             java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
             errorResponse.put("status", "error");
-            errorResponse.put("message", "Failed to search audit logs: " + e.getMessage());
+            errorResponse.put("message", "Failed to search audit logs");
             return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }

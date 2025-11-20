@@ -5,6 +5,8 @@ import com.mindease.dto.QuietHoursRequest;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.UserService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,6 +21,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping({"/api/users", "/api/user"})
 public class UserController {
+
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -123,7 +127,8 @@ public class UserController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(createErrorResponse("Failed to get profile: " + e.getMessage()));
+            log.error("Failed to get profile for user: {}", authentication != null ? authentication.getName() : "unknown", e);
+            return ResponseEntity.status(500).body(createErrorResponse("Failed to get profile"));
         }
     }
 
@@ -145,12 +150,27 @@ public class UserController {
             // Update allowed fields
             if (updates.containsKey("quietHoursStart") && updates.containsKey("quietHoursEnd")) {
                 QuietHoursRequest quietHours = new QuietHoursRequest();
-                // Handle conversion from String or LocalTime
                 Object startObj = updates.get("quietHoursStart");
                 Object endObj = updates.get("quietHoursEnd");
 
-                LocalTime startTime = startObj instanceof String ? LocalTime.parse((String) startObj) : (LocalTime) startObj;
-                LocalTime endTime = endObj instanceof String ? LocalTime.parse((String) endObj) : (LocalTime) endObj;
+                LocalTime startTime;
+                LocalTime endTime;
+
+                if (startObj instanceof String) {
+                    startTime = LocalTime.parse((String) startObj);
+                } else if (startObj instanceof LocalTime) {
+                    startTime = (LocalTime) startObj;
+                } else {
+                    return ResponseEntity.badRequest().body(createErrorResponse("quietHoursStart must be a string or LocalTime"));
+                }
+
+                if (endObj instanceof String) {
+                    endTime = LocalTime.parse((String) endObj);
+                } else if (endObj instanceof LocalTime) {
+                    endTime = (LocalTime) endObj;
+                } else {
+                    return ResponseEntity.badRequest().body(createErrorResponse("quietHoursEnd must be a string or LocalTime"));
+                }
 
                 quietHours.setQuietHoursStart(startTime);
                 quietHours.setQuietHoursEnd(endTime);
@@ -179,7 +199,8 @@ public class UserController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(createErrorResponse("Failed to update profile: " + e.getMessage()));
+            log.error("Failed to update profile for user: {}", authentication != null ? authentication.getName() : "unknown", e);
+            return ResponseEntity.status(500).body(createErrorResponse("Failed to update profile"));
         }
     }
 
