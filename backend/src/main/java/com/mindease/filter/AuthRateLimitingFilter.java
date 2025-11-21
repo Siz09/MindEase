@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -22,7 +23,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * NOTE: This is intended for a single-node deployment and development/staging
  * environments. For production, consider a distributed rate limiting solution
- * (e.g., Redis, API gateway) for stronger guarantees.
+ * (e.g., Redis, API gateway) and ensure that proxy headers such as
+ * X-Forwarded-For
+ * are sanitized by a trusted load balancer.
  */
 @Component
 public class AuthRateLimitingFilter extends OncePerRequestFilter {
@@ -35,6 +38,7 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     // Allow 5 requests per 15 minutes per IP for auth endpoints
     private static final int MAX_ATTEMPTS = 5;
     private static final long WINDOW_MILLIS = 15 * 60 * 1000L;
+    private static final long CLEANUP_INTERVAL_MILLIS = 60 * 60 * 1000L; // 1 hour
 
     private static class Counter {
         private final AtomicInteger attempts = new AtomicInteger(0);
@@ -51,6 +55,22 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     }
 
     private final Map<String, Counter> ipCounters = new ConcurrentHashMap<>();
+
+    /**
+     * Periodically remove stale IP counters to prevent unbounded memory growth.
+     * Entries that have been idle for more than 2x the rate-limit window are
+     * removed.
+     */
+    @Scheduled(fixedDelay = CLEANUP_INTERVAL_MILLIS)
+    void cleanupExpiredEntries() {
+        long now = Instant.now().toEpochMilli();
+        ipCounters.entrySet().removeIf(entry -> {
+            Counter counter = entry.getValue();
+            synchronized (counter) {
+                return (now - counter.windowStart) > (WINDOW_MILLIS * 2);
+            }
+        });
+    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -90,9 +110,9 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     private String resolveClientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
-            // In case of multiple IPs, take the first one
-            int commaIndex = forwarded.indexOf(',');
-            return commaIndex > 0 ? forwarded.substring(0, commaIndex).trim() : forwarded.trim();
+            // Behind a trusted proxy, take the last IP (closest to the server).
+            int commaIndex = forwarded.lastIndexOf(',');
+            return commaIndex > 0 ? forwarded.substring(commaIndex + 1).trim() : forwarded.trim();
         }
         String realIp = request.getHeader("X-Real-IP");
         if (realIp != null && !realIp.isBlank()) {
