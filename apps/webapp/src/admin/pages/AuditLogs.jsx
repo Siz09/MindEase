@@ -80,8 +80,15 @@ export default function AuditLogs() {
         ({ data } = await api.get(`/admin/audit-logs?${qs}`));
         setNotice('');
       }
-      setRows(data.content || []);
-      setTotalPages(data.totalPages ?? (data.last ? page + 1 : page + 2));
+      // Backend wraps page data in a consistent envelope:
+      // { status, data: [...], currentPage, totalItems, totalPages, hasNext, hasPrevious }
+      const rowsData = data?.data ?? data?.content ?? [];
+      const totalPagesValue =
+        data?.totalPages ??
+        (typeof data?.last === 'boolean' ? (data.last ? page + 1 : page + 2) : page + 1);
+
+      setRows(rowsData);
+      setTotalPages(Math.max(1, totalPagesValue));
     } catch {
       setError('Failed to load audit logs');
     } finally {

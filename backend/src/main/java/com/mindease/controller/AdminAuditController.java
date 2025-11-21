@@ -40,8 +40,7 @@ public class AdminAuditController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(required = false) Integer size
-    ) {
+            @RequestParam(required = false) Integer size) {
         int pageSize = Math.min(size == null ? DEFAULT_SIZE : Math.max(1, size), MAX_SIZE);
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -66,7 +65,8 @@ public class AdminAuditController {
             java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
             errorResponse.put("status", "error");
             errorResponse.put("message", "Failed to retrieve audit logs");
-            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            return org.springframework.http.ResponseEntity
+                    .status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
@@ -102,7 +102,8 @@ public class AdminAuditController {
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         try {
-            Slice<AuditLog> slice = repo.findByFilters(userId, request.actionType(), request.from(), request.to(), pageable);
+            Slice<AuditLog> slice = repo.findByFilters(userId, request.actionType(), request.from(), request.to(),
+                    pageable);
             Page<AuditLog> result = toPage(slice, pageable);
 
             // Wrap response in consistent format
@@ -122,7 +123,8 @@ public class AdminAuditController {
             java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
             errorResponse.put("status", "error");
             errorResponse.put("message", "Failed to search audit logs");
-            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            return org.springframework.http.ResponseEntity
+                    .status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 

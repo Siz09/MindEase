@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping({"/api/users", "/api/user"})
+@RequestMapping({ "/api/users", "/api/user" })
 public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
@@ -127,7 +127,8 @@ public class UserController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("Failed to get profile for user: {}", authentication != null ? authentication.getName() : "unknown", e);
+            log.error("Failed to get profile for user: {}",
+                    authentication != null ? authentication.getName() : "unknown", e);
             return ResponseEntity.status(500).body(createErrorResponse("Failed to get profile"));
         }
     }
@@ -161,7 +162,8 @@ public class UserController {
                 } else if (startObj instanceof LocalTime) {
                     startTime = (LocalTime) startObj;
                 } else {
-                    return ResponseEntity.badRequest().body(createErrorResponse("quietHoursStart must be a string or LocalTime"));
+                    return ResponseEntity.badRequest()
+                            .body(createErrorResponse("quietHoursStart must be a string or LocalTime"));
                 }
 
                 if (endObj instanceof String) {
@@ -169,7 +171,8 @@ public class UserController {
                 } else if (endObj instanceof LocalTime) {
                     endTime = (LocalTime) endObj;
                 } else {
-                    return ResponseEntity.badRequest().body(createErrorResponse("quietHoursEnd must be a string or LocalTime"));
+                    return ResponseEntity.badRequest()
+                            .body(createErrorResponse("quietHoursEnd must be a string or LocalTime"));
                 }
 
                 quietHours.setQuietHoursStart(startTime);
@@ -199,7 +202,8 @@ public class UserController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("Failed to update profile for user: {}", authentication != null ? authentication.getName() : "unknown", e);
+            log.error("Failed to update profile for user: {}",
+                    authentication != null ? authentication.getName() : "unknown", e);
             return ResponseEntity.status(500).body(createErrorResponse("Failed to update profile"));
         }
     }

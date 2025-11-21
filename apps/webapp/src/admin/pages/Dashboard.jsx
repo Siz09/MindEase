@@ -90,9 +90,13 @@ export default function Dashboard() {
 
           setActivityData(activityPayload);
           if (crisisStatsRes.status === 'fulfilled') {
-            setCrisisStats(
-              crisisStatsRes.value?.data || { high: 0, medium: 0, low: 0 }
-            );
+            const raw = crisisStatsRes.value?.data || {};
+            // Normalize to a simple POJO with numeric fields; defensive against undefined/null
+            setCrisisStats({
+              high: Number(raw.high) || 0,
+              medium: Number(raw.medium) || 0,
+              low: Number(raw.low) || 0,
+            });
           } else {
             setCrisisStats({ high: 0, medium: 0, low: 0 });
           }
@@ -142,9 +146,7 @@ export default function Dashboard() {
     if (activityChartRef.current) {
       const canvas = activityChartRef.current;
       const labels = (activityData || []).map((pt) => fmt(pt.day));
-      const values = (activityData || []).map(
-        (pt) => pt.activeUsers ?? pt.count ?? 0
-      );
+      const values = (activityData || []).map((pt) => pt.activeUsers ?? pt.count ?? 0);
 
       if (!charts.current.activity && isCanvasLive(canvas) && activityData.length > 0) {
         try {
@@ -189,17 +191,9 @@ export default function Dashboard() {
     if (crisisChartRef.current) {
       const canvas = crisisChartRef.current;
       const labels = ['High', 'Medium', 'Low'];
-      const values = [
-        crisisStats?.high || 0,
-        crisisStats?.medium || 0,
-        crisisStats?.low || 0,
-      ];
+      const values = [crisisStats?.high || 0, crisisStats?.medium || 0, crisisStats?.low || 0];
 
-      if (
-        !charts.current.crisis &&
-        isCanvasLive(canvas) &&
-        (values[0] || values[1] || values[2])
-      ) {
+      if (!charts.current.crisis && isCanvasLive(canvas)) {
         try {
           charts.current.crisis = new Chart(canvas, {
             type: 'bar',
@@ -277,9 +271,7 @@ export default function Dashboard() {
             <div className="bento-card-icon">👥</div>
             <div className="bento-card-label">Active Users</div>
             <div className="bento-card-value">{stats.activeUsers?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">
-              {formatTrendText(stats.activeUsersTrend)}
-            </div>
+            <div className="bento-card-trend">{formatTrendText(stats.activeUsersTrend)}</div>
           </div>
         </div>
 
@@ -288,9 +280,7 @@ export default function Dashboard() {
             <div className="bento-card-icon">📝</div>
             <div className="bento-card-label">Daily Signups</div>
             <div className="bento-card-value">{stats.dailySignups?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">
-              {formatTrendText(stats.dailySignupsTrend)}
-            </div>
+            <div className="bento-card-trend">{formatTrendText(stats.dailySignupsTrend)}</div>
           </div>
         </div>
 
@@ -310,9 +300,7 @@ export default function Dashboard() {
             <div className="bento-card-icon">🤖</div>
             <div className="bento-card-label">AI Usage</div>
             <div className="bento-card-value">{stats.aiUsage?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">
-              {formatTrendText(stats.aiUsageTrend)}
-            </div>
+            <div className="bento-card-trend">{formatTrendText(stats.aiUsageTrend)}</div>
           </div>
         </div>
       </div>
@@ -324,10 +312,7 @@ export default function Dashboard() {
             <div className="chart-card-subtitle">Daily active users trend</div>
           </div>
           <div className="chart-placeholder">
-            <canvas
-              ref={activityChartRef}
-              style={{ width: '100%', height: '260px' }}
-            />
+            <canvas ref={activityChartRef} style={{ width: '100%', height: '260px' }} />
           </div>
         </div>
 
@@ -337,10 +322,7 @@ export default function Dashboard() {
             <div className="chart-card-subtitle">Risk level breakdown</div>
           </div>
           <div className="chart-placeholder">
-            <canvas
-              ref={crisisChartRef}
-              style={{ width: '100%', height: '260px' }}
-            />
+            <canvas ref={crisisChartRef} style={{ width: '100%', height: '260px' }} />
           </div>
         </div>
       </div>
