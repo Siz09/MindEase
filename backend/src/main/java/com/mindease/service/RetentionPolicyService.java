@@ -57,8 +57,9 @@ public class RetentionPolicyService {
         logger.info("Retention policy cleanup completed");
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     private void cleanupSingleUser(User user) {
+        // Perform all deletions in sequence - if any fails, entire transaction rolls back
         journalEntryRepository.deleteByUserId(user.getId());
         moodEntryRepository.deleteByUser(user);
         List<ChatSession> sessions = chatSessionRepository.findByUser(user);

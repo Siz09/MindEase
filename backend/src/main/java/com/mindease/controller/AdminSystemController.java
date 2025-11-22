@@ -82,7 +82,7 @@ public class AdminSystemController {
             activeThreads = ((Number) metrics.get("activeThreads")).intValue();
         }
 
-        return new SystemHealthResponse(cpu, clampPercent(memoryUsage), clampPercent(disk), uptime, activeThreads);
+        return new SystemHealthResponse(clampPercent(cpu), clampPercent(memoryUsage), clampPercent(disk), uptime, activeThreads);
     }
 
     private static int clampPercent(int value) {
