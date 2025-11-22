@@ -36,11 +36,15 @@ public class PerformanceMonitorService {
             metrics.put("systemCpuLoad", cpuLoad * 100);
         } else {
             // getSystemLoadAverage() returns load average, not CPU percentage
-            // WARNING: Load average represents the average number of runnable and waiting processes,
-            // not actual CPU utilization. A load average of 4.0 on a 4-core system could indicate
+            // WARNING: Load average represents the average number of runnable and waiting
+            // processes,
+            // not actual CPU utilization. A load average of 4.0 on a 4-core system could
+            // indicate
             // 100% utilization, 50% utilization with blocking I/O, or many other states.
-            // This conversion is an approximation and may not reflect actual CPU percentage.
-            // For accurate CPU metrics, use a platform-specific library or the com.sun.management
+            // This conversion is an approximation and may not reflect actual CPU
+            // percentage.
+            // For accurate CPU metrics, use a platform-specific library or the
+            // com.sun.management
             // OperatingSystemMXBean when available.
             double loadAvg = osBean.getSystemLoadAverage();
             int availableProcessors = osBean.getAvailableProcessors();

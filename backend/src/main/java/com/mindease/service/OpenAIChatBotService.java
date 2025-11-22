@@ -50,7 +50,8 @@ public class OpenAIChatBotService implements ChatBotService {
             if (userContext != null && !userContext.isEmpty()) {
                 contextBuilder.append("\nUser Context:\n");
                 // Sanitize userContext to prevent PII leakage to third-party OpenAI service
-                // Only include non-sensitive context fields - filter out emails, identifiers, and personal data
+                // Only include non-sensitive context fields - filter out emails, identifiers,
+                // and personal data
                 java.util.Set<String> sensitiveKeys = java.util.Set.of("email", "userId", "user_id", "id", "phone",
                         "phoneNumber", "ssn", "address", "personalInfo", "pii");
                 userContext.entrySet().stream()
