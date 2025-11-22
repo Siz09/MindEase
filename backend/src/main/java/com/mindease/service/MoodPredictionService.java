@@ -52,7 +52,16 @@ public class MoodPredictionService {
             sumX2 += x * x;
         }
 
-        double slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        double denominator = n * sumX2 - sumX * sumX;
+        if (Math.abs(denominator) < 1e-10) {
+            // All entries at same time or insufficient variance
+            result.put("prediction", entries.get(entries.size() - 1).getMoodValue());
+            result.put("trend", "stable");
+            result.put("insight", "Your mood has been relatively stable recently.");
+            return result;
+        }
+
+        double slope = (n * sumXY - sumX * sumY) / denominator;
         double intercept = (sumY - slope * sumX) / n;
 
         // Predict for tomorrow (last entry time + 1 day)

@@ -15,14 +15,19 @@ const Dashboard = () => {
 
   // Widget State
   const [widgets, setWidgets] = useState(() => {
-    const saved = localStorage.getItem('dashboard_widgets');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          mood: true,
-          journal: true,
-          history: true,
-        };
+    try {
+      const saved = localStorage.getItem('dashboard_widgets');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Validate structure
+        if (parsed && typeof parsed === 'object') {
+          return { mood: true, journal: true, history: true, ...parsed };
+        }
+      }
+    } catch (error) {
+      console.error('Failed to parse dashboard_widgets from localStorage:', error);
+    }
+    return { mood: true, journal: true, history: true };
   });
 
   const [isCustomizing, setIsCustomizing] = useState(false);
@@ -30,7 +35,12 @@ const Dashboard = () => {
   const toggleWidget = (key) => {
     const newWidgets = { ...widgets, [key]: !widgets[key] };
     setWidgets(newWidgets);
-    localStorage.setItem('dashboard_widgets', JSON.stringify(newWidgets));
+    try {
+      localStorage.setItem('dashboard_widgets', JSON.stringify(newWidgets));
+    } catch (error) {
+      console.error('Failed to save widget preferences:', error);
+      toast.error('Failed to save widget preferences');
+    }
   };
 
   const showMoodReplyToast = (moodData) => {
@@ -171,19 +181,19 @@ const Dashboard = () => {
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
         >
           <div>
-            <h1 className="page-title">{t('checkin.title') || 'Dashboard'}</h1>
+            <h1 className="page-title">{t('dashboard.title') || 'Dashboard'}</h1>
             <p className="page-subtitle">
-              {t('checkin.subtitle') || 'Your personal wellness space.'}
+              {t('dashboard.subtitle') || 'Your personal wellness space.'}
             </p>
           </div>
           <button className="btn btn-outline" onClick={() => setIsCustomizing(!isCustomizing)}>
-            {isCustomizing ? 'Done' : 'Customize'}
+            {isCustomizing ? t('dashboard.customize.done') : t('dashboard.customize.button')}
           </button>
         </div>
 
         {isCustomizing && (
           <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <h3 className="card-title">Customize Dashboard</h3>
+            <h3 className="card-title">{t('dashboard.customize.title')}</h3>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <label
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
@@ -193,7 +203,7 @@ const Dashboard = () => {
                   checked={widgets.mood}
                   onChange={() => toggleWidget('mood')}
                 />
-                Mood Tracker
+                {t('dashboard.widgets.moodTracker')}
               </label>
               <label
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
@@ -203,7 +213,7 @@ const Dashboard = () => {
                   checked={widgets.journal}
                   onChange={() => toggleWidget('journal')}
                 />
-                Journal Entry
+                {t('dashboard.widgets.journalEntry')}
               </label>
               <label
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
@@ -213,7 +223,7 @@ const Dashboard = () => {
                   checked={widgets.history}
                   onChange={() => toggleWidget('history')}
                 />
-                Recent History
+                {t('dashboard.widgets.recentHistory')}
               </label>
             </div>
           </div>

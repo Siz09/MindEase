@@ -60,7 +60,8 @@ public class SafeAIChatService implements ChatBotService {
                     if (user != null) {
                         List<UserContext> contexts = userContextRepository.findByUser(user);
                         for (UserContext ctx : contexts) {
-                            userContext.put(ctx.getKey(), ctx.getValue());
+                            // Only add if not already provided explicitly
+                            userContext.putIfAbsent(ctx.getKey(), ctx.getValue());
                         }
                     }
                 } catch (IllegalArgumentException e) {

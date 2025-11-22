@@ -122,7 +122,7 @@ public class NotificationService {
     }
 
     public void sendPushNotification(User user, String title, String body) {
-        if (user == null || user.getFcmToken() == null) {
+        if (user == null || user.getFcmToken() == null || user.getFcmToken().isEmpty()) {
             return;
         }
 

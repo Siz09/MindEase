@@ -58,13 +58,13 @@ public class AdminSystemController {
         java.util.Map<String, Object> metrics = performanceMonitorService.getSystemMetrics();
 
         int memoryUsage = 0;
-        if (metrics.containsKey("heapMemoryUsagePercent")) {
-            memoryUsage = ((Double) metrics.get("heapMemoryUsagePercent")).intValue();
+        if (metrics.get("heapMemoryUsagePercent") instanceof Number) {
+            memoryUsage = ((Number) metrics.get("heapMemoryUsagePercent")).intValue();
         }
 
         int cpu = 0;
-        if (metrics.containsKey("systemCpuLoad")) {
-            cpu = ((Double) metrics.get("systemCpuLoad")).intValue();
+        if (metrics.get("systemCpuLoad") instanceof Number) {
+            cpu = ((Number) metrics.get("systemCpuLoad")).intValue();
         }
 
         // Disk usage - using File roots
@@ -81,13 +81,13 @@ public class AdminSystemController {
         }
 
         long uptime = 0;
-        if (metrics.containsKey("uptime")) {
-            uptime = (Long) metrics.get("uptime");
+        if (metrics.get("uptime") instanceof Number) {
+            uptime = ((Number) metrics.get("uptime")).longValue();
         }
 
         int activeThreads = 0;
-        if (metrics.containsKey("activeThreads")) {
-            activeThreads = (Integer) metrics.get("activeThreads");
+        if (metrics.get("activeThreads") instanceof Number) {
+            activeThreads = ((Number) metrics.get("activeThreads")).intValue();
         }
 
         return new SystemHealthResponse(cpu, clampPercent(memoryUsage), clampPercent(disk), uptime, activeThreads);

@@ -10,6 +10,8 @@ import com.theokanning.openai.service.OpenAiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -17,7 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-// Remove the @Service annotation
+@Service
+@Qualifier("openAIChatBotService")
 public class OpenAIChatBotService implements ChatBotService {
 
     @Autowired

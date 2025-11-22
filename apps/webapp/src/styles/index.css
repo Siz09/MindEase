@@ -82,9 +82,10 @@
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
+  --transition-fast: 150ms ease-in-out;
+  --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
 }
-
 [data-theme='dark'] {
   /* Primary Colors - Adjusted for Dark Mode */
   --primary-green: #22c55e;

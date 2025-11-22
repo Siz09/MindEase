@@ -5,13 +5,15 @@ import com.mindease.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
@@ -31,6 +33,8 @@ public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
     @Query("SELECT AVG(m.moodValue) FROM MoodEntry m WHERE m.user = :user AND m.createdAt >= :startDate")
     Double getAverageMoodByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
 
+    @Transactional
+    @Modifying
     void deleteByUser(User user);
 
     List<MoodEntry> findByUserAndCreatedAtAfterOrderByCreatedAtAsc(User user, LocalDateTime date);

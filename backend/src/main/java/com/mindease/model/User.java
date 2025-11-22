@@ -59,7 +59,7 @@ public class User {
     @Column(name = "preferred_language", length = 10)
     private String preferredLanguage = "en";
 
-    @Column(name = "fcm_token")
+    @Column(name = "fcm_token", length = 500)
     private String fcmToken;
 
     @Column(name = "region", length = 10)

@@ -38,47 +38,41 @@ public class RetentionPolicyService {
      * Runs every day at 2:00 AM
      */
     @Scheduled(cron = "0 0 2 * * ?") // Every day at 2:00 AM
-    @Transactional
     public void cleanUpOldData() {
         logger.info("Retention policy cleanup started");
 
-        // 1. Identify anonymous users created more than 30 days ago
         LocalDateTime threshold = LocalDateTime.now().minusDays(30);
         List<User> anonymousUsers = userRepository.findByAnonymousModeTrueAndCreatedAtBefore(threshold);
 
         logger.info("Found {} anonymous users to clean up", anonymousUsers.size());
 
         for (User user : anonymousUsers) {
-            try {
-                // 2. Delete Journal Entries
-                journalEntryRepository.deleteByUserId(user.getId());
-
-                // 3. Delete Mood Entries
-                moodEntryRepository.deleteByUser(user);
-
-                // 4. Delete Chat Sessions and Messages
-                List<ChatSession> sessions = chatSessionRepository.findByUser(user);
-                if (!sessions.isEmpty()) {
-                    messageRepository.deleteByChatSessionIn(sessions);
-                    chatSessionRepository.deleteAll(sessions);
-                }
-
-                // 5. Delete the User
-                userRepository.delete(user);
-
-                logger.debug("Cleaned up data for anonymous user: {}", user.getId());
-            } catch (Exception e) {
-                logger.error("Failed to clean up user {}", user.getId(), e);
-            }
+            cleanupSingleUser(user);
         }
 
         logger.info("Retention policy cleanup completed");
     }
 
+    @Transactional
+    private void cleanupSingleUser(User user) {
+        try {
+            journalEntryRepository.deleteByUserId(user.getId());
+            moodEntryRepository.deleteByUser(user);
+            List<ChatSession> sessions = chatSessionRepository.findByUser(user);
+            if (!sessions.isEmpty()) {
+                messageRepository.deleteByChatSessionIn(sessions);
+                chatSessionRepository.deleteAll(sessions);
+            }
+            userRepository.delete(user);
+            logger.debug("Cleaned up data for anonymous user: {}", user.getId());
+        } catch (Exception e) {
+            logger.error("Failed to clean up user {}", user.getId(), e);
+        }
+    }
+
     /**
      * Additional method for manual trigger of cleanup
      */
-    @Transactional
     public void manualCleanup() {
         logger.info("Manual retention policy cleanup triggered");
         cleanUpOldData();
