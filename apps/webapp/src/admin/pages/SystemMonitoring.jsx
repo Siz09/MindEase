@@ -204,7 +204,7 @@ export default function SystemMonitoring() {
             }}
           >
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--gray)', fontWeight: '600' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
                 UPTIME
               </div>
               <div style={{ fontSize: '18px', fontWeight: '700' }}>
@@ -219,7 +219,7 @@ export default function SystemMonitoring() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--gray)', fontWeight: '600' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
                 ACTIVE THREADS
               </div>
               <div style={{ fontSize: '18px', fontWeight: '700' }}>{health.activeThreads || 0}</div>

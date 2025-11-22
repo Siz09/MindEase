@@ -160,7 +160,7 @@ export default function Notifications() {
                     if (token) {
                       // Send to backend
                       const api = (await import('../utils/api')).default;
-                      await api.post('/api/notifications/token', { token });
+                      await api.post('/notifications/token', { token });
                       toast.success(t('notifications.pushEnabled'));
                     } else {
                       toast.error(t('notifications.tokenError') || 'Failed to get token');
