@@ -59,18 +59,18 @@ public class AdminSystemController {
 
         int memoryUsage = 0;
         if (metrics.get("heapMemoryUsagePercent") instanceof Number) {
-            memoryUsage = ((Number) metrics.get("heapMemoryUsagePercent")).intValue();
+            memoryUsage = (int) Math.round(((Number) metrics.get("heapMemoryUsagePercent")).doubleValue());
         }
 
         int cpu = 0;
         if (metrics.get("systemCpuLoad") instanceof Number) {
-            int rawCpu = ((Number) metrics.get("systemCpuLoad")).intValue();
-            cpu = rawCpu < 0 ? -1 : rawCpu; // Preserve -1 for unavailable, clamp only valid values
+            double rawCpu = ((Number) metrics.get("systemCpuLoad")).doubleValue();
+            cpu = rawCpu < 0 ? -1 : (int) Math.round(rawCpu); // Preserve -1 for unavailable, round valid values
         }
 
         int disk = 0;
         if (metrics.get("diskUsage") instanceof Number) {
-            disk = ((Number) metrics.get("diskUsage")).intValue();
+            disk = (int) Math.round(((Number) metrics.get("diskUsage")).doubleValue());
         }
 
         long uptime = 0;
