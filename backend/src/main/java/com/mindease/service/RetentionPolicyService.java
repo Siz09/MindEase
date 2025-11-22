@@ -33,6 +33,9 @@ public class RetentionPolicyService {
     @Autowired
     private MessageRepository messageRepository;
 
+    @Autowired
+    private UserContextRepository userContextRepository;
+
     /**
      * Scheduled task to clean up old data based on retention policy
      * Runs every day at 2:00 AM
@@ -67,6 +70,7 @@ public class RetentionPolicyService {
         // back
         journalEntryRepository.deleteByUserId(user.getId());
         moodEntryRepository.deleteByUser(user);
+        userContextRepository.deleteByUser(user);
         List<ChatSession> sessions = chatSessionRepository.findByUser(user);
         if (!sessions.isEmpty()) {
             messageRepository.deleteByChatSessionIn(sessions);
