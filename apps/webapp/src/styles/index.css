@@ -114,6 +114,11 @@
   --color-error-bg: #450a0a;
   --color-error-border: #7f1d1d;
 
+  --color-success: #22c55e;
+  --color-success-bg: rgba(34, 197, 94, 0.1);
+  --color-success-bg-light: rgba(34, 197, 94, 0.05);
+  --color-success-border-light: rgba(34, 197, 94, 0.2);
+
   --color-info: #38bdf8;
   --color-info-bg: rgba(56, 189, 248, 0.1);
   --color-info-border: rgba(56, 189, 248, 0.2);
