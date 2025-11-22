@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_context", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"user_id", "context_key"})
+        @UniqueConstraint(columnNames = { "user_id", "context_key" })
 })
 public class UserContext {
 

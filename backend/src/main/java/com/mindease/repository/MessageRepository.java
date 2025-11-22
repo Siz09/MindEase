@@ -16,17 +16,18 @@ import java.time.LocalDateTime;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, UUID> {
-  Page<Message> findByChatSessionOrderByCreatedAtDesc(ChatSession chatSession, Pageable pageable);
-  List<Message> findByChatSessionOrderByCreatedAtAsc(ChatSession chatSession);
-  Page<Message> findByChatSessionOrderByCreatedAtAsc(ChatSession chatSession, Pageable pageable);
+    Page<Message> findByChatSessionOrderByCreatedAtDesc(ChatSession chatSession, Pageable pageable);
 
-  long countByChatSession_UserAndIsUserMessageTrueAndCreatedAtBetween(
-    User user,
-    LocalDateTime start,
-    LocalDateTime end
-  );
+    List<Message> findByChatSessionOrderByCreatedAtAsc(ChatSession chatSession);
 
-  @Modifying
-  @Transactional
-  void deleteByChatSessionIn(List<ChatSession> chatSessions);
+    Page<Message> findByChatSessionOrderByCreatedAtAsc(ChatSession chatSession, Pageable pageable);
+
+    long countByChatSession_UserAndIsUserMessageTrueAndCreatedAtBetween(
+            User user,
+            LocalDateTime start,
+            LocalDateTime end);
+
+    @Modifying
+    @Transactional
+    void deleteByChatSessionIn(List<ChatSession> chatSessions);
 }

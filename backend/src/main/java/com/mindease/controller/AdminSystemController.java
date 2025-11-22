@@ -67,17 +67,18 @@ public class AdminSystemController {
             cpu = ((Number) metrics.get("systemCpuLoad")).intValue();
         }
 
-        // Disk usage - using File roots
+        // Disk usage - cross-platform approach
         int disk = 0;
         try {
-            java.io.File root = new java.io.File("/");
-            long totalSpace = root.getTotalSpace();
-            long freeSpace = root.getFreeSpace();
+            java.nio.file.FileStore store = java.nio.file.Files.getFileStore(
+                java.nio.file.Paths.get(System.getProperty("user.dir")));
+            long totalSpace = store.getTotalSpace();
+            long usableSpace = store.getUsableSpace();
             if (totalSpace > 0) {
-                disk = (int) (((totalSpace - freeSpace) * 100) / totalSpace);
+                disk = (int) (((totalSpace - usableSpace) * 100) / totalSpace);
             }
         } catch (Exception e) {
-            // Ignore disk error
+            log.warn("Failed to calculate disk usage", e);
         }
 
         long uptime = 0;

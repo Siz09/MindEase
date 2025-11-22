@@ -30,7 +30,7 @@ public class MoodPredictionController {
     public ResponseEntity<?> getPrediction(Authentication authentication) {
         String email = authentication.getName();
         User user = userService.findByEmail(email)
-            .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found"));
 
         Map<String, Object> prediction = moodPredictionService.predictMood(user);
         return ResponseEntity.ok(prediction);

@@ -16,21 +16,22 @@ import java.util.UUID;
 @Repository
 public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID> {
 
-  // Paginated results for performance
-  Page<JournalEntry> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+    // Paginated results for performance
+    Page<JournalEntry> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
-  // For infinite scroll - get entries before a certain date
-  List<JournalEntry> findByUserIdAndCreatedAtBeforeOrderByCreatedAtDesc(
-    UUID userId, LocalDateTime createdAt, Pageable pageable);
+    // For infinite scroll - get entries before a certain date
+    List<JournalEntry> findByUserIdAndCreatedAtBeforeOrderByCreatedAtDesc(
+            UUID userId, LocalDateTime createdAt, Pageable pageable);
 
-  // Count entries for a user (for pagination info)
-  long countByUserId(UUID userId);
+    // Count entries for a user (for pagination info)
+    long countByUserId(UUID userId);
 
-  // Get recent entries for dashboard
-  @Query("SELECT j FROM JournalEntry j WHERE j.userId = :userId ORDER BY j.createdAt DESC LIMIT 5")
-  List<JournalEntry> findRecentByUserId(@Param("userId") UUID userId);
+    // Get recent entries for dashboard
+    @Query("SELECT j FROM JournalEntry j WHERE j.userId = :userId ORDER BY j.createdAt DESC LIMIT 5")
+    List<JournalEntry> findRecentByUserId(@Param("userId") UUID userId);
 
-  @Modifying
-  @Transactional
-  void deleteByUserId(UUID userId);
+    @Query("DELETE FROM JournalEntry j WHERE j.userId = :userId")
+    @Modifying
+    @Transactional
+    int deleteByUserId(@Param("userId") UUID userId);
 }

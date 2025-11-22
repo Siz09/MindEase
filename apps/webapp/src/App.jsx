@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import CheckIn from './pages/CheckIn';
+import UserDashboard from './pages/Dashboard';
 import Insights from './pages/Insights';
 import Mindfulness from './pages/Mindfulness';
 import Settings from './pages/Settings';
@@ -69,7 +69,7 @@ function App() {
                   path="/"
                   element={
                     <ProtectedRoute>
-                      <CheckIn />
+                      <UserDashboard />
                     </ProtectedRoute>
                   }
                 />

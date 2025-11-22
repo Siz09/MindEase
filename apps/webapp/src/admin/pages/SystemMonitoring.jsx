@@ -208,7 +208,14 @@ export default function SystemMonitoring() {
                 UPTIME
               </div>
               <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                {health.uptime ? new Date(health.uptime).toISOString().substr(11, 8) : '00:00:00'}
+                {(() => {
+                  if (!health.uptime) return '00:00:00';
+                  const totalSeconds = Math.floor(health.uptime / 1000);
+                  const hours = Math.floor(totalSeconds / 3600);
+                  const minutes = Math.floor((totalSeconds % 3600) / 60);
+                  const seconds = totalSeconds % 60;
+                  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                })()}
               </div>
             </div>
             <div>
