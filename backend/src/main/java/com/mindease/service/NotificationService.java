@@ -104,18 +104,42 @@ public class NotificationService {
     }
 
     public void emailAdmins(String subject, String body) {
-        if (emailService == null) return;
+        if (emailService == null)
+            return;
         try {
             var admins = userRepository.findByRole(Role.ADMIN);
             for (User admin : admins) {
                 try {
-                    emailService.sendEmail(admin.getEmail(), subject != null ? subject : DEFAULT_ADMIN_EMAIL_SUBJECT, body != null ? body : "");
+                    emailService.sendEmail(admin.getEmail(), subject != null ? subject : DEFAULT_ADMIN_EMAIL_SUBJECT,
+                            body != null ? body : "");
                 } catch (Exception e) {
                     logger.warn("Failed emailing admin {}: {}", admin.getEmail(), e.getMessage());
                 }
             }
         } catch (Exception e) {
             logger.error("emailAdmins failed: {}", e.getMessage(), e);
+        }
+    }
+
+    public void sendPushNotification(User user, String title, String body) {
+        if (user == null || user.getFcmToken() == null) {
+            return;
+        }
+
+        try {
+            com.google.firebase.messaging.Message message = com.google.firebase.messaging.Message.builder()
+                    .setToken(user.getFcmToken())
+                    .setNotification(com.google.firebase.messaging.Notification.builder()
+                            .setTitle(title)
+                            .setBody(body)
+                            .build())
+                    .putData("click_action", "FLUTTER_NOTIFICATION_CLICK") // Standard for many apps, or use web URL
+                    .build();
+
+            String response = com.google.firebase.messaging.FirebaseMessaging.getInstance().send(message);
+            logger.info("Sent push notification to user {}: {}", user.getId(), response);
+        } catch (Exception e) {
+            logger.error("Failed to send push notification to user {}: {}", user.getId(), e.getMessage());
         }
     }
 }

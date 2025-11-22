@@ -101,8 +101,11 @@ const Sidebar = () => {
               key={item.path}
               to={item.path}
               className={`sidebar-link ${isActive(item.path) ? 'active' : ''}`}
+              aria-label={item.label}
             >
-              <div className="nav-icon">{item.icon}</div>
+              <div className="nav-icon" aria-hidden="true">
+                {item.icon}
+              </div>
               <span className="nav-label">{item.label}</span>
             </Link>
           ))}

@@ -27,4 +27,6 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
   // Get recent entries for dashboard
   @Query("SELECT j FROM JournalEntry j WHERE j.userId = :userId ORDER BY j.createdAt DESC LIMIT 5")
   List<JournalEntry> findRecentByUserId(@Param("userId") UUID userId);
+
+  void deleteByUserId(UUID userId);
 }

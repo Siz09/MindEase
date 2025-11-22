@@ -34,37 +34,33 @@ public class SafetyClassificationService {
     static {
         // CRITICAL - Immediate danger, active intent
         RISK_KEYWORDS.put(RiskLevel.CRITICAL, List.of(
-            "kill myself", "suicide plan", "end my life", "going to die",
-            "goodbye forever", "final message", "overdose", "jump off",
-            "hanging myself", "cutting deep", "want to die today"
-        ));
+                "kill myself", "suicide plan", "end my life", "going to die",
+                "goodbye forever", "final message", "overdose", "jump off",
+                "hanging myself", "cutting deep", "want to die today"));
 
         // HIGH - Suicidal ideation, self-harm intent
         RISK_KEYWORDS.put(RiskLevel.HIGH, List.of(
-            "suicid", "kill me", "end it all", "better off dead",
-            "no reason to live", "wish i was dead", "want to die",
-            "self harm", "cut myself", "hurt myself badly"
-        ));
+                "suicid", "kill me", "end it all", "better off dead",
+                "no reason to live", "wish i was dead", "want to die",
+                "self harm", "cut myself", "hurt myself badly"));
 
         // MEDIUM - Self-harm thoughts, moderate distress
         RISK_KEYWORDS.put(RiskLevel.MEDIUM, List.of(
-            "harm myself", "hurt myself", "cutting", "self injur",
-            "thoughts of dying", "life isn't worth", "feel worthless",
-            "everyone would be better", "nothing matters", "no point"
-        ));
+                "harm myself", "hurt myself", "cutting", "self injur",
+                "thoughts of dying", "life isn't worth", "feel worthless",
+                "everyone would be better", "nothing matters", "no point"));
 
         // LOW - Mild distress, negative mood
         RISK_KEYWORDS.put(RiskLevel.LOW, List.of(
-            "hopeless", "helpless", "empty inside", "numb",
-            "can't cope", "breaking down", "falling apart",
-            "exhausted", "burned out", "can't take it"
-        ));
+                "hopeless", "helpless", "empty inside", "numb",
+                "can't cope", "breaking down", "falling apart",
+                "exhausted", "burned out", "can't take it"));
     }
 
     /**
      * Classify a message's risk level based on content and context.
      *
-     * @param content The message content to classify
+     * @param content       The message content to classify
      * @param recentHistory Recent messages for context (optional)
      * @return The assessed risk level
      */
@@ -111,8 +107,8 @@ public class SafetyClassificationService {
      * Get appropriate crisis resources for a risk level and user language.
      *
      * @param riskLevel The risk level
-     * @param language User's preferred language (e.g., "en", "ne")
-     * @param region User's region (e.g., "US", "NP", or null for global)
+     * @param language  User's preferred language (e.g., "en", "ne")
+     * @param region    User's region (e.g., "US", "NP", or null for global)
      * @return List of crisis resources
      */
     @Cacheable(value = "crisisResources", key = "#language + '_' + #region")
@@ -128,7 +124,7 @@ public class SafetyClassificationService {
         try {
             // Try to get region-specific + global resources
             List<CrisisResource> resources = crisisResourceRepository
-                .findByLanguageAndRegionOrGlobal(effectiveLanguage, effectiveRegion);
+                    .findByLanguageAndRegionOrGlobal(effectiveLanguage, effectiveRegion);
 
             if (resources.isEmpty()) {
                 // Fallback to English if no resources in user's language
@@ -152,27 +148,29 @@ public class SafetyClassificationService {
      */
     public String getSafetyPrompt(RiskLevel riskLevel) {
         return switch (riskLevel) {
-            case CRITICAL -> "CRISIS MODE: The user is in immediate danger. Acknowledge their pain with deep empathy. " +
-                           "Strongly encourage them to reach out to emergency services or a crisis helpline immediately. " +
-                           "Be calm, direct, and supportive. Do not try to solve complex issues—focus on immediate safety.";
+            case CRITICAL -> "CRISIS MODE: The user is in immediate danger. Acknowledge their pain with deep empathy. "
+                    +
+                    "Strongly encourage them to reach out to emergency services or a crisis helpline immediately. " +
+                    "Be calm, direct, and supportive. Do not try to solve complex issues—focus on immediate safety.";
 
             case HIGH -> "HIGH RISK: The user is expressing serious distress and may be considering self-harm. " +
-                        "Respond with compassion and validation. Gently suggest professional help and crisis resources. " +
-                        "Avoid judgmental language. Focus on hope and connection.";
+                    "Respond with compassion and validation. Gently suggest professional help and crisis resources. " +
+                    "Avoid judgmental language. Focus on hope and connection.";
 
             case MEDIUM -> "MODERATE CONCERN: The user is experiencing significant distress. " +
-                          "Be extra supportive and validate their feelings. Explore coping strategies and suggest " +
-                          "professional support if appropriate. Monitor for escalation.";
+                    "Be extra supportive and validate their feelings. Explore coping strategies and suggest " +
+                    "professional support if appropriate. Monitor for escalation.";
 
             case LOW -> "MILD CONCERN: The user is experiencing some distress. " +
-                       "Provide empathetic support and gentle encouragement. Ask clarifying questions.";
+                    "Provide empathetic support and gentle encouragement. Ask clarifying questions.";
 
             default -> "";
         };
     }
 
     /**
-     * Check if text contains any keywords from a list, with basic negation handling.
+     * Check if text contains any keywords from a list, with basic negation
+     * handling.
      * Uses word boundaries and avoids counting negated phrases as positive matches.
      */
     private boolean containsKeywords(String text, List<String> keywords) {
@@ -212,16 +210,17 @@ public class SafetyClassificationService {
 
         // Get last 5 user messages
         List<Message> userMessages = history.stream()
-            .filter(m -> Boolean.TRUE.equals(m.getIsUserMessage()))
-            .limit(5)
-            .toList();
+                .filter(m -> Boolean.TRUE.equals(m.getIsUserMessage()))
+                .limit(5)
+                .toList();
 
         int lowRiskCount = 0;
         int mediumPlusRiskCount = 0;
 
         for (Message msg : userMessages) {
             RiskLevel msgRisk = msg.getRiskLevel();
-            if (msgRisk == null) continue;
+            if (msgRisk == null)
+                continue;
 
             if (msgRisk.ordinal() >= RiskLevel.MEDIUM.ordinal()) {
                 mediumPlusRiskCount++;

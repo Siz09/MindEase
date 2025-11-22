@@ -81,19 +81,7 @@ const Login = () => {
           <div className="auth-welcome">
             <div className="welcome-content">
               <div className="welcome-icon">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="35" fill="var(--primary-green)" opacity="0.1" />
-                  <path
-                    d="M30 40c0-5.5 4.5-10 10-10s10 4.5 10 10-4.5 10-10 10-10-4.5-10-10z"
-                    fill="var(--primary-green)"
-                  />
-                  <path
-                    d="M20 40c0-11 9-20 20-20s20 9 20 10"
-                    stroke="var(--primary-green)"
-                    strokeWidth="3"
-                    fill="none"
-                  />
-                </svg>
+                <img src="/mindease-logo.png" alt="MindEase Logo" width="120" height="120" />
               </div>
               <h1 className="welcome-title">{t('auth.welcomeBack')}</h1>
               <p className="welcome-subtitle">{t('auth.loginSubtitle')}</p>

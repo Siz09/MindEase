@@ -27,9 +27,12 @@ public class AdminSystemController {
     private static final Logger log = LoggerFactory.getLogger(AdminSystemController.class);
 
     private final DataSource dataSource;
+    private final com.mindease.service.PerformanceMonitorService performanceMonitorService;
 
-    public AdminSystemController(DataSource dataSource) {
+    public AdminSystemController(DataSource dataSource,
+            com.mindease.service.PerformanceMonitorService performanceMonitorService) {
         this.dataSource = dataSource;
+        this.performanceMonitorService = performanceMonitorService;
     }
 
     @GetMapping("/status")
@@ -52,16 +55,42 @@ public class AdminSystemController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Server resources", description = "Approximate CPU, memory, and disk usage for the UI")
     public SystemHealthResponse health() {
-        Runtime rt = Runtime.getRuntime();
-        long maxMem = rt.maxMemory();
-        long freeMem = rt.freeMemory();
-        long usedMem = rt.totalMemory() - freeMem;
-        int memoryUsage = maxMem == 0 ? 0 : (int) ((usedMem * 100L) / maxMem);
-        // Simple placeholders for CPU and disk usage; real implementation would use OS
-        // metrics
-        int cpu = 30;
-        int disk = 40;
-        return new SystemHealthResponse(cpu, clampPercent(memoryUsage), disk);
+        java.util.Map<String, Object> metrics = performanceMonitorService.getSystemMetrics();
+
+        int memoryUsage = 0;
+        if (metrics.containsKey("heapMemoryUsagePercent")) {
+            memoryUsage = ((Double) metrics.get("heapMemoryUsagePercent")).intValue();
+        }
+
+        int cpu = 0;
+        if (metrics.containsKey("systemCpuLoad")) {
+            cpu = ((Double) metrics.get("systemCpuLoad")).intValue();
+        }
+
+        // Disk usage - using File roots
+        int disk = 0;
+        try {
+            java.io.File root = new java.io.File("/");
+            long totalSpace = root.getTotalSpace();
+            long freeSpace = root.getFreeSpace();
+            if (totalSpace > 0) {
+                disk = (int) (((totalSpace - freeSpace) * 100) / totalSpace);
+            }
+        } catch (Exception e) {
+            // Ignore disk error
+        }
+
+        long uptime = 0;
+        if (metrics.containsKey("uptime")) {
+            uptime = (Long) metrics.get("uptime");
+        }
+
+        int activeThreads = 0;
+        if (metrics.containsKey("activeThreads")) {
+            activeThreads = (Integer) metrics.get("activeThreads");
+        }
+
+        return new SystemHealthResponse(cpu, clampPercent(memoryUsage), clampPercent(disk), uptime, activeThreads);
     }
 
     private static int clampPercent(int value) {

@@ -96,7 +96,6 @@ const JournalHistory = ({
                     </span>
                   )}
                   <div className="entry-meta-text">
-                    <h3 className="entry-title">{entry.title || t('journal.entry')}</h3>
                     <span className="entry-date">{formatDate(entry.createdAt)}</span>
                   </div>
                 </div>

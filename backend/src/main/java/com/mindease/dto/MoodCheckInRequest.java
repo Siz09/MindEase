@@ -18,10 +18,7 @@ public class MoodCheckInRequest {
     private List<String> tags;
 
     @NotNull(message = "Check-in type is required")
-    @Pattern(
-        regexp = "^(pre_chat|post_chat|standalone)$",
-        message = "Check-in type must be one of: pre_chat, post_chat, standalone"
-    )
+    @Pattern(regexp = "^(pre_chat|post_chat|standalone)$", message = "Check-in type must be one of: pre_chat, post_chat, standalone")
     private String checkinType; // "pre_chat", "post_chat", "standalone"
 
     private UUID sessionId; // Optional: link to chat session
@@ -70,4 +67,3 @@ public class MoodCheckInRequest {
         this.sessionId = sessionId;
     }
 }
-

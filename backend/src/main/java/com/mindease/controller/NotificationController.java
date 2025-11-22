@@ -28,7 +28,8 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/notifications")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "https://mindease.app", "https://app.mindease.app"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173", "https://mindease.app",
+        "https://app.mindease.app" })
 @Tag(name = "Notifications", description = "User notification management endpoints")
 @SecurityRequirement(name = "Bearer Authentication")
 public class NotificationController {
@@ -46,8 +47,8 @@ public class NotificationController {
 
     @Operation(summary = "List notifications (paginated)", description = "Get paginated list of notifications for the authenticated user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Notifications retrieved successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+            @ApiResponse(responseCode = "200", description = "Notifications retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
     @GetMapping("/list")
     public ResponseEntity<?> list(
@@ -77,15 +78,15 @@ public class NotificationController {
 
     @Operation(summary = "Get unread notification count", description = "Get count of unread notifications for the authenticated user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Unread count retrieved successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+            @ApiResponse(responseCode = "200", description = "Unread count retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
     @GetMapping("/unread-count")
     public ResponseEntity<?> getUnreadCount(Authentication authentication) {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
             long unreadCount = notificationRepository.countByUserAndIsReadFalse(user);
 
@@ -97,15 +98,15 @@ public class NotificationController {
         } catch (Exception e) {
             logger.error("Failed to get unread count for user: {}", principalEmail, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(createErrorResponse("Failed to get unread count"));
+                    .body(createErrorResponse("Failed to get unread count"));
         }
     }
 
     @Operation(summary = "Mark a notification as read", description = "Mark a specific notification as read")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Notification marked as read successfully"),
-        @ApiResponse(responseCode = "404", description = "Notification not found"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+            @ApiResponse(responseCode = "200", description = "Notification marked as read successfully"),
+            @ApiResponse(responseCode = "404", description = "Notification not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
     @PatchMapping("/mark-read/{id}")
     public ResponseEntity<?> markRead(
@@ -140,15 +141,15 @@ public class NotificationController {
 
     @Operation(summary = "Mark all notifications as read", description = "Mark all notifications for the authenticated user as read")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "All notifications marked as read successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+            @ApiResponse(responseCode = "200", description = "All notifications marked as read successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
     @PatchMapping("/mark-all-read")
     public ResponseEntity<?> markAllAsRead(Authentication authentication) {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Bulk update to mark all notifications as read (performance optimized)
             int count = notificationRepository.markAllAsReadForUser(user);
@@ -162,15 +163,15 @@ public class NotificationController {
         } catch (Exception e) {
             logger.error("Failed to mark all notifications as read for user: {}", principalEmail, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(createErrorResponse("Failed to mark all notifications as read"));
+                    .body(createErrorResponse("Failed to mark all notifications as read"));
         }
     }
 
     @Operation(summary = "Delete notification", description = "Delete a specific notification")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Notification deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Notification not found"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+            @ApiResponse(responseCode = "200", description = "Notification deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Notification not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
     @DeleteMapping("/{notificationId}")
     public ResponseEntity<?> deleteNotification(
@@ -180,7 +181,7 @@ public class NotificationController {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
             Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
 
@@ -202,7 +203,7 @@ public class NotificationController {
         } catch (Exception e) {
             logger.error("Failed to delete notification: {}", notificationId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(createErrorResponse("Failed to delete notification"));
+                    .body(createErrorResponse("Failed to delete notification"));
         }
     }
 
@@ -214,22 +215,24 @@ public class NotificationController {
 
     @Operation(summary = "Get notification preferences", description = "Get notification preferences for the authenticated user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Preferences retrieved successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+            @ApiResponse(responseCode = "200", description = "Preferences retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
     @GetMapping("/preferences")
     public ResponseEntity<?> getPreferences(Authentication authentication) {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
 
             Map<String, Object> preferences = new HashMap<>();
-            preferences.put("quietHoursStart", user.getQuietHoursStart() != null ? user.getQuietHoursStart().toString() : null);
-            preferences.put("quietHoursEnd", user.getQuietHoursEnd() != null ? user.getQuietHoursEnd().toString() : null);
+            preferences.put("quietHoursStart",
+                    user.getQuietHoursStart() != null ? user.getQuietHoursStart().toString() : null);
+            preferences.put("quietHoursEnd",
+                    user.getQuietHoursEnd() != null ? user.getQuietHoursEnd().toString() : null);
             preferences.put("emailNotifications", true); // Default to true, can be extended
             preferences.put("pushNotifications", true); // Default to true, can be extended
 
@@ -239,14 +242,14 @@ public class NotificationController {
         } catch (Exception e) {
             logger.error("Failed to get notification preferences for user: {}", principalEmail, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(createErrorResponse("Failed to get notification preferences: " + e.getMessage()));
+                    .body(createErrorResponse("Failed to get notification preferences: " + e.getMessage()));
         }
     }
 
     @Operation(summary = "Update notification preferences", description = "Update notification preferences for the authenticated user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Preferences updated successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+            @ApiResponse(responseCode = "200", description = "Preferences updated successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
     })
     @PutMapping("/preferences")
     @PatchMapping("/preferences")
@@ -256,7 +259,7 @@ public class NotificationController {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Update quiet hours if provided
             if (preferences.containsKey("quietHoursStart") && preferences.containsKey("quietHoursEnd")) {
@@ -285,8 +288,10 @@ public class NotificationController {
             response.put("message", "Notification preferences updated successfully");
 
             Map<String, Object> updatedPreferences = new HashMap<>();
-            updatedPreferences.put("quietHoursStart", user.getQuietHoursStart() != null ? user.getQuietHoursStart().toString() : null);
-            updatedPreferences.put("quietHoursEnd", user.getQuietHoursEnd() != null ? user.getQuietHoursEnd().toString() : null);
+            updatedPreferences.put("quietHoursStart",
+                    user.getQuietHoursStart() != null ? user.getQuietHoursStart().toString() : null);
+            updatedPreferences.put("quietHoursEnd",
+                    user.getQuietHoursEnd() != null ? user.getQuietHoursEnd().toString() : null);
 
             response.put("preferences", updatedPreferences);
             return ResponseEntity.ok(response);
@@ -294,7 +299,37 @@ public class NotificationController {
         } catch (Exception e) {
             logger.error("Failed to update notification preferences for user: {}", principalEmail, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(createErrorResponse("Failed to update notification preferences: " + e.getMessage()));
+                    .body(createErrorResponse("Failed to update notification preferences: " + e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "Register FCM token", description = "Register Firebase Cloud Messaging token for push notifications")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Token registered successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PostMapping("/token")
+    public ResponseEntity<?> registerToken(
+            @RequestBody Map<String, String> payload,
+            Authentication authentication) {
+        String principalEmail = authentication != null ? authentication.getName() : "unknown";
+        try {
+            User user = userService.findByEmail(principalEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            String token = payload.get("token");
+            if (token != null && !token.isBlank()) {
+                user.setFcmToken(token);
+                userRepository.save(user);
+                logger.info("Registered FCM token for user: {}", principalEmail);
+            }
+
+            return ResponseEntity.ok(createSuccessResponse("Token registered"));
+
+        } catch (Exception e) {
+            logger.error("Failed to register FCM token for user: {}", principalEmail, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Failed to register token"));
         }
     }
 

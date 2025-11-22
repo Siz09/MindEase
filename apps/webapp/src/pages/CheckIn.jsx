@@ -9,9 +9,30 @@ import JournalHistory from '../components/JournalHistory';
 import '../styles/CheckIn.css';
 import '../styles/EmojiPicker.css';
 
-const CheckIn = () => {
+const Dashboard = () => {
   const { t } = useTranslation();
   const { token } = useAuth();
+
+  // Widget State
+  const [widgets, setWidgets] = useState(() => {
+    const saved = localStorage.getItem('dashboard_widgets');
+    return saved
+      ? JSON.parse(saved)
+      : {
+          mood: true,
+          journal: true,
+          history: true,
+        };
+  });
+
+  const [isCustomizing, setIsCustomizing] = useState(false);
+
+  const toggleWidget = (key) => {
+    const newWidgets = { ...widgets, [key]: !widgets[key] };
+    setWidgets(newWidgets);
+    localStorage.setItem('dashboard_widgets', JSON.stringify(newWidgets));
+  };
+
   const showMoodReplyToast = (moodData) => {
     if (!moodData) return;
     toast.dismiss('mood-reply-toast');
@@ -145,48 +166,100 @@ const CheckIn = () => {
   return (
     <div className="page check-in-page">
       <div className="container">
-        <div className="page-header">
-          <h1 className="page-title">{t('checkin.title') || 'Check-in'}</h1>
-          <p className="page-subtitle">
-            {t('checkin.subtitle') || 'How are you feeling today? Share your mood and thoughts.'}
-          </p>
+        <div
+          className="page-header"
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <div>
+            <h1 className="page-title">{t('checkin.title') || 'Dashboard'}</h1>
+            <p className="page-subtitle">
+              {t('checkin.subtitle') || 'Your personal wellness space.'}
+            </p>
+          </div>
+          <button className="btn btn-outline" onClick={() => setIsCustomizing(!isCustomizing)}>
+            {isCustomizing ? 'Done' : 'Customize'}
+          </button>
         </div>
+
+        {isCustomizing && (
+          <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+            <h3 className="card-title">Customize Dashboard</h3>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <label
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={widgets.mood}
+                  onChange={() => toggleWidget('mood')}
+                />
+                Mood Tracker
+              </label>
+              <label
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={widgets.journal}
+                  onChange={() => toggleWidget('journal')}
+                />
+                Journal Entry
+              </label>
+              <label
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={widgets.history}
+                  onChange={() => toggleWidget('history')}
+                />
+                Recent History
+              </label>
+            </div>
+          </div>
+        )}
 
         <div className="check-in-content">
           {/* Mood Input Section */}
-          <section className="check-in-section">
-            <MoodInput
-              onSubmit={handleMoodSubmit}
-              loading={moodLoading}
-              currentMood={currentMood}
-            />
-          </section>
+          {widgets.mood && (
+            <section className="check-in-section">
+              <MoodInput
+                onSubmit={handleMoodSubmit}
+                loading={moodLoading}
+                currentMood={currentMood}
+              />
+            </section>
+          )}
 
           {/* Journal Form Section */}
-          <section className="check-in-section">
-            <JournalForm
-              onSubmit={handleJournalSubmit}
-              loading={journalSubmitting}
-              isOffline={isOffline}
-              currentMood={currentMood}
-              onUpdateMood={setCurrentMood}
-            />
-          </section>
+          {widgets.journal && (
+            <section className="check-in-section">
+              <JournalForm
+                onSubmit={handleJournalSubmit}
+                loading={journalSubmitting}
+                isOffline={isOffline}
+                currentMood={currentMood}
+                onUpdateMood={setCurrentMood}
+              />
+            </section>
+          )}
 
           {/* Journal History Section */}
-          <section className="check-in-section">
-            <JournalHistory
-              entries={journalEntries}
-              isLoading={journalLoading}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </section>
+          {widgets.history && (
+            <section className="check-in-section">
+              <JournalHistory
+                entries={journalEntries}
+                isLoading={journalLoading}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </section>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default CheckIn;
+export default Dashboard;

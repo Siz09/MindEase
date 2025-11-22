@@ -2,7 +2,6 @@ package com.mindease.service;
 
 import com.mindease.dto.ChatResponse;
 import com.mindease.model.*;
-import com.mindease.repository.CrisisResourceRepository;
 import com.mindease.service.GuardrailService.GuardrailResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +13,8 @@ import java.util.List;
 
 /**
  * Enhanced ChatBotService that wraps the base AI service with safety checks.
- * Integrates SafetyClassificationService and GuardrailService into the chat flow.
+ * Integrates SafetyClassificationService and GuardrailService into the chat
+ * flow.
  */
 @Service
 @Qualifier("safeAIChatService")
@@ -33,26 +33,56 @@ public class SafeAIChatService implements ChatBotService {
     private GuardrailService guardrailService;
 
     @Autowired
-    private CrisisResourceRepository crisisResourceRepository;
+    private com.mindease.repository.UserRepository userRepository;
+
+    @Autowired
+    private com.mindease.repository.UserContextRepository userContextRepository;
 
     @Override
     public ChatResponse generateResponse(String message, String userId, List<Message> history) {
+        return generateResponse(message, userId, history, null);
+    }
+
+    @Override
+    public ChatResponse generateResponse(String message, String userId, List<Message> history,
+            java.util.Map<String, String> providedContext) {
         try {
+            // Step 0: Fetch User and Context
+            User user = null;
+            java.util.Map<String, String> userContext = providedContext != null
+                    ? new java.util.HashMap<>(providedContext)
+                    : new java.util.HashMap<>();
+
+            if (userId != null) {
+                try {
+                    java.util.UUID uuid = java.util.UUID.fromString(userId);
+                    user = userRepository.findById(uuid).orElse(null);
+                    if (user != null) {
+                        List<UserContext> contexts = userContextRepository.findByUser(user);
+                        for (UserContext ctx : contexts) {
+                            userContext.put(ctx.getKey(), ctx.getValue());
+                        }
+                    }
+                } catch (IllegalArgumentException e) {
+                    log.warn("Invalid UUID format for userId: {}", userId);
+                }
+            }
+
             // Step 1: Classify user message risk level
             RiskLevel riskLevel = safetyService.classifyMessage(message, history);
             log.info("Message classified as risk level: {} for user: {}", riskLevel, userId);
 
             // Step 2: Get base AI response (which already includes some safety logic)
-            ChatResponse baseResponse = baseChatService.generateResponse(message, userId, history);
+            // We pass the fetched context to the base service
+            ChatResponse baseResponse = baseChatService.generateResponse(message, userId, history, userContext);
             if (baseResponse == null) {
                 throw new IllegalStateException("Base chat service returned null response");
             }
 
             // Step 3: Apply guardrails to AI response
             GuardrailResult guardrailResult = guardrailService.checkResponse(
-                baseResponse.getContent(),
-                riskLevel
-            );
+                    baseResponse.getContent(),
+                    riskLevel);
             if (guardrailResult == null) {
                 throw new IllegalStateException("Guardrail service returned null result");
             }
@@ -67,21 +97,26 @@ public class SafeAIChatService implements ChatBotService {
 
             // Step 5: Attach crisis resources for high-risk situations
             if (riskLevel.isHighOrCritical()) {
-                String userLanguage = "en"; // TODO: Get from user preferences
-                String userRegion = "global"; // TODO: Get from user profile or IP geolocation
+                String userLanguage = "en";
+                String userRegion = "global";
+
+                if (user != null) {
+                    if (user.getPreferredLanguage() != null)
+                        userLanguage = user.getPreferredLanguage();
+                    if (user.getRegion() != null)
+                        userRegion = user.getRegion();
+                }
 
                 List<CrisisResource> resources = safetyService.getCrisisResources(
-                    riskLevel,
-                    userLanguage,
-                    userRegion
-                );
+                        riskLevel,
+                        userLanguage,
+                        userRegion);
                 enhancedResponse.setCrisisResources(resources);
 
                 // Add crisis warning if resources are provided
                 if (!resources.isEmpty()) {
                     enhancedResponse.setModerationWarning(
-                        "If you're in crisis, please reach out to one of these resources for immediate support."
-                    );
+                            "If you're in crisis, please reach out to one of these resources for immediate support.");
                 }
             }
 
@@ -104,9 +139,8 @@ public class SafeAIChatService implements ChatBotService {
             // Fallback to safe response
             ChatResponse fallbackResponse = new ChatResponse();
             fallbackResponse.setContent(
-                "I'm here to support you, but I'm having technical difficulties right now. " +
-                "If you're in crisis, please reach out to a crisis helpline or emergency services immediately."
-            );
+                    "I'm here to support you, but I'm having technical difficulties right now. " +
+                            "If you're in crisis, please reach out to a crisis helpline or emergency services immediately.");
             fallbackResponse.setCrisisFlagged(false);
             fallbackResponse.setProvider("fallback:error");
             fallbackResponse.setRiskLevel(RiskLevel.NONE);

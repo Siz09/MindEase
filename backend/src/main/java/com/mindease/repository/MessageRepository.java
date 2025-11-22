@@ -23,4 +23,6 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     LocalDateTime start,
     LocalDateTime end
   );
+
+  void deleteByChatSessionIn(List<ChatSession> chatSessions);
 }

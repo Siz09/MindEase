@@ -87,14 +87,16 @@ export default function SystemMonitoring() {
       </div>
 
       {loading && (
-        <div style={{
-          marginBottom: 'var(--spacing-lg)',
-          padding: 'var(--spacing-sm) var(--spacing-md)',
-          backgroundColor: 'var(--color-bg-tertiary)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--color-text-secondary)'
-        }}>
+        <div
+          style={{
+            marginBottom: 'var(--spacing-lg)',
+            padding: 'var(--spacing-sm) var(--spacing-md)',
+            backgroundColor: 'var(--color-bg-tertiary)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
           Loading system status…
         </div>
       )}
@@ -190,6 +192,32 @@ export default function SystemMonitoring() {
           <HealthBar label="CPU Usage" value={health.cpu || 0} />
           <HealthBar label="Memory Usage" value={health.memory || 0} />
           <HealthBar label="Disk Usage" value={health.disk || 0} />
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 'var(--spacing-md)',
+              marginTop: 'var(--spacing-lg)',
+              paddingTop: 'var(--spacing-lg)',
+              borderTop: '1px solid var(--color-border)',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '12px', color: 'var(--gray)', fontWeight: '600' }}>
+                UPTIME
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '700' }}>
+                {health.uptime ? new Date(health.uptime).toISOString().substr(11, 8) : '00:00:00'}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', color: 'var(--gray)', fontWeight: '600' }}>
+                ACTIVE THREADS
+              </div>
+              <div style={{ fontSize: '18px', fontWeight: '700' }}>{health.activeThreads || 0}</div>
+            </div>
+          </div>
         </div>
       </Card>
 

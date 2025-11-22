@@ -20,7 +20,7 @@
 }
 
 .mood-entry-card {
-  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 255, 255, 0.9) 100%);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   border: 1px solid rgba(21, 128, 61, 0.1);
 }
 
@@ -157,6 +157,7 @@
   resize: vertical;
   transition: all var(--transition-fast);
   background-color: var(--bg-card);
+  color: var(--text-primary);
 }
 
 .form-textarea:focus {
@@ -235,6 +236,7 @@
 /* Chart Containers */
 .chart-card {
   padding: var(--spacing-xl);
+  background-color: var(--bg-card);
 }
 
 .chart-container {

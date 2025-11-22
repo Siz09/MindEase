@@ -21,55 +21,52 @@ public class GuardrailService {
 
     // Patterns that should never appear in bot responses
     private static final List<String> PROHIBITED_CONTENT = List.of(
-        "you should kill",
-        "you should harm",
-        "suicide is the answer",
-        "end your life",
-        "better off dead",
-        "no reason to live",
-        "you deserve to suffer"
-    );
+            "you should kill",
+            "you should harm",
+            "suicide is the answer",
+            "end your life",
+            "better off dead",
+            "no reason to live",
+            "you deserve to suffer");
 
     // Patterns that need careful handling but aren't outright prohibited
     private static final List<String> SENSITIVE_CONTENT = List.of(
-        "kill yourself",
-        "harm yourself",
-        "suicide method",
-        "how to die",
-        "ways to hurt",
-        "ending it all"
-    );
+            "kill yourself",
+            "harm yourself",
+            "suicide method",
+            "how to die",
+            "ways to hurt",
+            "ending it all");
 
     // Patterns indicating the bot is trying to diagnose
     private static final List<String> DIAGNOSIS_PATTERNS = List.of(
-        "you have depression",
-        "you are bipolar",
-        "you have ptsd",
-        "diagnosed with",
-        "you suffer from",
-        "you have a mental illness"
-    );
+            "you have depression",
+            "you are bipolar",
+            "you have ptsd",
+            "diagnosed with",
+            "you suffer from",
+            "you have a mental illness");
 
     // Safe fallback response for blocked content
-    private static final String SAFE_FALLBACK =
-        "I want to support you through this difficult time. Your feelings are valid and important. " +
-        "If you're experiencing thoughts of self-harm or suicide, please reach out to a crisis helpline " +
-        "or emergency services immediately. They have trained professionals who can provide the support you need right now.";
+    private static final String SAFE_FALLBACK = "I want to support you through this difficult time. Your feelings are valid and important. "
+            +
+            "If you're experiencing thoughts of self-harm or suicide, please reach out to a crisis helpline " +
+            "or emergency services immediately. They have trained professionals who can provide the support you need right now.";
 
     /**
      * Check an AI response for safety issues and determine moderation action.
      *
-     * @param response The AI-generated response
+     * @param response      The AI-generated response
      * @param userRiskLevel The risk level of the user's message
-     * @return Result containing moderation action, reason, and potentially modified response
+     * @return Result containing moderation action, reason, and potentially modified
+     *         response
      */
     public GuardrailResult checkResponse(String response, RiskLevel userRiskLevel) {
         if (response == null || response.isBlank()) {
             return new GuardrailResult(
-                ModerationAction.BLOCKED,
-                "Empty response",
-                SAFE_FALLBACK
-            );
+                    ModerationAction.BLOCKED,
+                    "Empty response",
+                    SAFE_FALLBACK);
         }
 
         String normalized = response.toLowerCase(Locale.ROOT);
@@ -79,10 +76,9 @@ public class GuardrailService {
             if (normalized.contains(prohibited)) {
                 log.error("BLOCKED: Prohibited content detected in AI response: {}", prohibited);
                 return new GuardrailResult(
-                    ModerationAction.BLOCKED,
-                    "Prohibited content: " + prohibited,
-                    SAFE_FALLBACK
-                );
+                        ModerationAction.BLOCKED,
+                        "Prohibited content: " + prohibited,
+                        SAFE_FALLBACK);
             }
         }
 
@@ -91,10 +87,9 @@ public class GuardrailService {
             if (normalized.contains(diagnosisPattern)) {
                 log.warn("FLAGGED: Diagnosis attempt detected in AI response");
                 return new GuardrailResult(
-                    ModerationAction.FLAGGED,
-                    "Attempted diagnosis: " + diagnosisPattern,
-                    response
-                );
+                        ModerationAction.FLAGGED,
+                        "Attempted diagnosis: " + diagnosisPattern,
+                        response);
             }
         }
 
@@ -106,16 +101,14 @@ public class GuardrailService {
                 // For high-risk users, be extra cautious
                 if (userRiskLevel.isHighOrCritical()) {
                     return new GuardrailResult(
-                        ModerationAction.MODIFIED,
-                        "Sensitive content removed for high-risk user: " + sensitive,
-                        removeSensitiveContent(response)
-                    );
+                            ModerationAction.MODIFIED,
+                            "Sensitive content removed for high-risk user: " + sensitive,
+                            removeSensitiveContent(response));
                 } else {
                     return new GuardrailResult(
-                        ModerationAction.FLAGGED,
-                        "Sensitive content detected: " + sensitive,
-                        response
-                    );
+                            ModerationAction.FLAGGED,
+                            "Sensitive content detected: " + sensitive,
+                            response);
                 }
             }
         }
@@ -124,10 +117,9 @@ public class GuardrailService {
         if (response.length() > 2000) {
             log.info("FLAGGED: Response too long ({} chars)", response.length());
             return new GuardrailResult(
-                ModerationAction.FLAGGED,
-                "Response too long: " + response.length() + " chars",
-                response
-            );
+                    ModerationAction.FLAGGED,
+                    "Response too long: " + response.length() + " chars",
+                    response);
         }
 
         // Check if response is too dismissive for high-risk situations
@@ -135,10 +127,9 @@ public class GuardrailService {
             if (isDismissive(normalized)) {
                 log.warn("MODIFIED: Dismissive response detected for high-risk user");
                 return new GuardrailResult(
-                    ModerationAction.MODIFIED,
-                    "Response too dismissive for high-risk situation",
-                    addEmpatheticPrefix(response)
-                );
+                        ModerationAction.MODIFIED,
+                        "Response too dismissive for high-risk situation",
+                        addEmpatheticPrefix(response));
             }
         }
 
@@ -151,13 +142,12 @@ public class GuardrailService {
      */
     private boolean isDismissive(String normalized) {
         List<String> dismissivePatterns = List.of(
-            "just think positive",
-            "cheer up",
-            "it's not that bad",
-            "others have it worse",
-            "you're overreacting",
-            "snap out of it"
-        );
+                "just think positive",
+                "cheer up",
+                "it's not that bad",
+                "others have it worse",
+                "you're overreacting",
+                "snap out of it");
 
         for (String pattern : dismissivePatterns) {
             if (normalized.contains(pattern)) {
@@ -177,15 +167,15 @@ public class GuardrailService {
         for (String sensitive : SENSITIVE_CONTENT) {
             // Replace sensitive phrases with ellipsis
             modified = Pattern.compile(Pattern.quote(sensitive), Pattern.CASE_INSENSITIVE)
-                .matcher(modified)
-                .replaceAll("[content removed for safety]");
+                    .matcher(modified)
+                    .replaceAll("[content removed for safety]");
         }
 
         // If too much was removed, use fallback
         if (modified.contains("[content removed for safety]")) {
             return addEmpatheticPrefix(modified) + "\n\n" +
-                   "I want to ensure I'm providing you with safe and supportive guidance. " +
-                   "Please consider reaching out to a crisis professional who can provide immediate help.";
+                    "I want to ensure I'm providing you with safe and supportive guidance. " +
+                    "Please consider reaching out to a crisis professional who can provide immediate help.";
         }
 
         return modified;
@@ -195,8 +185,9 @@ public class GuardrailService {
      * Add an empathetic prefix to a response.
      */
     private String addEmpatheticPrefix(String response) {
-        return "I hear that you're going through a really difficult time, and I want you to know that your feelings are valid. " +
-               response;
+        return "I hear that you're going through a really difficult time, and I want you to know that your feelings are valid. "
+                +
+                response;
     }
 
     /**

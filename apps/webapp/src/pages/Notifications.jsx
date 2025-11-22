@@ -136,6 +136,36 @@ export default function Notifications() {
               </svg>
               {t('notifications.refresh')}
             </button>
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+                try {
+                  const { messaging } = await import('../firebase');
+                  const { getToken } = await import('firebase/messaging');
+                  const permission = await Notification.requestPermission();
+
+                  if (permission === 'granted' && messaging) {
+                    const token = await getToken(messaging, {
+                      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+                    });
+
+                    if (token) {
+                      // Send to backend
+                      const api = (await import('../utils/api')).default;
+                      await api.post('/api/notifications/token', { token });
+                      toast.success(t('notifications.pushEnabled'));
+                    }
+                  } else {
+                    toast.warn(t('notifications.permissionDenied'));
+                  }
+                } catch (err) {
+                  console.error('Push notification setup failed', err);
+                  toast.error(t('notifications.pushError'));
+                }
+              }}
+            >
+              🔔 {t('notifications.enablePush')}
+            </button>
           </div>
         </div>
 

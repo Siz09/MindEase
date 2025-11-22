@@ -15,15 +15,23 @@ import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
-  List<MoodEntry> findByUserOrderByCreatedAtDesc(User user);
-  Page<MoodEntry> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
-  List<MoodEntry> findByUserAndCreatedAtBetweenOrderByCreatedAtDesc(User user, LocalDateTime start, LocalDateTime end);
-  List<MoodEntry> findByUserAndCreatedAtBetween(User user, LocalDateTime start, LocalDateTime end);
-  
-  // Optimized queries for better performance
-  @Query("SELECT COUNT(m) FROM MoodEntry m WHERE m.user = :user AND m.createdAt >= :startDate")
-  long countByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
-  
-  @Query("SELECT AVG(m.moodValue) FROM MoodEntry m WHERE m.user = :user AND m.createdAt >= :startDate")
-  Double getAverageMoodByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
+    List<MoodEntry> findByUserOrderByCreatedAtDesc(User user);
+
+    Page<MoodEntry> findByUserOrderByCreatedAtDesc(User user, Pageable pageable);
+
+    List<MoodEntry> findByUserAndCreatedAtBetweenOrderByCreatedAtDesc(User user, LocalDateTime start,
+            LocalDateTime end);
+
+    List<MoodEntry> findByUserAndCreatedAtBetween(User user, LocalDateTime start, LocalDateTime end);
+
+    // Optimized queries for better performance
+    @Query("SELECT COUNT(m) FROM MoodEntry m WHERE m.user = :user AND m.createdAt >= :startDate")
+    long countByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
+
+    @Query("SELECT AVG(m.moodValue) FROM MoodEntry m WHERE m.user = :user AND m.createdAt >= :startDate")
+    Double getAverageMoodByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
+
+    void deleteByUser(User user);
+
+    List<MoodEntry> findByUserAndCreatedAtAfterOrderByCreatedAtAsc(User user, LocalDateTime date);
 }

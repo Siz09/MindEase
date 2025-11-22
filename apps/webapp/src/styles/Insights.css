@@ -2,7 +2,7 @@
 /* Reverted page-header to original App.css styling */
 .insights-page {
   padding: 2rem 1rem;
-  background-color: #fafafa;
+  background-color: var(--bg-primary);
   min-height: 100vh;
 }
 
@@ -14,7 +14,7 @@
 .insights-page .page-title {
   font-size: var(--font-size-3xl);
   font-weight: 700;
-  color: var(--primary-black);
+  color: var(--text-primary);
   margin-bottom: var(--spacing-md);
 }
 
@@ -27,7 +27,7 @@
 
 /* ========== JOURNAL INSIGHTS & YOUR INSIGHTS (Reverted to original) ========== */
 .daily-summary-card {
-  background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 255, 255, 0.9) 100%);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   border: 1px solid rgba(21, 128, 61, 0.1);
 }
 
@@ -40,7 +40,7 @@
 .stat-item {
   text-align: center;
   padding: var(--spacing-md);
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-secondary);
   border-radius: var(--radius-md);
 }
 
@@ -108,8 +108,8 @@
 
 /* ========== DAILY SUMMARIES SECTION ========== */
 .daily-summaries-section {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--gray-200);
 }
 
 .section-header-wrapper {
@@ -125,7 +125,7 @@
 
 .section-subtitle {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   margin: 0.25rem 0 0 0;
   font-weight: 400;
 }
@@ -137,8 +137,8 @@
 }
 
 .daily-summaries-section .daily-summary-card {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--gray-200);
   border-radius: 10px;
   padding: 1rem;
   transition: all 0.3s ease;
@@ -148,8 +148,8 @@
 }
 
 .daily-summaries-section .daily-summary-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: #d1d5db;
+  box-shadow: var(--shadow-md);
+  border-color: var(--gray-300);
 }
 
 .daily-summaries-section .daily-summary-card:focus-visible {
@@ -172,13 +172,13 @@
 .date-label {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .entry-count-badge {
   font-size: 0.75rem;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--gray-100);
+  color: var(--text-secondary);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-weight: 500;
@@ -189,7 +189,7 @@
   display: flex;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: #f9fafb;
+  background: var(--bg-secondary);
   border-radius: 6px;
 }
 
@@ -200,7 +200,7 @@
 
 .daily-summary-text {
   font-size: 0.95rem;
-  color: #44403c;
+  color: var(--text-primary);
   line-height: 1.6;
   margin: 0;
   flex: 1;
@@ -208,12 +208,12 @@
 
 /* ========== JOURNAL SUMMARY SECTION ========== */
 .journal-summary-section {
-  background: white;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--gray-200);
 }
 
 .journal-summary-section .card-header {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--gray-200);
   padding-bottom: 1.25rem;
 }
 
@@ -231,16 +231,16 @@
 }
 
 .journal-entry-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gray-200);
   border-radius: 10px;
   overflow: hidden;
   transition: all 0.3s ease;
-  background: white;
+  background: var(--bg-card);
 }
 
 .journal-entry-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border-color: #d1d5db;
+  box-shadow: var(--shadow-lg);
+  border-color: var(--gray-300);
   transform: translateY(-2px);
 }
 
@@ -249,20 +249,20 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--gray-200);
 }
 
 .entry-timestamp {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .entry-badge {
   font-size: 0.7rem;
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--primary-green-light);
+  color: var(--primary-green-dark);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-weight: 600;
@@ -272,7 +272,7 @@
   margin: 0.5rem 1rem 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 .entry-content-wrapper {
@@ -298,16 +298,16 @@
 
 .entry-original {
   padding: 0.75rem;
-  background: #f9fafb;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gray-200);
 }
 
 .entry-summary {
   padding: 0.75rem;
-  background: linear-gradient(135deg, #f0fdf4 0%, #f5fbf3 100%);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   border-radius: 8px;
-  border: 1px solid #dcfce7;
+  border: 1px solid var(--primary-green-light);
 }
 
 .content-label {
@@ -316,7 +316,7 @@
   gap: 0.5rem;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
 }
 
 .label-icon {
@@ -326,7 +326,7 @@
 .entry-text,
 .summary-text {
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--text-primary);
   line-height: 1.5;
   margin: 0;
   white-space: pre-wrap;
@@ -335,7 +335,7 @@
 
 .entry-text.muted,
 .summary-text.processing {
-  color: #9ca3af;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -346,7 +346,7 @@
   justify-content: center;
   gap: 1.5rem;
   padding: 1.5rem 1rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--gray-200);
   margin-top: 1rem;
 }
 
@@ -365,7 +365,7 @@
 .pagination-button:hover:not(:disabled) {
   background: var(--primary-green-dark);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(21, 128, 61, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 .pagination-button:focus-visible {
@@ -380,7 +380,7 @@
 
 .pagination-info {
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
   min-width: 120px;
   text-align: center;
@@ -510,7 +510,7 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #e5e7eb;
+  border: 4px solid var(--gray-200);
   border-top: 4px solid var(--primary-green);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -528,9 +528,9 @@
 .empty-state {
   text-align: center;
   padding: 2rem;
-  background-color: #f9fafb;
+  background-color: var(--bg-secondary);
   border-radius: 8px;
-  border: 1px dashed #e5e7eb;
+  border: 1px dashed var(--gray-200);
 }
 
 .empty-icon {
@@ -544,12 +544,12 @@
 .empty-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
 .empty-description {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   max-width: 400px;
   margin: 0 auto;
@@ -558,7 +558,7 @@
 
 .card {
   padding: var(--spacing-xl);
-  background: white;
+  background: var(--bg-card);
   border-radius: var(--radius-lg);
   border: 1px solid var(--gray-200);
 }

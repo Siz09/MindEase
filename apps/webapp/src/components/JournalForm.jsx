@@ -7,8 +7,6 @@ import '../styles/components/JournalForm.css';
 const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, onUpdateMood }) => {
   const { t } = useTranslation();
   const [newEntry, setNewEntry] = useState('');
-  const [title, setTitle] = useState('');
-  const [titleError, setTitleError] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const textareaRef = useRef(null);
@@ -35,10 +33,6 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!title.trim()) {
-      setTitleError(t('journal.titleRequired'));
-      return;
-    }
     if (!newEntry.trim()) {
       return;
     }
@@ -47,12 +41,10 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
     }
 
     onSubmit({
-      title: title.trim(),
+      title: null,
       content: newEntry.trim(),
     });
     setNewEntry('');
-    setTitle('');
-    setTitleError('');
   };
 
   // No emoji state to initialize
@@ -138,28 +130,6 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
     <div className="journal-form-component">
       <form onSubmit={handleSubmit} className="journal-form">
         <div className="form-group">
-          <label htmlFor="journal-title" className="form-label">
-            {t('journal.entryTitleLabel')}
-          </label>
-          <input
-            id="journal-title"
-            type="text"
-            className={`journal-title-input ${titleError ? 'has-error' : ''}`}
-            placeholder={t('journal.entryTitlePlaceholder')}
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              if (titleError) setTitleError('');
-            }}
-            maxLength={150}
-            disabled={loading}
-          />
-          {titleError && (
-            <p className="form-error" role="alert">
-              {titleError}
-            </p>
-          )}
-
           <label htmlFor="journal-entry" className="form-label">
             {t('journal.newEntry')}
           </label>
@@ -204,7 +174,7 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={loading || !newEntry.trim() || !title.trim()}
+              disabled={loading || !newEntry.trim()}
             >
               {loading ? t('journal.saving') : t('journal.saveEntry')}
             </button>

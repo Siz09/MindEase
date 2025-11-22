@@ -31,20 +31,11 @@
   color: var(--primary-green);
 }
 
-.brand-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  background-color: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  color: var(--primary-green);
-  transition: all var(--transition-fast);
+.navbar-brand img {
+  transition: transform var(--transition-fast);
 }
 
-.brand-icon:hover {
-  background-color: var(--accent-lime-light);
+.navbar-brand:hover img {
   transform: scale(1.05);
 }
 

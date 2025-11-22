@@ -59,6 +59,12 @@ public class User {
     @Column(name = "preferred_language", length = 10)
     private String preferredLanguage = "en";
 
+    @Column(name = "fcm_token")
+    private String fcmToken;
+
+    @Column(name = "region", length = 10)
+    private String region = "global";
+
     // Constructors
     public User() {
         this.createdAt = LocalDateTime.now();
@@ -193,6 +199,22 @@ public class User {
 
     public void setPreferredLanguage(String preferredLanguage) {
         this.preferredLanguage = preferredLanguage;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
     }
 
     private void validateBanFieldConsistency() {

@@ -39,6 +39,15 @@
   --color-error-bg: #fef2f2;
   --color-error-border: #fecaca;
 
+  --color-info: #0369a1;
+  --color-info-bg: #f0f9ff;
+  --color-info-border: #bae6fd;
+
+  --color-warning: #b45309;
+  --color-warning-bg: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #92400e;
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -73,6 +82,48 @@
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+}
+
+[data-theme='dark'] {
+  /* Primary Colors - Adjusted for Dark Mode */
+  --primary-green: #22c55e;
+  --primary-green-light: #4ade80;
+  --primary-green-dark: #15803d;
+
+  /* Accent Colors */
+  --accent-lime: #a3e635;
+  --accent-lime-light: #bef264;
+  --accent-lime-dark: #65a30d;
+
+  /* Background Colors */
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-card: #374151;
+
+  /* Text Colors */
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+
+  /* Feedback Colors */
+  --color-error: #ef4444;
+  --color-error-bg: #450a0a;
+  --color-error-border: #7f1d1d;
+
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.1);
+  --color-info-border: rgba(56, 189, 248, 0.2);
+
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.1);
+  --color-warning-border: rgba(251, 191, 36, 0.2);
+  --color-warning-text: #fbbf24;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
 /* Reset and Base Styles */
