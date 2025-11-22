@@ -5,6 +5,7 @@ import com.mindease.model.Message;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -43,6 +44,14 @@ public class SimpleChatBotService implements ChatBotService {
     boolean isCrisis = message != null && isCrisisMessage(message);
 
     return new ChatResponse(content, isCrisis, "simple");
+  }
+
+  @Override
+  public ChatResponse generateResponse(String message, String userId, List<Message> history,
+          Map<String, String> userContext) {
+    // SimpleChatBotService does not use userContext, but we explicitly override
+    // to prevent silent context loss when called from SafeAIChatService
+    return generateResponse(message, userId, history);
   }
 
   @Override

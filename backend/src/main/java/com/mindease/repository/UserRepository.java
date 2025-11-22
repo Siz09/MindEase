@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -66,9 +65,11 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * records and foreign key constraint violations.
      *
      * See RetentionPolicyService.cleanupSingleUser() for proper usage pattern.
+     *
+     * NOTE: Transaction management should be handled at the service layer.
+     * The calling service method must be annotated with @Transactional.
      */
     @Query("DELETE FROM User u WHERE u.anonymousMode = true AND u.createdAt < :threshold")
     @Modifying
-    @Transactional
     int deleteAnonymousUsersCreatedBefore(@Param("threshold") LocalDateTime threshold);
 }
