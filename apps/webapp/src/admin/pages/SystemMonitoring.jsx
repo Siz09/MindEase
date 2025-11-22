@@ -45,39 +45,51 @@ export default function SystemMonitoring() {
     return () => clearInterval(interval);
   }, [loadSystemStatus]);
 
-  const HealthBar = ({ label, value }) => (
-    <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: 'var(--spacing-sm)',
-        }}
-      >
-        <span style={{ fontWeight: '500' }}>{label}</span>
-        <span style={{ fontWeight: '700' }}>{value}%</span>
-      </div>
-      <div
-        style={{
-          width: '100%',
-          height: '8px',
-          backgroundColor: 'var(--gray-light)',
-          borderRadius: 'var(--radius-sm)',
-          overflow: 'hidden',
-        }}
-      >
+  const HealthBar = ({ label, value }) => {
+    const isUnavailable = value < 0;
+    const displayValue = isUnavailable ? 0 : value;
+    const clampedValue = Math.max(0, Math.min(100, displayValue));
+
+    return (
+      <div style={{ marginBottom: 'var(--spacing-lg)' }}>
         <div
           style={{
-            width: `${value}%`,
-            height: '100%',
-            backgroundColor:
-              value > 80 ? 'var(--danger)' : value > 60 ? 'var(--warning)' : 'var(--success)',
-            transition: 'background-color 0.3s ease',
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: 'var(--spacing-sm)',
           }}
-        />
+        >
+          <span style={{ fontWeight: '500' }}>{label}</span>
+          <span style={{ fontWeight: '700' }}>{isUnavailable ? 'N/A' : `${clampedValue}%`}</span>
+        </div>
+        <div
+          style={{
+            width: '100%',
+            height: '8px',
+            backgroundColor: 'var(--gray-light)',
+            borderRadius: 'var(--radius-sm)',
+            overflow: 'hidden',
+          }}
+        >
+          {!isUnavailable && (
+            <div
+              style={{
+                width: `${clampedValue}%`,
+                height: '100%',
+                backgroundColor:
+                  clampedValue > 80
+                    ? 'var(--danger)'
+                    : clampedValue > 60
+                      ? 'var(--warning)'
+                      : 'var(--success)',
+                transition: 'background-color 0.3s ease',
+              }}
+            />
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div>
@@ -189,9 +201,9 @@ export default function SystemMonitoring() {
         style={{ marginBottom: 'var(--spacing-lg)' }}
       >
         <div style={{ padding: 'var(--spacing-lg)' }}>
-          <HealthBar label="CPU Usage" value={health.cpu || 0} />
-          <HealthBar label="Memory Usage" value={health.memory || 0} />
-          <HealthBar label="Disk Usage" value={health.disk || 0} />
+          <HealthBar label="CPU Usage" value={health.cpu >= 0 ? health.cpu : 0} />
+          <HealthBar label="Memory Usage" value={health.memory >= 0 ? health.memory : 0} />
+          <HealthBar label="Disk Usage" value={health.disk >= 0 ? health.disk : 0} />
 
           <div
             style={{
