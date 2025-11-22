@@ -58,7 +58,7 @@ public class OpenAIChatBotService implements ChatBotService {
                         .filter(entry -> entry.getKey() != null && entry.getValue() != null
                                 && !sensitiveKeys.contains(entry.getKey().toLowerCase()))
                         .forEach(entry -> contextBuilder.append("- ").append(entry.getKey()).append(": ")
-                                .append(entry.getValue()).append("\n"));
+                                .append(sanitizeContextValue(entry.getValue())).append("\n"));
             }
 
             // Persona + safety-first system prompt derived from your spec
@@ -102,7 +102,7 @@ public class OpenAIChatBotService implements ChatBotService {
                 for (int i = boundedHistory.size() - 1; i >= 0; i--) {
                     Message m = boundedHistory.get(i);
                     if (Boolean.TRUE.equals(m.getIsUserMessage())) {
-                        if (m.getContent() != null && m.getContent().equals(message)) {
+                        if (m.getContent() != null && message != null && m.getContent().equals(message)) {
                             hasCurrentAlready = true;
                         }
                         break;
@@ -193,5 +193,28 @@ public class OpenAIChatBotService implements ChatBotService {
         if (m.contains("good") || m.contains("better") || m.contains("grateful") || m.contains("happy"))
             return "[encouraging][reflective]";
         return "[empathetic]";
+    }
+
+    /**
+     * Sanitizes context values to prevent prompt injection attacks.
+     * Removes potential injection patterns, normalizes newlines, and limits length.
+     *
+     * @param value the context value to sanitize
+     * @return sanitized value safe for inclusion in AI prompts
+     */
+    private String sanitizeContextValue(String value) {
+        if (value == null) {
+            return "";
+        }
+        // Remove potential injection patterns (case-insensitive)
+        String sanitized = value.replaceAll("(?i)(ignore|disregard).*(previous|prior|above).*(instruction|prompt|rule)",
+                "[filtered]");
+        // Normalize newlines to spaces
+        sanitized = sanitized.replaceAll("\\n+", " ");
+        // Limit length to prevent excessive token usage
+        if (sanitized.length() > 200) {
+            sanitized = sanitized.substring(0, 200);
+        }
+        return sanitized;
     }
 }
