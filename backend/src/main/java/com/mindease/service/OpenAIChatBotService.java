@@ -157,11 +157,17 @@ public class OpenAIChatBotService implements ChatBotService {
 
     @Override
     public boolean isCrisisMessage(String message) {
+        if (chatConfig.getCrisisDetection() == null) {
+            return false;
+        }
         if (!chatConfig.getCrisisDetection().getEnabled()) {
             return false;
         }
         String lowerMessage = message == null ? "" : message.toLowerCase(Locale.ROOT);
         List<String> crisisKeywords = chatConfig.getCrisisDetection().getCrisisKeywords();
+        if (crisisKeywords == null) {
+            return false;
+        }
         return crisisKeywords.stream().anyMatch(lowerMessage::contains);
     }
 

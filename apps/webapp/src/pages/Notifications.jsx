@@ -141,10 +141,18 @@ export default function Notifications() {
               onClick={async () => {
                 try {
                   const { messaging } = await import('../firebase');
+
+                  if (!messaging) {
+                    toast.error(
+                      t('notifications.messagingNotAvailable') || 'Messaging not available'
+                    );
+                    return;
+                  }
+
                   const { getToken } = await import('firebase/messaging');
                   const permission = await Notification.requestPermission();
 
-                  if (permission === 'granted' && messaging) {
+                  if (permission === 'granted') {
                     const token = await getToken(messaging, {
                       vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
                     });
@@ -154,6 +162,8 @@ export default function Notifications() {
                       const api = (await import('../utils/api')).default;
                       await api.post('/api/notifications/token', { token });
                       toast.success(t('notifications.pushEnabled'));
+                    } else {
+                      toast.error(t('notifications.tokenError') || 'Failed to get token');
                     }
                   } else {
                     toast.warn(t('notifications.permissionDenied'));

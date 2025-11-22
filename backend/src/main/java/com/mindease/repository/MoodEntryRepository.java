@@ -34,7 +34,7 @@ public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
     Double getAverageMoodByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
 
     @Transactional
-    @Modifying(clearAutomatically = true)
+    @Modifying
     void deleteByUser(User user);
 
     List<MoodEntry> findByUserAndCreatedAtAfterOrderByCreatedAtAsc(User user, LocalDateTime date);

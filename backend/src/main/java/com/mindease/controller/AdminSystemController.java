@@ -64,7 +64,8 @@ public class AdminSystemController {
 
         int cpu = 0;
         if (metrics.get("systemCpuLoad") instanceof Number) {
-            cpu = ((Number) metrics.get("systemCpuLoad")).intValue();
+            int rawCpu = ((Number) metrics.get("systemCpuLoad")).intValue();
+            cpu = rawCpu < 0 ? -1 : rawCpu; // Preserve -1 for unavailable, clamp only valid values
         }
 
         int disk = 0;
@@ -82,7 +83,10 @@ public class AdminSystemController {
             activeThreads = ((Number) metrics.get("activeThreads")).intValue();
         }
 
-        return new SystemHealthResponse(clampPercent(cpu), clampPercent(memoryUsage), clampPercent(disk), uptime, activeThreads);
+        // Only clamp valid CPU values (≥ 0); preserve -1 for unavailable
+        int clampedCpu = cpu < 0 ? cpu : clampPercent(cpu);
+        return new SystemHealthResponse(clampedCpu, clampPercent(memoryUsage), clampPercent(disk), uptime,
+                activeThreads);
     }
 
     private static int clampPercent(int value) {
