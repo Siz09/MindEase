@@ -1,0 +1,47 @@
+# Test Profile Configuration
+# Used for running tests with feature flags and test-specific settings
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: false
+
+# Feature Flags for Testing
+features:
+  safety-pipeline:
+    enabled: true
+  mood-tracking:
+    enabled: true
+  guided-programs:
+    enabled: true
+  session-summaries:
+    enabled: true
+  crisis-resources:
+    enabled: true
+
+# OpenAI Configuration (mock for testing)
+openai:
+  api:
+    key: test-key
+    model: gpt-4
+    enabled: false  # Disable actual API calls in tests
+
+# Logging
+logging:
+  level:
+    com.mindease: DEBUG
+    org.springframework: WARN

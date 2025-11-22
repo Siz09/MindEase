@@ -1,12 +1,21 @@
 package com.mindease.dto;
 
+import com.mindease.model.CrisisResource;
+import com.mindease.model.ModerationAction;
+import com.mindease.model.RiskLevel;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ChatResponse {
   private String content;
   private boolean isCrisisFlagged;
   private LocalDateTime timestamp;
   private String provider;
+  private RiskLevel riskLevel;
+  private List<CrisisResource> crisisResources;
+  private ModerationAction moderationAction;
+  private String moderationWarning;
 
   public ChatResponse() {
     this.timestamp = LocalDateTime.now();
@@ -50,5 +59,37 @@ public class ChatResponse {
 
   public void setProvider(String provider) {
     this.provider = provider;
+  }
+
+  public RiskLevel getRiskLevel() {
+    return riskLevel;
+  }
+
+  public void setRiskLevel(RiskLevel riskLevel) {
+    this.riskLevel = riskLevel;
+  }
+
+  public List<CrisisResource> getCrisisResources() {
+    return crisisResources;
+  }
+
+  public void setCrisisResources(List<CrisisResource> crisisResources) {
+    this.crisisResources = crisisResources;
+  }
+
+  public ModerationAction getModerationAction() {
+    return moderationAction;
+  }
+
+  public void setModerationAction(ModerationAction moderationAction) {
+    this.moderationAction = moderationAction;
+  }
+
+  public String getModerationWarning() {
+    return moderationWarning;
+  }
+
+  public void setModerationWarning(String moderationWarning) {
+    this.moderationWarning = moderationWarning;
   }
 }

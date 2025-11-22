@@ -56,6 +56,9 @@ public class User {
     @Column(name = "banned_by")
     private UUID bannedBy;
 
+    @Column(name = "preferred_language", length = 10)
+    private String preferredLanguage = "en";
+
     // Constructors
     public User() {
         this.createdAt = LocalDateTime.now();
@@ -182,6 +185,14 @@ public class User {
 
     public void setBannedBy(UUID bannedBy) {
         this.bannedBy = bannedBy;
+    }
+
+    public String getPreferredLanguage() {
+        return preferredLanguage;
+    }
+
+    public void setPreferredLanguage(String preferredLanguage) {
+        this.preferredLanguage = preferredLanguage;
     }
 
     private void validateBanFieldConsistency() {

@@ -368,6 +368,12 @@ const Chat = () => {
       content: m.content || m.message || m.text || 'Empty message',
       isUserMessage: m.isUserMessage || (m.sender ? m.sender === 'user' : false),
       isCrisisFlagged: m.isCrisisFlagged || false,
+      // Safety / moderation metadata from backend (if present)
+      riskLevel: m.riskLevel || 'NONE',
+      moderationAction: m.moderationAction || 'NONE',
+      moderationReason: m.moderationReason,
+      crisisResources:
+        m.crisisResources || (m.crisisResourcesJson ? JSON.parse(m.crisisResourcesJson) : []),
       createdAt: m.createdAt || new Date().toISOString(),
       sender: m.sender || (m.isUserMessage ? 'user' : 'bot'),
     };
@@ -436,18 +442,11 @@ const Chat = () => {
               processedMessageIds.current.set(messageId, Date.now());
               trimProcessedIds();
 
-              const normalizedMessage = {
+              // Normalize and keep all safety metadata
+              const normalizedMessage = normalizeMessage({
+                ...parsedMessage,
                 id: messageId,
-                content:
-                  parsedMessage.content ||
-                  parsedMessage.message ||
-                  parsedMessage.text ||
-                  'Empty message',
-                isUserMessage: parsedMessage.isUserMessage || false,
-                isCrisisFlagged: parsedMessage.isCrisisFlagged || false,
-                createdAt: parsedMessage.createdAt || new Date().toISOString(),
-                sender: parsedMessage.sender || (parsedMessage.isUserMessage ? 'user' : 'bot'),
-              };
+              });
 
               setMessages((prev) => [...prev, normalizedMessage]);
 
@@ -807,6 +806,82 @@ const Chat = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const renderRiskLabel = (message) => {
+    if (!message || !message.riskLevel || message.riskLevel === 'NONE') return null;
+    // Simple, non-intrusive inline label using inline styles to avoid CSS changes
+    const label = `Risk: ${message.riskLevel.toUpperCase()}`;
+    const color =
+      message.riskLevel === 'CRITICAL'
+        ? '#b91c1c'
+        : message.riskLevel === 'HIGH'
+          ? '#dc2626'
+          : message.riskLevel === 'MEDIUM'
+            ? '#d97706'
+            : '#2563eb';
+    return (
+      <div style={{ marginTop: 4, fontSize: '0.75rem', fontWeight: 500, color }}>
+        {label}
+        {message.moderationAction && message.moderationAction !== 'NONE'
+          ? ` • Action: ${message.moderationAction.toLowerCase()}`
+          : null}
+      </div>
+    );
+  };
+
+  const renderModerationNote = (message) => {
+    if (!message || !message.moderationReason) return null;
+    return (
+      <div style={{ marginTop: 2, fontSize: '0.7rem', color: '#6b7280' }}>
+        {message.moderationReason}
+      </div>
+    );
+  };
+
+  const renderCrisisResources = (message) => {
+    if (
+      !message ||
+      !Array.isArray(message.crisisResources) ||
+      message.crisisResources.length === 0
+    ) {
+      return null;
+    }
+    return (
+      <div
+        style={{
+          marginTop: 6,
+          padding: '0.5rem 0.75rem',
+          borderRadius: 6,
+          backgroundColor: 'rgba(254, 226, 226, 0.6)',
+          border: '1px solid #fecaca',
+        }}
+      >
+        <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: 2 }}>
+          {t('chat.crisisResourcesTitle') || 'Crisis support contacts near you:'}
+        </div>
+        <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0, fontSize: '0.75rem' }}>
+          {message.crisisResources.map((r) => (
+            <li
+              key={`${r.region || ''}-${r.name || ''}-${r.phoneNumber || ''}`}
+              style={{ marginTop: 2 }}
+            >
+              {r.name && <span style={{ fontWeight: 500 }}>{r.name}</span>}
+              {r.phoneNumber && <span> • {r.phoneNumber}</span>}
+              {r.website && (
+                <span>
+                  {' '}
+                  •{' '}
+                  <a href={r.website} target="_blank" rel="noreferrer">
+                    {new URL(r.website).hostname.replace(/^www\./, '')}
+                  </a>
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
   return (
     <div className="page chat-page">
       <div className="container">
@@ -879,6 +954,10 @@ const Chat = () => {
                   <div className="message-content">
                     <div className="message-bubble">
                       <div className="message-text">{message.content}</div>
+                      {/* Visible safety / risk info inside the bubble, without changing layout classes */}
+                      {renderRiskLabel(message)}
+                      {renderModerationNote(message)}
+                      {renderCrisisResources(message)}
                     </div>
                     <div className="message-meta">
                       <span className="message-time">{formatTime(message.createdAt)}</span>

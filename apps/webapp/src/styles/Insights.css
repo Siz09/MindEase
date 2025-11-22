@@ -69,6 +69,35 @@
   width: 100%;
 }
 
+/* Layout for top insights area: Journal Insights + Your Insights side by side */
+.top-insights-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+.top-insights-section .card {
+  flex: 1 1 0;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .top-insights-section {
+    flex-direction: column;
+  }
+}
+
+.top-insights-section .journal-stats-grid {
+  gap: var(--spacing-sm);
+}
+
+.top-insights-section .stat-value {
+  font-size: var(--font-size-xl);
+}
+
 /* ========== SPACING BETWEEN SECTIONS ========== */
 /* Added proper spacing container for Daily Summaries and Journal Summary */
 .insights-summaries-container {

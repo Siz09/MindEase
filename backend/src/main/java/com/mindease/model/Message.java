@@ -25,6 +25,20 @@ public class Message {
   @Column(name = "is_crisis_flagged")
   private Boolean isCrisisFlagged = false;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "risk_level", nullable = false)
+  private RiskLevel riskLevel = RiskLevel.NONE;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "moderation_action")
+  private ModerationAction moderationAction = ModerationAction.NONE;
+
+  @Column(name = "moderation_reason", columnDefinition = "TEXT")
+  private String moderationReason;
+
+  @Column(name = "safety_checked", nullable = false)
+  private Boolean safetyChecked = false;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
@@ -80,6 +94,38 @@ public class Message {
 
   public void setIsCrisisFlagged(Boolean isCrisisFlagged) {
     this.isCrisisFlagged = isCrisisFlagged;
+  }
+
+  public RiskLevel getRiskLevel() {
+    return riskLevel;
+  }
+
+  public void setRiskLevel(RiskLevel riskLevel) {
+    this.riskLevel = riskLevel;
+  }
+
+  public ModerationAction getModerationAction() {
+    return moderationAction;
+  }
+
+  public void setModerationAction(ModerationAction moderationAction) {
+    this.moderationAction = moderationAction;
+  }
+
+  public String getModerationReason() {
+    return moderationReason;
+  }
+
+  public void setModerationReason(String moderationReason) {
+    this.moderationReason = moderationReason;
+  }
+
+  public Boolean getSafetyChecked() {
+    return safetyChecked;
+  }
+
+  public void setSafetyChecked(Boolean safetyChecked) {
+    this.safetyChecked = safetyChecked;
   }
 
   public LocalDateTime getCreatedAt() {

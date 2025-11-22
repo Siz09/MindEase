@@ -49,307 +49,307 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 @SecurityRequirement(name = "Bearer Authentication")
 public class ChatApiController {
 
-  private static final int MAX_CONVERSATION_HISTORY = 12;
+    private static final int MAX_CONVERSATION_HISTORY = 12;
 
-  @Autowired
-  private ChatSessionRepository chatSessionRepository;
+    @Autowired
+    private ChatSessionRepository chatSessionRepository;
 
-  @Autowired
-  private MessageRepository messageRepository;
+    @Autowired
+    private MessageRepository messageRepository;
 
-  @Autowired
-  private UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-  @Autowired
-  private ChatBotService chatBotService;
+    @Autowired
+    private ChatBotService chatBotService;
 
-  @Autowired
-  private UserService userService;
+    @Autowired
+    private UserService userService;
 
-  @Autowired
-  private SimpMessagingTemplate messagingTemplate;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
-  @Autowired
-  private CrisisFlaggingService crisisFlaggingService;
+    @Autowired
+    private CrisisFlaggingService crisisFlaggingService;
 
-  @Autowired
-  private PremiumAccessService premiumAccessService;
+    @Autowired
+    private PremiumAccessService premiumAccessService;
 
-  @Autowired
-  private ChatConfig chatConfig;
+    @Autowired
+    private ChatConfig chatConfig;
 
-  private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
+    private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
 
-  @Operation(summary = "Send a chat message", description = "Send a message to the AI assistant and receive a response")
-  @ApiResponses(value = {
-    @ApiResponse(responseCode = "200", description = "Message sent successfully"),
-    @ApiResponse(responseCode = "400", description = "Invalid request or user not found"),
-    @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
-  })
-  @PostMapping("/send")
-  @AuditChatSent
-  public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
-    try {
-      logger.info("=== INCOMING MESSAGE REQUEST ===");
-      logger.info("Message: {}", request.getMessage());
-      logger.info("Authentication: {}", authentication.getName());
+    @Operation(summary = "Send a chat message", description = "Send a message to the AI assistant and receive a response")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Message sent successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request or user not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+    })
+    @PostMapping("/send")
+    @AuditChatSent
+    public ResponseEntity<?> sendMessage(@RequestBody SendMessageRequest request, Authentication authentication) {
+        try {
+            logger.info("=== INCOMING MESSAGE REQUEST ===");
+            logger.info("Message: {}", request.getMessage());
+            logger.info("Authentication: {}", authentication.getName());
 
-      String email = authentication.getName();
-      Optional<User> userOptional = userRepository.findByEmail(email);
+            String email = authentication.getName();
+            Optional<User> userOptional = userRepository.findByEmail(email);
 
-      if (userOptional.isEmpty()) {
-        logger.error("User not found for email: {}", email);
-        return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
-      }
+            if (userOptional.isEmpty()) {
+                logger.error("User not found for email: {}", email);
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
+            }
 
-      User user = userOptional.get();
-      logger.info("Processing message for user ID: {}", user.getId());
+            User user = userOptional.get();
+            logger.info("Processing message for user ID: {}", user.getId());
 
-      // Track user activity (async - fire-and-forget)
-      userService.trackUserActivityAsync(user);
+            // Track user activity (async - fire-and-forget)
+            userService.trackUserActivityAsync(user);
 
-      // Get or create chat session
-      ChatSession chatSession = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
-        .stream()
-        .findFirst()
-        .orElseGet(() -> {
-          logger.info("Creating new chat session for user: {}", user.getId());
-          return chatSessionRepository.save(new ChatSession(user));
-        });
+            // Get or create chat session
+            ChatSession chatSession = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
+                    .stream()
+                    .findFirst()
+                    .orElseGet(() -> {
+                        logger.info("Creating new chat session for user: {}", user.getId());
+                        return chatSessionRepository.save(new ChatSession(user));
+                    });
 
-      chatSession.setUpdatedAt(java.time.LocalDateTime.now());
-      chatSessionRepository.save(chatSession);
+            chatSession.setUpdatedAt(java.time.LocalDateTime.now());
+            chatSessionRepository.save(chatSession);
 
-      // Check for crisis
-      boolean isCrisis = chatBotService.isCrisisMessage(request.getMessage());
-      logger.info("Crisis detection result: {}", isCrisis);
+            // Check for crisis
+            boolean isCrisis = chatBotService.isCrisisMessage(request.getMessage());
+            logger.info("Crisis detection result: {}", isCrisis);
 
-      // Enforce soft daily message limit for free users (non-crisis only)
-      boolean isPremium = premiumAccessService.isPremium(user.getId());
-      if (!isPremium && !isCrisis) {
-        Integer limit = chatConfig.getLimits().getFreeDailyMessageLimit();
-        if (limit != null && limit > 0) {
-          LocalDate today = LocalDate.now();
-          LocalDateTime start = today.atStartOfDay();
-          LocalDateTime end = today.plusDays(1).atStartOfDay();
-          long sentToday = messageRepository
-            .countByChatSession_UserAndIsUserMessageTrueAndCreatedAtBetween(user, start, end);
-          logger.info("Free daily usage: userId={}, sentToday={}, limit={}", user.getId(), sentToday, limit);
-          if (sentToday >= limit) {
-            logger.info("Free daily limit reached for user: {}", user.getId());
-            return ResponseEntity.status(429).body(createErrorResponse(
-              "You've reached today's free chat limit. You can continue tomorrow or upgrade to Premium for unlimited chat."
-            ));
-          }
+            // Enforce soft daily message limit for free users (non-crisis only)
+            boolean isPremium = premiumAccessService.isPremium(user.getId());
+            if (!isPremium && !isCrisis) {
+                Integer limit = chatConfig.getLimits().getFreeDailyMessageLimit();
+                if (limit != null && limit > 0) {
+                    LocalDate today = LocalDate.now();
+                    LocalDateTime start = today.atStartOfDay();
+                    LocalDateTime end = today.plusDays(1).atStartOfDay();
+                    long sentToday = messageRepository
+                            .countByChatSession_UserAndIsUserMessageTrueAndCreatedAtBetween(user, start, end);
+                    logger.info("Free daily usage: userId={}, sentToday={}, limit={}", user.getId(), sentToday, limit);
+                    if (sentToday >= limit) {
+                        logger.info("Free daily limit reached for user: {}", user.getId());
+                        return ResponseEntity.status(429).body(createErrorResponse(
+                                "You've reached today's free chat limit. You can continue tomorrow or upgrade to Premium for unlimited chat."));
+                    }
+                }
+            }
+
+            // Save user message
+            Message userMessage = new Message(chatSession, request.getMessage(), true);
+            userMessage.setIsCrisisFlagged(isCrisis);
+            userMessage = messageRepository.save(userMessage);
+            logger.info("Saved user message with ID: {}", userMessage.getId());
+
+            // Fire-and-forget crisis evaluation + alerts (async, idempotent)
+            try {
+                crisisFlaggingService.evaluateAndFlag(chatSession.getId(), user.getId(), request.getMessage());
+            } catch (Exception ex) {
+                logger.warn("Crisis flagging dispatch failed: {}", ex.getMessage());
+            }
+
+            // Create user message payload for WebSocket
+            Map<String, Object> userMessagePayload = createMessagePayload(userMessage, true);
+
+            // Send user message via WebSocket
+            String userTopic = "/topic/user/" + user.getId();
+            logger.info("Sending user message to topic: {}", userTopic);
+            logger.info("User message payload: {}", userMessagePayload);
+
+            messagingTemplate.convertAndSend(userTopic, userMessagePayload);
+
+            // Handle crisis response first if needed
+            Message crisisMessage = null;
+            if (isCrisis) {
+                String crisisResponse = "I'm concerned about what you're sharing. Please consider contacting a mental health professional or a crisis helpline immediately. Your wellbeing matters, and there are people who want to help you.";
+                crisisMessage = new Message(chatSession, crisisResponse, false);
+                crisisMessage.setIsCrisisFlagged(true);
+                crisisMessage = messageRepository.save(crisisMessage);
+
+                Map<String, Object> crisisMessagePayload = createMessagePayload(crisisMessage, false);
+
+                logger.info("Sending crisis message to topic: {}", userTopic);
+                logger.info("Crisis message payload: {}", crisisMessagePayload);
+
+                messagingTemplate.convertAndSend(userTopic, crisisMessagePayload);
+            }
+
+            // Prepare recent conversation history using DB pagination
+            Pageable historyPage = PageRequest.of(0, MAX_CONVERSATION_HISTORY, Sort.by("createdAt").descending());
+            List<Message> recentHistory = new java.util.ArrayList<>(
+                    messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, historyPage).getContent());
+            Collections.reverse(recentHistory); // chronological order oldest -> newest for AI context
+
+            // Avoid duplicating the current user message in AI context
+            if (!recentHistory.isEmpty()) {
+                Message last = recentHistory.get(recentHistory.size() - 1);
+                String incoming = request.getMessage();
+                if (Boolean.TRUE.equals(last.getIsUserMessage())
+                        && last.getContent() != null
+                        && incoming != null
+                        && last.getContent().equals(incoming)) {
+                    // Remove the most-recent (current) user message; service will append it
+                    // explicitly
+                    recentHistory.remove(recentHistory.size() - 1);
+                }
+            }
+
+            // Generate AI response with context
+            logger.info("Generating AI response with {} history messages...", recentHistory.size());
+            ChatResponse aiResponse = chatBotService.generateResponse(
+                    request.getMessage(),
+                    user.getId().toString(),
+                    recentHistory);
+            logger.info("Generated AI response: {}", aiResponse.getContent());
+
+            Message botMessage = new Message(chatSession, aiResponse.getContent(), false);
+            botMessage = messageRepository.save(botMessage);
+            logger.info("Saved bot message with ID: {}", botMessage.getId());
+
+            // Create bot message payload for WebSocket
+            Map<String, Object> botMessagePayload = createMessagePayload(botMessage, false);
+
+            logger.info("Sending bot message to topic: {}", userTopic);
+            logger.info("Bot message payload: {}", botMessagePayload);
+
+            messagingTemplate.convertAndSend(userTopic, botMessagePayload);
+
+            // Create response
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "Messages sent and processed successfully");
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("userMessage", userMessagePayload);
+            data.put("botMessage", botMessagePayload);
+            if (crisisMessage != null) {
+                data.put("crisisMessage", createMessagePayload(crisisMessage, false));
+            }
+
+            response.put("data", data);
+
+            logger.info("=== MESSAGE PROCESSING COMPLETED SUCCESSFULLY ===");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("=== ERROR PROCESSING MESSAGE ===", e);
+            return ResponseEntity.badRequest().body(createErrorResponse("Failed to send message: " + e.getMessage()));
         }
-      }
+    }
 
-      // Save user message
-      Message userMessage = new Message(chatSession, request.getMessage(), true);
-      userMessage.setIsCrisisFlagged(isCrisis);
-      userMessage = messageRepository.save(userMessage);
-      logger.info("Saved user message with ID: {}", userMessage.getId());
+    @GetMapping("/history")
+    public ResponseEntity<?> getChatHistory(Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "asc") String sort) {
+        try {
+            if (!"asc".equalsIgnoreCase(sort) && !"desc".equalsIgnoreCase(sort)) {
+                return ResponseEntity.badRequest()
+                        .body(createErrorResponse("Invalid sort parameter. Must be 'asc' or 'desc'."));
+            }
+            String email = authentication.getName();
+            Optional<User> userOptional = userRepository.findByEmail(email);
 
-      // Fire-and-forget crisis evaluation + alerts (async, idempotent)
-      try {
-        crisisFlaggingService.evaluateAndFlag(chatSession.getId(), user.getId(), request.getMessage());
-      } catch (Exception ex) {
-        logger.warn("Crisis flagging dispatch failed: {}", ex.getMessage());
-      }
+            if (userOptional.isEmpty()) {
+                logger.error("User not found for email: {}", email);
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
+            }
 
-      // Create user message payload for WebSocket
-      Map<String, Object> userMessagePayload = createMessagePayload(userMessage, true);
+            User user = userOptional.get();
+            logger.info("Fetching chat history for user: {}", user.getId());
 
-      // Send user message via WebSocket
-      String userTopic = "/topic/user/" + user.getId();
-      logger.info("Sending user message to topic: {}", userTopic);
-      logger.info("User message payload: {}", userMessagePayload);
+            Optional<ChatSession> chatSessionOptional = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
+                    .stream()
+                    .findFirst();
 
-      messagingTemplate.convertAndSend(userTopic, userMessagePayload);
+            if (chatSessionOptional.isEmpty()) {
+                return ResponseEntity.ok(createEmptyHistoryResponse());
+            }
 
-      // Handle crisis response first if needed
-      Message crisisMessage = null;
-      if (isCrisis) {
-        String crisisResponse = "I'm concerned about what you're sharing. Please consider contacting a mental health professional or a crisis helpline immediately. Your wellbeing matters, and there are people who want to help you.";
-        crisisMessage = new Message(chatSession, crisisResponse, false);
-        crisisMessage.setIsCrisisFlagged(true);
-        crisisMessage = messageRepository.save(crisisMessage);
+            ChatSession chatSession = chatSessionOptional.get();
 
-        Map<String, Object> crisisMessagePayload = createMessagePayload(crisisMessage, false);
+            Sort sortSpec = "desc".equalsIgnoreCase(sort)
+                    ? Sort.by("createdAt").descending()
+                    : Sort.by("createdAt").ascending();
+            Pageable pageable = PageRequest.of(page, size, sortSpec);
+            Page<Message> messagesPage = "desc".equalsIgnoreCase(sort)
+                    ? messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, pageable)
+                    : messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession, pageable);
 
-        logger.info("Sending crisis message to topic: {}", userTopic);
-        logger.info("Crisis message payload: {}", crisisMessagePayload);
+            // Normalize to the same payload shape used by WebSocket messages
+            List<Map<String, Object>> items = new java.util.ArrayList<>();
+            for (Message m : messagesPage.getContent()) {
+                boolean isUser = Boolean.TRUE.equals(m.getIsUserMessage());
+                items.add(createMessagePayload(m, isUser));
+            }
 
-        messagingTemplate.convertAndSend(userTopic, crisisMessagePayload);
-      }
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("data", items);
+            Map<String, Object> pagination = new HashMap<>();
+            pagination.put("currentPage", messagesPage.getNumber());
+            pagination.put("totalPages", messagesPage.getTotalPages());
+            pagination.put("pageSize", messagesPage.getSize());
+            pagination.put("totalItems", messagesPage.getTotalElements());
+            response.put("pagination", pagination);
 
-      // Prepare recent conversation history using DB pagination
-      Pageable historyPage = PageRequest.of(0, MAX_CONVERSATION_HISTORY, Sort.by("createdAt").descending());
-      List<Message> recentHistory = new java.util.ArrayList<>(
-        messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, historyPage).getContent()
-      );
-      Collections.reverse(recentHistory); // chronological order oldest -> newest for AI context
+            return ResponseEntity.ok(response);
 
-      // Avoid duplicating the current user message in AI context
-      if (!recentHistory.isEmpty()) {
-        Message last = recentHistory.get(recentHistory.size() - 1);
-        String incoming = request.getMessage();
-        if (Boolean.TRUE.equals(last.getIsUserMessage())
-            && last.getContent() != null
-            && incoming != null
-            && last.getContent().equals(incoming)) {
-          // Remove the most-recent (current) user message; service will append it explicitly
-          recentHistory.remove(recentHistory.size() - 1);
+        } catch (Exception e) {
+            logger.error("Failed to fetch chat history: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(createErrorResponse("Failed to fetch chat history: " + e.getMessage()));
         }
-      }
-
-      // Generate AI response with context
-      logger.info("Generating AI response with {} history messages...", recentHistory.size());
-      ChatResponse aiResponse = chatBotService.generateResponse(
-        request.getMessage(),
-        user.getId().toString(),
-        recentHistory
-      );
-      logger.info("Generated AI response: {}", aiResponse.getContent());
-
-      Message botMessage = new Message(chatSession, aiResponse.getContent(), false);
-      botMessage = messageRepository.save(botMessage);
-      logger.info("Saved bot message with ID: {}", botMessage.getId());
-
-      // Create bot message payload for WebSocket
-      Map<String, Object> botMessagePayload = createMessagePayload(botMessage, false);
-
-      logger.info("Sending bot message to topic: {}", userTopic);
-      logger.info("Bot message payload: {}", botMessagePayload);
-
-      messagingTemplate.convertAndSend(userTopic, botMessagePayload);
-
-      // Create response
-      Map<String, Object> response = new HashMap<>();
-      response.put("status", "success");
-      response.put("message", "Messages sent and processed successfully");
-
-      Map<String, Object> data = new HashMap<>();
-      data.put("userMessage", userMessagePayload);
-      data.put("botMessage", botMessagePayload);
-      if (crisisMessage != null) {
-        data.put("crisisMessage", createMessagePayload(crisisMessage, false));
-      }
-
-      response.put("data", data);
-
-      logger.info("=== MESSAGE PROCESSING COMPLETED SUCCESSFULLY ===");
-      return ResponseEntity.ok(response);
-
-    } catch (Exception e) {
-      logger.error("=== ERROR PROCESSING MESSAGE ===", e);
-      return ResponseEntity.badRequest().body(createErrorResponse("Failed to send message: " + e.getMessage()));
-    }
-  }
-
-  @GetMapping("/history")
-  public ResponseEntity<?> getChatHistory(Authentication authentication,
-                                          @RequestParam(defaultValue = "0") int page,
-                                          @RequestParam(defaultValue = "20") int size,
-                                          @RequestParam(defaultValue = "asc") String sort) {
-    try {
-      if (!"asc".equalsIgnoreCase(sort) && !"desc".equalsIgnoreCase(sort)) {
-        return ResponseEntity.badRequest().body(createErrorResponse("Invalid sort parameter. Must be 'asc' or 'desc'."));
-      }
-      String email = authentication.getName();
-      Optional<User> userOptional = userRepository.findByEmail(email);
-
-      if (userOptional.isEmpty()) {
-        logger.error("User not found for email: {}", email);
-        return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
-      }
-
-      User user = userOptional.get();
-      logger.info("Fetching chat history for user: {}", user.getId());
-
-      Optional<ChatSession> chatSessionOptional = chatSessionRepository.findByUserOrderByUpdatedAtDesc(user)
-        .stream()
-        .findFirst();
-
-      if (chatSessionOptional.isEmpty()) {
-        return ResponseEntity.ok(createEmptyHistoryResponse());
-      }
-
-      ChatSession chatSession = chatSessionOptional.get();
-
-      Sort sortSpec = "desc".equalsIgnoreCase(sort)
-        ? Sort.by("createdAt").descending()
-        : Sort.by("createdAt").ascending();
-      Pageable pageable = PageRequest.of(page, size, sortSpec);
-      Page<Message> messagesPage = "desc".equalsIgnoreCase(sort)
-        ? messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, pageable)
-        : messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession, pageable);
-
-      // Normalize to the same payload shape used by WebSocket messages
-      List<Map<String, Object>> items = new java.util.ArrayList<>();
-      for (Message m : messagesPage.getContent()) {
-        boolean isUser = Boolean.TRUE.equals(m.getIsUserMessage());
-        items.add(createMessagePayload(m, isUser));
-      }
-
-      Map<String, Object> response = new HashMap<>();
-      response.put("status", "success");
-      response.put("data", items);
-      Map<String, Object> pagination = new HashMap<>();
-      pagination.put("currentPage", messagesPage.getNumber());
-      pagination.put("totalPages", messagesPage.getTotalPages());
-      pagination.put("pageSize", messagesPage.getSize());
-      pagination.put("totalItems", messagesPage.getTotalElements());
-      response.put("pagination", pagination);
-
-      return ResponseEntity.ok(response);
-
-    } catch (Exception e) {
-      logger.error("Failed to fetch chat history: {}", e.getMessage(), e);
-      return ResponseEntity.badRequest().body(createErrorResponse("Failed to fetch chat history: " + e.getMessage()));
-    }
-  }
-
-  // Helper method to create consistent message payloads
-  private Map<String, Object> createMessagePayload(Message message, boolean isUserMessage) {
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("id", message.getId().toString());
-    payload.put("content", message.getContent() != null ? message.getContent() : "");
-    payload.put("isUserMessage", isUserMessage);
-    payload.put("isCrisisFlagged", message.getIsCrisisFlagged() != null ? message.getIsCrisisFlagged() : false);
-    payload.put("createdAt", message.getCreatedAt().toString());
-    payload.put("sender", isUserMessage ? "user" : "bot");
-    payload.put("type", "message");
-
-    return payload;
-  }
-
-  private Map<String, Object> createErrorResponse(String message) {
-    Map<String, Object> response = new HashMap<>();
-    response.put("message", message);
-    response.put("status", "error");
-    return response;
-  }
-
-  private Map<String, Object> createEmptyHistoryResponse() {
-    Map<String, Object> response = new HashMap<>();
-    response.put("status", "success");
-    response.put("data", new java.util.ArrayList<>());
-    response.put("currentPage", 0);
-    response.put("totalItems", 0);
-    response.put("totalPages", 0);
-    return response;
-  }
-
-  public static class SendMessageRequest {
-    private String message;
-
-    public String getMessage() {
-      return message;
     }
 
-    public void setMessage(String message) {
-      this.message = message;
+    // Helper method to create consistent message payloads
+    private Map<String, Object> createMessagePayload(Message message, boolean isUserMessage) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("id", message.getId().toString());
+        payload.put("content", message.getContent() != null ? message.getContent() : "");
+        payload.put("isUserMessage", isUserMessage);
+        payload.put("isCrisisFlagged", message.getIsCrisisFlagged() != null ? message.getIsCrisisFlagged() : false);
+        payload.put("createdAt", message.getCreatedAt().toString());
+        payload.put("sender", isUserMessage ? "user" : "bot");
+        payload.put("type", "message");
+
+        return payload;
     }
-  }
+
+    private Map<String, Object> createErrorResponse(String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", message);
+        response.put("status", "error");
+        return response;
+    }
+
+    private Map<String, Object> createEmptyHistoryResponse() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("data", new java.util.ArrayList<>());
+        response.put("currentPage", 0);
+        response.put("totalItems", 0);
+        response.put("totalPages", 0);
+        return response;
+    }
+
+    public static class SendMessageRequest {
+        private String message;
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+    }
 }

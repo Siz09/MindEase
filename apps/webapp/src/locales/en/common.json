@@ -213,7 +213,30 @@
     "recentSummaries": "Daily Summaries",
     "noDailySummaries": "No daily summaries yet",
     "noMoodData": "No mood data yet",
-    "startTracking": "Start tracking your mood from the Check-in page to see insights and trends."
+    "startTracking": "Start tracking your mood from the Check-in page to see insights and trends.",
+    "loading": "Loading insights...",
+    "avgMood": "Average Mood",
+    "totalCheckins": "Total Check-ins",
+    "trend": "Trend",
+    "trendUp": "Improving",
+    "trendDown": "Declining",
+    "trendStable": "Stable",
+    "completedPrograms": "Completed Programs",
+    "moodTrend": "Mood Trend",
+    "last30Days": "Last 30 days",
+    "sessionSummaries": "Session Summaries",
+    "aiGeneratedSummaries": "AI-generated summaries of your chat sessions",
+    "noSummaries": "No session summaries yet. Start chatting to see insights!",
+    "noData": "No insights yet",
+    "noDataDescription": "Start tracking your mood and chatting to see personalized insights.",
+    "status": {
+      "completed": "Completed",
+      "in_progress": "In Progress",
+      "abandoned": "Abandoned"
+    },
+    "errors": {
+      "loadFailed": "Failed to load insights"
+    }
   },
   "chatbot": {
     "name": "MindEase Assistant",
@@ -250,6 +273,20 @@
     "messageFailed": "Failed to send message",
     "reconnecting": "Reconnecting...",
     "welcomeMessage": "Hello! I'm here to support your mental wellness journey. How can I help you today?",
+    "safety": {
+      "notice": "Safety Notice",
+      "lowRisk": "We're here to support you",
+      "mediumRisk": "We want to check in with you",
+      "highRisk": "We're concerned about you",
+      "criticalRisk": "Immediate help is available",
+      "crisisResources": "Crisis Support Resources",
+      "visitWebsite": "Visit website"
+    },
+    "moodPrompt": {
+      "title": "How are you feeling?",
+      "description": "Taking a moment to check in with your mood can help us provide better support.",
+      "submit": "Submit"
+    },
     "quickResponses": {
       "anxiety": "I'm feeling anxious",
       "motivation": "I need motivation",
