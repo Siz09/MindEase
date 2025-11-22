@@ -47,7 +47,11 @@ public class RetentionPolicyService {
         logger.info("Found {} anonymous users to clean up", anonymousUsers.size());
 
         for (User user : anonymousUsers) {
-            cleanupSingleUser(user);
+            try {
+                cleanupSingleUser(user);
+            } catch (Exception e) {
+                logger.error("Failed to clean up user {}", user.getId(), e);
+            }
         }
 
         logger.info("Retention policy cleanup completed");
@@ -55,19 +59,15 @@ public class RetentionPolicyService {
 
     @Transactional
     private void cleanupSingleUser(User user) {
-        try {
-            journalEntryRepository.deleteByUserId(user.getId());
-            moodEntryRepository.deleteByUser(user);
-            List<ChatSession> sessions = chatSessionRepository.findByUser(user);
-            if (!sessions.isEmpty()) {
-                messageRepository.deleteByChatSessionIn(sessions);
-                chatSessionRepository.deleteAll(sessions);
-            }
-            userRepository.delete(user);
-            logger.debug("Cleaned up data for anonymous user: {}", user.getId());
-        } catch (Exception e) {
-            logger.error("Failed to clean up user {}", user.getId(), e);
+        journalEntryRepository.deleteByUserId(user.getId());
+        moodEntryRepository.deleteByUser(user);
+        List<ChatSession> sessions = chatSessionRepository.findByUser(user);
+        if (!sessions.isEmpty()) {
+            messageRepository.deleteByChatSessionIn(sessions);
+            chatSessionRepository.deleteAll(sessions);
         }
+        userRepository.delete(user);
+        logger.debug("Cleaned up data for anonymous user: {}", user.getId());
     }
 
     /**

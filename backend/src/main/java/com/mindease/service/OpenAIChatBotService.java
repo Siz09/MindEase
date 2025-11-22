@@ -142,7 +142,7 @@ public class OpenAIChatBotService implements ChatBotService {
         }
     }
 
-    private volatile OpenAiService openAiService;
+    private OpenAiService openAiService;
 
     private synchronized OpenAiService getOrCreateService() {
         if (openAiService != null)

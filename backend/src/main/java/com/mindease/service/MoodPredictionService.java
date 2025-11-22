@@ -14,6 +14,8 @@ import java.util.HashMap;
 @Service
 public class MoodPredictionService {
 
+    private static final double SECONDS_PER_DAY = 86400.0;
+
     @Autowired
     private MoodEntryRepository moodEntryRepository;
 
@@ -46,7 +48,7 @@ public class MoodPredictionService {
         long startTime = entries.get(0).getCreatedAt().toEpochSecond(java.time.ZoneOffset.UTC);
 
         for (MoodEntry entry : entries) {
-            double x = (entry.getCreatedAt().toEpochSecond(java.time.ZoneOffset.UTC) - startTime) / 86400.0; // days
+            double x = (entry.getCreatedAt().toEpochSecond(java.time.ZoneOffset.UTC) - startTime) / SECONDS_PER_DAY;
             double y = entry.getMoodValue();
 
             sumX += x;
@@ -69,7 +71,7 @@ public class MoodPredictionService {
 
         // Predict for tomorrow (last entry time + 1 day)
         double lastX = (entries.get(entries.size() - 1).getCreatedAt().toEpochSecond(java.time.ZoneOffset.UTC)
-                - startTime) / 86400.0;
+                - startTime) / SECONDS_PER_DAY;
         double nextX = lastX + 1.0;
         double predictedValue = slope * nextX + intercept;
 

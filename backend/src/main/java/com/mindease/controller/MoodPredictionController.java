@@ -30,10 +30,6 @@ public class MoodPredictionController {
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get mood prediction", description = "Analyze recent mood history to predict future mood and provide insights")
     public ResponseEntity<?> getPrediction(Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
-                    .body(java.util.Map.of("error", "Authentication required"));
-        }
         String email = authentication.getName();
         User user = userService.findByEmail(email)
                 .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found"));

@@ -1,5 +1,7 @@
 package com.mindease.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -9,6 +11,8 @@ import java.util.Map;
 
 @Service
 public class PerformanceMonitorService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PerformanceMonitorService.class);
 
     private final OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
     private final MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
@@ -34,8 +38,8 @@ public class PerformanceMonitorService {
             int availableProcessors = osBean.getAvailableProcessors();
             // Approximate: normalize load average by number of processors
             double cpuPercent = loadAvg > 0 && availableProcessors > 0
-                ? Math.min((loadAvg / availableProcessors) * 100, 100.0)
-                : -1.0; // Unavailable on this platform
+                    ? Math.min((loadAvg / availableProcessors) * 100, 100.0)
+                    : -1.0; // Unavailable on this platform
             metrics.put("systemCpuLoad", cpuPercent);
         }
 
@@ -44,6 +48,23 @@ public class PerformanceMonitorService {
 
         // Uptime
         metrics.put("uptime", ManagementFactory.getRuntimeMXBean().getUptime());
+
+        // Disk usage calculation
+        try {
+            java.nio.file.FileStore store = java.nio.file.Files.getFileStore(
+                    java.nio.file.Paths.get(System.getProperty("user.dir")));
+            long totalSpace = store.getTotalSpace();
+            long usableSpace = store.getUsableSpace();
+            if (totalSpace > 0) {
+                int diskUsage = (int) (((totalSpace - usableSpace) * 100) / totalSpace);
+                metrics.put("diskUsage", diskUsage);
+            } else {
+                metrics.put("diskUsage", 0);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to calculate disk usage", e);
+            metrics.put("diskUsage", 0);
+        }
 
         return metrics;
     }
