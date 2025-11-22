@@ -95,7 +95,10 @@ const JournalHistory = ({
                       {emoji}
                     </span>
                   )}
-                  <span className="entry-date">{formatDate(entry.createdAt)}</span>
+                  <div className="entry-meta-text">
+                    {entry.title && <h3 className="entry-title">{entry.title}</h3>}
+                    <span className="entry-date">{formatDate(entry.createdAt)}</span>
+                  </div>
                 </div>
                 {emoji && (
                   <span className="entry-mood-pill">

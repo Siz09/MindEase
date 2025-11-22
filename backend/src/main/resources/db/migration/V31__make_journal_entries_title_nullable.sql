@@ -2,4 +2,3 @@
 -- This migration is idempotent and safe to run even if column is already nullable
 ALTER TABLE journal_entries
 ALTER COLUMN title DROP NOT NULL;
-
