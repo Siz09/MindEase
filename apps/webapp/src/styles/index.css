@@ -39,6 +39,11 @@
   --color-error-bg: #fef2f2;
   --color-error-border: #fecaca;
 
+  --color-success: #15803d;
+  --color-success-bg: #ecfdf5;
+  --color-success-bg-light: rgba(16, 185, 129, 0.05);
+  --color-success-border-light: rgba(16, 185, 129, 0.2);
+
   --color-info: #0369a1;
   --color-info-bg: #f0f9ff;
   --color-info-border: #bae6fd;

@@ -16,7 +16,6 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Lazy initialization of messaging to prevent app crash if Firebase messaging is not properly configured
-let messagingInstance = null;
 export const messaging =
   typeof window !== 'undefined'
     ? (() => {

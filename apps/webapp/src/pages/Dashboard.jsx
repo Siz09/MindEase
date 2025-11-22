@@ -119,13 +119,18 @@ const Dashboard = () => {
           setTotalPages(data.totalPages || 0);
         }
       } catch (error) {
-        if (error.name === 'AbortError') return;
+        if (error.name === 'AbortError') {
+          // Don't clear loading state for aborted requests - let the newer request handle it
+          return;
+        }
         console.error('Error fetching journal entries:', error);
         toast.error(t('journal.errors.fetchFailed'));
       } finally {
-        setJournalLoading(false);
-        // Clear the ref if this was the current request
+        // Only clear loading state if this request is still the current one
+        // This prevents race conditions where an aborted request clears loading
+        // state while a newer request is still in flight
         if (abortControllerRef.current === controller) {
+          setJournalLoading(false);
           abortControllerRef.current = null;
         }
       }
