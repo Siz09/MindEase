@@ -33,6 +33,15 @@ public interface MoodEntryRepository extends JpaRepository<MoodEntry, UUID> {
     @Query("SELECT AVG(m.moodValue) FROM MoodEntry m WHERE m.user = :user AND m.createdAt >= :startDate")
     Double getAverageMoodByUserAndCreatedAtAfter(@Param("user") User user, @Param("startDate") LocalDateTime startDate);
 
+    /**
+     * Bulk delete for memory-efficient cleanup operations.
+     *
+     * WARNING: This derived delete query operates directly at the database level,
+     * bypassing JPA entity lifecycle callbacks and configured cascade operations.
+     *
+     * Caller must ensure no foreign key constraint violations occur.
+     * Related entities should be deleted before calling this method.
+     */
     @Transactional
     @Modifying
     void deleteByUser(User user);

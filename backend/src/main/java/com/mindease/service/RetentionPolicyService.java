@@ -48,7 +48,7 @@ public class RetentionPolicyService {
 
         for (User user : anonymousUsers) {
             try {
-                cleanupSingleUser(user);
+                cleanupSingleUserTransactional(user);
             } catch (Exception e) {
                 logger.error("Failed to clean up user {}", user.getId(), e);
             }
@@ -58,6 +58,10 @@ public class RetentionPolicyService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    protected void cleanupSingleUserTransactional(User user) {
+        cleanupSingleUser(user);
+    }
+
     private void cleanupSingleUser(User user) {
         // Perform all deletions in sequence - if any fails, entire transaction rolls
         // back

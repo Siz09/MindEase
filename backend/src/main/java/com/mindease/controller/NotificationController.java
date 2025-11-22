@@ -318,11 +318,18 @@ public class NotificationController {
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             String token = payload.get("token");
-            if (token != null && !token.isBlank()) {
-                user.setFcmToken(token);
-                userRepository.save(user);
-                logger.info("Registered FCM token for user: {}", principalEmail);
+            if (token == null || token.isBlank()) {
+                return ResponseEntity.badRequest()
+                        .body(createErrorResponse("Token is required"));
             }
+            if (token.length() > 500) {
+                return ResponseEntity.badRequest()
+                        .body(createErrorResponse("Token exceeds maximum length of 500 characters"));
+            }
+
+            user.setFcmToken(token);
+            userRepository.save(user);
+            logger.info("Registered FCM token for user: {}", principalEmail);
 
             return ResponseEntity.ok(createSuccessResponse("Token registered"));
 

@@ -25,7 +25,10 @@ public class PerformanceMonitorService {
         long heapMemoryMax = memoryBean.getHeapMemoryUsage().getMax();
         metrics.put("heapMemoryUsed", heapMemoryUsed);
         metrics.put("heapMemoryMax", heapMemoryMax);
-        metrics.put("heapMemoryUsagePercent", (double) heapMemoryUsed / heapMemoryMax * 100);
+        double heapUsagePercent = heapMemoryMax > 0
+                ? (double) heapMemoryUsed / heapMemoryMax * 100
+                : 0.0;
+        metrics.put("heapMemoryUsagePercent", heapUsagePercent);
 
         // CPU Load (if available)
         if (osBean instanceof com.sun.management.OperatingSystemMXBean) {

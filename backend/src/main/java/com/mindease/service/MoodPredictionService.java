@@ -21,7 +21,8 @@ public class MoodPredictionService {
 
     public Map<String, Object> predictMood(User user) {
         // Fetch last 14 days of mood data
-        // Use UTC for consistent date boundaries across all users regardless of server timezone
+        // Use UTC for consistent date boundaries across all users regardless of server
+        // timezone
         LocalDateTime fourteenDaysAgo = LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(14);
         List<MoodEntry> entries = moodEntryRepository.findByUserAndCreatedAtAfterOrderByCreatedAtAsc(user,
                 fourteenDaysAgo);

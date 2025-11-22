@@ -62,7 +62,7 @@ public class User {
     @Column(name = "fcm_token", length = 500)
     private String fcmToken;
 
-    @Column(name = "region", length = 10)
+    @Column(name = "region", length = 25)
     private String region = "global";
 
     // Constructors

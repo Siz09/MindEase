@@ -56,14 +56,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     /**
      * Bulk delete for memory-efficient cleanup operations.
-     * 
+     *
      * WARNING: This JPQL DELETE query operates directly at the database level,
      * bypassing JPA entity lifecycle callbacks and configured cascade operations.
-     * 
-     * Caller must delete related entities (journal entries, mood logs, chat sessions,
+     *
+     * Caller must delete related entities (journal entries, mood logs, chat
+     * sessions,
      * messages, user context, etc.) before invoking this method to prevent orphaned
      * records and foreign key constraint violations.
-     * 
+     *
      * See RetentionPolicyService.cleanupSingleUser() for proper usage pattern.
      */
     @Query("DELETE FROM User u WHERE u.anonymousMode = true AND u.createdAt < :threshold")
