@@ -3,6 +3,7 @@ package com.mindease.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,10 @@ public class MoodCheckInRequest {
     private List<String> tags;
 
     @NotNull(message = "Check-in type is required")
+    @Pattern(
+        regexp = "^(pre_chat|post_chat|standalone)$",
+        message = "Check-in type must be one of: pre_chat, post_chat, standalone"
+    )
     private String checkinType; // "pre_chat", "post_chat", "standalone"
 
     private UUID sessionId; // Optional: link to chat session

@@ -28,5 +28,13 @@ public enum RiskLevel {
     /**
      * Critical risk - immediate danger, active crisis, requires urgent intervention
      */
-    CRITICAL
+    CRITICAL;
+
+    /**
+     * Utility method to check if the level is HIGH or CRITICAL.
+     * This avoids relying on enum ordinal ordering.
+     */
+    public boolean isHighOrCritical() {
+        return this == HIGH || this == CRITICAL;
+    }
 }

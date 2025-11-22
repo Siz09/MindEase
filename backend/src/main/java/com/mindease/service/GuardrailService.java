@@ -104,7 +104,7 @@ public class GuardrailService {
                 log.warn("FLAGGED: Sensitive content detected in AI response: {}", sensitive);
 
                 // For high-risk users, be extra cautious
-                if (userRiskLevel.ordinal() >= RiskLevel.HIGH.ordinal()) {
+                if (userRiskLevel.isHighOrCritical()) {
                     return new GuardrailResult(
                         ModerationAction.MODIFIED,
                         "Sensitive content removed for high-risk user: " + sensitive,
@@ -131,7 +131,7 @@ public class GuardrailService {
         }
 
         // Check if response is too dismissive for high-risk situations
-        if (userRiskLevel.ordinal() >= RiskLevel.HIGH.ordinal()) {
+        if (userRiskLevel.isHighOrCritical()) {
             if (isDismissive(normalized)) {
                 log.warn("MODIFIED: Dismissive response detected for high-risk user");
                 return new GuardrailResult(

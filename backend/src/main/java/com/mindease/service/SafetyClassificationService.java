@@ -172,12 +172,30 @@ public class SafetyClassificationService {
     }
 
     /**
-     * Check if text contains any keywords from a list.
+     * Check if text contains any keywords from a list, with basic negation handling.
+     * Uses word boundaries and avoids counting negated phrases as positive matches.
      */
     private boolean containsKeywords(String text, List<String> keywords) {
+        if (keywords == null || keywords.isEmpty()) {
+            return false;
+        }
+
+        // Common negation patterns (e.g., "don't", "never", "not")
+        String negationPattern = "\\b(don't|dont|do not|never|not|no|wont|won't|will not)\\s+\\w*\\s*";
+
         for (String keyword : keywords) {
-            if (text.contains(keyword)) {
-                return true;
+            // Use word boundaries for more precise matching
+            Pattern pattern = Pattern.compile("\\b" + Pattern.quote(keyword) + "\\b", Pattern.CASE_INSENSITIVE);
+            var matcher = pattern.matcher(text);
+
+            while (matcher.find()) {
+                // Check if match is preceded by negation (within ~20 chars)
+                int start = Math.max(0, matcher.start() - 20);
+                String context = text.substring(start, matcher.start());
+
+                if (!context.matches(".*" + negationPattern + "$")) {
+                    return true;
+                }
             }
         }
         return false;

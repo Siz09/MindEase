@@ -44,23 +44,29 @@ public class SafeAIChatService implements ChatBotService {
 
             // Step 2: Get base AI response (which already includes some safety logic)
             ChatResponse baseResponse = baseChatService.generateResponse(message, userId, history);
+            if (baseResponse == null) {
+                throw new IllegalStateException("Base chat service returned null response");
+            }
 
             // Step 3: Apply guardrails to AI response
             GuardrailResult guardrailResult = guardrailService.checkResponse(
                 baseResponse.getContent(),
                 riskLevel
             );
+            if (guardrailResult == null) {
+                throw new IllegalStateException("Guardrail service returned null result");
+            }
 
             // Step 4: Create enhanced response with safety metadata
             ChatResponse enhancedResponse = new ChatResponse();
             enhancedResponse.setContent(guardrailResult.getFinalResponse());
-            enhancedResponse.setCrisisFlagged(riskLevel.ordinal() >= RiskLevel.HIGH.ordinal());
+            enhancedResponse.setCrisisFlagged(riskLevel.isHighOrCritical());
             enhancedResponse.setProvider(baseResponse.getProvider());
             enhancedResponse.setRiskLevel(riskLevel);
             enhancedResponse.setModerationAction(guardrailResult.getAction());
 
             // Step 5: Attach crisis resources for high-risk situations
-            if (riskLevel.ordinal() >= RiskLevel.HIGH.ordinal()) {
+            if (riskLevel.isHighOrCritical()) {
                 String userLanguage = "en"; // TODO: Get from user preferences
                 String userRegion = "global"; // TODO: Get from user profile or IP geolocation
 

@@ -1,6 +1,10 @@
 package com.mindease.service;
 
-import com.mindease.model.*;
+import com.mindease.model.ChatSession;
+import com.mindease.model.Message;
+import com.mindease.model.ModerationAction;
+import com.mindease.model.RiskLevel;
+import com.mindease.model.User;
 import com.mindease.repository.ChatSessionRepository;
 import com.mindease.repository.MessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,7 +73,7 @@ public class OptimizedChatService {
 
         // Save message with safety metadata
         Message message = new Message(chatSession, content, isUserMessage);
-        message.setIsCrisisFlagged(riskLevel.ordinal() >= RiskLevel.HIGH.ordinal());
+        message.setIsCrisisFlagged(riskLevel.isHighOrCritical());
         message.setRiskLevel(riskLevel);
         message.setSafetyChecked(true);
         message.setModerationAction(moderationAction);

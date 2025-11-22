@@ -11,10 +11,11 @@ export function cn(...inputs) {
 /**
  * Format date for display
  */
-export function formatDate(date) {
+export function formatDate(date, locale = 'en-US') {
   if (!date) return '';
   const d = new Date(date);
-  return d.toLocaleDateString('en-US', {
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -24,10 +25,11 @@ export function formatDate(date) {
 /**
  * Format time for display
  */
-export function formatTime(date) {
+export function formatTime(date, locale = 'en-US') {
   if (!date) return '';
   const d = new Date(date);
-  return d.toLocaleTimeString('en-US', {
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString(locale, {
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -41,6 +43,7 @@ export function formatRelativeTime(date) {
 
   const now = new Date();
   const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
   const diffMs = now - d;
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);
@@ -58,6 +61,7 @@ export function formatRelativeTime(date) {
  * Get mood color class based on score (1-5)
  */
 export function getMoodColor(score) {
+  if (score == null || score < 1 || score > 5) return 'mood-3'; // default to neutral
   if (score <= 1) return 'mood-1';
   if (score <= 2) return 'mood-2';
   if (score <= 3) return 'mood-3';
@@ -69,6 +73,7 @@ export function getMoodColor(score) {
  * Get mood label based on score (1-5)
  */
 export function getMoodLabel(score) {
+  if (score == null || score < 1 || score > 5) return 'Unknown';
   if (score <= 1) return 'Very Bad';
   if (score <= 2) return 'Bad';
   if (score <= 3) return 'Okay';
@@ -110,6 +115,7 @@ export function getInitials(name) {
   if (!name) return '?';
   return name
     .split(' ')
+    .filter((n) => n.length > 0)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
@@ -122,9 +128,10 @@ export function getInitials(name) {
 export function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
+    const context = this;
     const later = () => {
       clearTimeout(timeout);
-      func(...args);
+      func.apply(context, args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
@@ -142,5 +149,6 @@ export function sleep(ms) {
  * Check if user prefers reduced motion
  */
 export function prefersReducedMotion() {
+  if (typeof window === 'undefined') return false;
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }

@@ -1,6 +1,8 @@
 package com.mindease.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +28,8 @@ public class MoodCheckIn {
     private ChatSession session;
 
     @Column(name = "score", nullable = false)
+    @Min(1)
+    @Max(5)
     private Integer score; // 1-5 scale
 
     @Column(name = "tags", columnDefinition = "TEXT[]")
@@ -102,7 +106,7 @@ public class MoodCheckIn {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
+    protected void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
