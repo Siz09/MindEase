@@ -6,12 +6,14 @@ import com.mindease.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -29,10 +31,10 @@ public class MoodPredictionController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get mood prediction", description = "Analyze recent mood history to predict future mood and provide insights")
-    public ResponseEntity<?> getPrediction(Authentication authentication) {
+    public ResponseEntity<Map<String, Object>> getPrediction(Authentication authentication) {
         String email = authentication.getName();
         User user = userService.findByEmail(email)
-                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         Map<String, Object> prediction = moodPredictionService.predictMood(user);
         return ResponseEntity.ok(prediction);

@@ -49,8 +49,15 @@ public class OpenAIChatBotService implements ChatBotService {
             StringBuilder contextBuilder = new StringBuilder();
             if (userContext != null && !userContext.isEmpty()) {
                 contextBuilder.append("\nUser Context:\n");
-                userContext
-                        .forEach((k, v) -> contextBuilder.append("- ").append(k).append(": ").append(v).append("\n"));
+                // Sanitize userContext to prevent PII leakage to third-party OpenAI service
+                // Only include non-sensitive context fields - filter out emails, identifiers, and personal data
+                java.util.Set<String> sensitiveKeys = java.util.Set.of("email", "userId", "user_id", "id", "phone",
+                        "phoneNumber", "ssn", "address", "personalInfo", "pii");
+                userContext.entrySet().stream()
+                        .filter(entry -> entry.getKey() != null && entry.getValue() != null
+                                && !sensitiveKeys.contains(entry.getKey().toLowerCase()))
+                        .forEach(entry -> contextBuilder.append("- ").append(entry.getKey()).append(": ")
+                                .append(entry.getValue()).append("\n"));
             }
 
             // Persona + safety-first system prompt derived from your spec

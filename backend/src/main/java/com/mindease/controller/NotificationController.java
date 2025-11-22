@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalTime;
@@ -86,7 +87,7 @@ public class NotificationController {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
             long unreadCount = notificationRepository.countByUserAndIsReadFalse(user);
 
@@ -149,7 +150,7 @@ public class NotificationController {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
             // Bulk update to mark all notifications as read (performance optimized)
             int count = notificationRepository.markAllAsReadForUser(user);
@@ -181,7 +182,7 @@ public class NotificationController {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
             Optional<Notification> notificationOpt = notificationRepository.findById(notificationId);
 
@@ -223,7 +224,7 @@ public class NotificationController {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
@@ -259,7 +260,7 @@ public class NotificationController {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
             // Update quiet hours if provided
             if (preferences.containsKey("quietHoursStart") && preferences.containsKey("quietHoursEnd")) {
@@ -315,7 +316,7 @@ public class NotificationController {
         String principalEmail = authentication != null ? authentication.getName() : "unknown";
         try {
             User user = userService.findByEmail(principalEmail)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
             String token = payload.get("token");
             if (token == null || token.isBlank()) {

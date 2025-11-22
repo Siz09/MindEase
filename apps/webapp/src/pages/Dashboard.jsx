@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -80,6 +80,9 @@ const Dashboard = () => {
     typeof navigator !== 'undefined' ? !navigator.onLine : false
   );
 
+  // Abort controller ref for request cancellation
+  const abortControllerRef = useRef(null);
+
   // Handle online/offline status
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -96,9 +99,19 @@ const Dashboard = () => {
   // Fetch journal entries
   const fetchJournalEntries = useCallback(
     async (page = 0) => {
+      // Cancel any in-flight request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       try {
         setJournalLoading(true);
-        const res = await api.get(`/journal/history?page=${page}&size=10`);
+        const res = await api.get(`/journal/history?page=${page}&size=10`, {
+          signal: controller.signal,
+        });
         const data = res.data || {};
         if (data.success) {
           setJournalEntries(data.entries || []);
@@ -106,10 +119,15 @@ const Dashboard = () => {
           setTotalPages(data.totalPages || 0);
         }
       } catch (error) {
+        if (error.name === 'AbortError') return;
         console.error('Error fetching journal entries:', error);
         toast.error(t('journal.errors.fetchFailed'));
       } finally {
         setJournalLoading(false);
+        // Clear the ref if this was the current request
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null;
+        }
       }
     },
     [t]
