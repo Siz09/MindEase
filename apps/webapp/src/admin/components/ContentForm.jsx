@@ -32,9 +32,21 @@ export default function ContentForm({ isOpen, onClose, onSubmit, initialData }) 
         body: '',
       });
     }
-  }, [initialData, isOpen]);
+  }, [initialData]);
 
   const handleSubmit = () => {
+    if (!formData.title.trim()) {
+      alert('Title is required');
+      return;
+    }
+    if (!formData.description.trim()) {
+      alert('Description is required');
+      return;
+    }
+    if (!formData.body.trim()) {
+      alert('Content body is required');
+      return;
+    }
     onSubmit(formData);
   };
 

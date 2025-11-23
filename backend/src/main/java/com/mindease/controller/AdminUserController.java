@@ -297,11 +297,8 @@ public class AdminUserController {
         if (subscription != null) {
             subPlan = subscription.getPlanType() != null ? subscription.getPlanType().name() : "Free";
             subStatus = subscription.getStatus() != null ? subscription.getStatus().name() : "none";
-            // Assuming updatedAt or createdAt as a proxy for renewal if not explicitly
-            // tracked
-            // Ideally Subscription entity should have currentPeriodEnd
-            subRenews = subscription.getUpdatedAt() != null ? subscription.getUpdatedAt().atOffset(ZoneOffset.UTC)
-                    : null;
+            // TODO: Add currentPeriodEnd to Subscription entity
+            subRenews = null; // Don't show incorrect renewal dates
         }
 
         return new UserAdminSummary(
@@ -364,24 +361,15 @@ public class AdminUserController {
     private Map<UUID, Subscription> fetchSubscriptions(List<UUID> userIds) {
         if (userIds.isEmpty())
             return java.util.Collections.emptyMap();
-        // Naive implementation: N+1 query or complex join.
-        // For now, let's just fetch all subscriptions for these users and pick the
-        // latest in memory
-        // A better approach would be a custom query to get the latest subscription per
-        // user
-        List<Subscription> allSubs = subscriptionRepository.findAll(); // This is bad for scale, but okay for MVP with
-                                                                       // small user base
-        // Optimization: findByUserIdIn(userIds)
-
+        // Fetch all subscriptions for these users and group by userId, keeping only the latest
+        List<Subscription> subs = subscriptionRepository.findByUser_IdIn(userIds);
         Map<UUID, Subscription> map = new HashMap<>();
-        // We need to query subscriptions for these users.
-        // Since we don't have a bulk latest subscription query handy, and to avoid N+1
-        // loop:
-        // We will just loop for now as the page size is small (25).
-        // Real production code should use a window function or lateral join.
-        for (UUID uid : userIds) {
-            subscriptionRepository.findFirstByUser_IdOrderByCreatedAtDesc(uid)
-                    .ifPresent(s -> map.put(uid, s));
+        for (Subscription sub : subs) {
+            UUID userId = sub.getUser().getId();
+            Subscription existing = map.get(userId);
+            if (existing == null || sub.getCreatedAt().isAfter(existing.getCreatedAt())) {
+                map.put(userId, sub);
+            }
         }
         return map;
     }

@@ -177,7 +177,14 @@ export default function CrisisFlags() {
       toast.success('Flag resolved');
       load(); // Reload list
       if (selectedFlag?.id === flag.id) {
-        setSelectedFlag({ ...selectedFlag, status: 'RESOLVED' });
+        // Re-fetch flag to ensure consistent state
+        try {
+          const { data } = await api.get(`/admin/crisis-flags/${flag.id}`);
+          setSelectedFlag(data);
+        } catch (fetchErr) {
+          console.error('Failed to refetch flag:', fetchErr);
+          setSelectedFlag({ ...selectedFlag, status: 'RESOLVED' });
+        }
       }
     } catch (err) {
       console.error('Failed to resolve flag:', err);

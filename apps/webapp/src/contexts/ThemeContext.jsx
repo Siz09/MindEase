@@ -25,12 +25,6 @@ export const ThemeProvider = ({ children }) => {
     } catch (error) {
       console.warn('Failed to set theme:', error);
     }
-
-    return () => {
-      if (typeof window !== 'undefined') {
-        document.documentElement.removeAttribute('data-theme');
-      }
-    };
   }, [theme]);
 
   const toggleTheme = () => {

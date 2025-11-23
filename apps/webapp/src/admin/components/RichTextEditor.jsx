@@ -1,17 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from './shared';
+import DOMPurify from 'dompurify';
 
-export default function RichTextEditor({ value, onChange, placeholder }) {
+export default function RichTextEditor({ value, onChange }) {
   const contentRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
+  const sanitizedValue = DOMPurify.sanitize(value || '');
 
   useEffect(() => {
     if (contentRef.current && value !== contentRef.current.innerHTML) {
-      // Only update if content is significantly different to avoid cursor jumping
-      // This is a simple check; for production, a more robust diff might be needed
-      if (!contentRef.current.innerHTML && value) {
-        contentRef.current.innerHTML = value;
-      }
+      contentRef.current.innerHTML = value || '';
     }
   }, [value]);
 
@@ -107,7 +105,7 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
           fontSize: '14px',
           lineHeight: '1.6',
         }}
-        dangerouslySetInnerHTML={{ __html: value }}
+        dangerouslySetInnerHTML={{ __html: sanitizedValue }}
       />
     </div>
   );

@@ -38,6 +38,8 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, UUID
 
   Optional<Subscription> findFirstByUser_IdOrderByCreatedAtDesc(UUID userId);
 
+  List<Subscription> findByUser_IdIn(List<UUID> userIds);
+
   // Pessimistic lock for webhook processing to avoid concurrent updates
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT s FROM Subscription s WHERE s.checkoutSessionId = :sessionId")

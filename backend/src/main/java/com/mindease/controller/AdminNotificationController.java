@@ -61,11 +61,19 @@ public class AdminNotificationController {
             return ResponseEntity.badRequest().body(Map.of("error", "Targeting specific user not yet implemented"));
         } else {
             // Broadcast
+            UUID notificationId = UUID.randomUUID();
+            String messageText = message;
+            OffsetDateTime timestamp = OffsetDateTime.now(ZoneOffset.UTC);
+
+            // TODO: Persist system announcement to database
+            // SystemAnnouncement announcement = new SystemAnnouncement(notificationId, messageText, timestamp);
+            // announcementRepository.save(announcement);
+
             messagingTemplate.convertAndSend("/topic/notifications", Map.of(
-                    "id", UUID.randomUUID(),
+                    "id", notificationId,
                     "title", "System Announcement",
-                    "message", message,
-                    "timestamp", OffsetDateTime.now(ZoneOffset.UTC)));
+                    "message", messageText,
+                    "timestamp", timestamp));
         }
 
         return ResponseEntity.ok(Map.of("status", "sent"));

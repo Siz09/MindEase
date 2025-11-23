@@ -57,6 +57,9 @@ public class SimpleChatBotService implements ChatBotService {
 
     @Override
     public boolean isCrisisMessage(String message) {
+        if (message == null) {
+            return false;
+        }
         String lowerMessage = message.toLowerCase();
         return lowerMessage.contains("suicide") || lowerMessage.contains("kill myself") ||
                 lowerMessage.contains("want to die") || lowerMessage.contains("harm myself");
