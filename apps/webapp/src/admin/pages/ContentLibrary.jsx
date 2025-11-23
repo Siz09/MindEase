@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Badge, FilterBar, Select, Input, Modal, Card } from '../components/shared';
 import Toast from '../components/shared/Toast';
+import ContentForm from '../components/ContentForm';
 import adminApi from '../adminApi';
 
 export default function ContentLibrary() {
@@ -17,6 +18,8 @@ export default function ContentLibrary() {
 
   const [selectedContent, setSelectedContent] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
@@ -67,6 +70,37 @@ export default function ContentLibrary() {
     }
   };
 
+  const handleCreateClick = () => {
+    setEditingItem(null);
+    setShowForm(true);
+  };
+
+  const handleEditClick = (item) => {
+    setEditingItem(item);
+    setShowForm(true);
+    setShowModal(false); // Close details modal if open
+  };
+
+  const handleFormSubmit = async (formData) => {
+    try {
+      if (editingItem) {
+        await adminApi.put(`/admin/content/${editingItem.id}`, formData);
+        setToast({ type: 'success', message: 'Content updated successfully' });
+      } else {
+        await adminApi.post('/admin/content', formData);
+        setToast({ type: 'success', message: 'Content created successfully' });
+      }
+      setShowForm(false);
+      loadContent();
+    } catch (err) {
+      console.error('Failed to save content:', err);
+      setToast({
+        type: 'error',
+        message: 'Failed to save content. Please try again.',
+      });
+    }
+  };
+
   const handleContentClick = (item) => {
     setSelectedContent(item);
     setShowModal(true);
@@ -85,7 +119,9 @@ export default function ContentLibrary() {
         <h1 className="page-title">Content Library</h1>
         <p className="page-subtitle">Manage wellness resources, articles, and exercises</p>
         <div className="page-actions">
-          <Button variant="primary">+ Create New Content</Button>
+          <Button variant="primary" onClick={handleCreateClick}>
+            + Create New Content
+          </Button>
         </div>
       </div>
 
@@ -256,7 +292,15 @@ export default function ContentLibrary() {
                     borderTop: '1px solid var(--gray-light)',
                   }}
                 >
-                  <Button variant="ghost" size="sm" style={{ flex: 1 }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    style={{ flex: 1 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditClick(item);
+                    }}
+                  >
                     Edit
                   </Button>
                   <Button
@@ -287,7 +331,7 @@ export default function ContentLibrary() {
             <Button variant="ghost" onClick={() => setShowModal(false)}>
               Close
             </Button>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
+            <Button variant="secondary" onClick={() => handleEditClick(selectedContent)}>
               Edit
             </Button>
             <Button variant="danger" onClick={() => handleDeleteContent(selectedContent?.id)}>
@@ -350,13 +394,15 @@ export default function ContentLibrary() {
           </div>
         )}
       </Modal>
-      {toast && (
-        <Toast
-          type={toast.type}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
-      )}
+
+      <ContentForm
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={handleFormSubmit}
+        initialData={editingItem}
+      />
+
+      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
     </div>
   );
 }

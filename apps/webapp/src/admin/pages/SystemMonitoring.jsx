@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Card } from '../components/shared';
+import { Card, Button, Input } from '../components/shared';
+import Toast from '../components/shared/Toast';
 import adminApi from '../adminApi';
 
 export default function SystemMonitoring() {
@@ -15,10 +16,14 @@ export default function SystemMonitoring() {
     cpu: 0,
     memory: 0,
     disk: 0,
+    connectedUsers: 0,
   });
 
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
+  const [sending, setSending] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const loadSystemStatus = useCallback(async () => {
     setLoading(true);
@@ -38,6 +43,23 @@ export default function SystemMonitoring() {
       setLoading(false);
     }
   }, []);
+
+  const handleSendAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!announcement.trim()) return;
+
+    setSending(true);
+    try {
+      await adminApi.post('/admin/notifications', { message: announcement });
+      setToast({ type: 'success', message: 'Announcement sent successfully' });
+      setAnnouncement('');
+    } catch (err) {
+      console.error('Failed to send announcement:', err);
+      setToast({ type: 'error', message: 'Failed to send announcement' });
+    } finally {
+      setSending(false);
+    }
+  };
 
   useEffect(() => {
     loadSystemStatus();
@@ -195,50 +217,108 @@ export default function SystemMonitoring() {
         </Card>
       </div>
 
-      <Card
-        className="bento-card"
-        header={<div className="card-header-title">Server Resources</div>}
-        style={{ marginBottom: 'var(--spacing-lg)' }}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '2fr 1fr',
+          gap: 'var(--spacing-lg)',
+          marginBottom: 'var(--spacing-lg)',
+        }}
       >
-        <div style={{ padding: 'var(--spacing-lg)' }}>
-          <HealthBar label="CPU Usage" value={health.cpu >= 0 ? health.cpu : 0} />
-          <HealthBar label="Memory Usage" value={health.memory >= 0 ? health.memory : 0} />
-          <HealthBar label="Disk Usage" value={health.disk >= 0 ? health.disk : 0} />
+        <Card
+          className="bento-card"
+          header={<div className="card-header-title">Server Resources</div>}
+        >
+          <div style={{ padding: 'var(--spacing-lg)' }}>
+            <HealthBar label="CPU Usage" value={health.cpu >= 0 ? health.cpu : 0} />
+            <HealthBar label="Memory Usage" value={health.memory >= 0 ? health.memory : 0} />
+            <HealthBar label="Disk Usage" value={health.disk >= 0 ? health.disk : 0} />
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 'var(--spacing-md)',
-              marginTop: 'var(--spacing-lg)',
-              paddingTop: 'var(--spacing-lg)',
-              borderTop: '1px solid var(--color-border)',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                UPTIME
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: 'var(--spacing-md)',
+                marginTop: 'var(--spacing-lg)',
+                paddingTop: 'var(--spacing-lg)',
+                borderTop: '1px solid var(--color-border)',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                  UPTIME
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: '700' }}>
+                  {(() => {
+                    if (!health.uptime) return '00:00:00';
+                    const totalSeconds = Math.floor(health.uptime / 1000);
+                    const hours = Math.floor(totalSeconds / 3600);
+                    const minutes = Math.floor((totalSeconds % 3600) / 60);
+                    const seconds = totalSeconds % 60;
+                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                  })()}
+                </div>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                {(() => {
-                  if (!health.uptime) return '00:00:00';
-                  const totalSeconds = Math.floor(health.uptime / 1000);
-                  const hours = Math.floor(totalSeconds / 3600);
-                  const minutes = Math.floor((totalSeconds % 3600) / 60);
-                  const seconds = totalSeconds % 60;
-                  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                })()}
+              <div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                  ACTIVE THREADS
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: '700' }}>
+                  {health.activeThreads || 0}
+                </div>
               </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                ACTIVE THREADS
+              <div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+                  CONNECTED USERS
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)' }}>
+                  {health.connectedUsers || 0}
+                </div>
               </div>
-              <div style={{ fontSize: '18px', fontWeight: '700' }}>{health.activeThreads || 0}</div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+
+        <Card
+          className="bento-card"
+          header={<div className="card-header-title">System Announcement</div>}
+        >
+          <div
+            style={{
+              padding: 'var(--spacing-lg)',
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+            }}
+          >
+            <p
+              style={{ fontSize: '13px', color: 'var(--gray)', marginBottom: 'var(--spacing-md)' }}
+            >
+              Broadcast a message to all currently connected users.
+            </p>
+            <form
+              onSubmit={handleSendAnnouncement}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 'var(--spacing-md)',
+                flex: 1,
+              }}
+            >
+              <Input
+                as="textarea"
+                placeholder="Type your announcement here..."
+                value={announcement}
+                onChange={(e) => setAnnouncement(e.target.value)}
+                style={{ flex: 1, minHeight: '100px', resize: 'none' }}
+              />
+              <Button variant="primary" type="submit" disabled={sending || !announcement.trim()}>
+                {sending ? 'Sending...' : 'Send Announcement'}
+              </Button>
+            </form>
+          </div>
+        </Card>
+      </div>
 
       <Card
         className="bento-card"
@@ -316,6 +396,7 @@ export default function SystemMonitoring() {
           </div>
         )}
       </Card>
+      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
     </div>
   );
 }

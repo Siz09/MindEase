@@ -5,5 +5,6 @@ public record SystemHealthResponse(
         int memory,
         int disk,
         long uptime,
-        int activeThreads) {
+        int activeThreads,
+        int connectedUsers) {
 }

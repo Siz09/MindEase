@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../adminApi';
 import { useAdminAuth } from '../AdminAuthContext';
 import { toCSV } from '../../utils/export';
+import { Modal, Button, Badge } from '../components/shared';
+import { toast } from 'react-toastify';
 
 const pct = (n) => `${Math.round((n || 0) * 100)}%`;
 
@@ -16,6 +18,10 @@ export default function CrisisFlags() {
   const [loading, setLoading] = useState(false);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [showTranscriptModal, setShowTranscriptModal] = useState(false);
+  const [transcript, setTranscript] = useState([]);
+  const [transcriptLoading, setTranscriptLoading] = useState(false);
+  const [selectedFlag, setSelectedFlag] = useState(null);
   const esRef = useRef(null);
   const inFlightRef = useRef(false);
   const debounceRef = useRef(null);
@@ -64,7 +70,7 @@ export default function CrisisFlags() {
     }
 
     const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(/\/$/, '');
-    const sseUrl = `${base}/api/admin/crisis-flags/stream`;
+    const sseUrl = `${base}/api/admin/crisis-flags/stream?access_token=${encodeURIComponent(adminToken || '')}`;
     let startedPolling = false;
 
     function startPolling() {
@@ -145,9 +151,53 @@ export default function CrisisFlags() {
       { key: 'chatId', title: 'Chat ID' },
       { key: 'keywordDetected', title: 'Keyword' },
       { key: 'riskScore', title: 'Risk' },
+      { key: 'status', title: 'Status' },
       { key: 'createdAt', title: 'When' },
     ]);
   }
+
+  const handleViewTranscript = async (flag) => {
+    setSelectedFlag(flag);
+    setShowTranscriptModal(true);
+    setTranscriptLoading(true);
+    try {
+      const { data } = await api.get(`/admin/crisis-flags/${flag.id}/transcript`);
+      setTranscript(data);
+    } catch (err) {
+      console.error('Failed to load transcript:', err);
+      toast.error('Failed to load transcript');
+    } finally {
+      setTranscriptLoading(false);
+    }
+  };
+
+  const handleResolve = async (flag) => {
+    try {
+      await api.post(`/admin/crisis-flags/${flag.id}/resolve`);
+      toast.success('Flag resolved');
+      load(); // Reload list
+      if (selectedFlag?.id === flag.id) {
+        setSelectedFlag({ ...selectedFlag, status: 'RESOLVED' });
+      }
+    } catch (err) {
+      console.error('Failed to resolve flag:', err);
+      toast.error('Failed to resolve flag');
+    }
+  };
+
+  const handleEscalate = async (flag) => {
+    try {
+      await api.post(`/admin/crisis-flags/${flag.id}/escalate`);
+      toast.success('Flag escalated');
+      load(); // Reload list
+      if (selectedFlag?.id === flag.id) {
+        setSelectedFlag({ ...selectedFlag, escalated: true });
+      }
+    } catch (err) {
+      console.error('Failed to escalate flag:', err);
+      toast.error('Failed to escalate flag');
+    }
+  };
 
   return (
     <div>
@@ -178,20 +228,43 @@ export default function CrisisFlags() {
           <thead>
             <tr>
               <th>User</th>
-              <th>Chat ID</th>
               <th>Keyword</th>
               <th>Risk</th>
+              <th>Status</th>
               <th>When</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td>{r.userId}</td>
-                <td>{r.chatId}</td>
+                <td>
+                  <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>
+                    {r.userId.substring(0, 8)}...
+                  </div>
+                </td>
                 <td>{r.keywordDetected ?? r.keyword}</td>
                 <td>{r.riskScore != null ? pct(r.riskScore) : '—'}</td>
+                <td>
+                  <Badge
+                    type={r.status === 'RESOLVED' ? 'success' : r.escalated ? 'danger' : 'warning'}
+                  >
+                    {r.status === 'RESOLVED' ? 'Resolved' : r.escalated ? 'Escalated' : 'Open'}
+                  </Badge>
+                </td>
                 <td>{new Date(r.createdAt).toLocaleString()}</td>
+                <td>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button size="sm" variant="ghost" onClick={() => handleViewTranscript(r)}>
+                      View
+                    </Button>
+                    {r.status !== 'RESOLVED' && (
+                      <Button size="sm" variant="success" onClick={() => handleResolve(r)}>
+                        Resolve
+                      </Button>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
             {!loading && rows.length === 0 && (
@@ -246,6 +319,79 @@ export default function CrisisFlags() {
           </label>
         </div>
       </div>
+
+      <Modal
+        isOpen={showTranscriptModal}
+        title="Crisis Context & Transcript"
+        onClose={() => setShowTranscriptModal(false)}
+        footer={
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <Button variant="ghost" onClick={() => setShowTranscriptModal(false)}>
+              Close
+            </Button>
+            {selectedFlag && selectedFlag.status !== 'RESOLVED' && (
+              <Button variant="success" onClick={() => handleResolve(selectedFlag)}>
+                Resolve Flag
+              </Button>
+            )}
+            {selectedFlag && !selectedFlag.escalated && (
+              <Button variant="danger" onClick={() => handleEscalate(selectedFlag)}>
+                Escalate
+              </Button>
+            )}
+          </div>
+        }
+      >
+        {selectedFlag && (
+          <div
+            style={{
+              marginBottom: '16px',
+              padding: '12px',
+              background: '#fef2f2',
+              borderRadius: '8px',
+            }}
+          >
+            <strong>Trigger:</strong> {selectedFlag.keywordDetected} <br />
+            <strong>Risk Score:</strong> {pct(selectedFlag.riskScore)}
+          </div>
+        )}
+
+        <div
+          style={{
+            maxHeight: '400px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+          }}
+        >
+          {transcriptLoading ? (
+            <div style={{ textAlign: 'center', padding: '20px' }}>Loading transcript...</div>
+          ) : transcript.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px' }}>No transcript available</div>
+          ) : (
+            transcript.map((msg) => (
+              <div
+                key={msg.id}
+                style={{
+                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                  maxWidth: '80%',
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  backgroundColor: msg.sender === 'user' ? '#e0f2fe' : '#f3f4f6',
+                  color: '#1f2937',
+                }}
+              >
+                <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
+                  {msg.sender === 'user' ? 'User' : 'AI'} •{' '}
+                  {new Date(msg.createdAt).toLocaleTimeString()}
+                </div>
+                <div>{msg.content}</div>
+              </div>
+            ))
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

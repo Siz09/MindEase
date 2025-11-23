@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,11 +29,14 @@ public class AdminSystemController {
 
     private final DataSource dataSource;
     private final com.mindease.service.PerformanceMonitorService performanceMonitorService;
+    private final SimpUserRegistry userRegistry;
 
     public AdminSystemController(DataSource dataSource,
-            com.mindease.service.PerformanceMonitorService performanceMonitorService) {
+            com.mindease.service.PerformanceMonitorService performanceMonitorService,
+            SimpUserRegistry userRegistry) {
         this.dataSource = dataSource;
         this.performanceMonitorService = performanceMonitorService;
+        this.userRegistry = userRegistry;
     }
 
     @GetMapping("/status")
@@ -86,7 +90,7 @@ public class AdminSystemController {
         // Only clamp valid CPU values (≥ 0); preserve -1 for unavailable
         int clampedCpu = cpu < 0 ? cpu : clampPercent(cpu);
         return new SystemHealthResponse(clampedCpu, clampPercent(memoryUsage), clampPercent(disk), uptime,
-                activeThreads);
+                activeThreads, userRegistry.getUserCount());
     }
 
     private static int clampPercent(int value) {

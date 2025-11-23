@@ -16,13 +16,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import com.mindease.model.Content;
+import com.mindease.repository.ContentRepository;
+import org.springframework.data.domain.Sort;
+
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,37 +30,10 @@ import java.util.stream.Collectors;
 @Tag(name = "Admin Content")
 public class AdminContentController {
 
-    private final Map<UUID, ContentItemDto> store = new ConcurrentHashMap<>();
+    private final ContentRepository contentRepository;
 
-    public AdminContentController() {
-        // Seed with a few sample items so the UI has something to display.
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        putSample(new ContentItemDto(
-                UUID.randomUUID(),
-                "Guided Breathing Exercise",
-                "A simple 5-minute guided breathing exercise to reduce stress.",
-                "meditation",
-                "exercise",
-                null,
-                4.8,
-                124,
-                now.minusDays(10)
-        ));
-        putSample(new ContentItemDto(
-                UUID.randomUUID(),
-                "Understanding Anxiety",
-                "Educational article explaining common anxiety symptoms and coping strategies.",
-                "anxiety",
-                "article",
-                null,
-                4.6,
-                89,
-                now.minusDays(5)
-        ));
-    }
-
-    private void putSample(ContentItemDto dto) {
-        store.put(dto.id(), dto);
+    public AdminContentController(ContentRepository contentRepository) {
+        this.contentRepository = contentRepository;
     }
 
     @GetMapping
@@ -69,20 +42,21 @@ public class AdminContentController {
     public List<ContentItemDto> list(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String category
-    ) {
-        return store.values().stream()
+            @RequestParam(required = false) String category) {
+        List<Content> all = contentRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+        return all.stream()
                 .filter(item -> type == null || type.isBlank()
-                        || (item.type() != null && type.equalsIgnoreCase(item.type())))
+                        || (item.getType() != null && type.equalsIgnoreCase(item.getType())))
                 .filter(item -> category == null || category.isBlank()
-                        || (item.category() != null && category.equalsIgnoreCase(item.category())))
+                        || (item.getCategory() != null && category.equalsIgnoreCase(item.getCategory())))
                 .filter(item -> {
-                    if (search == null || search.isBlank()) return true;
+                    if (search == null || search.isBlank())
+                        return true;
                     String q = search.toLowerCase();
-                    return (item.title() != null && item.title().toLowerCase().contains(q))
-                            || (item.description() != null && item.description().toLowerCase().contains(q));
+                    return (item.getTitle() != null && item.getTitle().toLowerCase().contains(q))
+                            || (item.getDescription() != null && item.getDescription().toLowerCase().contains(q));
                 })
-                .sorted((a, b) -> b.createdAt().compareTo(a.createdAt()))
+                .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -90,21 +64,20 @@ public class AdminContentController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Get content", description = "Fetch a single content item")
     public ResponseEntity<ContentItemDto> get(@PathVariable UUID id) {
-        ContentItemDto item = store.get(id);
-        if (item == null) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(item);
+        return contentRepository.findById(id)
+                .map(this::toDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Create content", description = "Create a new content item")
     public ResponseEntity<ContentItemDto> create(@RequestBody Map<String, Object> body) {
-        UUID id = UUID.randomUUID();
-        ContentItemDto dto = fromBody(id, body, OffsetDateTime.now(ZoneOffset.UTC));
-        store.put(id, dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+        Content content = new Content();
+        updateContentFromMap(content, body);
+        content = contentRepository.save(content);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toDto(content));
     }
 
     @PutMapping("/{id}")
@@ -112,22 +85,25 @@ public class AdminContentController {
     @Operation(summary = "Update content", description = "Update an existing content item")
     public ResponseEntity<ContentItemDto> update(
             @PathVariable UUID id,
-            @RequestBody Map<String, Object> body
-    ) {
-        ContentItemDto existing = store.get(id);
-        if (existing == null) {
-            return ResponseEntity.notFound().build();
-        }
-        ContentItemDto dto = fromBody(id, body, existing.createdAt());
-        store.put(id, dto);
-        return ResponseEntity.ok(dto);
+            @RequestBody Map<String, Object> body) {
+        return contentRepository.findById(id)
+                .map(content -> {
+                    updateContentFromMap(content, body);
+                    return contentRepository.save(content);
+                })
+                .map(this::toDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Delete content", description = "Delete a content item")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        store.remove(id);
+        if (!contentRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        contentRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -135,31 +111,39 @@ public class AdminContentController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List content categories", description = "Return distinct content categories")
     public List<String> categories() {
-        return new ArrayList<>(store.values().stream()
-                .map(ContentItemDto::category)
-                .filter(c -> c != null && !c.isBlank())
-                .collect(Collectors.toCollection(java.util.TreeSet::new)));
+        return contentRepository.findDistinctCategories();
     }
 
-    private static ContentItemDto fromBody(UUID id, Map<String, Object> body, OffsetDateTime createdAt) {
-        String title = asString(body.get("title"));
-        String description = asString(body.get("description"));
-        String category = asString(body.get("category"));
-        String type = asString(body.get("type"));
-        String imageUrl = asString(body.get("imageUrl"));
-        Double rating = asDouble(body.get("rating"));
-        Integer reviewCount = asInteger(body.get("reviewCount"));
+    private ContentItemDto toDto(Content content) {
         return new ContentItemDto(
-                id,
-                title,
-                description,
-                category,
-                type,
-                imageUrl,
-                rating,
-                reviewCount,
-                createdAt
-        );
+                content.getId(),
+                content.getTitle(),
+                content.getDescription(),
+                content.getCategory(),
+                content.getType(),
+                content.getImageUrl(),
+                content.getRating(),
+                content.getReviewCount(),
+                content.getCreatedAt());
+    }
+
+    private void updateContentFromMap(Content content, Map<String, Object> body) {
+        if (body.containsKey("title"))
+            content.setTitle(asString(body.get("title")));
+        if (body.containsKey("description"))
+            content.setDescription(asString(body.get("description")));
+        if (body.containsKey("body"))
+            content.setBody(asString(body.get("body")));
+        if (body.containsKey("category"))
+            content.setCategory(asString(body.get("category")));
+        if (body.containsKey("type"))
+            content.setType(asString(body.get("type")));
+        if (body.containsKey("imageUrl"))
+            content.setImageUrl(asString(body.get("imageUrl")));
+        if (body.containsKey("rating"))
+            content.setRating(asDouble(body.get("rating")));
+        if (body.containsKey("reviewCount"))
+            content.setReviewCount(asInteger(body.get("reviewCount")));
     }
 
     private static String asString(Object value) {
@@ -167,7 +151,8 @@ public class AdminContentController {
     }
 
     private static Double asDouble(Object value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         if (value instanceof Number n) {
             return n.doubleValue();
         }
@@ -179,7 +164,8 @@ public class AdminContentController {
     }
 
     private static Integer asInteger(Object value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         if (value instanceof Number n) {
             return n.intValue();
         }

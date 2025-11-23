@@ -4,7 +4,7 @@ package com.mindease.filter;
 import com.mindease.service.CustomUserDetailsService;
 import com.mindease.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,98 +22,89 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  @Autowired
-  private JwtUtil jwtUtil;
+    @Autowired
+    private JwtUtil jwtUtil;
 
-  @Autowired
-  private CustomUserDetailsService userDetailsService;
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
 
-  @Value("${spring.profiles.active:}")
-  private String activeProfile;
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain chain) throws ServletException, IOException {
 
-  private boolean isDevProfile() {
-    return activeProfile != null && ("dev".equalsIgnoreCase(activeProfile) || activeProfile.toLowerCase().contains("development"));
-  }
+        final String authorizationHeader = request.getHeader("Authorization");
 
-  @Override
-  protected void doFilterInternal(
-    HttpServletRequest request,
-    HttpServletResponse response,
-    FilterChain chain) throws ServletException, IOException {
+        String username = null;
+        String jwt = null;
 
-    final String authorizationHeader = request.getHeader("Authorization");
-
-    String username = null;
-    String jwt = null;
-
-    // 1) Standard Authorization: Bearer <token>
-    if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-      jwt = authorizationHeader.substring(7);
-      try {
-        username = jwtUtil.extractUsername(jwt);
-      } catch (Exception e) {
-        logger.warn("JWT token validation failed: " + e.getMessage());
-      }
-    }
-
-    // 2) Restricted DEV-ONLY fallback for SSE where custom headers aren't available.
-    //    Accept JWT from a cookie (preferred) or query param ONLY for the exact crisis-flags stream endpoint.
-    if (username == null) {
-      String uri = request.getRequestURI();
-      if (uri != null && (uri.equals("/api/admin/crisis-flags/stream"))) {
-        if (isDevProfile()) {
-          // Try cookie first (less exposure than query params)
-          String cookieToken = null;
-          Cookie[] cookies = request.getCookies();
-          if (cookies != null) {
-            for (Cookie c : cookies) {
-              if (c != null && "ADMIN_JWT".equals(c.getName()) && c.getValue() != null && !c.getValue().isBlank()) {
-                cookieToken = c.getValue();
-                break;
-              }
-            }
-          }
-          if (cookieToken != null) {
-            jwt = cookieToken;
+        // 1) Standard Authorization: Bearer <token>
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            jwt = authorizationHeader.substring(7);
             try {
-              username = jwtUtil.extractUsername(jwt);
-              logger.warn("Using JWT from cookie for SSE authentication on " + uri + " (dev).");
-            } catch (Exception e) {
-              logger.warn("JWT (cookie) validation failed: " + e.getMessage());
-            }
-          }
-
-          // Fallback to query param for dev if cookie isn't present
-          if (username == null) {
-            String qpToken = request.getParameter("access_token");
-            if (qpToken == null || qpToken.isBlank()) {
-              qpToken = request.getParameter("token");
-            }
-            if (qpToken != null && !qpToken.isBlank()) {
-              jwt = qpToken.trim();
-              try {
                 username = jwtUtil.extractUsername(jwt);
-                logger.warn("Using JWT from query param for SSE authentication on " + uri + " (dev).");
-              } catch (Exception e) {
-                logger.warn("JWT (query param) validation failed: " + e.getMessage());
-              }
+            } catch (Exception e) {
+                logger.warn("JWT token validation failed: " + e.getMessage());
             }
-          }
         }
-      }
-    }
 
-    if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-      UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+        // 2) Restricted DEV-ONLY fallback for SSE where custom headers aren't
+        // available.
+        // Accept JWT from a cookie (preferred) or query param ONLY for the exact
+        // crisis-flags stream endpoint.
+        if (username == null) {
+            String uri = request.getRequestURI();
+            if (uri != null && (uri.equals("/api/admin/crisis-flags/stream"))) {
+                // Try cookie first (less exposure than query params)
+                String cookieToken = null;
+                Cookie[] cookies = request.getCookies();
+                if (cookies != null) {
+                    for (Cookie c : cookies) {
+                        if (c != null && "ADMIN_JWT".equals(c.getName()) && c.getValue() != null
+                                && !c.getValue().isBlank()) {
+                            cookieToken = c.getValue();
+                            break;
+                        }
+                    }
+                }
+                if (cookieToken != null) {
+                    jwt = cookieToken;
+                    try {
+                        username = jwtUtil.extractUsername(jwt);
+                    } catch (Exception e) {
+                        logger.warn("JWT (cookie) validation failed: " + e.getMessage());
+                    }
+                }
 
-      if (jwtUtil.validateToken(jwt, userDetails)) {
-        UsernamePasswordAuthenticationToken authentication =
-          new UsernamePasswordAuthenticationToken(
-            userDetails, null, userDetails.getAuthorities());
-        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-      }
+                // Fallback to query param if cookie isn't present
+                if (username == null) {
+                    String qpToken = request.getParameter("access_token");
+                    if (qpToken == null || qpToken.isBlank()) {
+                        qpToken = request.getParameter("token");
+                    }
+                    if (qpToken != null && !qpToken.isBlank()) {
+                        jwt = qpToken.trim();
+                        try {
+                            username = jwtUtil.extractUsername(jwt);
+                        } catch (Exception e) {
+                            logger.warn("JWT (query param) validation failed: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+
+            if (jwtUtil.validateToken(jwt, userDetails)) {
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        }
+        chain.doFilter(request, response);
     }
-    chain.doFilter(request, response);
-  }
 }

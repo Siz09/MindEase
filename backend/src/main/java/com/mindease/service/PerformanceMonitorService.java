@@ -49,7 +49,8 @@ public class PerformanceMonitorService {
             double loadAvg = osBean.getSystemLoadAverage();
             int availableProcessors = osBean.getAvailableProcessors();
             // Approximate: normalize load average by number of processors
-            // loadAvg >= 0 indicates a valid measurement (0.0 is valid - no processes waiting)
+            // loadAvg >= 0 indicates a valid measurement (0.0 is valid - no processes
+            // waiting)
             // loadAvg < 0 (typically -1.0) indicates unavailability
             double cpuPercent = loadAvg >= 0 && availableProcessors > 0
                     ? Math.min((loadAvg / availableProcessors) * 100, 100.0)

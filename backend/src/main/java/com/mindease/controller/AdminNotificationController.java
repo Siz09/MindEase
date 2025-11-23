@@ -30,9 +30,45 @@ import java.util.stream.Collectors;
 public class AdminNotificationController {
 
     private final NotificationRepository notificationRepository;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
-    public AdminNotificationController(NotificationRepository notificationRepository) {
+    public AdminNotificationController(NotificationRepository notificationRepository,
+            org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate) {
         this.notificationRepository = notificationRepository;
+        this.messagingTemplate = messagingTemplate;
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Send notification", description = "Send a notification to a user or broadcast to all")
+    public ResponseEntity<Map<String, Object>> create(
+            @org.springframework.web.bind.annotation.RequestBody Map<String, String> body) {
+        String message = body.get("message");
+        String userId = body.get("userId"); // Optional
+
+        if (message == null || message.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Message is required"));
+        }
+
+        if (userId != null && !userId.isBlank()) {
+            // Send to specific user (implementation omitted for brevity, would involve
+            // finding user and saving Notification)
+            // For now, just send via WebSocket to specific user topic if we had one
+            // messagingTemplate.convertAndSendToUser(userId, "/topic/notifications",
+            // Map.of("message", message));
+            // But since we don't have per-user queues set up in this simple example, we'll
+            // just log it.
+            return ResponseEntity.badRequest().body(Map.of("error", "Targeting specific user not yet implemented"));
+        } else {
+            // Broadcast
+            messagingTemplate.convertAndSend("/topic/notifications", Map.of(
+                    "id", UUID.randomUUID(),
+                    "title", "System Announcement",
+                    "message", message,
+                    "timestamp", OffsetDateTime.now(ZoneOffset.UTC)));
+        }
+
+        return ResponseEntity.ok(Map.of("status", "sent"));
     }
 
     @GetMapping

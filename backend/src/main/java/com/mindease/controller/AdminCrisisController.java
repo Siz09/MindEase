@@ -3,8 +3,11 @@ package com.mindease.controller;
 import com.mindease.dto.CrisisStatsResponse;
 import com.mindease.dto.KeywordStat;
 import com.mindease.events.CrisisFlagCreatedEvent;
+import com.mindease.model.ChatSession;
 import com.mindease.model.CrisisFlag;
+import com.mindease.repository.ChatSessionRepository;
 import com.mindease.repository.CrisisFlagRepository;
+import com.mindease.repository.MessageRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -40,12 +44,17 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class AdminCrisisController {
 
     private final CrisisFlagRepository repo;
+    private final ChatSessionRepository chatSessionRepository;
+    private final MessageRepository messageRepository;
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     private static final int MAX_SSE_CONNECTIONS = 100;
     private static final String STATUS_RESOLVED = "RESOLVED";
 
-    public AdminCrisisController(CrisisFlagRepository repo) {
+    public AdminCrisisController(CrisisFlagRepository repo, ChatSessionRepository chatSessionRepository,
+            MessageRepository messageRepository) {
         this.repo = repo;
+        this.chatSessionRepository = chatSessionRepository;
+        this.messageRepository = messageRepository;
     }
 
     @GetMapping
@@ -55,8 +64,7 @@ public class AdminCrisisController {
             @RequestParam(defaultValue = "25") int size,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
-            @RequestParam(required = false) String timeRange
-    ) {
+            @RequestParam(required = false) String timeRange) {
         int pageSize = Math.max(1, Math.min(size, 200));
         Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         DateWindow window = computeDateWindow(from, to, timeRange);
@@ -68,6 +76,27 @@ public class AdminCrisisController {
     public CrisisFlag getOne(@PathVariable UUID id) {
         return repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+    }
+
+    @GetMapping("/{id}/transcript")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Map<String, Object>> getTranscript(@PathVariable UUID id) {
+        CrisisFlag flag = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+
+        ChatSession session = chatSessionRepository.findById(flag.getChatId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat session not found"));
+
+        return messageRepository.findByChatSessionOrderByCreatedAtAsc(session).stream()
+                .map(m -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", m.getId());
+                    map.put("content", m.getContent());
+                    map.put("sender", m.getIsUserMessage() ? "user" : "bot");
+                    map.put("createdAt", m.getCreatedAt());
+                    return map;
+                })
+                .collect(Collectors.toList());
     }
 
     @PostMapping("/{id}/resolve")
@@ -106,8 +135,10 @@ public class AdminCrisisController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public CrisisFlag update(@PathVariable UUID id, @org.springframework.web.bind.annotation.RequestBody Map<String, Object> body) {
-        // At the moment, crisis flags are immutable; this endpoint simply returns the current record
+    public CrisisFlag update(@PathVariable UUID id,
+            @org.springframework.web.bind.annotation.RequestBody Map<String, Object> body) {
+        // At the moment, crisis flags are immutable; this endpoint simply returns the
+        // current record
         // so that the contract exists for the admin UI.
         return repo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
@@ -118,8 +149,7 @@ public class AdminCrisisController {
     public CrisisStatsResponse stats(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
-            @RequestParam(required = false) String timeRange
-    ) {
+            @RequestParam(required = false) String timeRange) {
         DateWindow window = computeDateWindow(from, to, timeRange);
         return repo.computeStats(window.from(), window.to());
     }
@@ -129,8 +159,7 @@ public class AdminCrisisController {
     public List<KeywordStat> topKeywords(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
-            @RequestParam(defaultValue = "10") int limit
-    ) {
+            @RequestParam(defaultValue = "10") int limit) {
         OffsetDateTime f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
         int max = Math.max(1, Math.min(limit, 50));

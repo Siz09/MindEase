@@ -14,34 +14,7 @@ const Dashboard = () => {
   const { token } = useAuth();
 
   // Widget State
-  const [widgets, setWidgets] = useState(() => {
-    try {
-      const saved = localStorage.getItem('dashboard_widgets');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        // Validate structure
-        if (parsed && typeof parsed === 'object') {
-          return { mood: true, journal: true, history: true, ...parsed };
-        }
-      }
-    } catch (error) {
-      console.error('Failed to parse dashboard_widgets from localStorage:', error);
-    }
-    return { mood: true, journal: true, history: true };
-  });
-
-  const [isCustomizing, setIsCustomizing] = useState(false);
-
-  const toggleWidget = (key) => {
-    const newWidgets = { ...widgets, [key]: !widgets[key] };
-    setWidgets(newWidgets);
-    try {
-      localStorage.setItem('dashboard_widgets', JSON.stringify(newWidgets));
-    } catch (error) {
-      console.error('Failed to save widget preferences:', error);
-      toast.error('Failed to save widget preferences');
-    }
-  };
+  const [widgets] = useState({ mood: true, journal: true, history: true });
 
   const showMoodReplyToast = (moodData) => {
     if (!moodData) return;
@@ -119,7 +92,11 @@ const Dashboard = () => {
           setTotalPages(data.totalPages || 0);
         }
       } catch (error) {
-        if (error.name === 'AbortError') {
+        if (
+          error.name === 'AbortError' ||
+          error.name === 'CanceledError' ||
+          error.code === 'ERR_CANCELED'
+        ) {
           // Don't clear loading state for aborted requests - let the newer request handle it
           return;
         }
@@ -172,7 +149,14 @@ const Dashboard = () => {
   const handleJournalSubmit = async ({ title, content }) => {
     try {
       setJournalSubmitting(true);
-      const res = await api.post('/journal/add', { title, content });
+
+      // Prepend mood emoji if available, similar to Journal page
+      let finalContent = content;
+      if (currentMood && currentMood.emoji) {
+        finalContent = `${currentMood.emoji} ${content}`;
+      }
+
+      const res = await api.post('/journal/add', { title, content: finalContent });
       const data = res.data || {};
 
       if (data.success || data.status === 'success') {
@@ -209,48 +193,7 @@ const Dashboard = () => {
               {t('dashboard.subtitle') || 'Your personal wellness space.'}
             </p>
           </div>
-          <button className="btn btn-outline" onClick={() => setIsCustomizing(!isCustomizing)}>
-            {isCustomizing ? t('dashboard.customize.done') : t('dashboard.customize.button')}
-          </button>
         </div>
-
-        {isCustomizing && (
-          <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <h3 className="card-title">{t('dashboard.customize.title')}</h3>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-              <label
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
-              >
-                <input
-                  type="checkbox"
-                  checked={widgets.mood}
-                  onChange={() => toggleWidget('mood')}
-                />
-                {t('dashboard.widgets.moodTracker')}
-              </label>
-              <label
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
-              >
-                <input
-                  type="checkbox"
-                  checked={widgets.journal}
-                  onChange={() => toggleWidget('journal')}
-                />
-                {t('dashboard.widgets.journalEntry')}
-              </label>
-              <label
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
-              >
-                <input
-                  type="checkbox"
-                  checked={widgets.history}
-                  onChange={() => toggleWidget('history')}
-                />
-                {t('dashboard.widgets.recentHistory')}
-              </label>
-            </div>
-          </div>
-        )}
 
         <div className="check-in-content">
           {/* Mood Input Section */}

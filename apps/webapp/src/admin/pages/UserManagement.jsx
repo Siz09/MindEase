@@ -280,6 +280,8 @@ export default function UserManagement() {
     { key: 'email', label: 'Email' },
     { key: 'createdAt', label: 'Joined' },
     { key: 'status', label: 'Status' },
+    { key: 'subscriptionPlan', label: 'Plan' },
+    { key: 'subscriptionStatus', label: 'Sub Status' },
     { key: 'flags', label: 'Crisis Flags' },
     { key: 'actions', label: 'Actions' },
   ];
@@ -289,6 +291,8 @@ export default function UserManagement() {
     email: user.email || user.userId || 'Unknown',
     createdAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
     status: user.status || 'active',
+    subscriptionPlan: user.subscriptionPlan || 'Free',
+    subscriptionStatus: user.subscriptionStatus || 'none',
     flags: user.crisisFlags || 0,
     actions: (
       <div className="admin-user-actions">
@@ -509,6 +513,50 @@ export default function UserManagement() {
                 {selectedUser.lastActive
                   ? new Date(selectedUser.lastActive).toLocaleString()
                   : 'N/A'}
+              </div>
+            </div>
+
+            <div
+              className="admin-user-detail-item"
+              style={{
+                gridColumn: '1 / -1',
+                marginTop: '16px',
+                borderTop: '1px solid var(--color-border)',
+                paddingTop: '16px',
+              }}
+            >
+              <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
+                Subscription & Billing
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div>
+                  <div className="admin-user-detail-label">Current Plan</div>
+                  <div className="admin-user-detail-value">
+                    <Badge
+                      type={selectedUser.subscriptionPlan === 'PREMIUM' ? 'info' : 'secondary'}
+                    >
+                      {selectedUser.subscriptionPlan || 'Free'}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <div className="admin-user-detail-label">Billing Status</div>
+                  <div className="admin-user-detail-value">
+                    <Badge
+                      type={selectedUser.subscriptionStatus === 'ACTIVE' ? 'success' : 'warning'}
+                    >
+                      {selectedUser.subscriptionStatus || 'none'}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <div className="admin-user-detail-label">Renews / Expires</div>
+                  <div className="admin-user-detail-value">
+                    {selectedUser.subscriptionRenewsAt
+                      ? new Date(selectedUser.subscriptionRenewsAt).toLocaleDateString()
+                      : 'N/A'}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

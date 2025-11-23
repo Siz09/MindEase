@@ -7,7 +7,7 @@ import '../styles/components/JournalForm.css';
 const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, onUpdateMood }) => {
   const { t } = useTranslation();
   const [newEntry, setNewEntry] = useState('');
-  const [title, setTitle] = useState('');
+
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const textareaRef = useRef(null);
@@ -42,11 +42,10 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
     }
 
     onSubmit({
-      title: title.trim() || null,
+      title: null,
       content: newEntry.trim(),
     });
     setNewEntry('');
-    setTitle('');
   };
 
   // No emoji state to initialize
@@ -132,20 +131,6 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
     <div className="journal-form-component">
       <form onSubmit={handleSubmit} className="journal-form">
         <div className="form-group">
-          <label htmlFor="journal-title" className="form-label">
-            {t('journal.entryTitleLabel') || 'Title (optional)'}
-          </label>
-          <input
-            id="journal-title"
-            type="text"
-            className="journal-title-input"
-            placeholder={t('journal.entryTitlePlaceholder') || 'Add a title (optional)'}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={150}
-            disabled={loading}
-          />
-
           <label htmlFor="journal-entry" className="form-label">
             {t('journal.newEntry')}
           </label>

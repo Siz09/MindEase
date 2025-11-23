@@ -12,7 +12,7 @@ const Journal = () => {
 
   const [entries, setEntries] = useState([]);
   const [newEntry, setNewEntry] = useState('');
-  const [entryTitle, setEntryTitle] = useState('');
+
   const [selectedEmoji, setSelectedEmoji] = useState('😊');
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -151,10 +151,6 @@ const Journal = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!entryTitle.trim()) {
-      toast.info(t('journal.titleRequired'));
-      return;
-    }
     if (!newEntry.trim()) {
       toast.info(t('journal.contentRequired'));
       return;
@@ -172,7 +168,7 @@ const Journal = () => {
 
     try {
       const res = await api.post('/journal/add', {
-        title: entryTitle.trim(),
+        title: null,
         content: `${selectedEmoji} ${newEntry.trim()}`,
       });
       const data = res.data || {};
@@ -184,7 +180,6 @@ const Journal = () => {
         setEntries((prev) => [returnedEntry, ...prev]);
       }
       setNewEntry('');
-      setEntryTitle('');
       setSelectedEmoji('😊');
 
       // Poll briefly for AI summary completion and refresh the entry in the list
@@ -296,20 +291,6 @@ const Journal = () => {
         <div className="journal-form-section">
           <form onSubmit={handleSubmit} className="journal-form">
             <div className="form-group">
-              <label htmlFor="journal-title" className="form-label">
-                {t('journal.entryTitleLabel')}
-              </label>
-              <input
-                id="journal-title"
-                type="text"
-                className="journal-title-input"
-                placeholder={t('journal.entryTitlePlaceholder')}
-                value={entryTitle}
-                onChange={(e) => setEntryTitle(e.target.value)}
-                maxLength={150}
-                disabled={loading}
-              />
-
               <label htmlFor="journal-entry" className="form-label">
                 {t('journal.newEntry')}
               </label>
@@ -356,7 +337,7 @@ const Journal = () => {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={loading || !entryTitle.trim() || !newEntry.trim()}
+                  disabled={loading || !newEntry.trim()}
                 >
                   {loading ? t('journal.saving') : t('journal.saveEntry')}
                 </button>
@@ -418,7 +399,7 @@ const Journal = () => {
                             {emoji}
                           </span>
                           <div className="entry-meta-text">
-                            <h3 className="entry-title">{entry.title || t('journal.entry')}</h3>
+                            <h3 className="entry-title">{t('journal.entry')}</h3>
                             <span className="entry-date">{formatDate(entry.createdAt)}</span>
                           </div>
                         </div>
