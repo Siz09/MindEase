@@ -3,8 +3,7 @@ package com.mindease.filter;
 
 import com.mindease.service.CustomUserDetailsService;
 import com.mindease.util.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,9 +24,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
 
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
+
     public JwtAuthenticationFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+    }
+
+    private boolean isDevProfile() {
+        return activeProfile != null && ("dev".equalsIgnoreCase(activeProfile) || activeProfile.toLowerCase().contains("development"));
     }
 
     @Override
@@ -57,7 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // crisis-flags stream endpoint.
         if (username == null) {
             String uri = request.getRequestURI();
-            if (uri != null && (uri.equals("/api/admin/crisis-flags/stream"))) {
+            if (uri != null && (uri.equals("/api/admin/crisis-flags/stream")) && isDevProfile()) {
                 // Try cookie first (less exposure than query params)
                 String cookieToken = null;
                 Cookie[] cookies = request.getCookies();

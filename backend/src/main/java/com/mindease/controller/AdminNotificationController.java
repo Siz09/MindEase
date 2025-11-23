@@ -66,7 +66,8 @@ public class AdminNotificationController {
             OffsetDateTime timestamp = OffsetDateTime.now(ZoneOffset.UTC);
 
             // TODO: Persist system announcement to database
-            // SystemAnnouncement announcement = new SystemAnnouncement(notificationId, messageText, timestamp);
+            // SystemAnnouncement announcement = new SystemAnnouncement(notificationId,
+            // messageText, timestamp);
             // announcementRepository.save(announcement);
 
             messagingTemplate.convertAndSend("/topic/notifications", Map.of(

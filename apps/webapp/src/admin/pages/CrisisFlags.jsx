@@ -276,12 +276,12 @@ export default function CrisisFlags() {
             ))}
             {!loading && rows.length === 0 && (
               <tr>
-                <td colSpan="5">No results</td>
+                <td colSpan="6">No results</td>
               </tr>
             )}
             {loading && (
               <tr>
-                <td colSpan="5">Loading...</td>
+                <td colSpan="6">Loading...</td>
               </tr>
             )}
           </tbody>

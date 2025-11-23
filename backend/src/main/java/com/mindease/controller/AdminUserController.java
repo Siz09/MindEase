@@ -361,7 +361,8 @@ public class AdminUserController {
     private Map<UUID, Subscription> fetchSubscriptions(List<UUID> userIds) {
         if (userIds.isEmpty())
             return java.util.Collections.emptyMap();
-        // Fetch all subscriptions for these users and group by userId, keeping only the latest
+        // Fetch all subscriptions for these users and group by userId, keeping only the
+        // latest
         List<Subscription> subs = subscriptionRepository.findByUser_IdIn(userIds);
         Map<UUID, Subscription> map = new HashMap<>();
         for (Subscription sub : subs) {

@@ -5,11 +5,12 @@ import DOMPurify from 'dompurify';
 export default function RichTextEditor({ value, onChange }) {
   const contentRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
-  const sanitizedValue = DOMPurify.sanitize(value || '');
 
   useEffect(() => {
     if (contentRef.current && value !== contentRef.current.innerHTML) {
-      contentRef.current.innerHTML = value || '';
+      // Sanitize value before setting innerHTML to prevent XSS
+      const sanitizedValue = DOMPurify.sanitize(value || '');
+      contentRef.current.innerHTML = sanitizedValue;
     }
   }, [value]);
 
@@ -105,7 +106,7 @@ export default function RichTextEditor({ value, onChange }) {
           fontSize: '14px',
           lineHeight: '1.6',
         }}
-        dangerouslySetInnerHTML={{ __html: sanitizedValue }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value || '') }}
       />
     </div>
   );
