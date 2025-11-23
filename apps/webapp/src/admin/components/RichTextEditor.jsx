@@ -16,7 +16,9 @@ export default function RichTextEditor({ value, onChange }) {
 
   const handleInput = () => {
     if (contentRef.current) {
-      onChange(contentRef.current.innerHTML);
+      // Sanitize content before sending to parent to prevent stored XSS
+      const sanitizedContent = DOMPurify.sanitize(contentRef.current.innerHTML);
+      onChange(sanitizedContent);
     }
   };
 

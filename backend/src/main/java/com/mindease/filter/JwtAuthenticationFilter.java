@@ -3,7 +3,6 @@ package com.mindease.filter;
 
 import com.mindease.service.CustomUserDetailsService;
 import com.mindease.util.JwtUtil;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,16 +23,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
 
-    @Value("${spring.profiles.active:}")
-    private String activeProfile;
-
     public JwtAuthenticationFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
-    }
-
-    private boolean isDevProfile() {
-        return activeProfile != null && ("dev".equalsIgnoreCase(activeProfile) || activeProfile.toLowerCase().contains("development"));
     }
 
     @Override
@@ -57,13 +49,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 2) Restricted DEV-ONLY fallback for SSE where custom headers aren't
-        // available.
-        // Accept JWT from a cookie (preferred) or query param ONLY for the exact
-        // crisis-flags stream endpoint.
+        // 2) Fallback for SSE where custom headers aren't available.
+        // EventSource API cannot send custom headers, so we must accept JWT from
+        // cookie (preferred) or query param for the crisis-flags stream endpoint.
+        // This is necessary in all environments, not just dev, due to EventSource limitations.
         if (username == null) {
             String uri = request.getRequestURI();
-            if (uri != null && (uri.equals("/api/admin/crisis-flags/stream")) && isDevProfile()) {
+            if (uri != null && (uri.equals("/api/admin/crisis-flags/stream"))) {
                 // Try cookie first (less exposure than query params)
                 String cookieToken = null;
                 Cookie[] cookies = request.getCookies();
