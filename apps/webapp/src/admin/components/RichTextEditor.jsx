@@ -6,6 +6,7 @@ export default function RichTextEditor({ value, onChange }) {
   const contentRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
   const isUserEditingRef = useRef(false);
+  const editingTimeoutRef = useRef(null);
 
   useEffect(() => {
     // Only update content if user is not actively editing to prevent desynchronization
@@ -16,15 +17,29 @@ export default function RichTextEditor({ value, onChange }) {
     }
   }, [value]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (editingTimeoutRef.current) {
+        clearTimeout(editingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleInput = () => {
     if (contentRef.current) {
       isUserEditingRef.current = true;
       // Sanitize content before sending to parent to prevent stored XSS
       const sanitizedContent = DOMPurify.sanitize(contentRef.current.innerHTML);
       onChange(sanitizedContent);
+      // Clear any existing timeout
+      if (editingTimeoutRef.current) {
+        clearTimeout(editingTimeoutRef.current);
+      }
       // Reset flag after a short delay to allow external updates
-      setTimeout(() => {
+      editingTimeoutRef.current = setTimeout(() => {
         isUserEditingRef.current = false;
+        editingTimeoutRef.current = null;
       }, 100);
     }
   };
@@ -109,12 +124,22 @@ export default function RichTextEditor({ value, onChange }) {
         onFocus={() => {
           setIsFocused(true);
           isUserEditingRef.current = true;
+          // Clear any pending timeout when focus returns
+          if (editingTimeoutRef.current) {
+            clearTimeout(editingTimeoutRef.current);
+            editingTimeoutRef.current = null;
+          }
         }}
         onBlur={() => {
           setIsFocused(false);
+          // Clear any existing timeout
+          if (editingTimeoutRef.current) {
+            clearTimeout(editingTimeoutRef.current);
+          }
           // Allow external updates after blur
-          setTimeout(() => {
+          editingTimeoutRef.current = setTimeout(() => {
             isUserEditingRef.current = false;
+            editingTimeoutRef.current = null;
           }, 100);
         }}
         style={{
