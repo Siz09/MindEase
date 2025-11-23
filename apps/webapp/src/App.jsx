@@ -38,136 +38,132 @@ import { ThemeProvider } from './contexts/ThemeContext';
 function App() {
   return (
     <Router>
-      <AdminAuthProvider>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+      <ThemeProvider>
+        <AdminAuthProvider>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            <Route
-              path="/admin/*"
-              element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="users" element={<UserManagement />} />
-              <Route path="crisis-monitoring" element={<CrisisMonitoring />} />
-              <Route path="content" element={<ContentLibrary />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="system" element={<SystemMonitoring />} />
-              <Route path="audit-logs" element={<AuditLogs />} />
-              <Route path="crisis-flags" element={<CrisisFlags />} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
+              <Route
+                path="/admin/*"
+                element={
+                  <AdminRoute>
+                    <AdminLayout />
+                  </AdminRoute>
+                }
+              >
+                <Route index element={<Dashboard />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="crisis-monitoring" element={<CrisisMonitoring />} />
+                <Route path="content" element={<ContentLibrary />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="system" element={<SystemMonitoring />} />
+                <Route path="audit-logs" element={<AuditLogs />} />
+                <Route path="crisis-flags" element={<CrisisFlags />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
 
-            <Route
-              element={
-                <ThemeProvider>
-                  <UserLayout />
-                </ThemeProvider>
-              }
-            >
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <UserDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/insights"
-                element={
-                  <ProtectedRoute>
-                    <Insights />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/journal"
-                element={
-                  <ProtectedRoute>
-                    <Navigate to="/" replace />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chat"
-                element={
-                  <ProtectedRoute>
-                    <Chat />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/mindfulness"
-                element={
-                  <ProtectedRoute>
-                    <Mindfulness />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/testing"
-                element={
-                  <ProtectedRoute>
-                    <Testing />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/notifications"
-                element={
-                  <ProtectedRoute>
-                    <Notifications />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/subscription"
-                element={
-                  <ProtectedRoute>
-                    <Subscription />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-              <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-          </Routes>
+              <Route element={<UserLayout />}>
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <UserDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/insights"
+                  element={
+                    <ProtectedRoute>
+                      <Insights />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/journal"
+                  element={
+                    <ProtectedRoute>
+                      <Navigate to="/" replace />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/chat"
+                  element={
+                    <ProtectedRoute>
+                      <Chat />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/mindfulness"
+                  element={
+                    <ProtectedRoute>
+                      <Mindfulness />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/testing"
+                  element={
+                    <ProtectedRoute>
+                      <Testing />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute>
+                      <Notifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/subscription"
+                  element={
+                    <ProtectedRoute>
+                      <Subscription />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+                <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
+            </Routes>
 
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-          />
-        </AuthProvider>
-      </AdminAuthProvider>
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+            />
+          </AuthProvider>
+        </AdminAuthProvider>
+      </ThemeProvider>
     </Router>
   );
 }

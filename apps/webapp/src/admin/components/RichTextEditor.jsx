@@ -5,9 +5,11 @@ import DOMPurify from 'dompurify';
 export default function RichTextEditor({ value, onChange }) {
   const contentRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
+  const isUserEditingRef = useRef(false);
 
   useEffect(() => {
-    if (contentRef.current && value !== contentRef.current.innerHTML) {
+    // Only update content if user is not actively editing to prevent desynchronization
+    if (contentRef.current && !isUserEditingRef.current && value !== contentRef.current.innerHTML) {
       // Sanitize value before setting innerHTML to prevent XSS
       const sanitizedValue = DOMPurify.sanitize(value || '');
       contentRef.current.innerHTML = sanitizedValue;
@@ -16,9 +18,14 @@ export default function RichTextEditor({ value, onChange }) {
 
   const handleInput = () => {
     if (contentRef.current) {
+      isUserEditingRef.current = true;
       // Sanitize content before sending to parent to prevent stored XSS
       const sanitizedContent = DOMPurify.sanitize(contentRef.current.innerHTML);
       onChange(sanitizedContent);
+      // Reset flag after a short delay to allow external updates
+      setTimeout(() => {
+        isUserEditingRef.current = false;
+      }, 100);
     }
   };
 
@@ -99,8 +106,17 @@ export default function RichTextEditor({ value, onChange }) {
         ref={contentRef}
         contentEditable
         onInput={handleInput}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
+        onFocus={() => {
+          setIsFocused(true);
+          isUserEditingRef.current = true;
+        }}
+        onBlur={() => {
+          setIsFocused(false);
+          // Allow external updates after blur
+          setTimeout(() => {
+            isUserEditingRef.current = false;
+          }, 100);
+        }}
         style={{
           minHeight: '200px',
           padding: '12px',
@@ -108,7 +124,6 @@ export default function RichTextEditor({ value, onChange }) {
           fontSize: '14px',
           lineHeight: '1.6',
         }}
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value || '') }}
       />
     </div>
   );

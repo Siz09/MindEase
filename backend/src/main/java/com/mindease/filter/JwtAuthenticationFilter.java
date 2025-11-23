@@ -52,7 +52,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 2) Fallback for SSE where custom headers aren't available.
         // EventSource API cannot send custom headers, so we must accept JWT from
         // cookie (preferred) or query param for the crisis-flags stream endpoint.
-        // This is necessary in all environments, not just dev, due to EventSource limitations.
+        // This is necessary in all environments, not just dev, due to EventSource
+        // limitations.
         if (username == null) {
             String uri = request.getRequestURI();
             if (uri != null && (uri.equals("/api/admin/crisis-flags/stream"))) {
