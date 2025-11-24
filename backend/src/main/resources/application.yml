@@ -125,9 +125,9 @@ management:
 # OpenAI Configuration
 openai:
   api:
-    key: ${OPENAI_API_KEY:} # Set via environment variable
+    key: ${OPENAI_API_KEY} # Set via environment variable
     timeout: 30
-  model: gpt-3.5-turbo-instruct
+  model: gpt-4o-mini
   max-tokens: 150
   temperature: 0.7
 

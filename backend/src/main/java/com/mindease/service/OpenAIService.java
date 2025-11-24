@@ -64,7 +64,8 @@ public class OpenAIService {
             List<ChatCompletionChoice> choices = result.getChoices();
             if (choices != null && !choices.isEmpty() && choices.get(0).getMessage() != null) {
                 String summary = choices.get(0).getMessage().getContent();
-                if (summary != null) summary = summary.trim();
+                if (summary != null)
+                    summary = summary.trim();
                 logger.info("Successfully generated AI summary for journal entry");
                 return Optional.ofNullable(summary);
             }
@@ -110,7 +111,8 @@ public class OpenAIService {
             List<ChatCompletionChoice> choices = result.getChoices();
             if (choices != null && !choices.isEmpty() && choices.get(0).getMessage() != null) {
                 String insight = choices.get(0).getMessage().getContent();
-                if (insight != null) insight = insight.trim();
+                if (insight != null)
+                    insight = insight.trim();
                 logger.info("Successfully generated mood insight for journal entry");
                 return Optional.ofNullable(insight);
             }
@@ -150,10 +152,12 @@ public class OpenAIService {
     }
 
     private String resolveChatModel(String configured) {
-        if (configured == null || configured.isBlank()) return "gpt-3.5-turbo";
+        if (configured == null || configured.isBlank())
+            return "gpt-3.5-turbo";
         // If an instruct model is configured, switch to nearest chat model.
         String lower = configured.toLowerCase();
-        if (lower.contains("instruct")) return "gpt-3.5-turbo";
+        if (lower.contains("instruct"))
+            return "gpt-3.5-turbo";
         return configured;
     }
 
@@ -161,15 +165,20 @@ public class OpenAIService {
         // Prefer chat config model; fall back to legacy openai.model if provided
         try {
             String m = chatConfig.getOpenai().getModel();
-            if (m != null && !m.isBlank()) return m;
-        } catch (Exception e) { logger.debug("Could not retrieve model from chat config, using legacy: {}", e.getMessage()); }
+            if (m != null && !m.isBlank())
+                return m;
+        } catch (Exception e) {
+            logger.debug("Could not retrieve model from chat config, using legacy: {}", e.getMessage());
+        }
         return legacyModel;
     }
 
     private OpenAiService getOrCreateService() {
-        if (client != null) return client;
+        if (client != null)
+            return client;
         synchronized (this) {
-            if (client != null) return client;
+            if (client != null)
+                return client;
             String apiKey = null;
             try {
                 var openaiCfg = chatConfig.getOpenai();
@@ -188,4 +197,3 @@ public class OpenAIService {
         }
     }
 }
-
