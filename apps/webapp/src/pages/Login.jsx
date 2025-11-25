@@ -25,6 +25,7 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -157,16 +158,69 @@ const Login = () => {
                   <label htmlFor="password" className="form-label">
                     {t('auth.password')}
                   </label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="form-input"
-                    placeholder={t('auth.passwordPlaceholder')}
-                    required
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={isPasswordVisible ? 'text' : 'password'}
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder={t('auth.passwordPlaceholder')}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setIsPasswordVisible((prev) => !prev)}
+                      aria-label={
+                        isPasswordVisible ? t('auth.hidePassword') : t('auth.showPassword')
+                      }
+                    >
+                      {isPasswordVisible ? (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M1.5 12C2.7 9.91 4.4 8.19 6.4 7A10.94 10.94 0 0112 5.5c2 0 3.9.5 5.6 1.5 2 1.19 3.7 2.91 4.9 5-1.2 2.09-2.9 3.81-4.9 5A10.94 10.94 0 0112 18.5c-2 0-3.9-.5-5.6-1.5C4.4 15.81 2.7 14.09 1.5 12z"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                        </svg>
+                      ) : (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M3 3l18 18"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <path
+                            d="M10.58 10.58a3 3 0 004.24 4.24"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M9.88 5.09A10.94 10.94 0 0121 12c-1.2 2.09-2.9 3.81-4.9 5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M6.1 6.1C4.21 7.35 2.67 9.02 1.5 11c1.2 2.09 2.9 3.81 4.9 5a10.94 10.94 0 005.6 1.5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <button

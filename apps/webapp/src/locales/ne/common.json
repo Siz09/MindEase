@@ -20,6 +20,8 @@
     "password": "पासवर्ड",
     "emailPlaceholder": "आफ्नो इमेल प्रविष्ट गर्नुहोस्",
     "passwordPlaceholder": "आफ्नो पासवर्ड प्रविष्ट गर्नुहोस्",
+    "showPassword": "पासवर्ड देखाउनुहोस्",
+    "hidePassword": "पासवर्ड लुकाउनुहोस्",
     "signingIn": "साइन इन गर्दै...",
     "or": "वा",
     "continueAnonymously": "बेनामी रूपमा जारी राख्नुहोस्",

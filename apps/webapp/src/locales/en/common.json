@@ -20,6 +20,8 @@
     "password": "Password",
     "emailPlaceholder": "Enter your email",
     "passwordPlaceholder": "Enter your password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
     "signingIn": "Signing in...",
     "or": "or",
     "continueAnonymously": "Continue Anonymously",
