@@ -72,18 +72,20 @@ public class PasswordResetService {
 
     /**
      * Mark a password reset as completed and revoke all refresh tokens for
-     * security. Only processes if there's a recent (within 1 hour) uncompleted request.
+     * security. Only processes if there's a recent (within 1 hour) uncompleted
+     * request.
      *
      * @param email User's email address
-     * @return true if a valid reset request was found and processed, false otherwise
+     * @return true if a valid reset request was found and processed, false
+     *         otherwise
      */
     @Transactional
     public boolean recordResetCompletion(String email) {
         // Only process if there's a recent uncompleted request (within 1 hour)
         // This prevents unauthorized token revocation attacks
         LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
-        List<PasswordResetRequest> recentUncompletedRequests =
-                passwordResetRequestRepository.findRecentUncompletedByEmail(email, oneHourAgo);
+        List<PasswordResetRequest> recentUncompletedRequests = passwordResetRequestRepository
+                .findRecentUncompletedByEmail(email, oneHourAgo);
 
         if (recentUncompletedRequests.isEmpty()) {
             logger.warn("Password reset confirmation attempted for email hash: {} but no recent valid request found",

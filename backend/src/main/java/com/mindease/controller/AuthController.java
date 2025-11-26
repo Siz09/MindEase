@@ -463,7 +463,8 @@ public class AuthController {
                 logger.warn("Password reset confirmation failed - no recent valid request for email hash: {}",
                         Integer.toHexString(email.hashCode()));
                 return ResponseEntity.badRequest()
-                        .body(ErrorResponse.of("No valid password reset request found. Please request a new password reset.",
+                        .body(ErrorResponse.of(
+                                "No valid password reset request found. Please request a new password reset.",
                                 "NO_VALID_RESET_REQUEST"));
             }
 
