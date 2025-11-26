@@ -148,11 +148,45 @@ public class PasswordResetIntegrationTest {
     public void testConfirmPasswordReset_WithoutEmail() throws Exception {
         String requestBody = "{\"email\":\"\"}";
 
+        // Empty email should be rejected with 400 Bad Request
         mockMvc.perform(post("/api/auth/confirm-password-reset")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message", containsString("confirmed successfully")));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("INVALID_EMAIL")));
+    }
+
+    @Test
+    public void testConfirmPasswordReset_NoValidRequest() throws Exception {
+        String email = "test@example.com";
+        String requestBody = String.format("{\"email\":\"%s\"}", email);
+
+        // Attempt to confirm without a recent password reset request
+        // Should be rejected with 400 Bad Request
+        mockMvc.perform(post("/api/auth/confirm-password-reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("NO_VALID_RESET_REQUEST")));
+    }
+
+    @Test
+    public void testConfirmPasswordReset_OldRequest() throws Exception {
+        String email = "test@example.com";
+
+        // Create an old password reset request (2 hours ago)
+        PasswordResetRequest oldRequest = new PasswordResetRequest(email, "192.168.1.1", "Mozilla/5.0");
+        oldRequest.setRequestedAt(LocalDateTime.now().minusHours(2));
+        passwordResetRequestRepository.save(oldRequest);
+
+        String requestBody = String.format("{\"email\":\"%s\"}", email);
+
+        // Old request should be rejected (must be within 1 hour)
+        mockMvc.perform(post("/api/auth/confirm-password-reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("NO_VALID_RESET_REQUEST")));
     }
 
     @Test
@@ -208,7 +242,8 @@ public class PasswordResetIntegrationTest {
         passwordResetRequestRepository.save(oldRequest);
 
         // Create a recent request
-        PasswordResetRequest recentRequest = new PasswordResetRequest("recent@example.com", "192.168.1.2", "Mozilla/5.0");
+        PasswordResetRequest recentRequest = new PasswordResetRequest("recent@example.com", "192.168.1.2",
+                "Mozilla/5.0");
         passwordResetRequestRepository.save(recentRequest);
 
         assertEquals(2, passwordResetRequestRepository.count());

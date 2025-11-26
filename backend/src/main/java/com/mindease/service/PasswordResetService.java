@@ -15,7 +15,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Service for managing password reset requests, including rate limiting and security monitoring.
+ * Service for managing password reset requests, including rate limiting and
+ * security monitoring.
  */
 @Service
 public class PasswordResetService {
@@ -47,9 +48,9 @@ public class PasswordResetService {
     /**
      * Record a password reset request for tracking and rate limiting.
      *
-     * @param email       User's email address
-     * @param ipAddress   Request IP address
-     * @param userAgent   Request user agent
+     * @param email     User's email address
+     * @param ipAddress Request IP address
+     * @param userAgent Request user agent
      * @return The created PasswordResetRequest
      * @throws IllegalArgumentException if email is invalid
      */
@@ -70,22 +71,31 @@ public class PasswordResetService {
     }
 
     /**
-     * Mark a password reset as completed and revoke all refresh tokens for security.
+     * Mark a password reset as completed and revoke all refresh tokens for
+     * security. Only processes if there's a recent (within 1 hour) uncompleted request.
      *
      * @param email User's email address
+     * @return true if a valid reset request was found and processed, false otherwise
      */
     @Transactional
-    public void recordResetCompletion(String email) {
-        // Mark the most recent uncompleted request as completed
-        List<PasswordResetRequest> uncompletedRequests =
-            passwordResetRequestRepository.findUncompletedByEmail(email);
+    public boolean recordResetCompletion(String email) {
+        // Only process if there's a recent uncompleted request (within 1 hour)
+        // This prevents unauthorized token revocation attacks
+        LocalDateTime oneHourAgo = LocalDateTime.now().minusHours(1);
+        List<PasswordResetRequest> recentUncompletedRequests =
+                passwordResetRequestRepository.findRecentUncompletedByEmail(email, oneHourAgo);
 
-        if (!uncompletedRequests.isEmpty()) {
-            PasswordResetRequest request = uncompletedRequests.get(0);
-            request.setCompleted(true);
-            request.setCompletedAt(LocalDateTime.now());
-            passwordResetRequestRepository.save(request);
+        if (recentUncompletedRequests.isEmpty()) {
+            logger.warn("Password reset confirmation attempted for email hash: {} but no recent valid request found",
+                    Integer.toHexString(email.hashCode()));
+            return false;
         }
+
+        // Mark the most recent uncompleted request as completed
+        PasswordResetRequest request = recentUncompletedRequests.get(0);
+        request.setCompleted(true);
+        request.setCompletedAt(LocalDateTime.now());
+        passwordResetRequestRepository.save(request);
 
         // Revoke all refresh tokens for this email for security
         List<RefreshToken> tokens = refreshTokenRepository.findByUserEmail(email);
@@ -96,6 +106,7 @@ public class PasswordResetService {
         }
 
         logger.info("Password reset completed for email hash: {}", Integer.toHexString(email.hashCode()));
+        return true;
     }
 
     /**
@@ -112,7 +123,7 @@ public class PasswordResetService {
         long emailCount = passwordResetRequestRepository.countByEmailSince(email, windowStart);
         if (emailCount >= maxRequestsPerEmail) {
             logger.warn("Rate limit exceeded for email hash: {} ({} requests in {} hour(s))",
-                Integer.toHexString(email.hashCode()), emailCount, rateLimitWindowHours);
+                    Integer.toHexString(email.hashCode()), emailCount, rateLimitWindowHours);
             return true;
         }
 
@@ -120,7 +131,7 @@ public class PasswordResetService {
         long ipCount = passwordResetRequestRepository.countByIpAddressSince(ipAddress, windowStart);
         if (ipCount >= maxRequestsPerIp) {
             logger.warn("Rate limit exceeded for IP: {} ({} requests in {} hour(s))",
-                ipAddress, ipCount, rateLimitWindowHours);
+                    ipAddress, ipCount, rateLimitWindowHours);
             return true;
         }
 

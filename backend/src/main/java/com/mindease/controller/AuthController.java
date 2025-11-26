@@ -439,20 +439,35 @@ public class AuthController {
         }
     }
 
-    @Operation(summary = "Confirm password reset", description = "Mark a password reset as completed and revoke all refresh tokens")
+    @Operation(summary = "Confirm password reset", description = "Mark a password reset as completed and revoke all refresh tokens. Requires a recent password reset request.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Password reset confirmed", content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
+            @ApiResponse(responseCode = "200", description = "Password reset confirmed", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
+            @ApiResponse(responseCode = "400", description = "No valid password reset request found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/confirm-password-reset")
     public ResponseEntity<?> confirmPasswordReset(@RequestBody PasswordResetConfirmRequest request) {
         try {
             String email = request.getEmail();
 
-            if (email != null && !email.isEmpty()) {
-                // Mark reset as completed and revoke all refresh tokens
-                passwordResetService.recordResetCompletion(email);
-                logger.info("Password reset confirmed for email: {}", email);
+            // Validate email format
+            if (email == null || email.trim().isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                return ResponseEntity.badRequest()
+                        .body(ErrorResponse.of("Invalid email format", "INVALID_EMAIL"));
             }
+
+            // Only process if there's a recent valid password reset request
+            // This prevents unauthorized token revocation attacks
+            boolean processed = passwordResetService.recordResetCompletion(email);
+
+            if (!processed) {
+                logger.warn("Password reset confirmation failed - no recent valid request for email hash: {}",
+                        Integer.toHexString(email.hashCode()));
+                return ResponseEntity.badRequest()
+                        .body(ErrorResponse.of("No valid password reset request found. Please request a new password reset.",
+                                "NO_VALID_RESET_REQUEST"));
+            }
+
+            logger.info("Password reset confirmed for email hash: {}", Integer.toHexString(email.hashCode()));
 
             return ResponseEntity.ok(new SuccessResponse("Password reset confirmed successfully"));
         } catch (Exception e) {

@@ -47,4 +47,10 @@ public interface PasswordResetRequestRepository extends JpaRepository<PasswordRe
      */
     @Query("SELECT p FROM PasswordResetRequest p WHERE p.email = :email AND p.completed = false ORDER BY p.requestedAt DESC")
     List<PasswordResetRequest> findUncompletedByEmail(@Param("email") String email);
+
+    /**
+     * Find recent uncompleted request by email within a time window (for security validation).
+     */
+    @Query("SELECT p FROM PasswordResetRequest p WHERE p.email = :email AND p.completed = false AND p.requestedAt >= :since ORDER BY p.requestedAt DESC")
+    List<PasswordResetRequest> findRecentUncompletedByEmail(@Param("email") String email, @Param("since") LocalDateTime since);
 }
