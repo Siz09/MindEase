@@ -400,12 +400,20 @@ public class AuthController {
             HttpServletRequest httpRequest) {
         try {
             String email = request.getEmail();
+
+            // Validate email format
+            if (email == null || email.trim().isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+                return ResponseEntity.badRequest()
+                        .body(ErrorResponse.of("Invalid email format", "INVALID_EMAIL"));
+            }
+
             String ipAddress = getClientIpAddress(httpRequest);
             String userAgent = httpRequest.getHeader("User-Agent");
 
             // Check rate limit
             if (passwordResetService.isRateLimitExceeded(email, ipAddress)) {
-                logger.warn("Password reset rate limit exceeded for email: {} from IP: {}", email, ipAddress);
+                logger.warn("Password reset rate limit exceeded for email hash: {} from IP: {}",
+                        Integer.toHexString(email.hashCode()), ipAddress);
                 return ResponseEntity.status(429).body(ErrorResponse
                         .of("Too many password reset requests. Please try again later.", "RATE_LIMIT_EXCEEDED"));
             }
@@ -415,10 +423,15 @@ public class AuthController {
 
             // Always return success to prevent account enumeration
             // Firebase will handle sending the email if the user exists
-            logger.info("Password reset requested for email: {} from IP: {}", email, ipAddress);
+            logger.info("Password reset requested for email hash: {} from IP: {}",
+                    Integer.toHexString(email.hashCode()), ipAddress);
 
             return ResponseEntity.ok(new SuccessResponse(
                     "If an account exists with this email, you will receive a password reset link."));
+        } catch (IllegalArgumentException e) {
+            // Handle validation errors from service layer
+            return ResponseEntity.badRequest()
+                    .body(ErrorResponse.of("Invalid email format", "INVALID_EMAIL"));
         } catch (Exception e) {
             logger.error("Error processing password reset request", e);
             return ResponseEntity.status(500)

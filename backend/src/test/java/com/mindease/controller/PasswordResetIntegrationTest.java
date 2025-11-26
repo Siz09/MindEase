@@ -226,33 +226,34 @@ public class PasswordResetIntegrationTest {
     public void testRequestPasswordReset_InvalidEmail() throws Exception {
         String requestBody = "{\"email\":\"invalid-email\"}";
 
-        // Note: The backend doesn't validate email format strictly,
-        // it relies on Firebase to handle this. This test verifies
-        // that the request is still recorded for tracking purposes.
+        // Invalid email should be rejected with 400 Bad Request
         mockMvc.perform(post("/api/auth/request-password-reset")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
                 .header("X-Forwarded-For", "192.168.1.1")
                 .header("User-Agent", "Mozilla/5.0"))
-                .andExpect(status().isOk());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("INVALID_EMAIL")));
 
-        // Request should still be recorded
-        assertEquals(1, passwordResetRequestRepository.count());
+        // Request should not be recorded
+        assertEquals(0, passwordResetRequestRepository.count());
     }
 
     @Test
     public void testRequestPasswordReset_EmptyEmail() throws Exception {
         String requestBody = "{\"email\":\"\"}";
 
+        // Empty email should be rejected with 400 Bad Request
         mockMvc.perform(post("/api/auth/request-password-reset")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody)
                 .header("X-Forwarded-For", "192.168.1.1")
                 .header("User-Agent", "Mozilla/5.0"))
-                .andExpect(status().isOk());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code", is("INVALID_EMAIL")));
 
-        // Request should still be recorded
-        assertEquals(1, passwordResetRequestRepository.count());
+        // Request should not be recorded
+        assertEquals(0, passwordResetRequestRepository.count());
     }
 
     @Test

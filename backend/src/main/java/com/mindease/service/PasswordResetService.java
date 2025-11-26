@@ -51,13 +51,20 @@ public class PasswordResetService {
      * @param ipAddress   Request IP address
      * @param userAgent   Request user agent
      * @return The created PasswordResetRequest
+     * @throws IllegalArgumentException if email is invalid
      */
     @Transactional
     public PasswordResetRequest recordResetRequest(String email, String ipAddress, String userAgent) {
+        // Validate email format before recording to prevent rate limit exhaustion
+        if (email == null || email.trim().isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            throw new IllegalArgumentException("Invalid email address");
+        }
+
         PasswordResetRequest request = new PasswordResetRequest(email, ipAddress, userAgent);
         PasswordResetRequest saved = passwordResetRequestRepository.save(request);
 
-        logger.info("Password reset requested for email: {} from IP: {}", email, ipAddress);
+        logger.info("Password reset requested for email hash: {} from IP: {}",
+                Integer.toHexString(email.hashCode()), ipAddress);
 
         return saved;
     }
@@ -84,10 +91,11 @@ public class PasswordResetService {
         List<RefreshToken> tokens = refreshTokenRepository.findByUserEmail(email);
         if (!tokens.isEmpty()) {
             refreshTokenRepository.deleteAll(tokens);
-            logger.info("Revoked {} refresh tokens for user {} after password reset", tokens.size(), email);
+            logger.info("Revoked {} refresh tokens for user hash: {} after password reset",
+                    tokens.size(), Integer.toHexString(email.hashCode()));
         }
 
-        logger.info("Password reset completed for email: {}", email);
+        logger.info("Password reset completed for email hash: {}", Integer.toHexString(email.hashCode()));
     }
 
     /**
@@ -103,8 +111,8 @@ public class PasswordResetService {
         // Check email rate limit
         long emailCount = passwordResetRequestRepository.countByEmailSince(email, windowStart);
         if (emailCount >= maxRequestsPerEmail) {
-            logger.warn("Rate limit exceeded for email: {} ({} requests in {} hour(s))",
-                email, emailCount, rateLimitWindowHours);
+            logger.warn("Rate limit exceeded for email hash: {} ({} requests in {} hour(s))",
+                Integer.toHexString(email.hashCode()), emailCount, rateLimitWindowHours);
             return true;
         }
 
