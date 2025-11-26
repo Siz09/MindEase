@@ -14,26 +14,14 @@ public class FirebaseService {
   private static final Logger logger = LoggerFactory.getLogger(FirebaseService.class);
 
   /**
-   * Verify Firebase ID token and check expiration
+   * Verify Firebase ID token
    * @param idToken Firebase ID token
    * @return Decoded and verified Firebase token
    * @throws FirebaseAuthException if token is invalid or expired
+   * Note: Firebase SDK's verifyIdToken() already validates expiration
    */
   public FirebaseToken verifyToken(String idToken) throws FirebaseAuthException {
     FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-
-    // Check if token is expired
-    long expirationTimeSeconds = decodedToken.getClaims().get("exp") != null
-        ? ((Number) decodedToken.getClaims().get("exp")).longValue()
-        : 0;
-    long currentTimeSeconds = System.currentTimeMillis() / 1000;
-
-    if (expirationTimeSeconds > 0 && currentTimeSeconds > expirationTimeSeconds) {
-      logger.warn("Firebase token has expired. Expiration: {}, Current: {}",
-          expirationTimeSeconds, currentTimeSeconds);
-      throw new FirebaseAuthException("EXPIRED_TOKEN", "Firebase token has expired");
-    }
-
     logger.debug("Firebase token verified successfully for UID: {}", decodedToken.getUid());
     return decodedToken;
   }

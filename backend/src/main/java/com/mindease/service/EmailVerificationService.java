@@ -22,6 +22,15 @@ public class EmailVerificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailVerificationService.class);
 
+    /**
+     * Mask email address for logging to reduce PII exposure
+     */
+    private String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return "***";
+        int atIndex = email.indexOf("@");
+        return email.substring(0, Math.min(2, atIndex)) + "***" + email.substring(atIndex);
+    }
+
     @Autowired
     private UserRepository userRepository;
 
@@ -47,13 +56,13 @@ public class EmailVerificationService {
         }
 
         if (user.isEmailVerified()) {
-            logger.info("Email already verified for user: {}", user.getEmail());
+            logger.debug("Email already verified for user: {}", maskEmail(user.getEmail()));
             return;
         }
 
         // Skip email verification for anonymous users
         if (user.getAnonymousMode() != null && user.getAnonymousMode()) {
-            logger.debug("Skipping email verification for anonymous user: {}", user.getEmail());
+            logger.debug("Skipping email verification for anonymous user: {}", maskEmail(user.getEmail()));
             return;
         }
 
@@ -85,15 +94,17 @@ public class EmailVerificationService {
                 );
 
                 mailSender.send(message);
-                logger.info("Verification email sent to: {}", user.getEmail());
+                logger.info("Verification email sent to: {}", maskEmail(user.getEmail()));
             } catch (Exception e) {
-                logger.error("Failed to send verification email to: {}", user.getEmail(), e);
+                logger.error("Failed to send verification email to: {}", maskEmail(user.getEmail()), e);
                 throw new RuntimeException("Failed to send verification email", e);
             }
         } else {
-            logger.warn("Email service not configured. Verification email not sent to: {}", user.getEmail());
-            // In development, log the token for testing
-            logger.info("Verification token for {}: {}", user.getEmail(), token);
+            logger.warn("Email service not configured. Verification email not sent to: {}", maskEmail(user.getEmail()));
+            // In development, use a dedicated mechanism for token retrieval
+            if (logger.isDebugEnabled()) {
+                logger.debug("DEV ONLY - Verification token generated for testing");
+            }
         }
     }
 
@@ -115,12 +126,12 @@ public class EmailVerificationService {
         }
 
         if (verificationToken.isExpired()) {
-            logger.warn("Expired verification token for email: {}", verificationToken.getEmail());
+            logger.warn("Expired verification token for email: {}", maskEmail(verificationToken.getEmail()));
             return false;
         }
 
         if (verificationToken.isUsed()) {
-            logger.warn("Verification token already used for email: {}", verificationToken.getEmail());
+            logger.warn("Verification token already used for email: {}", maskEmail(verificationToken.getEmail()));
             return false;
         }
 
@@ -128,7 +139,7 @@ public class EmailVerificationService {
             .orElse(null);
 
         if (user == null) {
-            logger.warn("User not found for verification token: {}", verificationToken.getEmail());
+            logger.warn("User not found for verification token: {}", maskEmail(verificationToken.getEmail()));
             return false;
         }
 
@@ -140,7 +151,7 @@ public class EmailVerificationService {
         user.setEmailVerified(true);
         userRepository.save(user);
 
-        logger.info("Email verified successfully for user: {}", user.getEmail());
+        logger.info("Email verified successfully for user: {}", maskEmail(user.getEmail()));
         return true;
     }
 

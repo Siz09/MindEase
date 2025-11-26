@@ -40,7 +40,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = new RefreshToken(token, user, expiresAt);
         refreshToken = refreshTokenRepository.save(refreshToken);
 
-        logger.debug("Created refresh token for user: {}", user.getEmail());
+        logger.debug("Created refresh token for user ID: {}", user.getId());
         return refreshToken;
     }
 
@@ -86,7 +86,7 @@ public class RefreshTokenService {
      */
     public int revokeAllUserTokens(User user) {
         int count = refreshTokenRepository.revokeAllTokensForUser(user, LocalDateTime.now());
-        logger.info("Revoked {} refresh tokens for user: {}", count, user.getEmail());
+        logger.info("Revoked {} refresh tokens for user ID: {}", count, user.getId());
         return count;
     }
 
@@ -95,7 +95,7 @@ public class RefreshTokenService {
      */
     public void deleteAllUserTokens(User user) {
         refreshTokenRepository.deleteByUser(user);
-        logger.info("Deleted all refresh tokens for user: {}", user.getEmail());
+        logger.info("Deleted all refresh tokens for user ID: {}", user.getId());
     }
 
     /**

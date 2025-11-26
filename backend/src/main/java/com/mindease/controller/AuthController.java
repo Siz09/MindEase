@@ -144,10 +144,8 @@ public class AuthController {
       return ResponseEntity.ok(createAuthResponse(user, jwtToken, refreshToken.getToken(), "Login successful"));
 
     } catch (FirebaseAuthException e) {
-      // Record failed login attempt if user was found
-      if (user != null) {
-        userService.recordFailedLoginAttempt(user);
-      }
+      // Don't record failed login for Firebase service errors
+      // Only record for invalid credential errors if distinguishable
       return ResponseEntity.status(401).body(ErrorResponse.of("Invalid Firebase token: " + e.getMessage(), "INVALID_FIREBASE_TOKEN"));
     } catch (Exception e) {
       String msg = e.getMessage() != null ? e.getMessage() : "Login failed";

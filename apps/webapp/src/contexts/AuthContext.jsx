@@ -31,6 +31,8 @@ export const AuthProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
   const location = useLocation();
   const welcomeToastShownRef = useRef(false);
+  const isRefreshingRef = useRef(false);
+  const failedQueueRef = useRef([]);
 
   // Configure axios defaults
   useEffect(() => {
@@ -103,18 +105,15 @@ export const AuthProvider = ({ children }) => {
 
   // Configure axios interceptors for global error handling and token refresh
   useEffect(() => {
-    let isRefreshing = false;
-    let failedQueue = [];
-
     const processQueue = (error, token = null) => {
-      failedQueue.forEach((prom) => {
+      failedQueueRef.current.forEach((prom) => {
         if (error) {
           prom.reject(error);
         } else {
           prom.resolve(token);
         }
       });
-      failedQueue = [];
+      failedQueueRef.current = [];
     };
 
     const responseInterceptor = axios.interceptors.response.use(
@@ -125,10 +124,10 @@ export const AuthProvider = ({ children }) => {
 
         // Handle 401 errors with token refresh
         if (error.response?.status === 401 && !originalRequest._retry) {
-          if (isRefreshing) {
+          if (isRefreshingRef.current) {
             // Queue the request while refresh is in progress
             return new Promise((resolve, reject) => {
-              failedQueue.push({ resolve, reject });
+              failedQueueRef.current.push({ resolve, reject });
             })
               .then((token) => {
                 originalRequest.headers['Authorization'] = 'Bearer ' + token;
@@ -140,7 +139,7 @@ export const AuthProvider = ({ children }) => {
           }
 
           originalRequest._retry = true;
-          isRefreshing = true;
+          isRefreshingRef.current = true;
 
           const storedRefreshToken = localStorage.getItem('refreshToken');
 
@@ -164,12 +163,12 @@ export const AuthProvider = ({ children }) => {
               originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
 
               processQueue(null, newToken);
-              isRefreshing = false;
+              isRefreshingRef.current = false;
 
               return axios(originalRequest);
             } catch (refreshError) {
               processQueue(refreshError, null);
-              isRefreshing = false;
+              isRefreshingRef.current = false;
 
               // Refresh failed, clear session
               localStorage.removeItem('token');
@@ -189,7 +188,7 @@ export const AuthProvider = ({ children }) => {
             }
           } else {
             // No refresh token available
-            isRefreshing = false;
+            isRefreshingRef.current = false;
             localStorage.removeItem('token');
             setToken(null);
             setCurrentUser(null);
