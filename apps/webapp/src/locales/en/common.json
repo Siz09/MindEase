@@ -69,6 +69,22 @@
       "lowercase": "One lowercase letter (a-z)",
       "number": "One number (0-9)",
       "specialChar": "One special character (!@#$%^&*)"
+    },
+    "errors": {
+      "USER_NOT_FOUND": "No account found. Please register first.",
+      "USER_ALREADY_EXISTS": "This account already exists. Please log in instead.",
+      "INVALID_FIREBASE_TOKEN": "Authentication failed. Please try again.",
+      "INVALID_CREDENTIALS": "Invalid email or password.",
+      "ACCOUNT_LOCKED": "Account is temporarily locked due to too many failed login attempts. Please try again later.",
+      "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later.",
+      "EMAIL_IN_USE": "This email is already in use. Please use a different email.",
+      "INVALID_REFRESH_TOKEN": "Session expired. Please log in again.",
+      "EMAIL_ALREADY_VERIFIED": "Email is already verified.",
+      "INVALID_VERIFICATION_TOKEN": "Invalid or expired verification token.",
+      "NOT_ANONYMOUS_ACCOUNT": "This account is already a full account.",
+      "WEAK_PASSWORD": "Password is too weak. Please use a stronger password.",
+      "NETWORK_ERROR": "Network error. Please check your connection.",
+      "SERVER_ERROR": "Server error. Please try again later."
     }
   },
   "mood": {

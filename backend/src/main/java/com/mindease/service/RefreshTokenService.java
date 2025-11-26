@@ -53,11 +53,12 @@ public class RefreshTokenService {
 
     /**
      * Verify and return a valid refresh token
+     *
      * @throws RuntimeException if token is invalid, expired, or revoked
      */
     public RefreshToken verifyRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-            .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
 
         if (refreshToken.isRevoked()) {
             throw new RuntimeException("Refresh token has been revoked");

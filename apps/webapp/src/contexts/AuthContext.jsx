@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { auth } from '../firebase';
 import {
@@ -25,12 +26,21 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const { t } = useTranslation();
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
   const location = useLocation();
   const welcomeToastShownRef = useRef(false);
+
+  // Helper to get translated error message
+  const getErrorMessage = (errorCode, fallback) => {
+    if (errorCode && t(`auth.errors.${errorCode}`, { defaultValue: null })) {
+      return t(`auth.errors.${errorCode}`);
+    }
+    return fallback;
+  };
   const isRefreshingRef = useRef(false);
   const failedQueueRef = useRef([]);
 
@@ -290,28 +300,22 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Login error:', error);
 
-      let errorMessage = 'Login failed';
       const errorCode = error.response?.data?.code;
+      let errorMessage = getErrorMessage(errorCode, t('auth.loginError'));
 
-      // Handle backend error codes
-      if (errorCode === 'USER_NOT_FOUND') {
-        errorMessage = 'No account found. Please register first.';
-      } else if (errorCode === 'INVALID_FIREBASE_TOKEN') {
-        errorMessage = 'Authentication failed. Please try again.';
-      } else if (errorCode === 'LOGIN_FAILED') {
-        errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
-      }
-      // Handle Firebase error codes
-      else if (error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password.';
-      } else if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email.';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password.';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
+      // Handle Firebase error codes if no backend code
+      if (!errorCode) {
+        if (error.code === 'auth/invalid-credential') {
+          errorMessage = getErrorMessage('INVALID_CREDENTIALS', 'Invalid email or password.');
+        } else if (error.code === 'auth/user-not-found') {
+          errorMessage = getErrorMessage('USER_NOT_FOUND', 'No account found with this email.');
+        } else if (error.code === 'auth/wrong-password') {
+          errorMessage = getErrorMessage('INVALID_CREDENTIALS', 'Incorrect password.');
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
       }
 
       toast.error(errorMessage);
@@ -385,7 +389,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password, anonymousMode = false) => {
+  const register = async (email, password, anonymousMode = false, autoLogin = true) => {
     try {
       const toastId = toast.loading('Creating account...');
 
@@ -403,52 +407,65 @@ export const AuthProvider = ({ children }) => {
         anonymousMode,
       });
 
-      // Do not auto-login after registration. Ensure clean auth state.
-      try {
-        await auth.signOut();
-      } catch (e) {
-        // Non-fatal: just ensure local state is cleared
+      const { token: jwtToken, refreshToken: refreshTokenValue, user: userData } = response.data;
+
+      if (autoLogin) {
+        // Auto-login after successful registration
+        return handleAuthSuccess(
+          jwtToken,
+          userData,
+          refreshTokenValue,
+          toastId,
+          'Account created! Welcome to MindEase!'
+        );
+      } else {
+        // Do not auto-login. Ensure clean auth state.
+        try {
+          await auth.signOut();
+        } catch (e) {
+          // Non-fatal: just ensure local state is cleared
+        }
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        setToken(null);
+        setRefreshToken(null);
+        setCurrentUser(null);
+        welcomeToastShownRef.current = false;
+
+        toast.update(toastId, {
+          render: 'Account created! Please log in.',
+          type: 'success',
+          isLoading: false,
+          autoClose: 3000,
+        });
+
+        return { success: true };
       }
-      localStorage.removeItem('token');
-      setToken(null);
-      setCurrentUser(null);
-      welcomeToastShownRef.current = false;
-
-      toast.update(toastId, {
-        render: 'Account created! Please log in.',
-        type: 'success',
-        isLoading: false,
-        autoClose: 3000,
-      });
-
-      return { success: true };
     } catch (error) {
       console.error('Register error:', error);
 
-      let errorMessage = 'Registration failed';
       const errorCode = error.response?.data?.code;
+      let errorMessage = getErrorMessage(errorCode, t('auth.registerError'));
 
-      // Handle backend error codes
-      if (errorCode === 'USER_ALREADY_EXISTS') {
-        errorMessage = 'This account already exists. Please log in instead.';
-      } else if (errorCode === 'INVALID_FIREBASE_TOKEN') {
-        errorMessage = 'Authentication failed. Please try again.';
-      } else if (errorCode === 'REGISTRATION_FAILED') {
-        errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
-      }
-      // Handle Firebase error codes
-      else if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email is already registered. Please log in instead.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password should be at least 6 characters.';
-      }
-      // Backend or Axios errors
-      else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
+      // Handle Firebase error codes if no backend code
+      if (!errorCode) {
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = getErrorMessage(
+            'USER_ALREADY_EXISTS',
+            'This email is already registered. Please log in instead.'
+          );
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = t('auth.invalidEmailFormat');
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = getErrorMessage(
+            'WEAK_PASSWORD',
+            'Password should be at least 6 characters.'
+          );
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
       }
 
       toast.error(errorMessage);
@@ -488,6 +505,87 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const convertAnonymousToFull = async (email, password) => {
+    try {
+      const toastId = toast.loading('Converting account...');
+
+      // Link anonymous account with email/password in Firebase
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) {
+        throw new Error('No active session');
+      }
+
+      // Import the credential helper
+      const { EmailAuthProvider, linkWithCredential } = await import('firebase/auth');
+      const credential = EmailAuthProvider.credential(email, password);
+      await linkWithCredential(firebaseUser, credential);
+
+      // Get new Firebase token
+      const firebaseToken = await firebaseUser.getIdToken(true); // Force refresh
+
+      // Call backend to convert account
+      const response = await axios.post(`${API_BASE_URL}/api/auth/convert-anonymous`, {
+        email,
+        password,
+        firebaseToken,
+      });
+
+      const { token: jwtToken, refreshToken: refreshTokenValue, user: userData } = response.data;
+
+      // Update local state
+      localStorage.setItem('token', jwtToken);
+      setToken(jwtToken);
+
+      if (refreshTokenValue) {
+        localStorage.setItem('refreshToken', refreshTokenValue);
+        setRefreshToken(refreshTokenValue);
+      }
+
+      setCurrentUser(userData);
+
+      toast.update(toastId, {
+        render: 'Account converted successfully! Welcome to MindEase!',
+        type: 'success',
+        isLoading: false,
+        autoClose: 3000,
+      });
+
+      return { success: true, user: userData };
+    } catch (error) {
+      console.error('Convert anonymous error:', error);
+
+      const errorCode = error.response?.data?.code;
+      let errorMessage = getErrorMessage(errorCode, 'Failed to convert account');
+
+      // Handle Firebase error codes if no backend code
+      if (!errorCode) {
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = getErrorMessage(
+            'EMAIL_IN_USE',
+            'This email is already in use. Please use a different email.'
+          );
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = t('auth.invalidEmailFormat');
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = getErrorMessage(
+            'WEAK_PASSWORD',
+            'Password should be at least 6 characters.'
+          );
+        } else if (error.code === 'auth/requires-recent-login') {
+          errorMessage = 'Please log out and log back in before converting your account.';
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+
+      toast.error(errorMessage);
+
+      return { success: false, error: errorMessage, code: errorCode };
+    }
+  };
+
   const logout = async () => {
     try {
       // Call backend logout to revoke refresh tokens
@@ -518,6 +616,7 @@ export const AuthProvider = ({ children }) => {
     loginAnonymously,
     register,
     updateUser,
+    convertAnonymousToFull,
     logout,
     isAuthenticated: !!currentUser,
   };

@@ -26,7 +26,8 @@ public class EmailVerificationService {
      * Mask email address for logging to reduce PII exposure
      */
     private String maskEmail(String email) {
-        if (email == null || !email.contains("@")) return "***";
+        if (email == null || !email.contains("@"))
+            return "***";
         int atIndex = email.indexOf("@");
         return email.substring(0, Math.min(2, atIndex)) + "***" + email.substring(atIndex);
     }
@@ -83,15 +84,14 @@ public class EmailVerificationService {
                 message.setTo(user.getEmail());
                 message.setSubject("Verify your MindEase email address");
                 message.setText(
-                    "Hello,\n\n" +
-                    "Thank you for registering with MindEase!\n\n" +
-                    "Please verify your email address by clicking the link below:\n" +
-                    verificationLink + "\n\n" +
-                    "This link will expire in 24 hours.\n\n" +
-                    "If you didn't create an account with MindEase, please ignore this email.\n\n" +
-                    "Best regards,\n" +
-                    "The MindEase Team"
-                );
+                        "Hello,\n\n" +
+                                "Thank you for registering with MindEase!\n\n" +
+                                "Please verify your email address by clicking the link below:\n" +
+                                verificationLink + "\n\n" +
+                                "This link will expire in 24 hours.\n\n" +
+                                "If you didn't create an account with MindEase, please ignore this email.\n\n" +
+                                "Best regards,\n" +
+                                "The MindEase Team");
 
                 mailSender.send(message);
                 logger.info("Verification email sent to: {}", maskEmail(user.getEmail()));
@@ -118,7 +118,7 @@ public class EmailVerificationService {
         }
 
         EmailVerificationToken verificationToken = tokenRepository.findByToken(token)
-            .orElse(null);
+                .orElse(null);
 
         if (verificationToken == null) {
             logger.warn("Invalid verification token: {}", token);
@@ -136,7 +136,7 @@ public class EmailVerificationService {
         }
 
         User user = userRepository.findByEmail(verificationToken.getEmail())
-            .orElse(null);
+                .orElse(null);
 
         if (user == null) {
             logger.warn("User not found for verification token: {}", maskEmail(verificationToken.getEmail()));

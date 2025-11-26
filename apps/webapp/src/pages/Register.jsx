@@ -85,10 +85,12 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const result = await register(formData.email, formData.password);
+      // Auto-login after registration for better UX
+      const result = await register(formData.email, formData.password, false, true);
 
       if (result.success) {
-        navigate('/login');
+        // Navigate to dashboard after auto-login
+        navigate('/');
       } else {
         setError(result.error);
       }
