@@ -17,9 +17,11 @@ import com.mindease.model.User;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.EmailVerificationService;
 import com.mindease.service.FirebaseService;
+import com.mindease.service.PasswordResetService;
 import com.mindease.service.RefreshTokenService;
 import com.mindease.service.UserService;
 import com.mindease.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -50,11 +52,14 @@ public class AuthController {
     @Autowired
     private RefreshTokenService refreshTokenService;
 
-  @Autowired
-  private EmailVerificationService emailVerificationService;
+    @Autowired
+    private EmailVerificationService emailVerificationService;
 
-  @Autowired
-  private UserRepository userRepository;
+    @Autowired
+    private PasswordResetService passwordResetService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Operation(summary = "Register a new user", description = "Register a new user with Firebase authentication")
     @ApiResponses(value = {
@@ -235,77 +240,78 @@ public class AuthController {
         }
     }
 
-  @Operation(summary = "Convert anonymous account to full account", description = "Link anonymous account to email and password")
-  @ApiResponses(value = {
-    @ApiResponse(responseCode = "200", description = "Account converted successfully",
-      content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-    @ApiResponse(responseCode = "400", description = "Not an anonymous account or invalid request",
-      content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-    @ApiResponse(responseCode = "401", description = "Unauthorized",
-      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-  })
-  @PostMapping("/convert-anonymous")
-  public ResponseEntity<?> convertAnonymous(@RequestBody ConvertAnonymousRequest request, Authentication authentication) {
-    try {
-      String currentEmail = authentication.getName();
-      User user = userService.findByEmail(currentEmail)
-        .orElseThrow(() -> new RuntimeException("User not found"));
+    @Operation(summary = "Convert anonymous account to full account", description = "Link anonymous account to email and password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account converted successfully", content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Not an anonymous account or invalid request", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping("/convert-anonymous")
+    public ResponseEntity<?> convertAnonymous(@RequestBody ConvertAnonymousRequest request,
+            Authentication authentication) {
+        try {
+            String currentEmail = authentication.getName();
+            User user = userService.findByEmail(currentEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-      // Check if user is actually anonymous
-      if (!user.getAnonymousMode()) {
-        return ResponseEntity.badRequest().body(ErrorResponse.of("Account is not anonymous", "NOT_ANONYMOUS_ACCOUNT"));
-      }
+            // Check if user is actually anonymous
+            if (!user.getAnonymousMode()) {
+                return ResponseEntity.badRequest()
+                        .body(ErrorResponse.of("Account is not anonymous", "NOT_ANONYMOUS_ACCOUNT"));
+            }
 
-      // Verify the new Firebase token
-      String newFirebaseUid = firebaseService.getUidFromToken(request.getFirebaseToken());
+            // Verify the new Firebase token
+            String newFirebaseUid = firebaseService.getUidFromToken(request.getFirebaseToken());
 
-      // Check if email is already in use
-      if (userRepository.existsByEmail(request.getEmail())) {
-        return ResponseEntity.badRequest().body(ErrorResponse.of("Email is already in use", "EMAIL_IN_USE"));
-      }
+            // Check if email is already in use
+            if (userRepository.existsByEmail(request.getEmail())) {
+                return ResponseEntity.badRequest().body(ErrorResponse.of("Email is already in use", "EMAIL_IN_USE"));
+            }
 
-      // Update user account
-      user.setEmail(request.getEmail());
-      user.setFirebaseUid(newFirebaseUid);
-      user.setAnonymousMode(false);
-      userRepository.save(user);
+            // Update user account
+            user.setEmail(request.getEmail());
+            user.setFirebaseUid(newFirebaseUid);
+            user.setAnonymousMode(false);
+            userRepository.save(user);
 
-      // Send verification email
-      try {
-        emailVerificationService.sendVerificationEmail(user);
-      } catch (Exception e) {
-        logger.warn("Failed to send verification email after conversion: {}", e.getMessage());
-      }
+            // Send verification email
+            try {
+                emailVerificationService.sendVerificationEmail(user);
+            } catch (Exception e) {
+                logger.warn("Failed to send verification email after conversion: {}", e.getMessage());
+            }
 
-      // Revoke old refresh tokens
-      refreshTokenService.revokeAllUserTokens(user);
+            // Revoke old refresh tokens
+            refreshTokenService.revokeAllUserTokens(user);
 
-      // Generate new JWT and refresh token
-      String jwtToken = jwtUtil.generateToken(user);
-      RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+            // Generate new JWT and refresh token
+            String jwtToken = jwtUtil.generateToken(user);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
-      logger.info("Converted anonymous account to full account for user: {}", user.getEmail());
-      return ResponseEntity.ok(createAuthResponse(user, jwtToken, refreshToken.getToken(), "Account converted successfully"));
+            logger.info("Converted anonymous account to full account for user: {}", user.getEmail());
+            return ResponseEntity
+                    .ok(createAuthResponse(user, jwtToken, refreshToken.getToken(), "Account converted successfully"));
 
-    } catch (org.springframework.dao.DataIntegrityViolationException e) {
-      // Handle race condition: email uniqueness constraint violation
-      return ResponseEntity.badRequest().body(ErrorResponse.of("Email is already in use", "EMAIL_IN_USE"));
-    } catch (FirebaseAuthException e) {
-      return ResponseEntity.status(401).body(ErrorResponse.of("Invalid Firebase token: " + e.getMessage(), "INVALID_FIREBASE_TOKEN"));
-    } catch (Exception e) {
-      logger.error("Failed to convert anonymous account", e);
-      return ResponseEntity.badRequest().body(ErrorResponse.of(e.getMessage(), "CONVERSION_FAILED"));
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Handle race condition: email uniqueness constraint violation
+            return ResponseEntity.badRequest().body(ErrorResponse.of("Email is already in use", "EMAIL_IN_USE"));
+        } catch (FirebaseAuthException e) {
+            return ResponseEntity.status(401)
+                    .body(ErrorResponse.of("Invalid Firebase token: " + e.getMessage(), "INVALID_FIREBASE_TOKEN"));
+        } catch (Exception e) {
+            logger.error("Failed to convert anonymous account", e);
+            return ResponseEntity.badRequest().body(ErrorResponse.of(e.getMessage(), "CONVERSION_FAILED"));
+        }
     }
-  }
 
-  @Operation(summary = "Send verification email", description = "Resend email verification link")
-  @ApiResponses(value = {
-    @ApiResponse(responseCode = "200", description = "Verification email sent"),
-    @ApiResponse(responseCode = "400", description = "Email already verified or invalid request"),
-    @ApiResponse(responseCode = "401", description = "Unauthorized")
-  })
-  @PostMapping("/send-verification")
-  public ResponseEntity<?> sendVerificationEmail(Authentication authentication) {
+    @Operation(summary = "Send verification email", description = "Resend email verification link")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Verification email sent"),
+            @ApiResponse(responseCode = "400", description = "Email already verified or invalid request"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    @PostMapping("/send-verification")
+    public ResponseEntity<?> sendVerificationEmail(Authentication authentication) {
         try {
             String email = authentication.getName();
             User user = userService.findByEmail(email)
@@ -384,6 +390,82 @@ public class AuthController {
         }
     }
 
+    @Operation(summary = "Request password reset", description = "Request a password reset email. Returns success even if email doesn't exist to prevent account enumeration.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password reset email sent (or email doesn't exist)", content = @Content(schema = @Schema(implementation = SuccessResponse.class))),
+            @ApiResponse(responseCode = "429", description = "Rate limit exceeded", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @PostMapping("/request-password-reset")
+    public ResponseEntity<?> requestPasswordReset(@RequestBody PasswordResetEmailRequest request,
+            HttpServletRequest httpRequest) {
+        try {
+            String email = request.getEmail();
+            String ipAddress = getClientIpAddress(httpRequest);
+            String userAgent = httpRequest.getHeader("User-Agent");
+
+            // Check rate limit
+            if (passwordResetService.isRateLimitExceeded(email, ipAddress)) {
+                logger.warn("Password reset rate limit exceeded for email: {} from IP: {}", email, ipAddress);
+                return ResponseEntity.status(429).body(ErrorResponse
+                        .of("Too many password reset requests. Please try again later.", "RATE_LIMIT_EXCEEDED"));
+            }
+
+            // Record the request for tracking
+            passwordResetService.recordResetRequest(email, ipAddress, userAgent);
+
+            // Always return success to prevent account enumeration
+            // Firebase will handle sending the email if the user exists
+            logger.info("Password reset requested for email: {} from IP: {}", email, ipAddress);
+
+            return ResponseEntity.ok(new SuccessResponse(
+                    "If an account exists with this email, you will receive a password reset link."));
+        } catch (Exception e) {
+            logger.error("Error processing password reset request", e);
+            return ResponseEntity.status(500)
+                    .body(ErrorResponse.of("Failed to process password reset request", "PASSWORD_RESET_ERROR"));
+        }
+    }
+
+    @Operation(summary = "Confirm password reset", description = "Mark a password reset as completed and revoke all refresh tokens")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password reset confirmed", content = @Content(schema = @Schema(implementation = SuccessResponse.class)))
+    })
+    @PostMapping("/confirm-password-reset")
+    public ResponseEntity<?> confirmPasswordReset(@RequestBody PasswordResetConfirmRequest request) {
+        try {
+            String email = request.getEmail();
+
+            if (email != null && !email.isEmpty()) {
+                // Mark reset as completed and revoke all refresh tokens
+                passwordResetService.recordResetCompletion(email);
+                logger.info("Password reset confirmed for email: {}", email);
+            }
+
+            return ResponseEntity.ok(new SuccessResponse("Password reset confirmed successfully"));
+        } catch (Exception e) {
+            logger.error("Error confirming password reset", e);
+            return ResponseEntity.status(500)
+                    .body(ErrorResponse.of("Failed to confirm password reset", "PASSWORD_RESET_CONFIRM_ERROR"));
+        }
+    }
+
+    /**
+     * Extract client IP address from request, handling proxies.
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+
+        return request.getRemoteAddr();
+    }
+
     public static class LoginRequest {
         private String firebaseToken;
 
@@ -394,6 +476,46 @@ public class AuthController {
 
         public void setFirebaseToken(String firebaseToken) {
             this.firebaseToken = firebaseToken;
+        }
+    }
+
+    public static class PasswordResetEmailRequest {
+        private String email;
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+    }
+
+    public static class PasswordResetConfirmRequest {
+        private String email;
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+    }
+
+    public static class SuccessResponse {
+        private String message;
+
+        public SuccessResponse(String message) {
+            this.message = message;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
         }
     }
 }

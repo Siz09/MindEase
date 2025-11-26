@@ -26,6 +26,12 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
     List<RefreshToken> findByUser(User user);
 
     /**
+     * Find all refresh tokens by user email
+     */
+    @Query("SELECT rt FROM RefreshToken rt WHERE rt.user.email = :email")
+    List<RefreshToken> findByUserEmail(String email);
+
+    /**
      * Find all valid (non-revoked, non-expired) refresh tokens for a user
      */
     @Query("SELECT rt FROM RefreshToken rt WHERE rt.user = :user AND rt.revoked = false AND rt.expiresAt > :now")

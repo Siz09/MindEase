@@ -223,6 +223,12 @@ const Login = () => {
                   </div>
                 </div>
 
+                <div style={{ textAlign: 'right', marginBottom: '16px' }}>
+                  <Link to="/forgot-password" className="auth-link" style={{ fontSize: '14px' }}>
+                    {t('auth.forgotPassword')}
+                  </Link>
+                </div>
+
                 <button
                   type="submit"
                   className={`btn btn-primary w-full ${loading ? 'loading' : ''}`}

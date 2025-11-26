@@ -35,6 +35,7 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     private static final String LOGIN_PATH = "/api/auth/login";
     private static final String REGISTER_PATH = "/api/auth/register";
     private static final String ME_PATH = "/api/auth/me";
+    private static final String PASSWORD_RESET_PATH = "/api/auth/request-password-reset";
 
     // Allow 5 requests per 15 minutes per IP for auth endpoints
     private static final int MAX_ATTEMPTS = 5;
@@ -43,6 +44,10 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     // More lenient rate limit for /me endpoint (100 requests per 15 minutes)
     private static final int MAX_ME_ATTEMPTS = 100;
     private static final long ME_WINDOW_MILLIS = 15 * 60 * 1000L;
+
+    // Stricter rate limit for password reset (3 requests per hour)
+    private static final int MAX_PASSWORD_RESET_ATTEMPTS = 3;
+    private static final long PASSWORD_RESET_WINDOW_MILLIS = 60 * 60 * 1000L;
     private static final long CLEANUP_INTERVAL_MILLIS = 60 * 60 * 1000L; // 1 hour
 
     private static class Counter {
@@ -80,7 +85,7 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return !(LOGIN_PATH.equals(path) || REGISTER_PATH.equals(path) || ME_PATH.equals(path));
+        return !(LOGIN_PATH.equals(path) || REGISTER_PATH.equals(path) || ME_PATH.equals(path) || PASSWORD_RESET_PATH.equals(path));
     }
 
     @Override
@@ -91,13 +96,27 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         long now = Instant.now().toEpochMilli();
 
-        // Use different rate limits for /me endpoint
+        // Use different rate limits for different endpoints
         boolean isMeEndpoint = ME_PATH.equals(path);
-        int maxAttempts = isMeEndpoint ? MAX_ME_ATTEMPTS : MAX_ATTEMPTS;
-        long windowMillis = isMeEndpoint ? ME_WINDOW_MILLIS : WINDOW_MILLIS;
+        boolean isPasswordResetEndpoint = PASSWORD_RESET_PATH.equals(path);
 
-        // Use separate counter key for /me endpoint
-        String counterKey = isMeEndpoint ? ip + ":me" : ip;
+        int maxAttempts;
+        long windowMillis;
+        String counterKey;
+
+        if (isMeEndpoint) {
+            maxAttempts = MAX_ME_ATTEMPTS;
+            windowMillis = ME_WINDOW_MILLIS;
+            counterKey = ip + ":me";
+        } else if (isPasswordResetEndpoint) {
+            maxAttempts = MAX_PASSWORD_RESET_ATTEMPTS;
+            windowMillis = PASSWORD_RESET_WINDOW_MILLIS;
+            counterKey = ip + ":password-reset";
+        } else {
+            maxAttempts = MAX_ATTEMPTS;
+            windowMillis = WINDOW_MILLIS;
+            counterKey = ip;
+        }
         Counter counter = ipCounters.computeIfAbsent(counterKey, k -> new Counter());
 
         synchronized (counter) {

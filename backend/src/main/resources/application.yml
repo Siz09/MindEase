@@ -182,6 +182,14 @@ stripe:
   publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_xxx}
   webhook:
     secret: ${STRIPE_WEBHOOK_SECRET:whsec_xxx}
+
+# Password reset configuration
+password-reset:
+  rate-limit:
+    max-per-email: 3
+    max-per-ip: 5
+    window-hours: 1
+  retention-days: 30
 ---
 spring:
   config:

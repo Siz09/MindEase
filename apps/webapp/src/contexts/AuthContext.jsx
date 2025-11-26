@@ -7,6 +7,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInAnonymously,
+  sendPasswordResetEmail as firebaseSendPasswordResetEmail,
 } from 'firebase/auth';
 import { toast } from 'react-toastify';
 
@@ -586,6 +587,56 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const sendPasswordResetEmail = async (email) => {
+    try {
+      // Track the request in backend for rate limiting and monitoring
+      try {
+        await axios.post(`${API_BASE_URL}/api/auth/request-password-reset`, { email });
+      } catch (backendError) {
+        // Check for rate limit error
+        if (backendError.response?.data?.code === 'RATE_LIMIT_EXCEEDED') {
+          const errorMsg = getErrorMessage(
+            'RATE_LIMIT_EXCEEDED',
+            'Too many reset requests. Please try again later.'
+          );
+          toast.error(errorMsg);
+          return { success: false, error: errorMsg };
+        }
+        // Continue even if backend tracking fails
+        console.warn('Backend tracking failed for password reset:', backendError);
+      }
+
+      // Send password reset email via Firebase
+      await firebaseSendPasswordResetEmail(auth, email);
+
+      toast.success(t('auth.passwordResetEmailSent', { email }));
+      return { success: true };
+    } catch (error) {
+      console.error('Password reset error:', error);
+
+      let errorMessage = t('auth.passwordResetError');
+
+      // Handle Firebase error codes
+      if (error.code === 'auth/user-not-found') {
+        // Don't reveal if user exists - show generic message
+        errorMessage = t('auth.passwordResetGenericSuccess');
+        return { success: true }; // Return success to prevent account enumeration
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = t('auth.invalidEmailFormat');
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = getErrorMessage(
+          'RATE_LIMIT_EXCEEDED',
+          'Too many requests. Please try again later.'
+        );
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
+
   const logout = async () => {
     try {
       // Call backend logout to revoke refresh tokens
@@ -617,6 +668,7 @@ export const AuthProvider = ({ children }) => {
     register,
     updateUser,
     convertAnonymousToFull,
+    sendPasswordResetEmail,
     logout,
     isAuthenticated: !!currentUser,
   };

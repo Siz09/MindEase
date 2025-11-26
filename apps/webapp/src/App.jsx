@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
 import UserDashboard from './pages/Dashboard';
 import Insights from './pages/Insights';
 import Mindfulness from './pages/Mindfulness';
@@ -44,6 +45,7 @@ function App() {
             {/* Auth routes (always light theme) */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Admin routes (use dedicated admin styling, not user theme) */}
             <Route
