@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
   const location = useLocation();
   const welcomeToastShownRef = useRef(false);
 
@@ -77,9 +78,15 @@ export const AuthProvider = ({ children }) => {
   }, [location.pathname]);
 
   // Helper to DRY success-path state updates and toasts
-  const handleAuthSuccess = (jwtToken, userData, toastId, messageText) => {
+  const handleAuthSuccess = (jwtToken, userData, refreshTokenValue, toastId, messageText) => {
     localStorage.setItem('token', jwtToken);
     setToken(jwtToken);
+
+    if (refreshTokenValue) {
+      localStorage.setItem('refreshToken', refreshTokenValue);
+      setRefreshToken(refreshTokenValue);
+    }
+
     setCurrentUser(userData);
     welcomeToastShownRef.current = true;
 
@@ -91,29 +98,120 @@ export const AuthProvider = ({ children }) => {
         autoClose: 3000,
       });
     }
-    return { success: true, user: userData, token: jwtToken };
+    return { success: true, user: userData, token: jwtToken, refreshToken: refreshTokenValue };
   };
 
-  // Configure axios interceptors for global error handling
+  // Configure axios interceptors for global error handling and token refresh
   useEffect(() => {
+    let isRefreshing = false;
+    let failedQueue = [];
+
+    const processQueue = (error, token = null) => {
+      failedQueue.forEach((prom) => {
+        if (error) {
+          prom.reject(error);
+        } else {
+          prom.resolve(token);
+        }
+      });
+      failedQueue = [];
+    };
+
     const responseInterceptor = axios.interceptors.response.use(
       (response) => response,
-      (error) => {
+      async (error) => {
+        const originalRequest = error.config;
         console.error('API Error:', error);
 
+        // Handle 401 errors with token refresh
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          if (isRefreshing) {
+            // Queue the request while refresh is in progress
+            return new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            })
+              .then((token) => {
+                originalRequest.headers['Authorization'] = 'Bearer ' + token;
+                return axios(originalRequest);
+              })
+              .catch((err) => {
+                return Promise.reject(err);
+              });
+          }
+
+          originalRequest._retry = true;
+          isRefreshing = true;
+
+          const storedRefreshToken = localStorage.getItem('refreshToken');
+
+          if (storedRefreshToken) {
+            try {
+              const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+                refreshToken: storedRefreshToken,
+              });
+
+              const { token: newToken, refreshToken: newRefreshToken } = response.data;
+
+              localStorage.setItem('token', newToken);
+              setToken(newToken);
+
+              if (newRefreshToken) {
+                localStorage.setItem('refreshToken', newRefreshToken);
+                setRefreshToken(newRefreshToken);
+              }
+
+              axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+              originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+
+              processQueue(null, newToken);
+              isRefreshing = false;
+
+              return axios(originalRequest);
+            } catch (refreshError) {
+              processQueue(refreshError, null);
+              isRefreshing = false;
+
+              // Refresh failed, clear session
+              localStorage.removeItem('token');
+              localStorage.removeItem('refreshToken');
+              setToken(null);
+              setRefreshToken(null);
+              setCurrentUser(null);
+
+              if (
+                !location.pathname.startsWith('/admin') &&
+                !location.pathname.startsWith('/login')
+              ) {
+                toast.error('Session expired. Please log in again.');
+              }
+
+              return Promise.reject(refreshError);
+            }
+          } else {
+            // No refresh token available
+            isRefreshing = false;
+            localStorage.removeItem('token');
+            setToken(null);
+            setCurrentUser(null);
+
+            if (
+              !location.pathname.startsWith('/admin') &&
+              !location.pathname.startsWith('/login')
+            ) {
+              toast.error('Session expired. Please log in again.');
+            }
+
+            return Promise.reject(error);
+          }
+        }
+
+        // Handle other errors
         let errorMessage = 'An unexpected error occurred';
 
         if (error.response) {
-          // Server responded with error status
           const { status, data } = error.response;
 
           switch (status) {
-            case 401:
-              errorMessage = data?.message || 'Session expired. Please log in again.';
-              localStorage.removeItem('token');
-              setToken(null);
-              setCurrentUser(null);
-              break;
             case 403:
               errorMessage = data?.message || 'Access denied';
               break;
@@ -133,15 +231,13 @@ export const AuthProvider = ({ children }) => {
               errorMessage = data?.message || `Error: ${status}`;
           }
         } else if (error.request) {
-          // Network error
           errorMessage = 'Network error. Please check your connection.';
         } else {
-          // Other error
           errorMessage = error.message || 'An unexpected error occurred';
         }
 
-        // Suppress global toasts on admin pages where this provider shouldn't affect UX
-        if (!location.pathname.startsWith('/admin')) {
+        // Suppress global toasts on admin pages and for 401 errors (already handled above)
+        if (!location.pathname.startsWith('/admin') && error.response?.status !== 401) {
           toast.error(errorMessage);
         }
         return Promise.reject(error);
@@ -151,7 +247,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       axios.interceptors.response.eject(responseInterceptor);
     };
-  }, [location.pathname]);
+  }, [location.pathname, refreshToken]);
   const login = async (email, password) => {
     try {
       const toastId = toast.loading('Signing in...');
@@ -165,7 +261,7 @@ export const AuthProvider = ({ children }) => {
         firebaseToken,
       });
 
-      const { token: jwtToken, user: userData } = response.data;
+      const { token: jwtToken, refreshToken: refreshTokenValue, user: userData } = response.data;
       // If the account is ADMIN, do not bind it to user session here.
       // Let the caller (Login page) adopt it into AdminAuth instead to keep sessions separate.
       const role = userData?.role || userData?.authority;
@@ -176,10 +272,22 @@ export const AuthProvider = ({ children }) => {
           isLoading: false,
           autoClose: 1500,
         });
-        return { success: true, user: userData, token: jwtToken, isAdmin: true };
+        return {
+          success: true,
+          user: userData,
+          token: jwtToken,
+          refreshToken: refreshTokenValue,
+          isAdmin: true,
+        };
       }
 
-      return handleAuthSuccess(jwtToken, userData, toastId, 'Successfully signed in!');
+      return handleAuthSuccess(
+        jwtToken,
+        userData,
+        refreshTokenValue,
+        toastId,
+        'Successfully signed in!'
+      );
     } catch (error) {
       console.error('Login error:', error);
 
@@ -230,8 +338,18 @@ export const AuthProvider = ({ children }) => {
           firebaseToken,
         });
 
-        const { token: jwtToken, user: userData } = loginResponse.data;
-        return handleAuthSuccess(jwtToken, userData, toastId, 'Continuing anonymously!');
+        const {
+          token: jwtToken,
+          refreshToken: refreshTokenValue,
+          user: userData,
+        } = loginResponse.data;
+        return handleAuthSuccess(
+          jwtToken,
+          userData,
+          refreshTokenValue,
+          toastId,
+          'Continuing anonymously!'
+        );
       } catch (loginErr) {
         const status = loginErr?.response?.status;
         const message = loginErr?.response?.data?.message || '';
@@ -244,8 +362,18 @@ export const AuthProvider = ({ children }) => {
             firebaseToken,
             anonymousMode: true,
           });
-          const { token: jwtToken, user: userData } = registerResponse.data;
-          return handleAuthSuccess(jwtToken, userData, toastId, 'Continuing anonymously!');
+          const {
+            token: jwtToken,
+            refreshToken: refreshTokenValue,
+            user: userData,
+          } = registerResponse.data;
+          return handleAuthSuccess(
+            jwtToken,
+            userData,
+            refreshTokenValue,
+            toastId,
+            'Continuing anonymously!'
+          );
         }
 
         // Any other error bubbles up to outer catch
@@ -361,9 +489,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Call backend logout to revoke refresh tokens
+      if (token) {
+        await axios.post(`${API_BASE_URL}/api/auth/logout`);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Continue with local logout even if backend call fails
+    }
+
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     setToken(null);
+    setRefreshToken(null);
     setCurrentUser(null);
     delete axios.defaults.headers.common['Authorization'];
     auth.signOut();

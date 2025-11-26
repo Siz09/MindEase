@@ -65,6 +65,9 @@ public class User {
     @Column(name = "region", length = 25)
     private String region = "global";
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = false;
+
     // Constructors
     public User() {
         this.createdAt = LocalDateTime.now();
@@ -215,6 +218,14 @@ public class User {
 
     public void setRegion(String region) {
         this.region = region;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     private void validateBanFieldConsistency() {

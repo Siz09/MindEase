@@ -34,10 +34,15 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
 
     private static final String LOGIN_PATH = "/api/auth/login";
     private static final String REGISTER_PATH = "/api/auth/register";
+    private static final String ME_PATH = "/api/auth/me";
 
     // Allow 5 requests per 15 minutes per IP for auth endpoints
     private static final int MAX_ATTEMPTS = 5;
     private static final long WINDOW_MILLIS = 15 * 60 * 1000L;
+
+    // More lenient rate limit for /me endpoint (100 requests per 15 minutes)
+    private static final int MAX_ME_ATTEMPTS = 100;
+    private static final long ME_WINDOW_MILLIS = 15 * 60 * 1000L;
     private static final long CLEANUP_INTERVAL_MILLIS = 60 * 60 * 1000L; // 1 hour
 
     private static class Counter {
@@ -75,7 +80,7 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return !(LOGIN_PATH.equals(path) || REGISTER_PATH.equals(path));
+        return !(LOGIN_PATH.equals(path) || REGISTER_PATH.equals(path) || ME_PATH.equals(path));
     }
 
     @Override
@@ -83,23 +88,31 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
         String ip = resolveClientIp(request);
+        String path = request.getRequestURI();
         long now = Instant.now().toEpochMilli();
 
-        Counter counter = ipCounters.computeIfAbsent(ip, k -> new Counter());
+        // Use different rate limits for /me endpoint
+        boolean isMeEndpoint = ME_PATH.equals(path);
+        int maxAttempts = isMeEndpoint ? MAX_ME_ATTEMPTS : MAX_ATTEMPTS;
+        long windowMillis = isMeEndpoint ? ME_WINDOW_MILLIS : WINDOW_MILLIS;
+
+        // Use separate counter key for /me endpoint
+        String counterKey = isMeEndpoint ? ip + ":me" : ip;
+        Counter counter = ipCounters.computeIfAbsent(counterKey, k -> new Counter());
 
         synchronized (counter) {
             long elapsed = now - counter.windowStart;
-            if (elapsed > WINDOW_MILLIS) {
+            if (elapsed > windowMillis) {
                 counter.resetWindow();
             }
 
             int attempts = counter.incrementAndGet();
-            if (attempts > MAX_ATTEMPTS) {
-                log.warn("Rate limit exceeded for IP {} on {}", ip, request.getRequestURI());
+            if (attempts > maxAttempts) {
+                log.warn("Rate limit exceeded for IP {} on {}", ip, path);
                 response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
                 response.setContentType("application/json");
                 response.getWriter().write(
-                        "{\"status\":\"error\",\"message\":\"Too many authentication attempts. Please try again later.\"}");
+                        "{\"status\":\"error\",\"message\":\"Too many requests. Please try again later.\",\"code\":\"RATE_LIMIT_EXCEEDED\"}");
                 return;
             }
         }

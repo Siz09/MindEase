@@ -30,41 +30,36 @@ public class JwtSecretValidator {
 
     @PostConstruct
     public void validateJwtSecret() {
-        logger.info("Validating JWT secret configuration for profiles: {}", 
-                    String.join(", ", environment.getActiveProfiles()));
+        logger.info("Validating JWT secret configuration for profiles: {}",
+                String.join(", ", environment.getActiveProfiles()));
 
         // In production, fail fast if secret is weak
         if (isProductionProfile()) {
             if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
                 throw new IllegalStateException(
-                    "FATAL: JWT secret is not configured in production environment. " +
-                    "Set JWT_SECRET environment variable."
-                );
+                        "FATAL: JWT secret is not configured in production environment. " +
+                                "Set JWT_SECRET environment variable.");
             }
 
             if (jwtSecret.equals(DEFAULT_DEV_SECRET)) {
                 throw new IllegalStateException(
-                    "FATAL: Using default development JWT secret in production environment. " +
-                    "This is a critical security vulnerability. Set a strong JWT_SECRET environment variable."
-                );
+                        "FATAL: Using default development JWT secret in production environment. " +
+                                "This is a critical security vulnerability. Set a strong JWT_SECRET environment variable.");
             }
 
             if (jwtSecret.length() < MINIMUM_SECRET_LENGTH) {
                 throw new IllegalStateException(
-                    String.format(
-                        "FATAL: JWT secret is too short (%d characters). " +
-                        "Minimum required length is %d characters for production.",
-                        jwtSecret.length(), MINIMUM_SECRET_LENGTH
-                    )
-                );
+                        String.format(
+                                "FATAL: JWT secret is too short (%d characters). " +
+                                        "Minimum required length is %d characters for production.",
+                                jwtSecret.length(), MINIMUM_SECRET_LENGTH));
             }
 
             // Check for common weak patterns
             if (isWeakSecret(jwtSecret)) {
                 throw new IllegalStateException(
-                    "FATAL: JWT secret appears to be weak (e.g., 'secret', 'password', repeated characters). " +
-                    "Use a strong, randomly generated secret."
-                );
+                        "FATAL: JWT secret appears to be weak (e.g., 'secret', 'password', repeated characters). " +
+                                "Use a strong, randomly generated secret.");
             }
 
             logger.info("JWT secret validation passed for production environment");
@@ -72,18 +67,16 @@ public class JwtSecretValidator {
             // In dev/test, just warn
             if (jwtSecret.equals(DEFAULT_DEV_SECRET)) {
                 logger.warn(
-                    "WARNING: Using default development JWT secret. " +
-                    "This is acceptable for development but MUST be changed in production."
-                );
+                        "WARNING: Using default development JWT secret. " +
+                                "This is acceptable for development but MUST be changed in production.");
             } else if (jwtSecret.length() < MINIMUM_SECRET_LENGTH) {
                 logger.warn(
-                    "WARNING: JWT secret is shorter than recommended ({} characters). " +
-                    "Consider using at least {} characters.",
-                    jwtSecret.length(), MINIMUM_SECRET_LENGTH
-                );
+                        "WARNING: JWT secret is shorter than recommended ({} characters). " +
+                                "Consider using at least {} characters.",
+                        jwtSecret.length(), MINIMUM_SECRET_LENGTH);
             } else {
-                logger.info("JWT secret validation passed for {} environment", 
-                           String.join(", ", environment.getActiveProfiles()));
+                logger.info("JWT secret validation passed for {} environment",
+                        String.join(", ", environment.getActiveProfiles()));
             }
         }
     }
@@ -99,8 +92,8 @@ public class JwtSecretValidator {
 
         // Check for common weak passwords
         String[] weakPatterns = {
-            "secret", "password", "123456", "qwerty", "admin",
-            "test", "demo", "changeme", "default"
+                "secret", "password", "123456", "qwerty", "admin",
+                "test", "demo", "changeme", "default"
         };
 
         for (String pattern : weakPatterns) {

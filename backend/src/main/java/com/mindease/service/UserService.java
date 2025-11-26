@@ -8,6 +8,7 @@ import com.mindease.repository.UserActivityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -30,6 +31,12 @@ public class UserService {
 
     @Autowired
     private UserActivityRepository userActivityRepository;
+
+    @Value("${account.lockout.max-attempts:5}")
+    private int maxFailedAttempts;
+
+    @Value("${account.lockout.duration-minutes:30}")
+    private int lockoutDurationMinutes;
 
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -221,7 +228,7 @@ public class UserService {
          try {
              trackUserActivity(user); // call existing synchronous method
          } catch (Exception e) {
-             logger.warn("Failed to track activity asynchronously for user {}: {}", 
+             logger.warn("Failed to track activity asynchronously for user {}: {}",
                      user != null ? user.getEmail() : "null", e.getMessage());
          }
      }
@@ -235,8 +242,87 @@ public class UserService {
          try {
              trackUserActivity(userId);
          } catch (Exception e) {
-             logger.warn("Failed to track activity asynchronously for userId {}: {}", 
+             logger.warn("Failed to track activity asynchronously for userId {}: {}",
                      userId, e.getMessage());
+         }
+     }
+
+     /**
+      * Check if user account is locked due to failed login attempts
+      */
+     @Transactional(readOnly = true)
+     public boolean isAccountLocked(User user) {
+         if (user == null) {
+             throw new IllegalArgumentException("User cannot be null");
+         }
+
+         Optional<UserActivity> activityOpt = userActivityRepository.findByUser(user);
+         if (activityOpt.isEmpty()) {
+             return false;
+         }
+
+         UserActivity activity = activityOpt.get();
+         return activity.isLocked();
+     }
+
+     /**
+      * Increment failed login attempts and lock account if threshold is reached
+      */
+     @Transactional
+     public void recordFailedLoginAttempt(User user) {
+         if (user == null) {
+             throw new IllegalArgumentException("User cannot be null");
+         }
+
+         try {
+             Optional<UserActivity> activityOpt = userActivityRepository.findByUser(user);
+             UserActivity activity;
+
+             if (activityOpt.isPresent()) {
+                 activity = activityOpt.get();
+             } else {
+                 activity = new UserActivity(user, LocalDateTime.now());
+             }
+
+             activity.incrementFailedAttempts();
+
+             // Lock account if max attempts reached
+             if (activity.getFailedLoginAttempts() >= maxFailedAttempts) {
+                 activity.setLockedUntil(LocalDateTime.now().plusMinutes(lockoutDurationMinutes));
+                 logger.warn("Account locked for user {} due to {} failed login attempts. Locked until: {}",
+                         user.getEmail(), activity.getFailedLoginAttempts(), activity.getLockedUntil());
+             } else {
+                 logger.info("Failed login attempt {} of {} for user {}",
+                         activity.getFailedLoginAttempts(), maxFailedAttempts, user.getEmail());
+             }
+
+             userActivityRepository.save(activity);
+         } catch (Exception e) {
+             logger.error("Failed to record failed login attempt for user: {}", user.getEmail(), e);
+         }
+     }
+
+     /**
+      * Reset failed login attempts after successful login
+      */
+     @Transactional
+     public void resetFailedLoginAttempts(User user) {
+         if (user == null) {
+             throw new IllegalArgumentException("User cannot be null");
+         }
+
+         try {
+             Optional<UserActivity> activityOpt = userActivityRepository.findByUser(user);
+             if (activityOpt.isPresent()) {
+                 UserActivity activity = activityOpt.get();
+                 if (activity.getFailedLoginAttempts() > 0 || activity.getLockedUntil() != null) {
+                     activity.resetFailedAttempts();
+                     userActivityRepository.save(activity);
+                     logger.debug("Reset failed login attempts for user: {}", user.getEmail());
+                 }
+             }
+         } catch (Exception e) {
+             logger.error("Failed to reset failed login attempts for user: {}", user.getEmail(), e);
          }
      }
 
