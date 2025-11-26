@@ -2,10 +2,13 @@ package com.mindease.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
+import java.util.Arrays;
 
 /**
  * Validates JWT secret strength on application startup.
@@ -19,15 +22,16 @@ public class JwtSecretValidator {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Value("${spring.profiles.active:dev}")
-    private String activeProfile;
+    @Autowired
+    private Environment environment;
 
     private static final int MINIMUM_SECRET_LENGTH = 32;
     private static final String DEFAULT_DEV_SECRET = "dev-jwt-secret-key-for-development-only-change-in-production";
 
     @PostConstruct
     public void validateJwtSecret() {
-        logger.info("Validating JWT secret configuration for profile: {}", activeProfile);
+        logger.info("Validating JWT secret configuration for profiles: {}", 
+                    String.join(", ", environment.getActiveProfiles()));
 
         // In production, fail fast if secret is weak
         if (isProductionProfile()) {
@@ -78,15 +82,16 @@ public class JwtSecretValidator {
                     jwtSecret.length(), MINIMUM_SECRET_LENGTH
                 );
             } else {
-                logger.info("JWT secret validation passed for {} environment", activeProfile);
+                logger.info("JWT secret validation passed for {} environment", 
+                           String.join(", ", environment.getActiveProfiles()));
             }
         }
     }
 
     private boolean isProductionProfile() {
-        return activeProfile != null &&
-               (activeProfile.equalsIgnoreCase("prod") ||
-                activeProfile.equalsIgnoreCase("production"));
+        String[] profiles = environment.getActiveProfiles();
+        return Arrays.stream(profiles)
+                .anyMatch(p -> p.equalsIgnoreCase("prod") || p.equalsIgnoreCase("production"));
     }
 
     private boolean isWeakSecret(String secret) {
