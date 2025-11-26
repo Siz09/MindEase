@@ -1,9 +1,11 @@
 package com.mindease.controller;
 
-// Add this import
 import org.springframework.security.core.Authentication;
 
 import com.mindease.aop.annotations.AuditLogin;
+import com.mindease.dto.AuthResponse;
+import com.mindease.dto.ErrorResponse;
+import com.mindease.dto.UserDTO;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.mindease.model.Role;
 import com.mindease.model.User;
@@ -14,10 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,7 +25,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 @Tag(name = "Authentication", description = "User authentication and registration endpoints")
 public class AuthController {
 
@@ -42,9 +39,12 @@ public class AuthController {
 
   @Operation(summary = "Register a new user", description = "Register a new user with Firebase authentication")
   @ApiResponses(value = {
-    @ApiResponse(responseCode = "200", description = "Registration successful"),
-    @ApiResponse(responseCode = "400", description = "Invalid request or user already exists"),
-    @ApiResponse(responseCode = "401", description = "Invalid Firebase token")
+    @ApiResponse(responseCode = "200", description = "Registration successful",
+      content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+    @ApiResponse(responseCode = "400", description = "Invalid request or user already exists",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+    @ApiResponse(responseCode = "401", description = "Invalid Firebase token",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
   })
   @PostMapping("/register")
   public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -54,7 +54,7 @@ public class AuthController {
 
       // Check if user already exists
       if (userService.findByFirebaseUid(firebaseUid).isPresent()) {
-        return ResponseEntity.badRequest().body(createErrorResponse("User already exists"));
+        return ResponseEntity.badRequest().body(ErrorResponse.of("User already exists", "USER_ALREADY_EXISTS"));
       }
 
       // Create new user
@@ -74,12 +74,21 @@ public class AuthController {
       return ResponseEntity.ok(createAuthResponse(user, jwtToken, "Registration successful"));
 
     } catch (FirebaseAuthException e) {
-      return ResponseEntity.status(401).body(createErrorResponse("Invalid Firebase token: " + e.getMessage()));
+      return ResponseEntity.status(401).body(ErrorResponse.of("Invalid Firebase token: " + e.getMessage(), "INVALID_FIREBASE_TOKEN"));
     } catch (Exception e) {
-      return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+      return ResponseEntity.badRequest().body(ErrorResponse.of(e.getMessage(), "REGISTRATION_FAILED"));
     }
   }
 
+  @Operation(summary = "Login user", description = "Authenticate user with Firebase token")
+  @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "Login successful",
+      content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+    @ApiResponse(responseCode = "401", description = "Invalid Firebase token",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+    @ApiResponse(responseCode = "404", description = "User not found",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  })
   @PostMapping("/login")
   @AuditLogin
   public ResponseEntity<?> login(@RequestBody LoginRequest request) {
@@ -100,18 +109,23 @@ public class AuthController {
       return ResponseEntity.ok(createAuthResponse(user, jwtToken, "Login successful"));
 
     } catch (FirebaseAuthException e) {
-      return ResponseEntity.status(401).body(createErrorResponse("Invalid Firebase token: " + e.getMessage()));
+      return ResponseEntity.status(401).body(ErrorResponse.of("Invalid Firebase token: " + e.getMessage(), "INVALID_FIREBASE_TOKEN"));
     } catch (Exception e) {
       String msg = e.getMessage() != null ? e.getMessage() : "Login failed";
       if (msg.toLowerCase().contains("user not found")) {
-        Map<String, Object> error = createErrorResponse(msg);
-        error.put("code", "USER_NOT_FOUND");
-        return ResponseEntity.status(404).body(error);
+        return ResponseEntity.status(404).body(ErrorResponse.of(msg, "USER_NOT_FOUND"));
       }
-      return ResponseEntity.badRequest().body(createErrorResponse(msg));
+      return ResponseEntity.badRequest().body(ErrorResponse.of(msg, "LOGIN_FAILED"));
     }
   }
 
+  @Operation(summary = "Get current user", description = "Get current authenticated user information")
+  @ApiResponses(value = {
+    @ApiResponse(responseCode = "200", description = "User information retrieved",
+      content = @Content(schema = @Schema(implementation = UserDTO.class))),
+    @ApiResponse(responseCode = "404", description = "User not found",
+      content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+  })
   @GetMapping("/me")
   public ResponseEntity<?> getCurrentUser(Authentication authentication) {
     try {
@@ -123,45 +137,18 @@ public class AuthController {
         .orElseThrow(() -> new RuntimeException("User not found"));
 
       // Return user information without sensitive data
-      Map<String, Object> response = new HashMap<>();
-      response.put("status", "success");
-
-      Map<String, Object> userInfo = new HashMap<>();
-      userInfo.put("id", user.getId());
-      userInfo.put("email", user.getEmail());
-      userInfo.put("role", user.getRole());
-      userInfo.put("anonymousMode", user.getAnonymousMode());
-
-      response.put("user", userInfo);
-      return ResponseEntity.ok(response);
+      UserDTO userDTO = new UserDTO(user.getId(), user.getEmail(), user.getRole(), user.getAnonymousMode());
+      return ResponseEntity.ok(userDTO);
 
     } catch (Exception e) {
-      return ResponseEntity.status(404).body(createErrorResponse("User not found: " + e.getMessage()));
+      return ResponseEntity.status(404).body(ErrorResponse.of("User not found: " + e.getMessage(), "USER_NOT_FOUND"));
     }
   }
 
   // Helper methods
-  private Map<String, Object> createAuthResponse(User user, String token, String message) {
-    Map<String, Object> response = new HashMap<>();
-    response.put("message", message);
-    response.put("status", "success");
-    response.put("token", token);
-
-    Map<String, Object> userInfo = new HashMap<>();
-    userInfo.put("id", user.getId());
-    userInfo.put("email", user.getEmail());
-    userInfo.put("role", user.getRole());
-    userInfo.put("anonymousMode", user.getAnonymousMode());
-
-    response.put("user", userInfo);
-    return response;
-  }
-
-  private Map<String, Object> createErrorResponse(String message) {
-    Map<String, Object> response = new HashMap<>();
-    response.put("message", message);
-    response.put("status", "error");
-    return response;
+  private AuthResponse createAuthResponse(User user, String token, String message) {
+    UserDTO userDTO = new UserDTO(user.getId(), user.getEmail(), user.getRole(), user.getAnonymousMode());
+    return AuthResponse.success(message, token, userDTO);
   }
 
   // Request DTO classes

@@ -19,8 +19,6 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const root = window.document.documentElement;
-      root.setAttribute('data-theme', theme);
       localStorage.setItem('theme', theme);
     } catch (error) {
       console.warn('Failed to set theme:', error);

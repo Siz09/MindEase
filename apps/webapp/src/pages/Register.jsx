@@ -88,7 +88,7 @@ const Register = () => {
       const result = await register(formData.email, formData.password);
 
       if (result.success) {
-        navigate('/');
+        navigate('/login');
       } else {
         setError(result.error);
       }

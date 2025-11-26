@@ -140,13 +140,12 @@ public class OpenAIChatBotService implements ChatBotService {
 
         } catch (Exception e) {
             log.error("OpenAI chat completion failed: {}", e.getMessage(), e);
-            // Make quota issues very obvious in the console so they're easier to spot.
             String msg = e.getMessage();
             if (msg != null && msg.toLowerCase(Locale.ROOT).contains("you exceeded your current quota")) {
-                System.out.println("=== OPENAI QUOTA EXCEEDED ===");
-                System.out.println("Your OpenAI API key has exceeded its current quota.");
-                System.out.println("Please check your OpenAI plan/billing for the key configured in OPENAI_API_KEY.");
-                System.out.println("While quota is exceeded, MindEase will fall back to the simple local bot.");
+                log.error("=== OPENAI QUOTA EXCEEDED ===");
+                log.error("Your OpenAI API key has exceeded its current quota.");
+                log.error("Please check your OpenAI plan/billing for the key configured in OPENAI_API_KEY.");
+                log.error("While quota is exceeded, MindEase will fall back to the simple local bot.");
             }
             String fallbackContent = "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
             boolean isCrisis = isCrisisMessage(message);

@@ -52,7 +52,9 @@ export const AuthProvider = ({ children }) => {
       if (storedToken) {
         try {
           const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
-          setCurrentUser(response.data.user);
+          // Handle both old format (response.data.user) and new format (response.data directly)
+          const userData = response.data.user || response.data;
+          setCurrentUser(userData);
           setToken(storedToken);
           if (!welcomeToastShownRef.current) {
             toast.success('Welcome back!');
@@ -182,7 +184,18 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error:', error);
 
       let errorMessage = 'Login failed';
-      if (error.code === 'auth/invalid-credential') {
+      const errorCode = error.response?.data?.code;
+
+      // Handle backend error codes
+      if (errorCode === 'USER_NOT_FOUND') {
+        errorMessage = 'No account found. Please register first.';
+      } else if (errorCode === 'INVALID_FIREBASE_TOKEN') {
+        errorMessage = 'Authentication failed. Please try again.';
+      } else if (errorCode === 'LOGIN_FAILED') {
+        errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      }
+      // Handle Firebase error codes
+      else if (error.code === 'auth/invalid-credential') {
         errorMessage = 'Invalid email or password.';
       } else if (error.code === 'auth/user-not-found') {
         errorMessage = 'No account found with this email.';
@@ -196,7 +209,7 @@ export const AuthProvider = ({ children }) => {
 
       toast.error(errorMessage);
 
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, code: errorCode };
     }
   };
 
@@ -286,9 +299,18 @@ export const AuthProvider = ({ children }) => {
       console.error('Register error:', error);
 
       let errorMessage = 'Registration failed';
+      const errorCode = error.response?.data?.code;
 
-      // Firebase error codes
-      if (error.code === 'auth/email-already-in-use') {
+      // Handle backend error codes
+      if (errorCode === 'USER_ALREADY_EXISTS') {
+        errorMessage = 'This account already exists. Please log in instead.';
+      } else if (errorCode === 'INVALID_FIREBASE_TOKEN') {
+        errorMessage = 'Authentication failed. Please try again.';
+      } else if (errorCode === 'REGISTRATION_FAILED') {
+        errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      }
+      // Handle Firebase error codes
+      else if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'This email is already registered. Please log in instead.';
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address.';
@@ -307,6 +329,7 @@ export const AuthProvider = ({ children }) => {
       return {
         success: false,
         error: errorMessage,
+        code: errorCode,
       };
     }
   };

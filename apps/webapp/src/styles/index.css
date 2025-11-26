@@ -88,7 +88,7 @@
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
 }
-[data-theme='dark'] {
+.app-layout[data-theme='dark'] {
   /* Primary Colors - Adjusted for Dark Mode */
   --primary-green: #22c55e;
   --primary-green-light: #4ade80;
