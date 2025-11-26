@@ -87,7 +87,7 @@ logging:
 # Chat configuration
 chat:
   openai:
-    api-key: ${OPENAI_API_KEY:}
+    api-key: ${OPENAI_API_KEY}
     model: gpt-4o-mini
     temperature: 0.8
     max-tokens: 160
@@ -125,7 +125,7 @@ management:
 # OpenAI Configuration
 openai:
   api:
-    key: ${OPENAI_API_KEY:} # Set via environment variable
+    key: ${OPENAI_API_KEY} # Set via environment variable (required)
     timeout: 30
   model: gpt-4o-mini
   max-tokens: 150
