@@ -132,8 +132,17 @@ const Settings = () => {
       return;
     }
 
-    if (convertPassword.length < 6) {
-      setConvertError('Password must be at least 6 characters');
+    // Align password validation with registration requirements
+    const passwordRules = {
+      minLength: convertPassword.length >= 8,
+      hasUpperCase: /[A-Z]/.test(convertPassword),
+      hasLowerCase: /[a-z]/.test(convertPassword),
+      hasNumber: /\d/.test(convertPassword),
+      hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(convertPassword),
+    };
+
+    if (!Object.values(passwordRules).every((rule) => rule)) {
+      setConvertError(t('auth.passwordNotMeetRequirements'));
       return;
     }
 
@@ -156,7 +165,7 @@ const Settings = () => {
       } else {
         setConvertError(result.error || 'Failed to convert account');
       }
-    } catch (error) {
+    } catch {
       setConvertError('An unexpected error occurred');
     } finally {
       setConvertLoading(false);

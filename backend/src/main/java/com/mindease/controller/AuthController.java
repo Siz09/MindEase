@@ -77,7 +77,7 @@ public class AuthController {
             User user = userService.createUser(
                     request.getEmail(),
                     Role.USER,
-                    request.getAnonymousMode(),
+                    Boolean.TRUE.equals(request.getAnonymousMode()),
                     firebaseUid);
 
             // Track user activity on registration (async - fire-and-forget)
@@ -287,6 +287,9 @@ public class AuthController {
       logger.info("Converted anonymous account to full account for user: {}", user.getEmail());
       return ResponseEntity.ok(createAuthResponse(user, jwtToken, refreshToken.getToken(), "Account converted successfully"));
 
+    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+      // Handle race condition: email uniqueness constraint violation
+      return ResponseEntity.badRequest().body(ErrorResponse.of("Email is already in use", "EMAIL_IN_USE"));
     } catch (FirebaseAuthException e) {
       return ResponseEntity.status(401).body(ErrorResponse.of("Invalid Firebase token: " + e.getMessage(), "INVALID_FIREBASE_TOKEN"));
     } catch (Exception e) {
