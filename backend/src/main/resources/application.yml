@@ -137,8 +137,8 @@ stripe:
     success-url: ${STRIPE_SUCCESS_URL:http://localhost:5173/subscription/success?session_id={CHECKOUT_SESSION_ID}}
     cancel-url: ${STRIPE_CANCEL_URL:http://localhost:5173/subscription/cancel}
   price:
-    monthly: price_1SIgqq2LRJUkG498T0ShypPb
-    annual: price_1SIgrH2LRJUkG498Hvi6qsOh
+    monthly: ${STRIPE_PRICE_ID_MONTHLY:}
+    annual: ${STRIPE_PRICE_ID_ANNUAL:}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
