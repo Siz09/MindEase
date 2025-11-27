@@ -72,14 +72,25 @@ public class CrisisFlaggingService {
             // Optional ML scorer
             Optional<Double> risk = riskScorer.score(messageText);
 
-            // Idempotency via DB unique constraint, handle race safely
+            // Check if already flagged (idempotency check)
+            if (flagRepo.existsByChatIdAndKeywordDetectedIgnoreCase(chatId, keyword)) {
+                log.debug("Crisis flag already exists for chatId={}, keyword={}", chatId, keyword);
+                return;
+            }
+
+            // Create crisis flag with proper idempotency
             try {
                 CrisisFlag flag = new CrisisFlag();
                 flag.setChatId(chatId);
                 flag.setUserId(userId);
                 flag.setKeywordDetected(keyword);
                 risk.ifPresent(flag::setRiskScore);
+
                 CrisisFlag saved = flagRepo.save(flag);
+
+                log.info("Crisis flag created: chatId={}, userId={}, keyword={}, riskScore={}",
+                    chatId, userId, keyword, risk.orElse(null));
+
                 try {
                     // publish event for SSE consumers
                     events.publishEvent(new com.mindease.events.CrisisFlagCreatedEvent(saved));
@@ -87,8 +98,8 @@ public class CrisisFlaggingService {
                     log.debug("CrisisFlag event publish failed: {}", pubEx.getMessage());
                 }
             } catch (DataIntegrityViolationException e) {
-                // Already flagged by a concurrent request; preserve idempotency
-                log.debug("Duplicate crisis flag ignored for chatId={}, keyword={}", chatId, keyword);
+                // Race condition: another thread created the flag between our check and save
+                log.debug("Duplicate crisis flag detected (race condition) for chatId={}, keyword={}", chatId, keyword);
                 return;
             }
 

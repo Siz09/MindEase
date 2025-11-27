@@ -38,6 +38,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/ws/**", "/topic/**", "/app/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/request-password-reset", "/api/auth/confirm-password-reset")
+                        .permitAll()
                         .requestMatchers("/api/stripe/webhook", "/api/subscription/webhook").permitAll()
                         .requestMatchers("/api/dev/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

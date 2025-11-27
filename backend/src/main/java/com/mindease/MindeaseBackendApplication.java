@@ -15,7 +15,7 @@ public class MindeaseBackendApplication {
         // Support both running from repo root and from backend/ directory.
         try {
             io.github.cdimascio.dotenv.Dotenv dotenv = io.github.cdimascio.dotenv.Dotenv.configure()
-                    .directory("./backend") // when run from monorepo root
+                    .directory("./") // when run from monorepo root
                     .ignoreIfMissing()
                     .load();
 

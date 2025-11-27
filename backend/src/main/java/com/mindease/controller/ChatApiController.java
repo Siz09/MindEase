@@ -12,6 +12,7 @@ import com.mindease.service.PremiumAccessService;
 import com.mindease.config.ChatConfig;
 import com.mindease.service.CrisisFlaggingService;
 import com.mindease.dto.ChatResponse;
+import com.mindease.dto.TypingEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -125,6 +126,7 @@ public class ChatApiController {
             logger.info("Crisis detection result: {}", isCrisis);
 
             // Enforce soft daily message limit for free users (non-crisis only)
+            // Crisis messages ALWAYS bypass rate limits for user safety
             boolean isPremium = premiumAccessService.isPremium(user.getId());
             if (!isPremium && !isCrisis) {
                 Integer limit = chatConfig.getLimits().getFreeDailyMessageLimit();
@@ -138,9 +140,11 @@ public class ChatApiController {
                     if (sentToday >= limit) {
                         logger.info("Free daily limit reached for user: {}", user.getId());
                         return ResponseEntity.status(429).body(createErrorResponse(
-                                "You've reached today's free chat limit. You can continue tomorrow or upgrade to Premium for unlimited chat."));
+                                "You've reached today's free chat limit. You can continue tomorrow or upgrade to Premium for unlimited chat.")                        );
                     }
                 }
+            } else if (isCrisis) {
+                logger.info("Crisis message detected - bypassing rate limits for user safety: userId={}", user.getId());
             }
 
             // Save user message
@@ -165,6 +169,11 @@ public class ChatApiController {
             logger.info("User message payload: {}", userMessagePayload);
 
             messagingTemplate.convertAndSend(userTopic, userMessagePayload);
+
+            // Send typing indicator - bot is "typing"
+            TypingEvent typingStart = new TypingEvent(user.getId(), true);
+            messagingTemplate.convertAndSend(userTopic + "/typing", typingStart);
+            logger.debug("Sent typing start event to: {}", userTopic + "/typing");
 
             // Handle crisis response first if needed
             Message crisisMessage = null;
@@ -219,6 +228,11 @@ public class ChatApiController {
 
             logger.info("Sending bot message to topic: {}", userTopic);
             logger.info("Bot message payload: {}", botMessagePayload);
+
+            // Send typing indicator - bot stopped "typing"
+            TypingEvent typingStop = new TypingEvent(user.getId(), false);
+            messagingTemplate.convertAndSend(userTopic + "/typing", typingStop);
+            logger.debug("Sent typing stop event to: {}", userTopic + "/typing");
 
             messagingTemplate.convertAndSend(userTopic, botMessagePayload);
 

@@ -12,6 +12,20 @@ import useVoiceRecorder from '../hooks/useVoiceRecorder';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import VoicePlayer from '../components/VoicePlayer';
 import { mapI18nToSpeechLang } from '../utils/speechUtils';
+import LRUCache from '../utils/lruCache';
+import {
+  MESSAGE_STATUS,
+  getStatusIcon,
+  getStatusColor,
+  getStatusText,
+} from '../utils/messageStatus';
+import {
+  addToOfflineQueue,
+  getOfflineQueue,
+  removeFromOfflineQueue,
+  clearOfflineQueue,
+  getOfflineQueueCount,
+} from '../utils/offlineQueue';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080').replace(
   /\/$/,
@@ -26,6 +40,9 @@ const Chat = () => {
   const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [messageStatuses, setMessageStatuses] = useState({}); // Track delivery status by message ID
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [offlineQueueCount, setOfflineQueueCount] = useState(getOfflineQueueCount());
   const [historyPage, setHistoryPage] = useState(null);
   const [hasMoreHistory, setHasMoreHistory] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -57,18 +74,43 @@ const Chat = () => {
   const stompClientRef = useRef(null);
   const isConnectingRef = useRef(false);
   const isIntentionallyDisconnectingRef = useRef(false);
-  const processedMessageIds = useRef(new Map());
+  const processedMessageIds = useRef(new LRUCache(1000)); // LRU cache with max 1000 entries
   const messagesContainerRef = useRef(null);
   const preventAutoScrollRef = useRef(false);
   const prevScrollHeightRef = useRef(null);
+  const subscriptionsRef = useRef([]); // Track all subscriptions for cleanup
+
+  // Reconnection backoff state
+  const reconnectAttempts = useRef(0);
+  const reconnectTimeoutRef = useRef(null);
+  const MAX_RECONNECT_DELAY = 30000; // 30 seconds max
+  const BASE_RECONNECT_DELAY = 1000; // Start with 1 second
+
+  // Memory management: limit messages in memory to prevent memory leaks
+  const MAX_MESSAGES_IN_MEMORY = 200; // Keep last 200 messages in memory
 
   // Shared function to send messages to the server
   const sendMessageToServer = async (messageText) => {
     if (!messageText.trim()) return false;
-    if (!stompClientRef.current || !isConnected) {
-      toast.error('Not connected to chat. Please refresh the page.');
+
+    // If offline, queue the message
+    if (!isOnline) {
+      const queueId = addToOfflineQueue(messageText);
+      setOfflineQueueCount(getOfflineQueueCount());
+      toast.info('Message queued. Will send when online.');
       return false;
     }
+
+    if (!stompClientRef.current || !isConnected) {
+      // Queue message if WebSocket is not connected but we're online
+      const queueId = addToOfflineQueue(messageText);
+      setOfflineQueueCount(getOfflineQueueCount());
+      toast.warning('Not connected. Message queued.');
+      return false;
+    }
+
+    // Don't add optimistic message - let WebSocket handle it
+    // This prevents duplicate messages
 
     setIsTyping(true);
 
@@ -88,6 +130,12 @@ const Chat = () => {
 
       if (!response.ok) {
         throw new Error(result.message || 'Failed to send message');
+      }
+
+      // Message will be added via WebSocket, just mark as sent
+      const realMessageId = result.data?.userMessage?.id;
+      if (realMessageId) {
+        setMessageStatuses((prev) => ({ ...prev, [realMessageId]: MESSAGE_STATUS.SENT }));
       }
 
       return true;
@@ -342,15 +390,123 @@ const Chat = () => {
     isVoiceConversationActiveRef.current = isVoiceConversationActive;
   }, [isVoiceConversationActive]);
 
-  // Limit memory growth of processed IDs
-  const MAX_PROCESSED_IDS = 1000;
-  const trimProcessedIds = () => {
-    if (processedMessageIds.current.size > MAX_PROCESSED_IDS) {
-      const entries = Array.from(processedMessageIds.current.entries())
-        .sort(([, a], [, b]) => b - a) // newest first by timestamp
-        .slice(0, MAX_PROCESSED_IDS);
-      processedMessageIds.current = new Map(entries);
+  // Cleanup old processed message IDs periodically (every 5 minutes)
+  useEffect(() => {
+    const cleanupInterval = setInterval(
+      () => {
+        const fiveMinutesAgo = 5 * 60 * 1000;
+        const removed = processedMessageIds.current.removeOlderThan(fiveMinutesAgo);
+        if (removed > 0) {
+          console.log(`Cleaned up ${removed} old message IDs from cache`);
+        }
+      },
+      5 * 60 * 1000
+    ); // Run every 5 minutes
+
+    return () => clearInterval(cleanupInterval);
+  }, []);
+
+  // Online/offline detection
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('Connection restored');
+      setIsOnline(true);
+      toast.success('Connection restored');
+
+      // Process offline queue
+      processOfflineQueue();
+    };
+
+    const handleOffline = () => {
+      console.log('Connection lost');
+      setIsOnline(false);
+      toast.warning('You are offline. Messages will be queued.');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Process offline message queue
+  const processOfflineQueue = async () => {
+    const queue = getOfflineQueue();
+    if (queue.length === 0) return;
+
+    console.log(`Processing ${queue.length} queued messages...`);
+    toast.info(`Sending ${queue.length} queued message${queue.length > 1 ? 's' : ''}...`);
+
+    for (const item of queue) {
+      try {
+        const success = await sendMessageToServer(item.message);
+        if (success) {
+          removeFromOfflineQueue(item.id);
+          setOfflineQueueCount(getOfflineQueueCount());
+        }
+      } catch (error) {
+        console.error('Error sending queued message:', error);
+      }
     }
+
+    const remainingCount = getOfflineQueueCount();
+    if (remainingCount === 0) {
+      toast.success('All queued messages sent!');
+    } else {
+      toast.warning(`${remainingCount} message${remainingCount > 1 ? 's' : ''} could not be sent`);
+    }
+  };
+
+  // Calculate exponential backoff delay
+  const getReconnectDelay = () => {
+    const delay = Math.min(
+      BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current),
+      MAX_RECONNECT_DELAY
+    );
+    return delay;
+  };
+
+  // Reset reconnection state on successful connection
+  const resetReconnectState = () => {
+    reconnectAttempts.current = 0;
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  };
+
+  // Schedule reconnection with backoff
+  const scheduleReconnect = () => {
+    if (reconnectTimeoutRef.current) {
+      return; // Already scheduled
+    }
+
+    const delay = getReconnectDelay();
+    reconnectAttempts.current += 1;
+
+    console.log(`Scheduling reconnection attempt ${reconnectAttempts.current} in ${delay}ms`);
+    toast.info(
+      `Reconnecting in ${Math.round(delay / 1000)}s... (attempt ${reconnectAttempts.current})`
+    );
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      connectWebSocket();
+    }, delay);
+  };
+
+  // Trim messages to prevent memory leaks
+  const trimMessages = (messagesList) => {
+    if (messagesList.length > MAX_MESSAGES_IN_MEMORY) {
+      // Keep the most recent messages
+      const trimmed = messagesList.slice(-MAX_MESSAGES_IN_MEMORY);
+      console.log(`Trimmed messages from ${messagesList.length} to ${trimmed.length}`);
+      return trimmed;
+    }
+    return messagesList;
   };
 
   const extractTotalPages = (res) =>
@@ -362,7 +518,9 @@ const Chat = () => {
 
   const normalizeMessage = (m) => {
     const id = m.id;
-    if (id) processedMessageIds.current.set(id, Date.now());
+    if (id) {
+      processedMessageIds.current.set(id, { timestamp: Date.now() });
+    }
     return {
       id,
       content: m.content || m.message || m.text || 'Empty message',
@@ -427,20 +585,48 @@ const Chat = () => {
           setIsConnected(true);
           isConnectingRef.current = false;
           isIntentionallyDisconnectingRef.current = false; // Reset flag on successful connection
+          resetReconnectState(); // Reset backoff on successful connection
+
+          if (reconnectAttempts.current > 0) {
+            toast.success('Reconnected successfully!');
+          }
+
+          // Process offline queue when reconnected
+          if (isOnline && getOfflineQueueCount() > 0) {
+            setTimeout(() => processOfflineQueue(), 1000);
+          }
 
           const userTopic = `/topic/user/${currentUser.id}`;
 
-          client.subscribe(userTopic, (message) => {
+          // Track subscriptions for cleanup
+          const messageSubscription = client.subscribe(userTopic, (message) => {
             try {
               const parsedMessage = JSON.parse(message.body);
               const messageId = parsedMessage.id;
 
+              // Check if message was already processed
               if (processedMessageIds.current.has(messageId)) {
+                console.debug('Duplicate message detected and skipped:', messageId);
                 return;
               }
 
-              processedMessageIds.current.set(messageId, Date.now());
-              trimProcessedIds();
+              // Also check if message with same content already exists in messages array
+              // This handles race conditions between HTTP response and WebSocket
+              const isDuplicate = messages.some(
+                (m) =>
+                  m.id === messageId ||
+                  (m.content === parsedMessage.content &&
+                    m.isUserMessage === parsedMessage.isUserMessage &&
+                    Math.abs(new Date(m.createdAt) - new Date(parsedMessage.createdAt)) < 1000)
+              );
+
+              if (isDuplicate) {
+                console.debug('Duplicate message content detected and skipped:', messageId);
+                processedMessageIds.current.set(messageId, { timestamp: Date.now() });
+                return;
+              }
+
+              processedMessageIds.current.set(messageId, { timestamp: Date.now() });
 
               // Normalize and keep all safety metadata
               const normalizedMessage = normalizeMessage({
@@ -448,7 +634,12 @@ const Chat = () => {
                 id: messageId,
               });
 
-              setMessages((prev) => [...prev, normalizedMessage]);
+              setMessages((prev) => trimMessages([...prev, normalizedMessage]));
+
+              // Mark message as delivered if it's from the server
+              if (normalizedMessage.isUserMessage) {
+                setMessageStatuses((prev) => ({ ...prev, [messageId]: MESSAGE_STATUS.DELIVERED }));
+              }
 
               // Only auto-play in voice conversation mode to respect accessibility guidelines
               // Use ref to get current value since this callback captures old values
@@ -484,6 +675,22 @@ const Chat = () => {
               console.error('Error parsing message:', error);
             }
           });
+          subscriptionsRef.current.push(messageSubscription);
+
+          // Subscribe to typing indicator
+          const typingSubscription = client.subscribe(userTopic + '/typing', (message) => {
+            try {
+              const typingEvent = JSON.parse(message.body);
+              setIsTyping(typingEvent.isTyping);
+              console.log(
+                'Typing indicator:',
+                typingEvent.isTyping ? 'Bot is typing...' : 'Bot stopped typing'
+              );
+            } catch (error) {
+              console.error('Error parsing typing event:', error);
+            }
+          });
+          subscriptionsRef.current.push(typingSubscription);
 
           // Load existing chat history once connected
           if (historyPage === null && !loadingHistory) {
@@ -493,8 +700,37 @@ const Chat = () => {
 
         onStompError: (frame) => {
           console.error('STOMP error:', frame);
-          toast.error('Chat connection error');
           isConnectingRef.current = false;
+
+          // Check if error is due to token expiration
+          const errorMessage = frame?.headers?.message || frame?.body || '';
+          if (errorMessage.includes('expired') || errorMessage.includes('JWT token has expired')) {
+            console.log('Token expired, attempting to refresh and reconnect...');
+            toast.info('Reconnecting with fresh session...');
+
+            // Disconnect current client
+            if (stompClientRef.current) {
+              try {
+                stompClientRef.current.deactivate();
+              } catch (e) {
+                console.error('Error deactivating client:', e);
+              }
+              stompClientRef.current = null;
+            }
+
+            // Reset backoff for token expiration (not a network issue)
+            resetReconnectState();
+
+            // Trigger token refresh by reloading user data
+            // The token will be refreshed automatically by the axios interceptor
+            setTimeout(() => {
+              connectWebSocket();
+            }, 1000);
+          } else {
+            toast.error('Chat connection error');
+            // Schedule reconnection with backoff for other errors
+            scheduleReconnect();
+          }
         },
 
         onDisconnect: () => {
@@ -503,6 +739,8 @@ const Chat = () => {
           // Don't show toast during intentional disconnection (cleanup/unmount)
           if (!isIntentionallyDisconnectingRef.current) {
             toast.info('Disconnected from chat');
+            // Schedule reconnection with backoff
+            scheduleReconnect();
           }
         },
 
@@ -516,6 +754,8 @@ const Chat = () => {
 
           if (!isCleanup) {
             console.error('WebSocket error:', event);
+            // Schedule reconnection with backoff
+            scheduleReconnect();
           }
           isConnectingRef.current = false;
           // Fallback: ensure history loads even if WS fails (only if not disconnecting)
@@ -556,8 +796,25 @@ const Chat = () => {
       // Set flag first to prevent any error handlers from logging
       isIntentionallyDisconnectingRef.current = true;
 
+      // Clear any pending reconnection attempts
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
       if (stompClientRef.current) {
         const client = stompClientRef.current;
+
+        // Unsubscribe from all subscriptions
+        subscriptionsRef.current.forEach((subscription) => {
+          try {
+            subscription.unsubscribe();
+          } catch (e) {
+            console.debug('Error unsubscribing:', e);
+          }
+        });
+        subscriptionsRef.current = [];
+
         // Set ref to null BEFORE deactivating so error handlers see it's null
         stompClientRef.current = null;
         isConnectingRef.current = false;
@@ -583,7 +840,6 @@ const Chat = () => {
       const totalPages = extractTotalPages(res) ?? 1;
       const items = Array.isArray(res?.data) ? res.data.slice().reverse() : [];
       const normalized = items.map((m) => normalizeMessage(m));
-      trimProcessedIds();
       setMessages((prev) => {
         if (prev.length === 0) return normalized;
         const newIds = new Set(normalized.map((m) => m.id));
@@ -698,7 +954,6 @@ const Chat = () => {
         if (typeof totalPages === 'number') {
           setHasMoreHistory(nextPage < totalPages - 1);
         }
-        trimProcessedIds();
       }
     } catch (err) {
       console.error('Failed to load older history:', err);
@@ -886,6 +1141,149 @@ const Chat = () => {
     <div className="page chat-page">
       <div className="container">
         <div className="chat-container">
+          {/* Connection Status Indicator */}
+          {(!isConnected || reconnectAttempts.current > 0) && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '10px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 1000,
+                padding: '8px 16px',
+                borderRadius: '20px',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                backgroundColor: reconnectAttempts.current > 0 ? '#fef3c7' : '#fee2e2',
+                color: reconnectAttempts.current > 0 ? '#92400e' : '#991b1b',
+                animation: 'slideDown 0.3s ease-out',
+              }}
+            >
+              <div
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: reconnectAttempts.current > 0 ? '#f59e0b' : '#ef4444',
+                  animation: reconnectAttempts.current > 0 ? 'pulse 2s infinite' : 'none',
+                }}
+              />
+              {reconnectAttempts.current > 0
+                ? `Reconnecting... (attempt ${reconnectAttempts.current})`
+                : 'Disconnected from chat'}
+            </div>
+          )}
+
+          {/* Offline Indicator */}
+          {!isOnline && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '10px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 1001,
+                padding: '8px 16px',
+                borderRadius: '20px',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                backgroundColor: '#fef3c7',
+                color: '#92400e',
+                animation: 'slideDown 0.3s ease-out',
+              }}
+            >
+              <div
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#f59e0b',
+                }}
+              />
+              Offline Mode
+              {offlineQueueCount > 0 && (
+                <span
+                  style={{
+                    marginLeft: '4px',
+                    padding: '2px 6px',
+                    backgroundColor: '#f59e0b',
+                    color: 'white',
+                    borderRadius: '10px',
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  {offlineQueueCount} queued
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Voice Conversation Mode Indicator */}
+          {isVoiceConversationActive && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                zIndex: 1000,
+                padding: '8px 16px',
+                borderRadius: '20px',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                backgroundColor: '#dcfce7',
+                color: '#166534',
+                animation: 'slideDown 0.3s ease-out',
+              }}
+            >
+              <div
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  backgroundColor: '#10b981',
+                  animation: isRecording ? 'pulse 2s infinite' : 'none',
+                }}
+              />
+              {isRecording
+                ? '🎤 Listening...'
+                : isPlaying
+                  ? '🔊 Speaking...'
+                  : isTranscribing
+                    ? '⏳ Processing...'
+                    : '✓ Voice Mode Active'}
+              <button
+                onClick={handleToggleVoiceConversation}
+                style={{
+                  marginLeft: '8px',
+                  padding: '4px 12px',
+                  fontSize: '0.75rem',
+                  background: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+                title="Stop voice conversation"
+              >
+                Stop
+              </button>
+            </div>
+          )}
+
           <div className="chat-messages" ref={messagesContainerRef} onScroll={handleScroll}>
             {loadingHistory && (
               <div className="loading-history">
@@ -962,16 +1360,47 @@ const Chat = () => {
                     <div className="message-meta">
                       <span className="message-time">{formatTime(message.createdAt)}</span>
                       {message.isUserMessage && (
-                        <span className="message-status">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path
-                              d="M13.5 4.5L6 12l-3.5-3.5"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              fill="none"
-                            />
-                          </svg>
-                        </span>
+                        <>
+                          <span
+                            className="message-status"
+                            style={{
+                              color: getStatusColor(messageStatuses[message.id]),
+                              fontSize: '0.75rem',
+                              marginLeft: '4px',
+                            }}
+                            title={getStatusText(messageStatuses[message.id])}
+                          >
+                            {getStatusIcon(messageStatuses[message.id]) || '✓'}
+                          </span>
+                          {messageStatuses[message.id] === MESSAGE_STATUS.FAILED && (
+                            <button
+                              onClick={() => {
+                                // Retry sending the message
+                                sendMessageToServer(message.content);
+                                // Remove the failed message
+                                setMessages((prev) => prev.filter((m) => m.id !== message.id));
+                                setMessageStatuses((prev) => {
+                                  const newStatuses = { ...prev };
+                                  delete newStatuses[message.id];
+                                  return newStatuses;
+                                });
+                              }}
+                              style={{
+                                marginLeft: '8px',
+                                padding: '2px 8px',
+                                fontSize: '0.7rem',
+                                background: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                              }}
+                              title="Retry sending message"
+                            >
+                              Retry
+                            </button>
+                          )}
+                        </>
                       )}
                       {!message.isUserMessage && voiceOutputEnabled && isTTSSupported && (
                         <VoicePlayer

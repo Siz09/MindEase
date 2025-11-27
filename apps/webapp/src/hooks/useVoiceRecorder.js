@@ -152,7 +152,29 @@ const useVoiceRecorder = ({
         }
 
         console.error('Speech recognition error:', event);
-        const errorMessage = getSpeechErrorMessage(event, (key) => key);
+
+        // Provide user-friendly error messages
+        let errorMessage;
+        switch (event.error) {
+          case 'not-allowed':
+          case 'permission-denied':
+            errorMessage =
+              'Microphone permission denied. Please enable microphone access in your browser settings.';
+            break;
+          case 'network':
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+            break;
+          case 'audio-capture':
+            errorMessage = 'No microphone detected. Please connect a microphone and try again.';
+            break;
+          case 'service-not-allowed':
+            errorMessage = 'Speech recognition service not available. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              getSpeechErrorMessage(event, (key) => key) || 'Voice input failed. Please try again.';
+        }
+
         setError(errorMessage);
         setIsRecording(false);
         setIsTranscribing(false);
@@ -188,9 +210,22 @@ const useVoiceRecorder = ({
       recognition.start();
     } catch (err) {
       console.error('Error starting recognition:', err);
-      setError('Failed to start recording');
+
+      // Provide specific error message based on error type
+      let errorMessage = 'Failed to start voice recording. ';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errorMessage += 'Please enable microphone permissions in your browser.';
+      } else if (err.name === 'NotFoundError') {
+        errorMessage += 'No microphone found. Please connect a microphone.';
+      } else if (err.name === 'NotSupportedError') {
+        errorMessage += 'Voice input is not supported in this browser.';
+      } else {
+        errorMessage += 'Please try again.';
+      }
+
+      setError(errorMessage);
       setIsRecording(false);
-      onError('Failed to start recording');
+      onError(errorMessage);
     }
   }, [
     isSupported,

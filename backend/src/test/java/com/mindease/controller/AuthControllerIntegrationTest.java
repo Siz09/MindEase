@@ -1,8 +1,6 @@
 package com.mindease.controller;
 
-import com.mindease.dto.AuthResponse;
-import com.mindease.dto.ErrorResponse;
-import com.mindease.model.User;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mindease.repository.RefreshTokenRepository;
 import com.mindease.repository.UserRepository;
 import com.mindease.service.FirebaseService;
@@ -155,8 +153,8 @@ public class AuthControllerIntegrationTest {
                 .getContentAsString();
 
         // Extract refresh token from response
-        String refreshToken = com.fasterxml.jackson.databind.ObjectMapper()
-            .readTree(registerResponse)
+        ObjectMapper mapper = new ObjectMapper();
+        String refreshToken = mapper.readTree(registerResponse)
             .get("refreshToken")
             .asText();
 

@@ -44,8 +44,9 @@ public class OptimizedChatService {
 
     /**
      * Save message and update session timestamp
+     * Evicts both session and message caches
      */
-    @CacheEvict(value = "chatSession", key = "#chatSession.user.id")
+    @CacheEvict(value = {"chatSession", "recentMessages"}, key = "#chatSession.user.id")
     @Transactional
     public Message saveMessage(ChatSession chatSession, String content, boolean isUserMessage,
             boolean isCrisisFlagged) {
@@ -61,8 +62,9 @@ public class OptimizedChatService {
 
     /**
      * Save message with full safety metadata
+     * Evicts both session and message caches
      */
-    @CacheEvict(value = "chatSession", key = "#chatSession.user.id")
+    @CacheEvict(value = {"chatSession", "recentMessages"}, key = "#chatSession.user.id")
     @Transactional
     public Message saveMessageWithSafety(ChatSession chatSession, String content, boolean isUserMessage,
             RiskLevel riskLevel, ModerationAction moderationAction,
@@ -91,12 +93,33 @@ public class OptimizedChatService {
 
     /**
      * Get recent messages for context (cached)
+     * Caches the last N messages for each chat session to reduce DB queries
      */
-    @Cacheable(value = "recentMessages", key = "#chatSession.id")
+    @Cacheable(value = "recentMessages", key = "#chatSession.id + '_' + #limit")
     public java.util.List<Message> getRecentMessages(ChatSession chatSession, int limit) {
-        return messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession)
-                .stream()
-                .skip(Math.max(0, messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession).size() - limit))
+        java.util.List<Message> allMessages = messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession);
+        int totalMessages = allMessages.size();
+        int skipCount = Math.max(0, totalMessages - limit);
+
+        return allMessages.stream()
+                .skip(skipCount)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Evict all caches for a specific chat session
+     * Useful for admin operations or when session data is modified externally
+     */
+    @CacheEvict(value = {"chatSession", "recentMessages"}, allEntries = true)
+    public void evictAllCaches() {
+        // Method intentionally empty - annotation handles cache eviction
+    }
+
+    /**
+     * Evict caches for a specific user
+     */
+    @CacheEvict(value = {"chatSession", "recentMessages"}, key = "#userId")
+    public void evictUserCaches(java.util.UUID userId) {
+        // Method intentionally empty - annotation handles cache eviction
     }
 }

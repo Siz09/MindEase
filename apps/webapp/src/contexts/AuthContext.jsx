@@ -44,6 +44,27 @@ export const AuthProvider = ({ children }) => {
   };
   const isRefreshingRef = useRef(false);
   const failedQueueRef = useRef([]);
+  const tokenRefreshTimerRef = useRef(null);
+
+  // Utility to decode JWT and get expiration
+  const getTokenExpiration = (token) => {
+    if (!token) return null;
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const payload = JSON.parse(jsonPayload);
+      return payload.exp * 1000; // Convert to milliseconds
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  };
 
   // Configure axios defaults
   useEffect(() => {
@@ -53,6 +74,75 @@ export const AuthProvider = ({ children }) => {
       delete axios.defaults.headers.common['Authorization'];
     }
   }, [token]);
+
+  // Proactive token refresh - refresh 5 minutes before expiration
+  useEffect(() => {
+    if (!token || !refreshToken) {
+      if (tokenRefreshTimerRef.current) {
+        clearTimeout(tokenRefreshTimerRef.current);
+        tokenRefreshTimerRef.current = null;
+      }
+      return;
+    }
+
+    const expirationTime = getTokenExpiration(token);
+    if (!expirationTime) return;
+
+    const now = Date.now();
+    const timeUntilExpiry = expirationTime - now;
+    const refreshTime = timeUntilExpiry - 5 * 60 * 1000; // 5 minutes before expiry
+
+    if (refreshTime > 0) {
+      console.log(
+        `Token will be proactively refreshed in ${Math.round(refreshTime / 1000 / 60)} minutes`
+      );
+
+      tokenRefreshTimerRef.current = setTimeout(async () => {
+        console.log('Proactively refreshing token...');
+        try {
+          const response = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+            refreshToken: refreshToken,
+          });
+
+          const newToken = response.data.data.token;
+          const newRefreshToken = response.data.data.refreshToken;
+
+          setToken(newToken);
+          setRefreshToken(newRefreshToken);
+          localStorage.setItem('token', newToken);
+          localStorage.setItem('refreshToken', newRefreshToken);
+
+          console.log('Token proactively refreshed successfully');
+        } catch (error) {
+          console.error('Proactive token refresh failed:', error);
+          // Don't logout - let the interceptor handle it on next request
+        }
+      }, refreshTime);
+    } else if (timeUntilExpiry > 0) {
+      // Token expires soon, refresh immediately
+      console.log('Token expires soon, refreshing immediately...');
+      axios
+        .post(`${API_BASE_URL}/api/auth/refresh`, { refreshToken })
+        .then((response) => {
+          const newToken = response.data.data.token;
+          const newRefreshToken = response.data.data.refreshToken;
+          setToken(newToken);
+          setRefreshToken(newRefreshToken);
+          localStorage.setItem('token', newToken);
+          localStorage.setItem('refreshToken', newRefreshToken);
+        })
+        .catch((error) => {
+          console.error('Immediate token refresh failed:', error);
+        });
+    }
+
+    return () => {
+      if (tokenRefreshTimerRef.current) {
+        clearTimeout(tokenRefreshTimerRef.current);
+        tokenRefreshTimerRef.current = null;
+      }
+    };
+  }, [token, refreshToken]);
 
   // Check if user is authenticated on app load
   useEffect(() => {
@@ -607,8 +697,12 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Send password reset email via Firebase
+      console.log('Attempting to send password reset email via Firebase for:', email);
+      console.log('Firebase auth object:', auth);
+
       await firebaseSendPasswordResetEmail(auth, email);
 
+      console.log('Firebase password reset email sent successfully');
       toast.success(t('auth.passwordResetEmailSent', { email }));
       return { success: true };
     } catch (error) {
