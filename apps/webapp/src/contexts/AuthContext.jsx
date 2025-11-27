@@ -697,12 +697,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Send password reset email via Firebase
-      console.log('Attempting to send password reset email via Firebase for:', email);
-      console.log('Firebase auth object:', auth);
-
       await firebaseSendPasswordResetEmail(auth, email);
-
-      console.log('Firebase password reset email sent successfully');
       toast.success(t('auth.passwordResetEmailSent', { email }));
       return { success: true };
     } catch (error) {

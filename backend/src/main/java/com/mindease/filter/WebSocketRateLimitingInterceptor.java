@@ -87,6 +87,7 @@ public class WebSocketRateLimitingInterceptor implements ChannelInterceptor {
             // Reset window if expired
             if (elapsed > WINDOW_MILLIS) {
                 counter.resetWindow();
+                elapsed = 0; // Update elapsed after reset
             }
 
             int currentCount = counter.incrementAndGet();
@@ -94,10 +95,11 @@ public class WebSocketRateLimitingInterceptor implements ChannelInterceptor {
 
             if (currentCount > limit) {
                 logger.warn("WebSocket rate limit exceeded for user: {} ({} messages in {} ms)",
-                    username, currentCount, elapsed);
+                        username, currentCount, elapsed);
                 throw new IllegalArgumentException(
-                    String.format("Rate limit exceeded. Maximum %d messages per minute allowed.",
-                        MAX_MESSAGES_PER_MINUTE));
+                        String.format(
+                                "Rate limit exceeded. Maximum %d messages per minute allowed (including %d burst messages).",
+                                MAX_MESSAGES_PER_MINUTE + BURST_SIZE, BURST_SIZE));
             }
 
             // Log warning when approaching limit

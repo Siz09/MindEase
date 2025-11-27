@@ -10,13 +10,15 @@ import com.mindease.repository.MessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.Collections;
 
 @Service
 @Transactional
@@ -46,7 +48,10 @@ public class OptimizedChatService {
      * Save message and update session timestamp
      * Evicts both session and message caches
      */
-    @CacheEvict(value = {"chatSession", "recentMessages"}, key = "#chatSession.user.id")
+    @Caching(evict = {
+            @CacheEvict(value = "chatSession", key = "#chatSession.user.id"),
+            @CacheEvict(value = "recentMessages", allEntries = true)
+    })
     @Transactional
     public Message saveMessage(ChatSession chatSession, String content, boolean isUserMessage,
             boolean isCrisisFlagged) {
@@ -64,7 +69,10 @@ public class OptimizedChatService {
      * Save message with full safety metadata
      * Evicts both session and message caches
      */
-    @CacheEvict(value = {"chatSession", "recentMessages"}, key = "#chatSession.user.id")
+    @Caching(evict = {
+            @CacheEvict(value = "chatSession", key = "#chatSession.user.id"),
+            @CacheEvict(value = "recentMessages", allEntries = true)
+    })
     @Transactional
     public Message saveMessageWithSafety(ChatSession chatSession, String content, boolean isUserMessage,
             RiskLevel riskLevel, ModerationAction moderationAction,
@@ -97,28 +105,30 @@ public class OptimizedChatService {
      */
     @Cacheable(value = "recentMessages", key = "#chatSession.id + '_' + #limit")
     public java.util.List<Message> getRecentMessages(ChatSession chatSession, int limit) {
-        java.util.List<Message> allMessages = messageRepository.findByChatSessionOrderByCreatedAtAsc(chatSession);
-        int totalMessages = allMessages.size();
-        int skipCount = Math.max(0, totalMessages - limit);
-
-        return allMessages.stream()
-                .skip(skipCount)
-                .collect(java.util.stream.Collectors.toList());
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit,
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                        "createdAt"));
+        java.util.List<Message> messages = new ArrayList<>(
+                messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, pageable).getContent());
+        Collections.reverse(messages); // Return in ascending order
+        return messages;
     }
 
     /**
-     * Evict all caches for a specific chat session
-     * Useful for admin operations or when session data is modified externally
+     * Evict all cache entries across all users and sessions
+     * Useful for admin operations or after bulk data modifications
      */
-    @CacheEvict(value = {"chatSession", "recentMessages"}, allEntries = true)
+    @CacheEvict(value = { "chatSession", "recentMessages" }, allEntries = true)
     public void evictAllCaches() {
         // Method intentionally empty - annotation handles cache eviction
     }
 
     /**
      * Evict caches for a specific user
+     * Note: Only evicts chatSession cache; recentMessages requires allEntries=true
+     * due to composite keys
      */
-    @CacheEvict(value = {"chatSession", "recentMessages"}, key = "#userId")
+    @CacheEvict(value = "chatSession", key = "#userId")
     public void evictUserCaches(java.util.UUID userId) {
         // Method intentionally empty - annotation handles cache eviction
     }

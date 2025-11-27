@@ -140,7 +140,7 @@ public class ChatApiController {
                     if (sentToday >= limit) {
                         logger.info("Free daily limit reached for user: {}", user.getId());
                         return ResponseEntity.status(429).body(createErrorResponse(
-                                "You've reached today's free chat limit. You can continue tomorrow or upgrade to Premium for unlimited chat.")                        );
+                                "You've reached today's free chat limit. You can continue tomorrow or upgrade to Premium for unlimited chat."));
                     }
                 }
             } else if (isCrisis) {

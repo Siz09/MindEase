@@ -18,6 +18,6 @@ WHERE is_crisis_flagged = true;
 CREATE INDEX IF NOT EXISTS idx_messages_moderation ON messages(moderation_action)
 WHERE moderation_action IS NOT NULL;
 -- Analyze tables to update statistics for query planner
+-- Only analyze tables modified by this migration
 ANALYZE messages;
 ANALYZE chat_sessions;
-ANALYZE crisis_flags;

@@ -135,7 +135,13 @@ const Chat = () => {
       // Message will be added via WebSocket, just mark as sent
       const realMessageId = result.data?.userMessage?.id;
       if (realMessageId) {
-        setMessageStatuses((prev) => ({ ...prev, [realMessageId]: MESSAGE_STATUS.SENT }));
+        setMessageStatuses((prev) => {
+          // Don't regress from DELIVERED to SENT
+          if (prev[realMessageId] === MESSAGE_STATUS.DELIVERED) {
+            return prev;
+          }
+          return { ...prev, [realMessageId]: MESSAGE_STATUS.SENT };
+        });
       }
 
       return true;
@@ -503,6 +509,19 @@ const Chat = () => {
     if (messagesList.length > MAX_MESSAGES_IN_MEMORY) {
       // Keep the most recent messages
       const trimmed = messagesList.slice(-MAX_MESSAGES_IN_MEMORY);
+
+      // Also clean up status entries for removed messages
+      const keptIds = new Set(trimmed.map((m) => m.id));
+      setMessageStatuses((prev) => {
+        const cleaned = {};
+        Object.keys(prev).forEach((id) => {
+          if (keptIds.has(Number(id)) || keptIds.has(id)) {
+            cleaned[id] = prev[id];
+          }
+        });
+        return cleaned;
+      });
+
       console.log(`Trimmed messages from ${messagesList.length} to ${trimmed.length}`);
       return trimmed;
     }
