@@ -156,7 +156,7 @@ export const loadVoiceSettings = () => {
     const validation = validateSettings(settings);
     if (!validation.isValid) {
       console.warn('Invalid voice settings detected:', validation.errors);
-      // Use defaults but preserve valid fields from settings
+      // Replace with defaults on validation failure
       settings = { ...DEFAULT_SETTINGS };
       // Re-validate after using defaults
       const revalidation = validateSettings(settings);

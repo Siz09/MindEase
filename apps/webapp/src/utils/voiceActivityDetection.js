@@ -102,7 +102,8 @@ export const createVAD = ({
           onSpeechEnd();
         }
       } else {
-        // Reset silence timer if we're not in speech
+        // Reset timers if we're not in speech
+        speechStartTime = null;
         silenceStartTime = null;
       }
     }
