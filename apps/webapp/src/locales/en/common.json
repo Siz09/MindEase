@@ -377,7 +377,43 @@
     "voiceConversationStarted": "Voice conversation mode started",
     "voiceConversationStopped": "Voice conversation mode stopped",
     "enableVoiceInSettings": "Please enable both voice input and output in Settings to use voice conversation mode",
-    "voiceRecordingFailed": "Voice recording failed after multiple attempts. Please check your microphone permissions."
+    "voiceRecordingFailed": "Voice recording failed after multiple attempts. Please check your microphone permissions.",
+    "ttsPaused": "Speech paused",
+    "ttsResumed": "Speech resumed",
+    "repeating": "Repeating last message",
+    "noMessageToRepeat": "No message to repeat",
+    "speedReduced": "Speed reduced",
+    "speedIncreased": "Speed increased",
+    "volumeIncreased": "Volume increased",
+    "volumeDecreased": "Volume decreased",
+    "voicePausedHidden": "Voice mode paused (tab hidden)",
+    "crisisResourcesTitle": "Crisis support contacts near you:",
+    "voiceTutorial": {
+      "title": "Voice Conversation Mode",
+      "description": "Have a natural conversation with the AI assistant using your voice. Your messages will be automatically transcribed and sent, and you'll hear the responses spoken aloud.",
+      "step1": {
+        "title": "Start Voice Mode",
+        "description": "Click the microphone button to start voice conversation mode. Make sure you've enabled both voice input and output in Settings."
+      },
+      "step2": {
+        "title": "Speak Naturally",
+        "description": "Just speak naturally - your words will be transcribed automatically. You can use voice commands like 'stop', 'pause', or 'repeat' to control the conversation."
+      },
+      "step3": {
+        "title": "Listen to Responses",
+        "description": "The AI's responses will be spoken aloud automatically. You can adjust the speech rate and volume in Settings."
+      },
+      "step4": {
+        "title": "Stop When Done",
+        "description": "Click the microphone button again or say 'stop' to end voice conversation mode."
+      },
+      "tip": {
+        "title": "Tip:",
+        "description": "Voice conversation mode works best in a quiet environment. Make sure your microphone is working and you have a stable internet connection."
+      },
+      "dontShowAgain": "Don't show this again",
+      "gotIt": "Got it!"
+    }
   },
   "settings": {
     "title": "Settings",

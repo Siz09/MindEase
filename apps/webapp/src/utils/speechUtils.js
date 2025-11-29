@@ -91,3 +91,52 @@ export const requestMicrophonePermission = async () => {
     };
   }
 };
+
+/**
+ * Split text into TTS-safe chunks to avoid browser limits (~32KB)
+ * Attempts to split at sentence boundaries when possible
+ * @param {string} text - The text to split
+ * @param {number} maxChunkSize - Maximum characters per chunk (default: 3000)
+ * @returns {string[]} Array of text chunks
+ */
+export const splitTextForTTS = (text, maxChunkSize = 3000) => {
+  if (!text || text.length <= maxChunkSize) {
+    return [text];
+  }
+
+  const chunks = [];
+  let remaining = text;
+
+  while (remaining.length > maxChunkSize) {
+    // Try to split at sentence boundary (., !, ?)
+    const chunk = remaining.substring(0, maxChunkSize);
+    const lastSentenceEnd = Math.max(
+      chunk.lastIndexOf('. '),
+      chunk.lastIndexOf('! '),
+      chunk.lastIndexOf('? ')
+    );
+
+    if (lastSentenceEnd > maxChunkSize * 0.5) {
+      // Found a sentence boundary in the second half, split there
+      chunks.push(remaining.substring(0, lastSentenceEnd + 1).trim());
+      remaining = remaining.substring(lastSentenceEnd + 1).trim();
+    } else {
+      // No good sentence boundary, split at word boundary
+      const lastSpace = chunk.lastIndexOf(' ');
+      if (lastSpace > maxChunkSize * 0.5) {
+        chunks.push(remaining.substring(0, lastSpace).trim());
+        remaining = remaining.substring(lastSpace).trim();
+      } else {
+        // Fallback: hard split
+        chunks.push(remaining.substring(0, maxChunkSize).trim());
+        remaining = remaining.substring(maxChunkSize).trim();
+      }
+    }
+  }
+
+  if (remaining.length > 0) {
+    chunks.push(remaining);
+  }
+
+  return chunks.filter((chunk) => chunk.length > 0);
+};

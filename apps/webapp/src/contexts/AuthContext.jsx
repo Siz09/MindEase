@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(localStorage.getItem('refreshToken'));
   const location = useLocation();
   const welcomeToastShownRef = useRef(false);
+  const sessionExpiredToastShownRef = useRef(false);
 
   // Helper to get translated error message
   const getErrorMessage = (errorCode, fallback) => {
@@ -170,8 +171,14 @@ export const AuthProvider = ({ children }) => {
           setToken(null);
           welcomeToastShownRef.current = false;
           // Suppress toast on login route to reduce flicker
-          if (!location.pathname.startsWith('/login')) {
+          // Also check if interceptor already showed the toast to prevent duplicates
+          if (!location.pathname.startsWith('/login') && !sessionExpiredToastShownRef.current) {
+            sessionExpiredToastShownRef.current = true;
             toast.error('Session expired. Please log in again.');
+            // Reset flag after a delay to allow showing again if needed
+            setTimeout(() => {
+              sessionExpiredToastShownRef.current = false;
+            }, 3000);
           }
         }
       }
@@ -192,6 +199,7 @@ export const AuthProvider = ({ children }) => {
 
     setCurrentUser(userData);
     welcomeToastShownRef.current = true;
+    sessionExpiredToastShownRef.current = false; // Reset on successful auth
 
     if (toastId) {
       toast.update(toastId, {
@@ -280,9 +288,15 @@ export const AuthProvider = ({ children }) => {
 
               if (
                 !location.pathname.startsWith('/admin') &&
-                !location.pathname.startsWith('/login')
+                !location.pathname.startsWith('/login') &&
+                !sessionExpiredToastShownRef.current
               ) {
+                sessionExpiredToastShownRef.current = true;
                 toast.error('Session expired. Please log in again.');
+                // Reset flag after a delay to allow showing again if needed
+                setTimeout(() => {
+                  sessionExpiredToastShownRef.current = false;
+                }, 3000);
               }
 
               return Promise.reject(refreshError);
@@ -296,9 +310,15 @@ export const AuthProvider = ({ children }) => {
 
             if (
               !location.pathname.startsWith('/admin') &&
-              !location.pathname.startsWith('/login')
+              !location.pathname.startsWith('/login') &&
+              !sessionExpiredToastShownRef.current
             ) {
+              sessionExpiredToastShownRef.current = true;
               toast.error('Session expired. Please log in again.');
+              // Reset flag after a delay to allow showing again if needed
+              setTimeout(() => {
+                sessionExpiredToastShownRef.current = false;
+              }, 3000);
             }
 
             return Promise.reject(error);
@@ -349,8 +369,9 @@ export const AuthProvider = ({ children }) => {
     };
   }, [location.pathname, refreshToken]);
   const login = async (email, password) => {
+    let toastId = null;
     try {
-      const toastId = toast.loading('Signing in...');
+      toastId = toast.loading('Signing in...');
 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const firebaseUser = userCredential.user;
@@ -391,6 +412,11 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Login error:', error);
 
+      // Dismiss the loading toast first if it exists
+      if (toastId !== null) {
+        toast.dismiss(toastId);
+      }
+
       const errorCode = error.response?.data?.code;
       let errorMessage = getErrorMessage(errorCode, t('auth.loginError'));
 
@@ -416,8 +442,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginAnonymously = async () => {
+    let toastId = null;
     try {
-      const toastId = toast.loading('Continuing anonymously...');
+      toastId = toast.loading('Continuing anonymously...');
 
       // Sign in anonymously with Firebase
       const userCredential = await signInAnonymously(auth);
@@ -475,14 +502,19 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Anonymous login error:', error);
+      // Dismiss the loading toast if it exists
+      if (toastId !== null) {
+        toast.dismiss(toastId);
+      }
       toast.error('Failed to continue anonymously. Please try again.');
       return { success: false, error: error.message };
     }
   };
 
   const register = async (email, password, anonymousMode = false, autoLogin = true) => {
+    let toastId = null;
     try {
-      const toastId = toast.loading('Creating account...');
+      toastId = toast.loading('Creating account...');
 
       // Step 1: Create user in Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -534,6 +566,11 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Register error:', error);
+
+      // Dismiss the loading toast if it exists
+      if (toastId !== null) {
+        toast.dismiss(toastId);
+      }
 
       const errorCode = error.response?.data?.code;
       let errorMessage = getErrorMessage(errorCode, t('auth.registerError'));
@@ -597,8 +634,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const convertAnonymousToFull = async (email, password) => {
+    let toastId = null;
     try {
-      const toastId = toast.loading('Converting account...');
+      toastId = toast.loading('Converting account...');
 
       // Link anonymous account with email/password in Firebase
       const firebaseUser = auth.currentUser;
@@ -644,6 +682,11 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: userData };
     } catch (error) {
       console.error('Convert anonymous error:', error);
+
+      // Dismiss the loading toast if it exists
+      if (toastId !== null) {
+        toast.dismiss(toastId);
+      }
 
       const errorCode = error.response?.data?.code;
       let errorMessage = getErrorMessage(errorCode, 'Failed to convert account');

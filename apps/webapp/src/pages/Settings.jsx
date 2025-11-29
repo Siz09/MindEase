@@ -211,16 +211,26 @@ const Settings = () => {
     }
   };
 
+  // Use centralized settings manager for better persistence and validation
   const saveVoiceSettings = (settings) => {
-    let currentSettings = {};
-    try {
-      const saved = localStorage.getItem('voiceSettings');
-      if (saved) currentSettings = JSON.parse(saved);
-    } catch {
-      // If parse fails, start with empty settings
-    }
-    const newSettings = { ...currentSettings, ...settings };
-    localStorage.setItem('voiceSettings', JSON.stringify(newSettings));
+    // Import dynamically to avoid circular dependencies
+    import('../utils/voiceSettingsManager')
+      .then(({ saveVoiceSettings: saveSettings }) => {
+        saveSettings(settings);
+      })
+      .catch(() => {
+        // Fallback to old method if import fails
+        let currentSettings = {};
+        try {
+          const saved = localStorage.getItem('voiceSettings');
+          if (saved) currentSettings = JSON.parse(saved);
+        } catch {
+          // If parse fails, start with empty settings
+        }
+        const newSettings = { ...currentSettings, ...settings };
+        localStorage.setItem('voiceSettings', JSON.stringify(newSettings));
+        window.dispatchEvent(new Event('voiceSettingsChanged'));
+      });
   };
 
   const handleVoiceInputToggle = (enabled) => {
@@ -277,103 +287,105 @@ const Settings = () => {
 
         <div className="settings-content">
           {/* Convert Anonymous Account */}
-          {currentUser.anonymousMode && (
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">Convert to Full Account</h2>
+          {currentUser &&
+            currentUser.anonymousMode === true &&
+            (!currentUser.email || currentUser.email.startsWith('anonymous_')) && (
+              <div className="card">
+                <div className="card-header">
+                  <h2 className="card-title">Convert to Full Account</h2>
+                </div>
+
+                <div className="convert-anonymous-info">
+                  <p className="setting-description">
+                    You're currently using an anonymous account. Convert to a full account to:
+                  </p>
+                  <ul className="benefits-list">
+                    <li>Keep your data permanently</li>
+                    <li>Access your account from any device</li>
+                    <li>Receive personalized recommendations</li>
+                    <li>Enable email notifications</li>
+                  </ul>
+
+                  {!showConvertForm ? (
+                    <button className="btn btn-primary" onClick={() => setShowConvertForm(true)}>
+                      Convert to Full Account
+                    </button>
+                  ) : (
+                    <div className="convert-form">
+                      {convertError && <div className="error-message">{convertError}</div>}
+
+                      <div className="form-group">
+                        <label htmlFor="convert-email" className="form-label">
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          id="convert-email"
+                          className="form-input"
+                          value={convertEmail}
+                          onChange={(e) => setConvertEmail(e.target.value)}
+                          placeholder="your@email.com"
+                          disabled={convertLoading}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="convert-password" className="form-label">
+                          Password
+                        </label>
+                        <input
+                          type="password"
+                          id="convert-password"
+                          className="form-input"
+                          value={convertPassword}
+                          onChange={(e) => setConvertPassword(e.target.value)}
+                          placeholder="Create a password"
+                          disabled={convertLoading}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="convert-confirm-password" className="form-label">
+                          Confirm Password
+                        </label>
+                        <input
+                          type="password"
+                          id="convert-confirm-password"
+                          className="form-input"
+                          value={convertConfirmPassword}
+                          onChange={(e) => setConvertConfirmPassword(e.target.value)}
+                          placeholder="Confirm your password"
+                          disabled={convertLoading}
+                        />
+                      </div>
+
+                      <div className="form-actions">
+                        <button
+                          className="btn btn-primary"
+                          onClick={handleConvertAnonymous}
+                          disabled={convertLoading}
+                        >
+                          {convertLoading ? 'Converting...' : 'Convert Account'}
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setShowConvertForm(false);
+                            setConvertError('');
+                            setConvertEmail('');
+                            setConvertPassword('');
+                            setConvertConfirmPassword('');
+                          }}
+                          disabled={convertLoading}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <div className="convert-anonymous-info">
-                <p className="setting-description">
-                  You're currently using an anonymous account. Convert to a full account to:
-                </p>
-                <ul className="benefits-list">
-                  <li>Keep your data permanently</li>
-                  <li>Access your account from any device</li>
-                  <li>Receive personalized recommendations</li>
-                  <li>Enable email notifications</li>
-                </ul>
-
-                {!showConvertForm ? (
-                  <button className="btn btn-primary" onClick={() => setShowConvertForm(true)}>
-                    Convert to Full Account
-                  </button>
-                ) : (
-                  <div className="convert-form">
-                    {convertError && <div className="error-message">{convertError}</div>}
-
-                    <div className="form-group">
-                      <label htmlFor="convert-email" className="form-label">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        id="convert-email"
-                        className="form-input"
-                        value={convertEmail}
-                        onChange={(e) => setConvertEmail(e.target.value)}
-                        placeholder="your@email.com"
-                        disabled={convertLoading}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="convert-password" className="form-label">
-                        Password
-                      </label>
-                      <input
-                        type="password"
-                        id="convert-password"
-                        className="form-input"
-                        value={convertPassword}
-                        onChange={(e) => setConvertPassword(e.target.value)}
-                        placeholder="Create a password"
-                        disabled={convertLoading}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="convert-confirm-password" className="form-label">
-                        Confirm Password
-                      </label>
-                      <input
-                        type="password"
-                        id="convert-confirm-password"
-                        className="form-input"
-                        value={convertConfirmPassword}
-                        onChange={(e) => setConvertConfirmPassword(e.target.value)}
-                        placeholder="Confirm your password"
-                        disabled={convertLoading}
-                      />
-                    </div>
-
-                    <div className="form-actions">
-                      <button
-                        className="btn btn-primary"
-                        onClick={handleConvertAnonymous}
-                        disabled={convertLoading}
-                      >
-                        {convertLoading ? 'Converting...' : 'Convert Account'}
-                      </button>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setShowConvertForm(false);
-                          setConvertError('');
-                          setConvertEmail('');
-                          setConvertPassword('');
-                          setConvertConfirmPassword('');
-                        }}
-                        disabled={convertLoading}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            )}
 
           {/* Privacy Settings */}
           <div className="card">

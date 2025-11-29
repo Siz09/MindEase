@@ -129,7 +129,6 @@ const Dashboard = () => {
         notes: moodData.notes || null,
       });
       if (response.data.status === 'success' || response.data.success) {
-        toast.success(t('mood.success.saved') || 'Mood entry saved!');
         showMoodReplyToast(moodData);
         // Update shared current mood for cross-component sync
         setCurrentMood({

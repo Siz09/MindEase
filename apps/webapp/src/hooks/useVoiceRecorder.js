@@ -153,26 +153,30 @@ const useVoiceRecorder = ({
 
         console.error('Speech recognition error:', event);
 
-        // Provide user-friendly error messages
+        // Provide user-friendly error messages with actionable guidance
         let errorMessage;
         switch (event.error) {
           case 'not-allowed':
           case 'permission-denied':
             errorMessage =
-              'Microphone permission denied. Please enable microphone access in your browser settings.';
+              "Microphone permission denied. Click the lock icon in your browser's address bar, then allow microphone access. You may need to refresh the page after granting permission.";
             break;
           case 'network':
-            errorMessage = 'Network error. Please check your internet connection and try again.';
+            errorMessage =
+              'Network error detected. Please check your internet connection and try again. If the problem persists, refresh the page or check your firewall settings.';
             break;
           case 'audio-capture':
-            errorMessage = 'No microphone detected. Please connect a microphone and try again.';
+            errorMessage =
+              "No microphone detected. Please connect a microphone to your device and ensure it's not being used by another application. Check your system sound settings to verify the microphone is working.";
             break;
           case 'service-not-allowed':
-            errorMessage = 'Speech recognition service not available. Please try again later.';
+            errorMessage =
+              'Speech recognition service is not available. This may be due to browser restrictions or service unavailability. Please try again in a few moments, or try using a different browser (Chrome or Edge recommended).';
             break;
           default:
             errorMessage =
-              getSpeechErrorMessage(event, (key) => key) || 'Voice input failed. Please try again.';
+              getSpeechErrorMessage(event, (key) => key) ||
+              'Voice input failed. Please check your microphone connection and browser permissions, then try again.';
         }
 
         setError(errorMessage);
@@ -211,16 +215,20 @@ const useVoiceRecorder = ({
     } catch (err) {
       console.error('Error starting recognition:', err);
 
-      // Provide specific error message based on error type
+      // Provide specific error message based on error type with actionable guidance
       let errorMessage = 'Failed to start voice recording. ';
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errorMessage += 'Please enable microphone permissions in your browser.';
+        errorMessage +=
+          'Please enable microphone permissions in your browser settings. Click the lock icon in the address bar and allow microphone access.';
       } else if (err.name === 'NotFoundError') {
-        errorMessage += 'No microphone found. Please connect a microphone.';
+        errorMessage +=
+          'No microphone found. Please connect a microphone to your device and check your system sound settings.';
       } else if (err.name === 'NotSupportedError') {
-        errorMessage += 'Voice input is not supported in this browser.';
+        errorMessage +=
+          'Voice input is not supported in this browser. Please use Chrome, Edge, or Safari (with flag enabled).';
       } else {
-        errorMessage += 'Please try again.';
+        errorMessage +=
+          'Please check your microphone connection and browser permissions, then try again.';
       }
 
       setError(errorMessage);

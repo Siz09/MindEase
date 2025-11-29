@@ -11,7 +11,26 @@ import { apiGet } from '../lib/api';
 import useVoiceRecorder from '../hooks/useVoiceRecorder';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import VoicePlayer from '../components/VoicePlayer';
-import { mapI18nToSpeechLang } from '../utils/speechUtils';
+import VoiceModeTutorial from '../components/VoiceModeTutorial';
+import {
+  mapI18nToSpeechLang,
+  requestMicrophonePermission,
+  splitTextForTTS,
+} from '../utils/speechUtils';
+import { detectVoiceCommand, isVoiceCommand } from '../utils/voiceCommands';
+import {
+  trackVoiceModeStarted,
+  trackVoiceModeStopped,
+  trackRecordingStarted,
+  trackRecordingCompleted,
+  trackRecordingError,
+  trackTranscriptionComplete,
+  trackTTSStarted,
+  trackTTSCompleted,
+  trackTTSError,
+  trackVoiceCommand,
+  trackPermissionDenied,
+} from '../utils/voiceAnalytics';
 import LRUCache from '../utils/lruCache';
 import {
   MESSAGE_STATUS,
@@ -48,11 +67,11 @@ const Chat = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-  const [voiceInputEnabled] = useState(() => {
+  const [voiceInputEnabled, setVoiceInputEnabled] = useState(() => {
     const saved = localStorage.getItem('voiceSettings');
     return saved ? JSON.parse(saved).voiceInputEnabled !== false : true;
   });
-  const [voiceOutputEnabled] = useState(() => {
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(() => {
     const saved = localStorage.getItem('voiceSettings');
     return saved ? JSON.parse(saved).voiceOutputEnabled === true : false;
   });
@@ -61,6 +80,7 @@ const Chat = () => {
   const [currentPlayingMessageId, setCurrentPlayingMessageId] = useState(null);
   const [messageQueue, setMessageQueue] = useState([]);
   const [isVoiceConversationActive, setIsVoiceConversationActive] = useState(false);
+  const [showVoiceTutorial, setShowVoiceTutorial] = useState(false);
   const inputRef = useRef(null);
   const userCancelledRecordingRef = useRef(false);
   const manuallyStoppedTTSRef = useRef(false);
@@ -70,6 +90,11 @@ const Chat = () => {
   const ttsStateRef = useRef({ isPlaying: false, stopSpeech: null });
   const isVoiceConversationActiveRef = useRef(false);
   const lastRecordingStartRef = useRef(0);
+  const recordingTimerRef = useRef(null);
+  const originalTTSVolumeRef = useRef(1.0);
+  const isDuckingRef = useRef(false);
+  const lastBotMessageRef = useRef(null); // Store last bot message for repeat command
+  const voiceModeStartTimeRef = useRef(null); // Track voice mode start time for analytics
 
   const stompClientRef = useRef(null);
   const isConnectingRef = useRef(false);
@@ -216,9 +241,11 @@ const Chat = () => {
   };
 
   // Helper function to interrupt TTS when user starts speaking
+  // Fixed: Use refs instead of closure values to get fresh state
   const interruptTTS = () => {
     const { isPlaying, stopSpeech } = ttsStateRef.current;
-    if (isVoiceConversationActive && (isPlaying || window.speechSynthesis?.speaking)) {
+    // Use ref to get current value instead of closure
+    if (isVoiceConversationActiveRef.current && (isPlaying || window.speechSynthesis?.speaking)) {
       if (stopSpeech) stopSpeech();
       setCurrentPlayingMessageId(null);
       setMessageQueue([]);
@@ -235,6 +262,7 @@ const Chat = () => {
     isRecording,
     isSupported: isVoiceSupported,
     isTranscribing,
+    interimTranscript,
   } = useVoiceRecorder({
     language: mapI18nToSpeechLang(i18n.language),
     onStart: () => {
@@ -244,6 +272,12 @@ const Chat = () => {
     onInterimResult: (interimText) => {
       // Interrupt TTS as soon as we detect any speech (speech recognition already filters noise)
       if (interimText && interimText.trim().length > 0) {
+        // Implement audio ducking: reduce TTS volume instead of hard stop
+        if (isPlaying && !isDuckingRef.current && isVoiceConversationActiveRef.current) {
+          originalTTSVolumeRef.current = ttsVolume;
+          setTTSVolume(ttsVolume * 0.3); // Reduce to 30% of original volume
+          isDuckingRef.current = true;
+        }
         interruptTTS();
       }
     },
@@ -268,10 +302,128 @@ const Chat = () => {
         return;
       }
 
+      // Check for voice commands first
+      const command = detectVoiceCommand(text);
+      const isCommand = isVoiceCommand(text);
+
+      if (isCommand && command && isVoiceConversationActiveRef.current) {
+        // Track voice command usage
+        trackVoiceCommand(command);
+        // Execute voice command
+        let commandExecuted = false;
+        switch (command) {
+          case 'stop':
+            setIsVoiceConversationActive(false);
+            isStartingRecordingRef.current = false;
+            if (isRecording) {
+              cancelRecording();
+            }
+            if (isPlaying) {
+              stopSpeech();
+              setCurrentPlayingMessageId(null);
+            }
+            setMessageQueue([]);
+            clearTTSQueue();
+            setVoiceStatusText('');
+            toast.info(t('chat.voiceConversationStopped'));
+            commandExecuted = true;
+            break;
+
+          case 'pause':
+            if (isPlaying) {
+              pauseSpeech();
+              toast.info(t('chat.ttsPaused') || 'Speech paused');
+              commandExecuted = true;
+            }
+            break;
+
+          case 'resume':
+            if (isPaused) {
+              resumeSpeech();
+              toast.info(t('chat.ttsResumed') || 'Speech resumed');
+              commandExecuted = true;
+            }
+            break;
+
+          case 'repeat':
+            if (lastBotMessageRef.current) {
+              stopSpeech();
+              setCurrentPlayingMessageId(lastBotMessageRef.current.id);
+              speak(lastBotMessageRef.current.content);
+              toast.info(t('chat.repeating') || 'Repeating last message');
+              commandExecuted = true;
+            } else {
+              toast.info(t('chat.noMessageToRepeat') || 'No message to repeat');
+            }
+            break;
+
+          case 'slower': {
+            const newSlowerRate = Math.max(0.1, ttsRate - 0.1);
+            setTTSRate(newSlowerRate);
+            toast.info(t('chat.speedReduced') || `Speed: ${newSlowerRate.toFixed(1)}x`);
+            commandExecuted = true;
+            break;
+          }
+
+          case 'faster': {
+            const newFasterRate = Math.min(2.0, ttsRate + 0.1);
+            setTTSRate(newFasterRate);
+            toast.info(t('chat.speedIncreased') || `Speed: ${newFasterRate.toFixed(1)}x`);
+            commandExecuted = true;
+            break;
+          }
+
+          case 'louder': {
+            const newLouderVolume = Math.min(1.0, ttsVolume + 0.1);
+            setTTSVolume(newLouderVolume);
+            toast.info(
+              t('chat.volumeIncreased') || `Volume: ${Math.round(newLouderVolume * 100)}%`
+            );
+            commandExecuted = true;
+            break;
+          }
+
+          case 'quieter': {
+            const newQuieterVolume = Math.max(0.1, ttsVolume - 0.1);
+            setTTSVolume(newQuieterVolume);
+            toast.info(
+              t('chat.volumeDecreased') || `Volume: ${Math.round(newQuieterVolume * 100)}%`
+            );
+            commandExecuted = true;
+            break;
+          }
+        }
+
+        if (commandExecuted) {
+          // Restart listening after command execution
+          if (isVoiceConversationActiveRef.current && command !== 'stop') {
+            setTimeout(() => {
+              if (
+                !isRecording &&
+                !isTranscribing &&
+                isVoiceConversationActiveRef.current &&
+                !isStartingRecordingRef.current
+              ) {
+                isStartingRecordingRef.current = true;
+                startRecording();
+                setVoiceStatusText(t('chat.listening'));
+              }
+            }, 300);
+          }
+          return; // Don't process as regular message
+        }
+      }
+
       setInputValue(text);
       setIsVoiceTranscribed(true);
       setVoiceStatusText('');
       retryCountRef.current = 0; // Reset retry counter on successful transcription
+
+      // Restore TTS volume after speech ends (audio ducking)
+      if (isDuckingRef.current) {
+        setTTSVolume(originalTTSVolumeRef.current);
+        isDuckingRef.current = false;
+      }
 
       // Use ref to get current value instead of captured state
       if (isVoiceConversationActiveRef.current) {
@@ -312,9 +464,17 @@ const Chat = () => {
       // Also don't show for 'no-speech' errors - they're normal
       if (err && !err.includes('cancelled') && !err.includes('no-speech')) {
         toast.error(err);
+        // Track recording errors
+        trackRecordingError(err, 'recognition_error');
       }
       setVoiceStatusText('');
       isStartingRecordingRef.current = false;
+
+      // Restore TTS volume if ducking was active (audio ducking)
+      if (isDuckingRef.current) {
+        setTTSVolume(originalTTSVolumeRef.current);
+        isDuckingRef.current = false;
+      }
 
       // Restart listening after error in conversation mode (except for aborted/cancelled)
       if (isVoiceConversationActive && err && !err.includes('cancelled')) {
@@ -346,6 +506,11 @@ const Chat = () => {
     isPlaying,
     isPaused,
     isSupported: isTTSSupported,
+    clearQueue: clearTTSQueue,
+    volume: ttsVolume,
+    setVolume: setTTSVolume,
+    rate: ttsRate,
+    setRate: setTTSRate,
   } = useTextToSpeech({
     language: mapI18nToSpeechLang(i18n.language),
     defaultRate: (() => {
@@ -357,28 +522,32 @@ const Chat = () => {
       return saved ? JSON.parse(saved).volume || 1.0 : 1.0;
     })(),
     onComplete: () => {
-      setCurrentPlayingMessageId(null);
-
-      // Play next message in queue if available
+      // Play next chunk/message in queue if available
       if (messageQueue.length > 0) {
-        const nextMessage = messageQueue[0];
+        const nextItem = messageQueue[0];
         setMessageQueue((prev) => prev.slice(1));
-        setCurrentPlayingMessageId(nextMessage.id);
-        speak(nextMessage.content);
+        setCurrentPlayingMessageId(nextItem.id);
+        speak(nextItem.content);
+      } else {
+        // No more items in queue, clear playing message ID
+        setCurrentPlayingMessageId(null);
       }
       // Note: Listening is handled continuously, no need to restart here
     },
     onError: (err) => {
       if (err?.error !== 'interrupted' && err?.error !== 'canceled') {
         console.error('TTS error:', err);
+        trackTTSError(err?.error || err?.message || 'Unknown TTS error');
       }
-      setCurrentPlayingMessageId(null);
 
+      // Try to play next chunk/message in queue if available
       if (messageQueue.length > 0) {
-        const nextMessage = messageQueue[0];
+        const nextItem = messageQueue[0];
         setMessageQueue((prev) => prev.slice(1));
-        setCurrentPlayingMessageId(nextMessage.id);
-        speak(nextMessage.content);
+        setCurrentPlayingMessageId(nextItem.id);
+        speak(nextItem.content);
+      } else {
+        setCurrentPlayingMessageId(null);
       }
     },
   });
@@ -395,6 +564,100 @@ const Chat = () => {
   useEffect(() => {
     isVoiceConversationActiveRef.current = isVoiceConversationActive;
   }, [isVoiceConversationActive]);
+
+  // Make voice settings reactive - listen for changes from Settings page
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'voiceSettings' && e.newValue) {
+        try {
+          const settings = JSON.parse(e.newValue);
+          setVoiceInputEnabled(settings.voiceInputEnabled !== false);
+          setVoiceOutputEnabled(settings.voiceOutputEnabled === true);
+        } catch (err) {
+          console.error('Error parsing voice settings:', err);
+        }
+      }
+    };
+
+    // Listen for storage events (from other tabs/windows)
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also listen for custom events (from same tab)
+    const handleCustomStorageChange = () => {
+      const saved = localStorage.getItem('voiceSettings');
+      if (saved) {
+        try {
+          const settings = JSON.parse(saved);
+          setVoiceInputEnabled(settings.voiceInputEnabled !== false);
+          setVoiceOutputEnabled(settings.voiceOutputEnabled === true);
+        } catch (err) {
+          console.error('Error parsing voice settings:', err);
+        }
+      }
+    };
+
+    // Listen for custom event that Settings page can dispatch
+    window.addEventListener('voiceSettingsChanged', handleCustomStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('voiceSettingsChanged', handleCustomStorageChange);
+    };
+  }, []);
+
+  // Handle visibility change - pause voice mode when tab is hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab became hidden - pause voice mode
+        if (isVoiceConversationActive) {
+          // Store state to resume later
+          if (isRecording) {
+            cancelRecording();
+          }
+          if (isPlaying) {
+            stopSpeech();
+            setCurrentPlayingMessageId(null);
+          }
+          // Don't fully stop voice mode, just pause it
+          // User can resume when tab becomes visible
+          setVoiceStatusText(t('chat.voicePausedHidden') || 'Voice mode paused (tab hidden)');
+        }
+      } else {
+        // Tab became visible - resume voice mode if it was active
+        if (isVoiceConversationActive && !isRecording && !isTranscribing) {
+          setVoiceStatusText(t('chat.listening'));
+          // Restart listening after a short delay
+          setTimeout(() => {
+            if (
+              isVoiceConversationActiveRef.current &&
+              !isRecording &&
+              !isTranscribing &&
+              !isStartingRecordingRef.current
+            ) {
+              isStartingRecordingRef.current = true;
+              startRecording();
+            }
+          }, 500);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [
+    isVoiceConversationActive,
+    isRecording,
+    isTranscribing,
+    isPlaying,
+    cancelRecording,
+    stopSpeech,
+    startRecording,
+    t,
+  ]);
 
   // Cleanup old processed message IDs periodically (every 5 minutes)
   useEffect(() => {
@@ -660,6 +923,11 @@ const Chat = () => {
                 setMessageStatuses((prev) => ({ ...prev, [messageId]: MESSAGE_STATUS.DELIVERED }));
               }
 
+              // Store last bot message for repeat command
+              if (!normalizedMessage.isUserMessage) {
+                lastBotMessageRef.current = normalizedMessage;
+              }
+
               // Only auto-play in voice conversation mode to respect accessibility guidelines
               // Use ref to get current value since this callback captures old values
               if (
@@ -684,10 +952,32 @@ const Chat = () => {
                     }
                     setCurrentPlayingMessageId(null);
                     setMessageQueue([]);
+                    clearTTSQueue();
                   }
-                  // Play the new message immediately
-                  setCurrentPlayingMessageId(normalizedMessage.id);
-                  speak(messageContent);
+
+                  // Split long messages into TTS-safe chunks
+                  const chunks = splitTextForTTS(messageContent);
+                  if (chunks.length > 1) {
+                    // Queue all chunks for sequential playback
+                    setCurrentPlayingMessageId(normalizedMessage.id);
+                    // Play first chunk immediately
+                    speak(chunks[0]);
+                    // Queue remaining chunks
+                    for (let i = 1; i < chunks.length; i++) {
+                      // Use addToQueue from TTS hook if available, otherwise use messageQueue
+                      // For now, we'll use the TTS hook's queue via speak calls in onComplete
+                      // Store chunks in messageQueue for sequential playback
+                      setMessageQueue((prev) => [
+                        ...prev,
+                        { id: normalizedMessage.id, content: chunks[i], chunkIndex: i },
+                      ]);
+                    }
+                  } else {
+                    // Single chunk, play immediately
+                    setCurrentPlayingMessageId(normalizedMessage.id);
+                    trackTTSStarted(messageContent.length);
+                    speak(messageContent);
+                  }
                 }
               }
             } catch (error) {
@@ -887,36 +1177,48 @@ const Chat = () => {
   // Continuous listening in voice conversation mode
   // This ensures we're always listening when not recording/transcribing
   // Use cooldown to prevent rapid restarts while allowing interruption
+  // Fixed: Use single timer ref approach to prevent race conditions
   useEffect(() => {
+    // Clear any existing timer first
+    if (recordingTimerRef.current) {
+      clearTimeout(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+
+    // Early return guard using refs to avoid stale closures
     if (
-      isVoiceConversationActive &&
-      isConnected &&
-      !isRecording &&
-      !isTranscribing &&
-      !userCancelledRecordingRef.current &&
-      !manuallyStoppedTTSRef.current &&
-      !isStartingRecordingRef.current
+      !isVoiceConversationActiveRef.current ||
+      !isConnected ||
+      isRecording ||
+      isTranscribing ||
+      userCancelledRecordingRef.current ||
+      manuallyStoppedTTSRef.current ||
+      isStartingRecordingRef.current
     ) {
-      // Add cooldown to prevent rapid restarts
-      const now = Date.now();
-      const timeSinceLastStart = now - lastRecordingStartRef.current;
-      const cooldownPeriod = 800; // 800ms minimum between recordings to prevent echo/feedback
+      return;
+    }
 
-      if (timeSinceLastStart < cooldownPeriod) {
-        return;
-      }
+    // Add cooldown to prevent rapid restarts
+    const now = Date.now();
+    const timeSinceLastStart = now - lastRecordingStartRef.current;
+    const cooldownPeriod = 350; // 350ms minimum between recordings (reduced from 800ms for better responsiveness)
 
-      // Use longer delay if TTS is playing to reduce chance of audio feedback
-      const delay = isPlaying ? 500 : 100;
-
-      const timer = setTimeout(() => {
-        // Only start if conditions are still met
+    if (timeSinceLastStart < cooldownPeriod) {
+      // Schedule a check after cooldown period
+      const remainingCooldown = cooldownPeriod - timeSinceLastStart;
+      recordingTimerRef.current = setTimeout(() => {
+        recordingTimerRef.current = null;
+        // Trigger effect re-evaluation by checking conditions
         if (
+          isVoiceConversationActiveRef.current &&
+          isConnected &&
           !isRecording &&
           !isTranscribing &&
-          isVoiceConversationActive &&
+          !userCancelledRecordingRef.current &&
+          !manuallyStoppedTTSRef.current &&
           !isStartingRecordingRef.current
         ) {
+          // Re-check cooldown
           const timeSinceLastCheck = Date.now() - lastRecordingStartRef.current;
           if (timeSinceLastCheck >= cooldownPeriod) {
             lastRecordingStartRef.current = Date.now();
@@ -925,9 +1227,46 @@ const Chat = () => {
             setVoiceStatusText(t('chat.listening'));
           }
         }
-      }, delay);
-      return () => clearTimeout(timer);
+      }, remainingCooldown);
+      return () => {
+        if (recordingTimerRef.current) {
+          clearTimeout(recordingTimerRef.current);
+          recordingTimerRef.current = null;
+        }
+      };
     }
+
+    // Use longer delay if TTS is playing to reduce chance of audio feedback
+    const delay = isPlaying ? 500 : 100;
+
+    recordingTimerRef.current = setTimeout(() => {
+      recordingTimerRef.current = null;
+      // Only start if conditions are still met (using refs for fresh values)
+      if (
+        isVoiceConversationActiveRef.current &&
+        isConnected &&
+        !isRecording &&
+        !isTranscribing &&
+        !userCancelledRecordingRef.current &&
+        !manuallyStoppedTTSRef.current &&
+        !isStartingRecordingRef.current
+      ) {
+        const timeSinceLastCheck = Date.now() - lastRecordingStartRef.current;
+        if (timeSinceLastCheck >= cooldownPeriod) {
+          lastRecordingStartRef.current = Date.now();
+          isStartingRecordingRef.current = true;
+          startRecording();
+          setVoiceStatusText(t('chat.listening'));
+        }
+      }
+    }, delay);
+
+    return () => {
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    };
   }, [
     isVoiceConversationActive,
     isConnected,
@@ -1017,7 +1356,7 @@ const Chat = () => {
     setMessageQueue([]);
   };
 
-  const handleToggleVoiceConversation = () => {
+  const handleToggleVoiceConversation = async () => {
     if (isVoiceConversationActive) {
       setIsVoiceConversationActive(false);
       isStartingRecordingRef.current = false;
@@ -1028,8 +1367,21 @@ const Chat = () => {
         stopSpeech();
         setCurrentPlayingMessageId(null);
       }
+      // Clear both React state queue and TTS hook's internal queue
       setMessageQueue([]);
+      clearTTSQueue();
       setVoiceStatusText('');
+      // Restore TTS volume if ducking was active
+      if (isDuckingRef.current) {
+        setTTSVolume(originalTTSVolumeRef.current);
+        isDuckingRef.current = false;
+      }
+      // Track voice mode stopped with duration
+      if (voiceModeStartTimeRef.current) {
+        const duration = Date.now() - voiceModeStartTimeRef.current;
+        trackVoiceModeStopped(duration);
+        voiceModeStartTimeRef.current = null;
+      }
       toast.info(t('chat.voiceConversationStopped'));
     } else {
       if (!isVoiceConversationMode) {
@@ -1040,7 +1392,34 @@ const Chat = () => {
         toast.error('Please wait for connection before starting voice conversation');
         return;
       }
+
+      // Check microphone permission before starting
+      const permissionResult = await requestMicrophonePermission();
+      if (!permissionResult.granted) {
+        let errorMessage = 'Microphone permission is required for voice conversation. ';
+        if (permissionResult.error === 'not-allowed') {
+          errorMessage += 'Please enable microphone access in your browser settings and try again.';
+        } else if (permissionResult.error === 'audio-capture') {
+          errorMessage += 'Please connect a microphone and try again.';
+        } else if (permissionResult.error === 'not-supported') {
+          errorMessage += 'Microphone access is not supported in this browser.';
+        } else {
+          errorMessage += 'Please check your microphone settings and try again.';
+        }
+        toast.error(errorMessage);
+        return;
+      }
+
+      // Check if tutorial should be shown (first time user)
+      const hasSeenTutorial = localStorage.getItem('voiceTutorialSeen') === 'true';
+      if (!hasSeenTutorial) {
+        setShowVoiceTutorial(true);
+        // Don't start voice mode yet - wait for user to close tutorial
+        return;
+      }
+
       setIsVoiceConversationActive(true);
+      voiceModeStartTimeRef.current = Date.now(); // Track start time
       retryCountRef.current = 0; // Reset retry counter for new conversation
       userCancelledRecordingRef.current = false;
       manuallyStoppedTTSRef.current = false;
@@ -1048,6 +1427,7 @@ const Chat = () => {
       startRecording();
       setVoiceStatusText(t('chat.listening'));
       toast.success(t('chat.voiceConversationStarted'));
+      trackVoiceModeStarted();
     }
   };
 
@@ -1519,16 +1899,45 @@ const Chat = () => {
                   )}
                 </button>
               )}
-              <textarea
-                ref={inputRef}
-                value={inputValue}
-                onChange={handleInputChange}
-                onKeyPress={handleKeyPress}
-                placeholder={t('chat.inputPlaceholder')}
-                className={`chat-input ${isVoiceTranscribed ? 'chat-input--voice-transcribed' : ''}`}
-                rows="1"
-                disabled={!isConnected || isTranscribing}
-              />
+              <div style={{ position: 'relative', width: '100%' }}>
+                <textarea
+                  ref={inputRef}
+                  value={inputValue}
+                  onChange={handleInputChange}
+                  onKeyPress={handleKeyPress}
+                  placeholder={
+                    interimTranscript && isRecording
+                      ? interimTranscript
+                      : t('chat.inputPlaceholder')
+                  }
+                  className="chat-input"
+                  rows="1"
+                  disabled={!isConnected || isTranscribing}
+                />
+                {interimTranscript && isRecording && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      left: 0,
+                      right: 0,
+                      marginBottom: '4px',
+                      padding: '6px 12px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      borderRadius: '8px',
+                      fontSize: '0.875rem',
+                      color: '#059669',
+                      fontStyle: 'italic',
+                      maxHeight: '60px',
+                      overflow: 'auto',
+                    }}
+                  >
+                    <span style={{ fontWeight: 500, marginRight: '4px' }}>Listening:</span>
+                    {interimTranscript}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={sendMessage}
                 disabled={!inputValue.trim() || !isConnected || isTranscribing}
@@ -1549,6 +1958,24 @@ const Chat = () => {
           </div>
         </div>
       </div>
+      <VoiceModeTutorial
+        isOpen={showVoiceTutorial}
+        onClose={() => {
+          setShowVoiceTutorial(false);
+          // Start voice mode after tutorial is closed
+          setIsVoiceConversationActive(true);
+          retryCountRef.current = 0;
+          userCancelledRecordingRef.current = false;
+          manuallyStoppedTTSRef.current = false;
+          isStartingRecordingRef.current = true;
+          startRecording();
+          setVoiceStatusText(t('chat.listening'));
+          toast.success(t('chat.voiceConversationStarted'));
+        }}
+        onDontShowAgain={() => {
+          localStorage.setItem('voiceTutorialSeen', 'true');
+        }}
+      />
     </div>
   );
 };
