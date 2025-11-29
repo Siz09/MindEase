@@ -1,5 +1,6 @@
 package com.mindease.service;
 
+import com.mindease.config.MoodConfig;
 import com.mindease.model.MoodEntry;
 import com.mindease.model.User;
 import com.mindease.repository.MoodEntryRepository;
@@ -19,6 +20,9 @@ public class MoodPredictionService {
     @Autowired
     private MoodEntryRepository moodEntryRepository;
 
+    @Autowired
+    private MoodConfig moodConfig;
+
     public Map<String, Object> predictMood(User user) {
         // Fetch last 14 days of mood data
         // Use UTC for consistent date boundaries across all users regardless of server
@@ -32,7 +36,10 @@ public class MoodPredictionService {
         if (entries.size() < 3) {
             result.put("prediction", null);
             result.put("trend", "insufficient_data");
-            result.put("insight", "Keep tracking your mood for a few more days to get personalized insights!");
+            String insight = moodConfig.getPrediction().getInsights().getOrDefault(
+                    "insufficient-data",
+                    "Keep tracking your mood for a few more days to get personalized insights!");
+            result.put("insight", insight);
             return result;
         }
 
@@ -61,7 +68,10 @@ public class MoodPredictionService {
             // All entries at same time or insufficient variance
             result.put("prediction", entries.get(entries.size() - 1).getMoodValue());
             result.put("trend", "stable");
-            result.put("insight", "Your mood has been relatively stable recently.");
+            String insight = moodConfig.getPrediction().getInsights().getOrDefault(
+                    "stable",
+                    "Your mood has been relatively stable recently.");
+            result.put("insight", insight);
             return result;
         }
 
@@ -83,15 +93,26 @@ public class MoodPredictionService {
         String trend;
         String insight;
 
-        if (slope > 0.1) {
+        // Get trend threshold from config (default to 0.1 if not configured)
+        double threshold = moodConfig.getPrediction().getTrendThreshold() != null
+                ? moodConfig.getPrediction().getTrendThreshold()
+                : 0.1;
+
+        if (slope > threshold) {
             trend = "improving";
-            insight = "Your mood seems to be on an upward trend! Keep doing what you're doing.";
-        } else if (slope < -0.1) {
+            insight = moodConfig.getPrediction().getInsights().getOrDefault(
+                    "improving",
+                    "Your mood seems to be on an upward trend! Keep doing what you're doing.");
+        } else if (slope < -threshold) {
             trend = "declining";
-            insight = "It looks like things have been tough lately. Consider practicing some mindfulness or reaching out to a friend.";
+            insight = moodConfig.getPrediction().getInsights().getOrDefault(
+                    "declining",
+                    "It looks like things have been tough lately. Consider practicing some mindfulness or reaching out to a friend.");
         } else {
             trend = "stable";
-            insight = "Your mood has been relatively stable recently.";
+            insight = moodConfig.getPrediction().getInsights().getOrDefault(
+                    "stable",
+                    "Your mood has been relatively stable recently.");
         }
 
         result.put("trend", trend);

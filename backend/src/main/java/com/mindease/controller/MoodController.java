@@ -1,9 +1,11 @@
 package com.mindease.controller;
 
+import com.mindease.dto.UnifiedMoodRecord;
 import com.mindease.model.MoodEntry;
 import com.mindease.model.User;
 import com.mindease.repository.MoodEntryRepository;
 import com.mindease.repository.UserRepository;
+import com.mindease.service.UnifiedMoodService;
 import com.mindease.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -40,6 +42,9 @@ public class MoodController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private UnifiedMoodService unifiedMoodService;
 
     // POST /api/mood/add - Add a new mood entry
     @Operation(summary = "Add a mood entry", description = "Add a new mood entry for the authenticated user")
@@ -119,6 +124,48 @@ public class MoodController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(createErrorResponse("Failed to fetch mood history: " + e.getMessage()));
+        }
+    }
+
+    // GET /api/mood/unified - Get unified mood history (combines MoodEntry and MoodCheckIn)
+    @Operation(summary = "Get unified mood history",
+               description = "Get mood history combining both MoodEntry (1-10) and MoodCheckIn (1-5) data, normalized to 1-10 scale")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Unified mood history retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "User not found"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - invalid JWT token")
+    })
+    @GetMapping("/unified")
+    public ResponseEntity<?> getUnifiedMoodHistory(
+            Authentication authentication,
+            @RequestParam(defaultValue = "30") int days) {
+        try {
+            String email = authentication.getName();
+            Optional<User> userOptional = userRepository.findByEmail(email);
+
+            if (userOptional.isEmpty()) {
+                return ResponseEntity.badRequest().body(createErrorResponse("User not found"));
+            }
+
+            User user = userOptional.get();
+            List<UnifiedMoodRecord> unifiedHistory = unifiedMoodService.getUnifiedMoodHistory(user, days);
+            Map<String, Double> trend = unifiedMoodService.getUnifiedMoodTrend(user, days);
+            Double averageMood = unifiedMoodService.getAverageMood(user, days);
+            Map<String, Long> countBySource = unifiedMoodService.getMoodCountBySource(user, days);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("data", unifiedHistory);
+            response.put("trend", trend);
+            response.put("averageMood", averageMood);
+            response.put("countBySource", countBySource);
+            response.put("days", days);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(createErrorResponse("Failed to fetch unified mood history: " + e.getMessage()));
         }
     }
 

@@ -6,6 +6,7 @@ import api from '../utils/api';
 import MoodInput from '../components/MoodInput';
 import JournalForm from '../components/JournalForm';
 import JournalHistory from '../components/JournalHistory';
+import useAICompletionPolling from '../hooks/useAICompletionPolling';
 import '../styles/CheckIn.css';
 import '../styles/EmojiPicker.css';
 
@@ -55,6 +56,18 @@ const Dashboard = () => {
 
   // Abort controller ref for request cancellation
   const abortControllerRef = useRef(null);
+
+  // AI completion polling hook
+  const pollForAICompletion = useAICompletionPolling((updatedEntry) => {
+    // Update the journal entries list when AI summary completes
+    setJournalEntries((prev) => {
+      const idx = prev.findIndex((it) => it.id === updatedEntry.id);
+      if (idx === -1) return prev;
+      const next = prev.slice();
+      next[idx] = updatedEntry;
+      return next;
+    });
+  });
 
   // Handle online/offline status
   useEffect(() => {
@@ -145,23 +158,30 @@ const Dashboard = () => {
     }
   };
 
-  const handleJournalSubmit = async ({ title, content }) => {
+  const handleJournalSubmit = async ({ title, content, moodValue }) => {
     try {
       setJournalSubmitting(true);
 
-      // Prepend mood emoji if available, similar to Journal page
-      let finalContent = content;
-      if (currentMood && currentMood.emoji) {
-        finalContent = `${currentMood.emoji} ${content}`;
-      }
+      // Use provided moodValue, or currentMood value if available
+      const finalMoodValue = moodValue || (currentMood ? currentMood.value : null);
 
-      const res = await api.post('/journal/add', { title, content: finalContent });
+      const res = await api.post('/journal/add', {
+        title,
+        content: content.trim(), // No longer prepending emoji
+        moodValue: finalMoodValue, // Send structured mood value
+      });
       const data = res.data || {};
 
       if (data.success || data.status === 'success') {
         toast.success(t('journal.success.added') || 'Journal entry added!');
         await fetchJournalEntries(0);
         setCurrentPage(0);
+
+        // Poll for AI summary completion
+        const returnedEntry = data.entry || null;
+        if (returnedEntry && returnedEntry.id) {
+          pollForAICompletion(returnedEntry.id);
+        }
       } else {
         toast.error(t('journal.errors.saveFailed') || 'Failed to save journal entry');
       }

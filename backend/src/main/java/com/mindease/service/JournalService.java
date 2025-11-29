@@ -1,7 +1,11 @@
 package com.mindease.service;
 
 import com.mindease.model.JournalEntry;
+import com.mindease.model.MoodEntry;
+import com.mindease.model.User;
 import com.mindease.repository.JournalEntryRepository;
+import com.mindease.repository.MoodEntryRepository;
+import com.mindease.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,9 +31,16 @@ public class JournalService {
     @Autowired
     private OpenAIService openAIService;
 
+    @Autowired
+    private MoodEntryRepository moodEntryRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     private static final int MAX_TITLE_LENGTH = 150;
 
-    public JournalEntry saveJournalEntry(UUID userId, String title, String content) {
+    @Transactional
+    public JournalEntry saveJournalEntry(UUID userId, String title, String content, Integer moodValue) {
         if (userId == null) {
             throw new IllegalArgumentException("User ID cannot be null");
         }
@@ -37,16 +48,39 @@ public class JournalService {
             throw new IllegalArgumentException("Content cannot be empty");
         }
 
+        // Validate mood value if provided
+        if (moodValue != null && (moodValue < 1 || moodValue > 10)) {
+            throw new IllegalArgumentException("Mood value must be between 1 and 10");
+        }
+
         String normalizedContent = content.trim();
         String normalizedTitle = normalizeTitle(title);
 
         JournalEntry entry = new JournalEntry(userId, normalizedTitle, normalizedContent);
+
+        // Create linked MoodEntry if moodValue is provided
+        if (moodValue != null) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+            MoodEntry moodEntry = new MoodEntry(user, moodValue, null);
+            moodEntry = moodEntryRepository.save(moodEntry);
+            entry.setMoodEntry(moodEntry);
+
+            logger.info("Created linked mood entry (value: {}) for journal entry", moodValue);
+        }
+
         JournalEntry savedEntry = journalEntryRepository.save(entry);
 
         // Generate AI summary asynchronously
         generateAndSaveAISummary(savedEntry);
 
         return savedEntry;
+    }
+
+    // Overloaded method for backward compatibility
+    public JournalEntry saveJournalEntry(UUID userId, String title, String content) {
+        return saveJournalEntry(userId, title, content, null);
     }
 
     @Transactional
@@ -90,12 +124,25 @@ public class JournalService {
             logger.info("Successfully saved AI summary for journal entry: {}", entry.getId());
 
         } catch (Exception e) {
-            logger.error("Failed to generate AI summary for journal entry {}: {}",
-                    entry.getId(), e.getMessage(), e);
+            // Log error with context
+            String errorMessage = e.getMessage();
+            boolean isConfigError = errorMessage != null &&
+                    (errorMessage.contains("API key") ||
+                     errorMessage.contains("authentication") ||
+                     errorMessage.contains("401") ||
+                     errorMessage.contains("403"));
 
-            // Set fallback messages
-            entry.setAiSummary("Summary unavailable due to technical issues.");
-            entry.setMoodInsight("Mood insight unavailable.");
+            if (isConfigError) {
+                logger.error("Configuration error generating AI summary for journal entry {}: {}. " +
+                        "Check OpenAI API key configuration.", entry.getId(), errorMessage, e);
+                entry.setAiSummary("Summary unavailable - AI service not configured. Please contact support.");
+                entry.setMoodInsight("Mood insight unavailable - AI service not configured.");
+            } else {
+                logger.warn("Temporary failure generating AI summary for journal entry {}: {}. " +
+                        "Will retry on next entry.", entry.getId(), errorMessage, e);
+                entry.setAiSummary("Summary unavailable due to temporary technical issues. Please try again later.");
+                entry.setMoodInsight("Mood insight unavailable due to temporary technical issues.");
+            }
             journalEntryRepository.save(entry);
         }
 

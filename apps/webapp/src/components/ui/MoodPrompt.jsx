@@ -9,16 +9,23 @@ const MoodPrompt = ({ onSubmit, onDismiss }) => {
   const { t } = useTranslation();
   const [selectedMood, setSelectedMood] = useState(null);
 
+  // Updated to use 1-10 scale to match MoodInput component
   const moods = [
-    { score: 1, label: t('mood.veryBad'), emoji: '😢' },
-    { score: 2, label: t('mood.bad'), emoji: '😟' },
-    { score: 3, label: t('mood.neutral'), emoji: '😐' },
-    { score: 4, label: t('mood.good'), emoji: '🙂' },
-    { score: 5, label: t('mood.veryGood'), emoji: '😊' },
+    { score: 1, label: t('mood.terrible'), emoji: '😭', color: '#dc2626' },
+    { score: 2, label: t('mood.veryBad'), emoji: '😢', color: '#ea580c' },
+    { score: 3, label: t('mood.bad'), emoji: '😔', color: '#f97316' },
+    { score: 4, label: t('mood.poor'), emoji: '😕', color: '#fb923c' },
+    { score: 5, label: t('mood.neutral'), emoji: '😐', color: '#eab308' },
+    { score: 6, label: t('mood.okay'), emoji: '🙂', color: '#a3e635' },
+    { score: 7, label: t('mood.good'), emoji: '😊', color: '#84cc16' },
+    { score: 8, label: t('mood.veryGood'), emoji: '😄', color: '#65a30d' },
+    { score: 9, label: t('mood.great'), emoji: '😁', color: '#16a34a' },
+    { score: 10, label: t('mood.amazing'), emoji: '🤩', color: '#15803d' },
   ];
 
   const handleSubmit = () => {
     if (selectedMood) {
+      // Submit with score value (1-10 scale)
       onSubmit(selectedMood);
     }
   };
@@ -48,21 +55,27 @@ const MoodPrompt = ({ onSubmit, onDismiss }) => {
           {t('chat.moodPrompt.description')}
         </p>
 
-        <div className="flex gap-2 mb-4">
+        <div className="grid grid-cols-5 gap-2 mb-4">
           {moods.map((mood) => (
             <button
               key={mood.score}
-              onClick={() => setSelectedMood(mood.score)}
+              onClick={() => setSelectedMood(mood)}
               className={cn(
-                'flex-1 flex flex-col items-center gap-2 p-3 rounded-lg transition-all',
+                'flex flex-col items-center gap-1 p-2 rounded-lg transition-all',
                 'hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-500',
-                selectedMood === mood.score
-                  ? `mood-${mood.score} shadow-lg scale-105`
-                  : 'bg-gray-100 dark:bg-gray-800'
+                selectedMood?.score === mood.score
+                  ? 'shadow-lg scale-105 border-2'
+                  : 'bg-gray-100 dark:bg-gray-800 border border-transparent'
               )}
+              style={
+                selectedMood?.score === mood.score
+                  ? { borderColor: mood.color, backgroundColor: `${mood.color}20` }
+                  : {}
+              }
             >
-              <span className="text-2xl">{mood.emoji}</span>
-              <span className="text-xs font-medium">{mood.label}</span>
+              <span className="text-xl">{mood.emoji}</span>
+              <span className="text-xs font-medium">{mood.score}</span>
+              <span className="text-[10px] text-center leading-tight">{mood.label}</span>
             </button>
           ))}
         </div>

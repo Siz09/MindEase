@@ -30,6 +30,10 @@ public class JournalEntry {
   @Column(name = "mood_insight")
   private String moodInsight;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "mood_entry_id")
+  private MoodEntry moodEntry;
+
   @CreationTimestamp
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;
@@ -65,6 +69,9 @@ public class JournalEntry {
 
   public String getMoodInsight() { return moodInsight; }
   public void setMoodInsight(String moodInsight) { this.moodInsight = moodInsight; }
+
+  public MoodEntry getMoodEntry() { return moodEntry; }
+  public void setMoodEntry(MoodEntry moodEntry) { this.moodEntry = moodEntry; }
 
   public LocalDateTime getCreatedAt() { return createdAt; }
   public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

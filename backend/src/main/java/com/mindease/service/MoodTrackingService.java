@@ -1,5 +1,6 @@
 package com.mindease.service;
 
+import com.mindease.config.MoodConfig;
 import com.mindease.model.ChatSession;
 import com.mindease.model.MoodCheckIn;
 import com.mindease.model.User;
@@ -26,6 +27,9 @@ public class MoodTrackingService {
 
     @Autowired
     private MoodCheckInRepository moodCheckInRepository;
+
+    @Autowired
+    private MoodConfig moodConfig;
 
     /**
      * Create a new mood check-in for a user.
@@ -223,6 +227,10 @@ public class MoodTrackingService {
     }
 
     private boolean isValidCheckinType(String type) {
-        return "pre_chat".equals(type) || "post_chat".equals(type) || "standalone".equals(type);
+        if (type == null) {
+            return false;
+        }
+        List<String> validTypes = moodConfig.getTracking().getCheckinTypes();
+        return validTypes != null && validTypes.contains(type);
     }
 }

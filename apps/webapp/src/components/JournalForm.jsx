@@ -44,6 +44,7 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
     onSubmit({
       title: null,
       content: newEntry.trim(),
+      moodValue: currentMood ? currentMood.value : null, // Pass mood value if available
     });
     setNewEntry('');
   };

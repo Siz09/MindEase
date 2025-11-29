@@ -95,6 +95,29 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
+# Mood tracking configuration
+mood:
+  tracking:
+    checkin-types:
+      - pre_chat
+      - post_chat
+      - standalone
+  prediction:
+    insights:
+      insufficient-data: "Keep tracking your mood for a few more days to get personalized insights!"
+      stable: "Your mood has been relatively stable recently."
+      improving: "Your mood seems to be on an upward trend! Keep doing what you're doing."
+      declining: "It looks like things have been tough lately. Consider practicing some mindfulness or reaching out to a friend."
+    trend-threshold: 0.1
+
+# AI prompts configuration
+ai:
+  prompts:
+    journal-summary: "Summarize the following journal entry in under 100 words, with empathy and focus on emotions and themes.\n\nJournal entry: {content}"
+    mood-insight: "Based on this journal entry, briefly describe the writer's emotional state and offer one gentle self-care suggestion (under 50 words).\n\nJournal entry: {content}"
+    journal-summary-system: "You are an empathetic mental health assistant. Provide concise, supportive summaries."
+    mood-insight-system: "You analyze journal entries to detect emotions and suggest one gentle self-care tip."
+
 # Chat configuration
 chat:
   openai:

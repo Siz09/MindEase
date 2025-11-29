@@ -63,8 +63,11 @@ public class JournalController {
                 logger.warn("Failed to track user activity for userId: {}", userId, ex);
             }
 
-            // Save journal entry
-            JournalEntry savedEntry = journalService.saveJournalEntry(userId, title, content);
+            // Extract mood value from request (optional)
+            Integer moodValue = request.getMoodValue();
+
+            // Save journal entry (with optional mood linking)
+            JournalEntry savedEntry = journalService.saveJournalEntry(userId, title, content, moodValue);
 
             response.put("success", true);
             response.put("message", "Journal entry saved successfully");

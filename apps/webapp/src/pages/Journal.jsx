@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import EmojiPicker from '../components/EmojiPicker';
+import useAICompletionPolling from '../hooks/useAICompletionPolling';
 import '../styles/Journal.css';
 
 const Journal = () => {
@@ -14,6 +15,7 @@ const Journal = () => {
   const [newEntry, setNewEntry] = useState('');
 
   const [selectedEmoji, setSelectedEmoji] = useState('😊');
+  const [selectedMoodValue, setSelectedMoodValue] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -24,8 +26,19 @@ const Journal = () => {
   // Kept state for API flow (no inline summary card rendered anymore)
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const pollingMapRef = useRef(new Map());
   const progressTimerRef = useRef(null);
+
+  // AI completion polling hook
+  const pollForAICompletion = useAICompletionPolling((updatedEntry) => {
+    // Update the journal entries list when AI summary completes
+    setEntries((prev) => {
+      const idx = prev.findIndex((it) => it.id === updatedEntry.id);
+      if (idx === -1) return prev;
+      const next = prev.slice();
+      next[idx] = updatedEntry;
+      return next;
+    });
+  });
 
   const emojiPickerRef = useRef(null);
   const textareaRef = useRef(null);
@@ -53,18 +66,7 @@ const Journal = () => {
     };
   }, []);
 
-  // Cleanup any pending polling on unmount
-  useEffect(() => {
-    const pollingMap = pollingMapRef.current;
-    return () => {
-      if (pollingMap) {
-        for (const id of pollingMap.values()) {
-          clearInterval(id);
-        }
-        pollingMap.clear();
-      }
-    };
-  }, []);
+  // Cleanup handled by useAICompletionPolling hook
 
   // Fetch journal entries
   const fetchJournalEntries = useCallback(
@@ -118,6 +120,11 @@ const Journal = () => {
 
   const handleEmojiSelect = (emoji) => {
     setSelectedEmoji(emoji);
+    // Auto-set mood value based on emoji
+    const moodValue = emojiToMoodValue(emoji);
+    if (moodValue) {
+      setSelectedMoodValue(moodValue);
+    }
     setShowEmojiPicker(false);
   };
 
@@ -147,6 +154,31 @@ const Journal = () => {
     };
   }, [loading]);
 
+  // Map emoji to mood value (1-10 scale)
+  const emojiToMoodValue = (emoji) => {
+    const emojiMoodMap = {
+      '😭': 1,
+      '😢': 2,
+      '😔': 3,
+      '😕': 4,
+      '😐': 5,
+      '🙂': 6,
+      '😊': 7,
+      '😄': 8,
+      '😁': 9,
+      '🤩': 10,
+      '😀': 8,
+      '🙁': 4,
+      '😡': 2,
+      '😤': 3,
+      '😱': 2,
+      '😴': 5,
+      '🤒': 3,
+      '🤗': 7,
+    };
+    return emojiMoodMap[emoji] || null;
+  };
+
   // Submit new entry
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -167,9 +199,13 @@ const Journal = () => {
     setLoading(true);
 
     try {
+      // Map emoji to mood value, or use explicitly selected mood value
+      const moodValue = selectedMoodValue || emojiToMoodValue(selectedEmoji);
+
       const res = await api.post('/journal/add', {
         title: null,
-        content: `${selectedEmoji} ${newEntry.trim()}`,
+        content: newEntry.trim(), // No longer prepending emoji
+        moodValue: moodValue, // Send structured mood value
       });
       const data = res.data || {};
 
@@ -181,6 +217,7 @@ const Journal = () => {
       }
       setNewEntry('');
       setSelectedEmoji('😊');
+      setSelectedMoodValue(null);
 
       // Poll briefly for AI summary completion and refresh the entry in the list
       if (returnedEntry && returnedEntry.id) {
@@ -220,43 +257,7 @@ const Journal = () => {
     return { emoji: '📝', text: s };
   };
 
-  const pollForAICompletion = useCallback((entryId) => {
-    const maxAttempts = 8;
-    const intervalMs = 1500;
-
-    if (pollingMapRef.current) {
-      const existing = pollingMapRef.current.get(entryId);
-      if (existing) clearInterval(existing);
-    }
-
-    let attempts = 0;
-    const id = setInterval(async () => {
-      attempts += 1;
-      const historyRes = await api.get('/journal/history?page=0&size=10').catch(() => null);
-      if (historyRes) {
-        const payload = historyRes.data || {};
-        const list = payload.entries || [];
-        const found = list.find((it) => it.id === entryId);
-        if (found && (found.aiSummary || found.moodInsight)) {
-          setEntries((prev) => {
-            const idx = prev.findIndex((it) => it.id === entryId);
-            if (idx === -1) return prev;
-            const next = prev.slice();
-            next[idx] = found;
-            return next;
-          });
-          clearInterval(id);
-          pollingMapRef.current.delete(entryId);
-          return;
-        }
-      }
-      if (attempts >= maxAttempts) {
-        clearInterval(id);
-        pollingMapRef.current.delete(entryId);
-      }
-    }, intervalMs);
-    pollingMapRef.current.set(entryId, id);
-  }, []);
+  // pollForAICompletion is now provided by useAICompletionPolling hook
 
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < totalPages) {

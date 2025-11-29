@@ -1,5 +1,6 @@
 package com.mindease.service;
 
+import com.mindease.config.AIPromptConfig;
 import com.mindease.config.ChatConfig;
 import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
@@ -25,6 +26,9 @@ public class OpenAIService {
     @Autowired
     private ChatConfig chatConfig;
 
+    @Autowired
+    private AIPromptConfig aiPromptConfig;
+
     // Lazily initialize our own OpenAI client using the same mechanism as chat
     private volatile OpenAiService client;
 
@@ -34,7 +38,7 @@ public class OpenAIService {
     public Optional<String> generateJournalSummary(String journalContent) {
         OpenAiService svc = getOrCreateService();
         if (svc == null) {
-            logger.warn("OpenAI service not configured - returning mock summary");
+            logger.error("OpenAI service not configured - API key missing or invalid. Returning mock summary.");
             return generateMockSummary(journalContent);
         }
 
@@ -42,13 +46,15 @@ public class OpenAIService {
             String resolvedModel = resolveChatModel(effectiveModel());
             var openaiConfig = chatConfig.getOpenai();
             if (openaiConfig == null) {
-                logger.warn("OpenAI configuration missing - returning mock summary");
+                logger.error("OpenAI configuration missing - chat.openai configuration not found. Returning mock summary.");
                 return generateMockSummary(journalContent);
             }
 
             List<ChatMessage> messages = new ArrayList<>();
-            messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(),
-                    "You are an empathetic mental health assistant. Provide concise, supportive summaries."));
+            String systemPrompt = aiPromptConfig.getJournalSummarySystem() != null
+                    ? aiPromptConfig.getJournalSummarySystem()
+                    : "You are an empathetic mental health assistant. Provide concise, supportive summaries.";
+            messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt));
             messages.add(new ChatMessage(ChatMessageRole.USER.value(),
                     createJournalSummaryPrompt(journalContent)));
 
@@ -72,8 +78,16 @@ public class OpenAIService {
             logger.warn("No choices returned from OpenAI Chat API for summary");
             return generateMockSummary(journalContent);
 
+        } catch (com.theokanning.openai.service.OpenAiHttpException e) {
+            // Distinguish between configuration errors (401, 403) and temporary failures
+            if (e.statusCode == 401 || e.statusCode == 403) {
+                logger.error("OpenAI API authentication failed (status: {}). Check API key configuration. Returning mock summary.", e.statusCode, e);
+            } else {
+                logger.warn("Temporary error calling OpenAI Chat API (summary, status: {}): {}. Returning mock summary.", e.statusCode, e.getMessage());
+            }
+            return generateMockSummary(journalContent);
         } catch (Exception e) {
-            logger.error("Error calling OpenAI Chat API (summary): {}", e.getMessage(), e);
+            logger.warn("Unexpected error calling OpenAI Chat API (summary): {}. Returning mock summary.", e.getMessage(), e);
             return generateMockSummary(journalContent);
         }
     }
@@ -81,7 +95,7 @@ public class OpenAIService {
     public Optional<String> generateMoodInsight(String journalContent) {
         OpenAiService svc = getOrCreateService();
         if (svc == null) {
-            logger.warn("OpenAI service not configured - returning mock mood insight");
+            logger.error("OpenAI service not configured - API key missing or invalid. Returning mock mood insight.");
             return generateMockMoodInsight(journalContent);
         }
 
@@ -89,13 +103,15 @@ public class OpenAIService {
             String resolvedModel = resolveChatModel(effectiveModel());
             var openaiConfig = chatConfig.getOpenai();
             if (openaiConfig == null) {
-                logger.warn("OpenAI configuration missing - returning mock insight");
+                logger.error("OpenAI configuration missing - chat.openai configuration not found. Returning mock insight.");
                 return generateMockMoodInsight(journalContent);
             }
 
             List<ChatMessage> messages = new ArrayList<>();
-            messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(),
-                    "You analyze journal entries to detect emotions and suggest one gentle self-care tip."));
+            String systemPrompt = aiPromptConfig.getMoodInsightSystem() != null
+                    ? aiPromptConfig.getMoodInsightSystem()
+                    : "You analyze journal entries to detect emotions and suggest one gentle self-care tip.";
+            messages.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt));
             messages.add(new ChatMessage(ChatMessageRole.USER.value(),
                     createMoodInsightPrompt(journalContent)));
 
@@ -119,20 +135,32 @@ public class OpenAIService {
             logger.warn("No choices returned from OpenAI Chat API for mood insight");
             return generateMockMoodInsight(journalContent);
 
+        } catch (com.theokanning.openai.service.OpenAiHttpException e) {
+            // Distinguish between configuration errors (401, 403) and temporary failures
+            if (e.statusCode == 401 || e.statusCode == 403) {
+                logger.error("OpenAI API authentication failed (status: {}). Check API key configuration. Returning mock insight.", e.statusCode, e);
+            } else {
+                logger.warn("Temporary error calling OpenAI Chat API (insight, status: {}): {}. Returning mock insight.", e.statusCode, e.getMessage());
+            }
+            return generateMockMoodInsight(journalContent);
         } catch (Exception e) {
-            logger.error("Error calling OpenAI Chat API (insight): {}", e.getMessage(), e);
+            logger.warn("Unexpected error calling OpenAI Chat API (insight): {}. Returning mock insight.", e.getMessage(), e);
             return generateMockMoodInsight(journalContent);
         }
     }
 
     private String createJournalSummaryPrompt(String journalContent) {
-        return "Summarize the following journal entry in under 100 words, with empathy and focus on emotions and themes.\n\n"
-                + "Journal entry: " + journalContent;
+        String template = aiPromptConfig.getJournalSummary() != null
+                ? aiPromptConfig.getJournalSummary()
+                : "Summarize the following journal entry in under 100 words, with empathy and focus on emotions and themes.\n\nJournal entry: {content}";
+        return template.replace("{content}", journalContent);
     }
 
     private String createMoodInsightPrompt(String journalContent) {
-        return "Based on this journal entry, briefly describe the writer's emotional state and offer one gentle self-care suggestion (under 50 words).\n\n"
-                + "Journal entry: " + journalContent;
+        String template = aiPromptConfig.getMoodInsight() != null
+                ? aiPromptConfig.getMoodInsight()
+                : "Based on this journal entry, briefly describe the writer's emotional state and offer one gentle self-care suggestion (under 50 words).\n\nJournal entry: {content}";
+        return template.replace("{content}", journalContent);
     }
 
     private Optional<String> generateMockSummary(String journalContent) {
