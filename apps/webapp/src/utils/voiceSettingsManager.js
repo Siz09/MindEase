@@ -156,12 +156,12 @@ export const loadVoiceSettings = () => {
     const validation = validateSettings(settings);
     if (!validation.isValid) {
       console.warn('Invalid voice settings detected:', validation.errors);
-      // Merge with defaults to fix invalid values
-      settings = { ...DEFAULT_SETTINGS, ...settings };
-      // Re-validate after merge
+      // Use defaults but preserve valid fields from settings
+      settings = { ...DEFAULT_SETTINGS };
+      // Re-validate after using defaults
       const revalidation = validateSettings(settings);
       if (!revalidation.isValid) {
-        console.error('Settings still invalid after merge, using defaults');
+        console.error('Default settings are invalid, this should not happen');
         return { ...DEFAULT_SETTINGS };
       }
     }

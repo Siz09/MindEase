@@ -95,6 +95,8 @@ const Chat = () => {
   const isDuckingRef = useRef(false);
   const lastBotMessageRef = useRef(null); // Store last bot message for repeat command
   const voiceModeStartTimeRef = useRef(null); // Track voice mode start time for analytics
+  const ttsVolumeRef = useRef(1.0); // Track current TTS volume to avoid stale closures
+  const messageQueueRef = useRef([]); // Track message queue to avoid stale closures
 
   const stompClientRef = useRef(null);
   const isConnectingRef = useRef(false);
@@ -274,8 +276,9 @@ const Chat = () => {
       if (interimText && interimText.trim().length > 0) {
         // Implement audio ducking: reduce TTS volume instead of hard stop
         if (isPlaying && !isDuckingRef.current && isVoiceConversationActiveRef.current) {
-          originalTTSVolumeRef.current = ttsVolume;
-          setTTSVolume(ttsVolume * 0.3); // Reduce to 30% of original volume
+          // Use ref to get current volume value instead of closure
+          originalTTSVolumeRef.current = ttsVolumeRef.current;
+          setTTSVolume(ttsVolumeRef.current * 0.3); // Reduce to 30% of original volume
           isDuckingRef.current = true;
         }
         interruptTTS();
@@ -330,7 +333,8 @@ const Chat = () => {
             break;
 
           case 'pause':
-            if (isPlaying) {
+            // Use speechSynthesis API directly for fresh state
+            if (window.speechSynthesis?.speaking && !window.speechSynthesis?.paused) {
               pauseSpeech();
               toast.info(t('chat.ttsPaused') || 'Speech paused');
               commandExecuted = true;
@@ -338,7 +342,8 @@ const Chat = () => {
             break;
 
           case 'resume':
-            if (isPaused) {
+            // Use speechSynthesis API directly for fresh state
+            if (window.speechSynthesis?.paused) {
               resumeSpeech();
               toast.info(t('chat.ttsResumed') || 'Speech resumed');
               commandExecuted = true;
@@ -523,8 +528,10 @@ const Chat = () => {
     })(),
     onComplete: () => {
       // Play next chunk/message in queue if available
-      if (messageQueue.length > 0) {
-        const nextItem = messageQueue[0];
+      // Use ref to get current queue value instead of closure
+      const currentQueue = messageQueueRef.current;
+      if (currentQueue.length > 0) {
+        const nextItem = currentQueue[0];
         setMessageQueue((prev) => prev.slice(1));
         setCurrentPlayingMessageId(nextItem.id);
         speak(nextItem.content);
@@ -541,8 +548,10 @@ const Chat = () => {
       }
 
       // Try to play next chunk/message in queue if available
-      if (messageQueue.length > 0) {
-        const nextItem = messageQueue[0];
+      // Use ref to get current queue value instead of closure
+      const currentQueue = messageQueueRef.current;
+      if (currentQueue.length > 0) {
+        const nextItem = currentQueue[0];
         setMessageQueue((prev) => prev.slice(1));
         setCurrentPlayingMessageId(nextItem.id);
         speak(nextItem.content);
@@ -559,6 +568,16 @@ const Chat = () => {
   useEffect(() => {
     ttsStateRef.current = { isPlaying, stopSpeech };
   }, [isPlaying, stopSpeech]);
+
+  // Update TTS volume ref to avoid stale closures
+  useEffect(() => {
+    ttsVolumeRef.current = ttsVolume;
+  }, [ttsVolume]);
+
+  // Update message queue ref to avoid stale closures in TTS callbacks
+  useEffect(() => {
+    messageQueueRef.current = messageQueue;
+  }, [messageQueue]);
 
   // Update voice conversation active ref so WebSocket callback can access current value
   useEffect(() => {
@@ -675,34 +694,8 @@ const Chat = () => {
     return () => clearInterval(cleanupInterval);
   }, []);
 
-  // Online/offline detection
-  useEffect(() => {
-    const handleOnline = () => {
-      console.log('Connection restored');
-      setIsOnline(true);
-      toast.success('Connection restored');
-
-      // Process offline queue
-      processOfflineQueue();
-    };
-
-    const handleOffline = () => {
-      console.log('Connection lost');
-      setIsOnline(false);
-      toast.warning('You are offline. Messages will be queued.');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   // Process offline message queue
-  const processOfflineQueue = async () => {
+  const processOfflineQueue = useCallback(async () => {
     const queue = getOfflineQueue();
     if (queue.length === 0) return;
 
@@ -727,7 +720,7 @@ const Chat = () => {
     } else {
       toast.warning(`${remainingCount} message${remainingCount > 1 ? 's' : ''} could not be sent`);
     }
-  };
+  }, []);
 
   // Calculate exponential backoff delay
   const getReconnectDelay = () => {
@@ -874,6 +867,7 @@ const Chat = () => {
           }
 
           // Process offline queue when reconnected
+          // Note: processOfflineQueue is stable, no need to include in dependencies
           if (isOnline && getOfflineQueueCount() > 0) {
             setTimeout(() => processOfflineQueue(), 1000);
           }
@@ -960,6 +954,7 @@ const Chat = () => {
                   if (chunks.length > 1) {
                     // Queue all chunks for sequential playback
                     setCurrentPlayingMessageId(normalizedMessage.id);
+                    trackTTSStarted(messageContent.length);
                     // Play first chunk immediately
                     speak(chunks[0]);
                     // Queue remaining chunks
@@ -1964,6 +1959,7 @@ const Chat = () => {
           setShowVoiceTutorial(false);
           // Start voice mode after tutorial is closed
           setIsVoiceConversationActive(true);
+          voiceModeStartTimeRef.current = Date.now();
           retryCountRef.current = 0;
           userCancelledRecordingRef.current = false;
           manuallyStoppedTTSRef.current = false;
@@ -1971,6 +1967,7 @@ const Chat = () => {
           startRecording();
           setVoiceStatusText(t('chat.listening'));
           toast.success(t('chat.voiceConversationStarted'));
+          trackVoiceModeStarted();
         }}
         onDontShowAgain={() => {
           localStorage.setItem('voiceTutorialSeen', 'true');

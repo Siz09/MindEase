@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }) => {
   const location = useLocation();
   const welcomeToastShownRef = useRef(false);
   const sessionExpiredToastShownRef = useRef(false);
+  const sessionExpiredTimeoutRef = useRef(null);
 
   // Helper to get translated error message
   const getErrorMessage = (errorCode, fallback) => {
@@ -176,8 +177,13 @@ export const AuthProvider = ({ children }) => {
             sessionExpiredToastShownRef.current = true;
             toast.error('Session expired. Please log in again.');
             // Reset flag after a delay to allow showing again if needed
-            setTimeout(() => {
+            // Clear any existing timeout first
+            if (sessionExpiredTimeoutRef.current) {
+              clearTimeout(sessionExpiredTimeoutRef.current);
+            }
+            sessionExpiredTimeoutRef.current = setTimeout(() => {
               sessionExpiredToastShownRef.current = false;
+              sessionExpiredTimeoutRef.current = null;
             }, 3000);
           }
         }
@@ -185,6 +191,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
     checkAuth();
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (sessionExpiredTimeoutRef.current) {
+        clearTimeout(sessionExpiredTimeoutRef.current);
+        sessionExpiredTimeoutRef.current = null;
+      }
+    };
   }, [location.pathname]);
 
   // Helper to DRY success-path state updates and toasts
@@ -294,8 +308,13 @@ export const AuthProvider = ({ children }) => {
                 sessionExpiredToastShownRef.current = true;
                 toast.error('Session expired. Please log in again.');
                 // Reset flag after a delay to allow showing again if needed
-                setTimeout(() => {
+                // Clear any existing timeout first
+                if (sessionExpiredTimeoutRef.current) {
+                  clearTimeout(sessionExpiredTimeoutRef.current);
+                }
+                sessionExpiredTimeoutRef.current = setTimeout(() => {
                   sessionExpiredToastShownRef.current = false;
+                  sessionExpiredTimeoutRef.current = null;
                 }, 3000);
               }
 
@@ -316,8 +335,13 @@ export const AuthProvider = ({ children }) => {
               sessionExpiredToastShownRef.current = true;
               toast.error('Session expired. Please log in again.');
               // Reset flag after a delay to allow showing again if needed
-              setTimeout(() => {
+              // Clear any existing timeout first
+              if (sessionExpiredTimeoutRef.current) {
+                clearTimeout(sessionExpiredTimeoutRef.current);
+              }
+              sessionExpiredTimeoutRef.current = setTimeout(() => {
                 sessionExpiredToastShownRef.current = false;
+                sessionExpiredTimeoutRef.current = null;
               }, 3000);
             }
 

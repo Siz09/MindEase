@@ -19,7 +19,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Service that aggregates mood data from both MoodEntry (1-10 scale) and MoodCheckIn (1-5 scale) systems.
+ * Service that aggregates mood data from both MoodEntry (1-10 scale) and
+ * MoodCheckIn (1-5 scale) systems.
  * Provides a unified API for mood history, trends, and analytics.
  */
 @Service
@@ -47,7 +48,8 @@ public class UnifiedMoodService {
     }
 
     /**
-     * Get unified mood history for a user, combining both MoodEntry and MoodCheckIn records.
+     * Get unified mood history for a user, combining both MoodEntry and MoodCheckIn
+     * records.
      *
      * @param user The user
      * @param days Number of days to look back
@@ -73,8 +75,7 @@ public class UnifiedMoodService {
                     "mood_entry",
                     entry.getNotes(),
                     null,
-                    entry.getCreatedAt()
-            ));
+                    entry.getCreatedAt()));
         }
 
         // Add MoodCheckIn records (with score mapping)
@@ -85,8 +86,7 @@ public class UnifiedMoodService {
                     "mood_checkin",
                     null, // MoodCheckIn doesn't have notes field
                     checkIn.getCheckinType(),
-                    checkIn.getCreatedAt()
-            ));
+                    checkIn.getCreatedAt()));
         }
 
         // Sort by created date, most recent first
@@ -110,10 +110,10 @@ public class UnifiedMoodService {
 
         // Group by date and calculate averages
         Map<String, Double> trend = records.stream()
+                .filter(record -> record.getMoodValue() != null)
                 .collect(Collectors.groupingBy(
                         record -> record.getCreatedAt().toLocalDate().toString(),
-                        Collectors.averagingInt(UnifiedMoodRecord::getMoodValue)
-                ));
+                        Collectors.averagingInt(UnifiedMoodRecord::getMoodValue)));
 
         log.debug("Calculated mood trend for user {}: {} days of data", user.getId(), trend.size());
         return trend;
@@ -134,6 +134,7 @@ public class UnifiedMoodService {
         }
 
         double average = records.stream()
+                .filter(record -> record.getMoodValue() != null)
                 .mapToInt(UnifiedMoodRecord::getMoodValue)
                 .average()
                 .orElse(0.0);
@@ -154,8 +155,7 @@ public class UnifiedMoodService {
         return records.stream()
                 .collect(Collectors.groupingBy(
                         UnifiedMoodRecord::getSource,
-                        Collectors.counting()
-                ));
+                        Collectors.counting()));
     }
 
     /**
@@ -185,8 +185,7 @@ public class UnifiedMoodService {
                         "mood_entry",
                         entry.getNotes(),
                         null,
-                        entry.getCreatedAt()
-                );
+                        entry.getCreatedAt());
             }
         }
 
@@ -199,8 +198,7 @@ public class UnifiedMoodService {
                         "mood_checkin",
                         null,
                         recentCheckIn.getCheckinType(),
-                        recentCheckIn.getCreatedAt()
-                );
+                        recentCheckIn.getCreatedAt());
             }
         }
 

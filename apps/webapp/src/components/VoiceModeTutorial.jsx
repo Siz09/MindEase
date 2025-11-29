@@ -1,18 +1,26 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const VoiceModeTutorial = ({ isOpen, onClose, onDontShowAgain }) => {
   const { t } = useTranslation();
   const modalRef = useRef(null);
+  const [dontShow, setDontShow] = useState(false);
+
+  const handleClose = useCallback(() => {
+    if (dontShow && onDontShowAgain) {
+      onDontShowAgain();
+    }
+    onClose?.();
+  }, [dontShow, onDontShowAgain, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
-        onClose?.();
+        handleClose();
       }
     };
 
@@ -20,7 +28,7 @@ const VoiceModeTutorial = ({ isOpen, onClose, onDontShowAgain }) => {
     return () => {
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
 
@@ -39,7 +47,7 @@ const VoiceModeTutorial = ({ isOpen, onClose, onDontShowAgain }) => {
         zIndex: 2000,
         animation: 'fadeIn 0.2s ease',
       }}
-      onClick={() => onClose?.()}
+      onClick={handleClose}
     >
       <div
         ref={modalRef}
@@ -81,7 +89,7 @@ const VoiceModeTutorial = ({ isOpen, onClose, onDontShowAgain }) => {
             {t('chat.voiceTutorial.title') || 'Voice Conversation Mode'}
           </h2>
           <button
-            onClick={() => onClose?.()}
+            onClick={handleClose}
             aria-label="Close tutorial"
             style={{
               background: 'none',
@@ -337,17 +345,14 @@ const VoiceModeTutorial = ({ isOpen, onClose, onDontShowAgain }) => {
           >
             <input
               type="checkbox"
-              onChange={(e) => {
-                if (e.target.checked && onDontShowAgain) {
-                  onDontShowAgain();
-                }
-              }}
+              checked={dontShow}
+              onChange={(e) => setDontShow(e.target.checked)}
               style={{ cursor: 'pointer' }}
             />
             {t('chat.voiceTutorial.dontShowAgain') || "Don't show this again"}
           </label>
           <button
-            onClick={() => onClose?.()}
+            onClick={handleClose}
             style={{
               padding: '0.75rem 1.5rem',
               backgroundColor: 'var(--primary-green, #10b981)',

@@ -77,16 +77,18 @@ export const createVAD = ({
     // Check if audio level exceeds threshold
     if (normalizedLevel > threshold) {
       if (!isSpeechActive) {
-        // Speech just started
-        speechStartTime = now;
-        silenceStartTime = null;
-      } else if (speechStartTime && now - speechStartTime > MIN_SPEECH_DURATION) {
-        // Speech is confirmed (lasted long enough)
-        if (!isSpeechActive) {
+        if (!speechStartTime) {
+          // Speech just started - record start time
+          speechStartTime = now;
+          silenceStartTime = null;
+        } else if (now - speechStartTime > MIN_SPEECH_DURATION) {
+          // Speech is confirmed (lasted long enough)
           isSpeechActive = true;
           onSpeechStart(normalizedLevel);
         }
       }
+      // Reset silence timer when audio is above threshold
+      silenceStartTime = null;
     } else {
       // Audio level below threshold
       if (isSpeechActive) {
