@@ -25,7 +25,7 @@ const MoodPrompt = ({ onSubmit, onDismiss }) => {
 
   const handleSubmit = () => {
     if (selectedMood) {
-      // Submit with score value (1-10 scale)
+      // Submit the entire mood object (with score, label, emoji, color)
       onSubmit(selectedMood);
     }
   };

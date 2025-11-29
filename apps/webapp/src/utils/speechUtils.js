@@ -100,7 +100,10 @@ export const requestMicrophonePermission = async () => {
  * @returns {string[]} Array of text chunks
  */
 export const splitTextForTTS = (text, maxChunkSize = 3000) => {
-  if (!text || text.length <= maxChunkSize) {
+  if (!text) {
+    return [];
+  }
+  if (text.length <= maxChunkSize) {
     return [text];
   }
 
@@ -125,7 +128,7 @@ export const splitTextForTTS = (text, maxChunkSize = 3000) => {
       const lastSpace = chunk.lastIndexOf(' ');
       if (lastSpace > maxChunkSize * 0.5) {
         chunks.push(remaining.substring(0, lastSpace).trim());
-        remaining = remaining.substring(lastSpace).trim();
+        remaining = remaining.substring(lastSpace + 1).trim();
       } else {
         // Fallback: hard split
         chunks.push(remaining.substring(0, maxChunkSize).trim());

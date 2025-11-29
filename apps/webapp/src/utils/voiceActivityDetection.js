@@ -33,6 +33,11 @@ export const createVAD = ({
    * Start VAD monitoring
    */
   const start = async () => {
+    if (audioContext) {
+      console.warn('VAD already started');
+      return;
+    }
+
     try {
       // Get user media
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
