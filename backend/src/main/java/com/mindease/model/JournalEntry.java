@@ -1,5 +1,8 @@
 package com.mindease.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
@@ -10,6 +13,7 @@ import java.util.UUID;
   @Index(name = "idx_journal_user_created", columnList = "user_id, created_at"),
   @Index(name = "idx_journal_created", columnList = "created_at")
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class JournalEntry {
   @Id
   @GeneratedValue
@@ -30,6 +34,7 @@ public class JournalEntry {
   @Column(name = "mood_insight")
   private String moodInsight;
 
+  @JsonIgnore // Prevent lazy loading issues during JSON serialization
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "mood_entry_id")
   private MoodEntry moodEntry;
@@ -75,4 +80,18 @@ public class JournalEntry {
 
   public LocalDateTime getCreatedAt() { return createdAt; }
   public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+  // Getter for mood value from linked mood entry (for JSON serialization)
+  @JsonProperty("moodValue")
+  public Integer getMoodValue() {
+    if (moodEntry != null) {
+      try {
+        return moodEntry.getMoodValue();
+      } catch (Exception e) {
+        // If lazy loading fails, return null
+        return null;
+      }
+    }
+    return null;
+  }
 }

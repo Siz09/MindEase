@@ -6,6 +6,7 @@ import com.theokanning.openai.completion.chat.ChatCompletionChoice;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
+import com.theokanning.openai.OpenAiHttpException;
 import com.theokanning.openai.service.OpenAiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +79,7 @@ public class OpenAIService {
             logger.warn("No choices returned from OpenAI Chat API for summary");
             return generateMockSummary(journalContent);
 
-        } catch (com.theokanning.openai.service.OpenAiHttpException e) {
+        } catch (OpenAiHttpException e) {
             // Distinguish between configuration errors (401, 403) and temporary failures
             if (e.statusCode == 401 || e.statusCode == 403) {
                 logger.error("OpenAI API authentication failed (status: {}). Check API key configuration. Returning mock summary.", e.statusCode, e);
@@ -135,7 +136,7 @@ public class OpenAIService {
             logger.warn("No choices returned from OpenAI Chat API for mood insight");
             return generateMockMoodInsight(journalContent);
 
-        } catch (com.theokanning.openai.service.OpenAiHttpException e) {
+        } catch (OpenAiHttpException e) {
             // Distinguish between configuration errors (401, 403) and temporary failures
             if (e.statusCode == 401 || e.statusCode == 403) {
                 logger.error("OpenAI API authentication failed (status: {}). Check API key configuration. Returning mock insight.", e.statusCode, e);

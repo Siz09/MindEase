@@ -28,6 +28,24 @@ const JournalHistory = ({
     }).format(date);
   };
 
+  // Map mood value (1-10) to emoji
+  const moodValueToEmoji = (moodValue) => {
+    if (!moodValue || moodValue < 1 || moodValue > 10) return null;
+    const moodEmojiMap = {
+      1: '😭',
+      2: '😢',
+      3: '😔',
+      4: '😕',
+      5: '😐',
+      6: '🙂',
+      7: '😊',
+      8: '😄',
+      9: '😁',
+      10: '🤩',
+    };
+    return moodEmojiMap[moodValue] || null;
+  };
+
   const extractEntryParts = (content) => {
     if (!content) return { emoji: '', text: '' };
     const s = String(content);
@@ -85,7 +103,11 @@ const JournalHistory = ({
 
       <div className="entries-list">
         {entries.map((entry, idx) => {
-          const { emoji, text } = extractEntryParts(entry.content);
+          // Get emoji from mood value if available, otherwise try to extract from content
+          const moodEmoji = entry.moodValue ? moodValueToEmoji(entry.moodValue) : null;
+          const { emoji: contentEmoji, text } = extractEntryParts(entry.content);
+          const emoji = moodEmoji || contentEmoji;
+
           return (
             <div key={entry.id ?? idx} className="journal-entry-card">
               <div className="entry-header">
@@ -110,7 +132,7 @@ const JournalHistory = ({
               </div>
 
               <div className="entry-content">
-                <p>{text}</p>
+                <p>{text || entry.content}</p>
               </div>
             </div>
           );

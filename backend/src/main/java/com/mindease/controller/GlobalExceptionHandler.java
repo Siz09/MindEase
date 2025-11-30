@@ -2,11 +2,14 @@ package com.mindease.controller;
 
 import com.google.firebase.auth.FirebaseAuthException;
 import com.mindease.exception.PremiumRequiredException;
+import com.mindease.exception.UnauthenticatedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -30,6 +33,18 @@ public class GlobalExceptionHandler {
     body.put("message", ex.getMessage());
     body.put("timestamp", System.currentTimeMillis());
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+  }
+
+  @ExceptionHandler(UnauthenticatedException.class)
+  public ResponseEntity<Map<String, Object>> handleUnauthenticated(UnauthenticatedException ex) {
+    logger.warn("Unauthenticated access attempted: {}", ex.getMessage());
+
+    Map<String, Object> body = new HashMap<>();
+    body.put("status", "error");
+    body.put("errorCode", "unauthenticated");
+    body.put("message", ex.getMessage());
+    body.put("timestamp", System.currentTimeMillis());
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
   }
 
   @ExceptionHandler(Exception.class)
@@ -67,6 +82,35 @@ public class GlobalExceptionHandler {
 
     response.put("message", "Validation failed");
     response.put("errors", errors);
+
+    return ResponseEntity.status(400).body(response);
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+    logger.warn("Parameter type mismatch: {} = {}", ex.getName(), ex.getValue(), ex);
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", "error");
+    response.put("errorCode", "invalid_parameter");
+    response.put("message", String.format("Invalid value for parameter '%s': %s", ex.getName(), ex.getValue()));
+    response.put("parameter", ex.getName());
+    response.put("value", ex.getValue());
+    response.put("timestamp", System.currentTimeMillis());
+
+    return ResponseEntity.status(400).body(response);
+  }
+
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<Map<String, Object>> handleMissingParameter(MissingServletRequestParameterException ex) {
+    logger.warn("Missing required parameter: {}", ex.getParameterName(), ex);
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("status", "error");
+    response.put("errorCode", "missing_parameter");
+    response.put("message", String.format("Missing required parameter: %s", ex.getParameterName()));
+    response.put("parameter", ex.getParameterName());
+    response.put("timestamp", System.currentTimeMillis());
 
     return ResponseEntity.status(400).body(response);
   }

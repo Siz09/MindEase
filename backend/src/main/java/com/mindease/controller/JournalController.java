@@ -1,6 +1,7 @@
 package com.mindease.controller;
 
 import com.mindease.dto.JournalRequest;
+import com.mindease.exception.UnauthenticatedException;
 import com.mindease.model.JournalEntry;
 import com.mindease.service.JournalService;
 import com.mindease.service.UserService;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -77,12 +80,35 @@ public class JournalController {
 
             return ResponseEntity.ok(response);
 
+        } catch (UnauthenticatedException e) {
+            // Re-throw to let global exception handler catch it and return 401
+            throw e;
+        } catch (IllegalArgumentException e) {
+            // Handle validation errors as 400 Bad Request
+            response.put("success", false);
+            response.put("message", "Invalid request: " + e.getMessage());
+            response.put("details", e.getMessage());
+            String username = authentication != null ? authentication.getName() : "unknown";
+            logger.warn("Invalid journal entry request from user: {} - {}", username, e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        } catch (DataAccessException e) {
+            // Handle database errors
+            response.put("success", false);
+            response.put("message", "Database error while saving journal entry");
+            response.put("details", e.getMessage());
+            response.put("errorType", "DataAccessException");
+            String username = authentication != null ? authentication.getName() : "unknown";
+            logger.error("Database error saving journal entry for user: {}", username, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Error saving journal entry");
             response.put("details", e.getMessage());
-            logger.error("Error saving journal entry for user: {}", authentication.getName(), e);
-            return ResponseEntity.internalServerError().body(response);
+            response.put("errorType", e.getClass().getSimpleName());
+            String username = authentication != null ? authentication.getName() : "unknown";
+            logger.error("Error saving journal entry for user: {} - Exception type: {}, Message: {}",
+                        username, e.getClass().getSimpleName(), e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
@@ -120,9 +146,25 @@ public class JournalController {
 
             return ResponseEntity.ok(response);
 
+        } catch (UnauthenticatedException e) {
+            // Re-throw to let global exception handler catch it and return 401
+            throw e;
         } catch (Exception e) {
-            logger.error("Error retrieving journal history for user: {}", authentication.getName(), e);
-            return ResponseEntity.internalServerError().body("Error retrieving journal history: " + e.getMessage());
+            String username = authentication != null ? authentication.getName() : "unknown";
+            logger.error("Error retrieving journal history for user: {}", username, e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Error retrieving journal history");
+            errorResponse.put("details", e.getMessage());
+            errorResponse.put("errorType", e.getClass().getSimpleName());
+
+            // Return 400 for client errors, 500 for server errors
+            HttpStatus status = (e instanceof IllegalArgumentException)
+                                ? HttpStatus.BAD_REQUEST
+                                : HttpStatus.INTERNAL_SERVER_ERROR;
+
+            return ResponseEntity.status(status).body(errorResponse);
         }
     }
 
@@ -139,7 +181,8 @@ public class JournalController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            logger.error("Error retrieving recent journal entries for user: {}", authentication.getName(), e);
+            String username = authentication != null ? authentication.getName() : "unknown";
+            logger.error("Error retrieving recent journal entries for user: {}", username, e);
             return ResponseEntity.internalServerError().body("Error retrieving recent entries: " + e.getMessage());
         }
     }
@@ -157,7 +200,8 @@ public class JournalController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            logger.error("Error retrieving journal entry count for user: {}", authentication.getName(), e);
+            String username = authentication != null ? authentication.getName() : "unknown";
+            logger.error("Error retrieving journal entry count for user: {}", username, e);
             return ResponseEntity.internalServerError().body("Error retrieving journal count: " + e.getMessage());
         }
     }

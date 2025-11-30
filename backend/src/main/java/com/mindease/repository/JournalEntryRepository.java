@@ -3,6 +3,7 @@ package com.mindease.repository;
 import com.mindease.model.JournalEntry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -16,6 +17,7 @@ import java.util.UUID;
 public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID> {
 
     // Paginated results for performance
+    @EntityGraph(attributePaths = {"moodEntry"})
     Page<JournalEntry> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
     // For infinite scroll - get entries before a certain date
@@ -26,7 +28,8 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
     long countByUserId(UUID userId);
 
     // Get recent entries for dashboard
-    @Query("SELECT j FROM JournalEntry j WHERE j.userId = :userId ORDER BY j.createdAt DESC LIMIT 5")
+    @EntityGraph(attributePaths = {"moodEntry"})
+    @Query("SELECT j FROM JournalEntry j WHERE j.userId = :userId ORDER BY j.createdAt DESC")
     List<JournalEntry> findRecentByUserId(@Param("userId") UUID userId);
 
     /**
