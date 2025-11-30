@@ -90,15 +90,55 @@ public class GlobalExceptionHandler {
   public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
     logger.warn("Parameter type mismatch: {} = {}", ex.getName(), ex.getValue(), ex);
 
+    // Sanitize parameter value to prevent exposure of sensitive data
+    String sanitizedValue = sanitizeParameterValue(ex.getValue());
+    String parameterName = ex.getName();
+
     Map<String, Object> response = new HashMap<>();
     response.put("status", "error");
     response.put("errorCode", "invalid_parameter");
-    response.put("message", String.format("Invalid value for parameter '%s': %s", ex.getName(), ex.getValue()));
-    response.put("parameter", ex.getName());
-    response.put("value", ex.getValue());
+    response.put("message", String.format("Invalid value for parameter '%s'", parameterName));
+    response.put("parameter", parameterName);
+    // Only include sanitized value for debugging, truncated to prevent data leakage
+    if (sanitizedValue != null) {
+      response.put("value", sanitizedValue);
+    }
     response.put("timestamp", System.currentTimeMillis());
 
     return ResponseEntity.status(400).body(response);
+  }
+
+  /**
+   * Sanitizes parameter values to prevent accidental exposure of sensitive data.
+   * Truncates long values and redacts potentially sensitive patterns.
+   *
+   * @param value The parameter value to sanitize
+   * @return Sanitized value safe for inclusion in error responses
+   */
+  private String sanitizeParameterValue(Object value) {
+    if (value == null) {
+      return null;
+    }
+
+    String valueStr = String.valueOf(value);
+    
+    // Truncate long values to prevent excessive data exposure
+    int maxLength = 50;
+    if (valueStr.length() > maxLength) {
+      return valueStr.substring(0, maxLength) + "... (truncated)";
+    }
+
+    // Check for potentially sensitive patterns and redact
+    String lowerValue = valueStr.toLowerCase();
+    if (lowerValue.contains("token") || 
+        lowerValue.contains("password") || 
+        lowerValue.contains("secret") ||
+        lowerValue.contains("key") ||
+        lowerValue.matches(".*[a-zA-Z0-9]{20,}.*")) { // Long alphanumeric strings (potential tokens)
+      return "[REDACTED]";
+    }
+
+    return valueStr;
   }
 
   @ExceptionHandler(MissingServletRequestParameterException.class)

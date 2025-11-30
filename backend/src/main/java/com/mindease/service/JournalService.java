@@ -154,7 +154,7 @@ public class JournalService {
     }
 
     public List<JournalEntry> getRecentJournalEntries(UUID userId) {
-        return journalEntryRepository.findRecentByUserId(userId);
+        return journalEntryRepository.findTop5ByUserIdOrderByCreatedAtDesc(userId);
     }
 
     public long getJournalEntryCount(UUID userId) {

@@ -27,10 +27,9 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
     // Count entries for a user (for pagination info)
     long countByUserId(UUID userId);
 
-    // Get recent entries for dashboard
+    // Get recent entries for dashboard (limited to 5 most recent)
     @EntityGraph(attributePaths = {"moodEntry"})
-    @Query("SELECT j FROM JournalEntry j WHERE j.userId = :userId ORDER BY j.createdAt DESC")
-    List<JournalEntry> findRecentByUserId(@Param("userId") UUID userId);
+    List<JournalEntry> findTop5ByUserIdOrderByCreatedAtDesc(UUID userId);
 
     /**
      * Bulk delete for memory-efficient cleanup operations.
