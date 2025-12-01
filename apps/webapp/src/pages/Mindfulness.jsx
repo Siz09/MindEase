@@ -252,7 +252,11 @@ const Mindfulness = () => {
         }
         // Call completion callback if provided
         if (onComplete) {
-          await onComplete();
+          try {
+            await onComplete();
+          } catch (error) {
+            console.error('onComplete failed', error);
+          }
         }
       };
 

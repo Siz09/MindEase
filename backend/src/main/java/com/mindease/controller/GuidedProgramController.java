@@ -118,7 +118,12 @@ public class GuidedProgramController {
             @SuppressWarnings("unchecked")
             Map<String, Object> responseData = (Map<String, Object>) responseObj;
 
-            UUID userId = CurrentUserId.get();
+            UUID userId;
+            try {
+                userId = CurrentUserId.get();
+            } catch (IllegalStateException e) {
+                return ResponseEntity.status(401).body(createErrorResponse("User not authenticated"));
+            }
             GuidedSession session = guidedProgramService.updateSessionStep(userId, sessionId, stepNumber, responseData);
 
             Map<String, Object> response = new HashMap<>();
@@ -129,7 +134,8 @@ public class GuidedProgramController {
             return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
         } catch (Exception e) {
             logger.error("Error updating session", e);
-            return ResponseEntity.internalServerError().body(createErrorResponse("An unexpected error occurred while updating session."));
+            return ResponseEntity.internalServerError()
+                    .body(createErrorResponse("An unexpected error occurred while updating session."));
         }
     }
 
