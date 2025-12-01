@@ -9,7 +9,10 @@ import com.mindease.repository.GuidedStepRepository;
 import com.mindease.exception.SessionNotFoundException;
 import com.mindease.exception.ProgramNotFoundException;
 import com.mindease.exception.AccessDeniedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +21,9 @@ import java.util.*;
 
 @Service
 public class GuidedProgramService {
+
+    private static final Logger logger = LoggerFactory.getLogger(GuidedProgramService.class);
+    private static final int MAX_RETRY_ATTEMPTS = 3;
 
     @Autowired
     private GuidedProgramRepository guidedProgramRepository;
@@ -63,6 +69,30 @@ public class GuidedProgramService {
 
     @Transactional
     public GuidedSession updateSessionStep(UUID userId, UUID sessionId, Integer stepNumber, Map<String, Object> responseData) {
+        int attempt = 0;
+        while (attempt < MAX_RETRY_ATTEMPTS) {
+            try {
+                return updateSessionStepInternal(userId, sessionId, stepNumber, responseData);
+            } catch (OptimisticLockingFailureException e) {
+                attempt++;
+                if (attempt >= MAX_RETRY_ATTEMPTS) {
+                    logger.warn("Optimistic locking failure after {} attempts for session {}", attempt, sessionId);
+                    throw new IllegalArgumentException("Session was modified by another operation. Please try again.");
+                }
+                logger.debug("Optimistic locking failure, retrying (attempt {}/{}) for session {}", attempt, MAX_RETRY_ATTEMPTS, sessionId);
+                // Brief pause before retry to reduce contention
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted during retry", ie);
+                }
+            }
+        }
+        throw new IllegalStateException("Unexpected state after retry attempts");
+    }
+
+    private GuidedSession updateSessionStepInternal(UUID userId, UUID sessionId, Integer stepNumber, Map<String, Object> responseData) {
         GuidedSession session = guidedSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new SessionNotFoundException("Session not found: " + sessionId));
 
@@ -71,7 +101,23 @@ public class GuidedProgramService {
             throw new AccessDeniedException("You do not have permission to update this session");
         }
 
-        // Update responses if provided
+        // Get total steps for validation
+        List<GuidedStep> steps = guidedStepRepository.findByProgramIdOrderByStepNumberAsc(session.getProgramId());
+        int totalSteps = steps.size();
+
+        // Validate stepNumber before any mutations
+        if (stepNumber == null) {
+            throw new IllegalArgumentException("stepNumber cannot be null");
+        }
+        if (stepNumber <= 0) {
+            throw new IllegalArgumentException("stepNumber must be greater than 0");
+        }
+        if (stepNumber > totalSteps) {
+            throw new IllegalArgumentException(
+                    String.format("stepNumber %d exceeds total steps %d for this program", stepNumber, totalSteps));
+        }
+
+        // Update responses if provided (only after validation)
         if (responseData != null) {
             Map<String, Object> currentResponses = session.getResponses();
             if (currentResponses == null) {
@@ -82,16 +128,13 @@ public class GuidedProgramService {
             session.setResponses(currentResponses);
         }
 
-        // Check if this was the last step or if we should move to next
-        List<GuidedStep> steps = guidedStepRepository.findByProgramIdOrderByStepNumberAsc(session.getProgramId());
-        int totalSteps = steps.size();
-
+        // Update step number based on validation
         if (stepNumber >= totalSteps) {
             session.setStatus("completed");
             session.setCompletedAt(LocalDateTime.now());
             session.setCurrentStepNumber(totalSteps); // Stay on last step
         } else {
-            session.setCurrentStepNumber(stepNumber + 1);
+            session.setCurrentStepNumber(Math.min(stepNumber + 1, totalSteps));
         }
 
         return guidedSessionRepository.save(session);

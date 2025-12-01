@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Bell } from 'lucide-react';
 import '../../styles/mindfulness/MeditationTimer.css';
@@ -43,12 +43,29 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
     setTimeRemaining(selectedDuration * 60);
   }, [selectedDuration]);
 
+  const handleTimerComplete = useCallback(
+    (elapsedTime) => {
+      playBellSound();
+      setIsPlaying(false);
+      setShowMoodCheckIn(true);
+
+      if (onComplete) {
+        onComplete({
+          duration: elapsedTime,
+          presetDuration: selectedDuration,
+        });
+      }
+    },
+    [selectedDuration, onComplete]
+  );
+
   useEffect(() => {
     if (isPlaying && !isPaused) {
       intervalRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
-            handleTimerComplete();
+            const fullDuration = selectedDuration * 60;
+            handleTimerComplete(fullDuration);
             return 0;
           }
           return prev - 1;
@@ -67,7 +84,7 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
         intervalRef.current = null;
       }
     };
-  }, [isPlaying, isPaused, timeRemaining]);
+  }, [isPlaying, isPaused, handleTimerComplete, selectedDuration]);
 
   useEffect(() => {
     if (soundEnabled && selectedSound !== 'none' && AMBIENT_SOUNDS[selectedSound]?.url) {
@@ -127,24 +144,6 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
       }
     };
   }, [soundEnabled, selectedSound, isPlaying, isPaused]);
-
-  const handleTimerComplete = () => {
-    playBellSound();
-    setIsPlaying(false);
-    setShowMoodCheckIn(true);
-
-    if (onComplete) {
-      // Calculate duration: if timer naturally completed (timeRemaining <= 1), use full duration
-      // Otherwise compute elapsed time
-      const duration =
-        timeRemaining <= 1 ? selectedDuration * 60 : selectedDuration * 60 - timeRemaining;
-
-      onComplete({
-        duration,
-        presetDuration: selectedDuration,
-      });
-    }
-  };
 
   const playBellSound = () => {
     // Generate bell tone using Web Audio API

@@ -123,17 +123,17 @@ public class GlobalExceptionHandler {
 
         response.put("message", "Validation failed");
         response.put("errors", errors);
+        response.put("timestamp", System.currentTimeMillis());
 
         return ResponseEntity.status(400).body(response);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        logger.warn("Parameter type mismatch: {} = {}", ex.getName(), ex.getValue(), ex);
-
         // Sanitize parameter value to prevent exposure of sensitive data
         String sanitizedValue = sanitizeParameterValue(ex.getValue());
         String parameterName = ex.getName();
+        logger.warn("Parameter type mismatch: {} = {}", parameterName, sanitizedValue, ex);
 
         Map<String, Object> response = new HashMap<>();
         response.put("status", "error");

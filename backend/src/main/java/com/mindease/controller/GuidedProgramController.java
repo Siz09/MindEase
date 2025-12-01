@@ -3,6 +3,7 @@ package com.mindease.controller;
 import com.mindease.exception.AccessDeniedException;
 import com.mindease.exception.ProgramNotFoundException;
 import com.mindease.exception.SessionNotFoundException;
+import com.mindease.exception.UnauthenticatedException;
 import com.mindease.model.GuidedProgram;
 import com.mindease.model.GuidedSession;
 import com.mindease.model.GuidedStep;
@@ -12,6 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -76,13 +80,16 @@ public class GuidedProgramController {
     @PostMapping("/{id}/start")
     public ResponseEntity<?> startSession(@PathVariable UUID id) {
         try {
+            if (!isAuthenticated()) {
+                return ResponseEntity.status(401).body(createErrorResponse("User not authenticated"));
+            }
             UUID userId = CurrentUserId.get();
             GuidedSession session = guidedProgramService.startSession(userId, id);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("session", session);
             return ResponseEntity.ok(response);
-        } catch (IllegalStateException e) {
+        } catch (UnauthenticatedException e) {
             return ResponseEntity.status(401).body(createErrorResponse("User not authenticated"));
         } catch (ProgramNotFoundException e) {
             return ResponseEntity.status(404).body(createErrorResponse("Program not found: " + e.getMessage()));
@@ -125,12 +132,10 @@ public class GuidedProgramController {
             @SuppressWarnings("unchecked")
             Map<String, Object> responseData = (Map<String, Object>) responseObj;
 
-            UUID userId;
-            try {
-                userId = CurrentUserId.get();
-            } catch (IllegalStateException e) {
+            if (!isAuthenticated()) {
                 return ResponseEntity.status(401).body(createErrorResponse("User not authenticated"));
             }
+            UUID userId = CurrentUserId.get();
             GuidedSession session = guidedProgramService.updateSessionStep(userId, sessionId, stepNumber, responseData);
 
             Map<String, Object> response = new HashMap<>();
@@ -155,5 +160,13 @@ public class GuidedProgramController {
         error.put("success", false);
         error.put("message", message);
         return error;
+    }
+
+    private boolean isAuthenticated() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)
+                && !"anonymousUser".equals(authentication.getPrincipal());
     }
 }

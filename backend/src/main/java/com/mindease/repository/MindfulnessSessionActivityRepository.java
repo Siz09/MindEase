@@ -27,7 +27,7 @@ public interface MindfulnessSessionActivityRepository extends JpaRepository<Mind
 
     Optional<MindfulnessSessionActivity> findFirstByUserOrderByCompletedAtDesc(User user);
 
-    @Query("SELECT COUNT(DISTINCT DATE(a.completedAt)) FROM MindfulnessSessionActivity a WHERE a.user = :user AND a.completedAt >= :since")
+    @Query(value = "SELECT COUNT(DISTINCT DATE(a.completed_at)) FROM mindfulness_session_activities a WHERE a.user_id = :#{#user.id} AND a.completed_at >= :since", nativeQuery = true)
     Long countDistinctDaysByUserSince(@Param("user") User user, @Param("since") LocalDateTime since);
 
     @Query("SELECT SUM(a.durationMinutes) FROM MindfulnessSessionActivity a WHERE a.user = :user AND a.completedAt >= :since")
