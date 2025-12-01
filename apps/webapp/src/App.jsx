@@ -6,6 +6,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import UserDashboard from './pages/Dashboard';
 import Insights from './pages/Insights';
 import Mindfulness from './pages/Mindfulness';
+import GuidedProgramPlayer from './pages/GuidedProgramPlayer';
 import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserLayout from './components/UserLayout';
@@ -120,6 +121,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Mindfulness />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/guided-program/:id"
+                element={
+                  <ProtectedRoute>
+                    <GuidedProgramPlayer />
                   </ProtectedRoute>
                 }
               />

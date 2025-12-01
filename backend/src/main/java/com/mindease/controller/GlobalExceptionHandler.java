@@ -21,137 +21,137 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-  private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  @ExceptionHandler(PremiumRequiredException.class)
-  public ResponseEntity<Map<String, Object>> handlePremiumRequired(PremiumRequiredException ex) {
-    logger.warn("Premium feature access attempted: {}", ex.getMessage());
+    @ExceptionHandler(PremiumRequiredException.class)
+    public ResponseEntity<Map<String, Object>> handlePremiumRequired(PremiumRequiredException ex) {
+        logger.warn("Premium feature access attempted: {}", ex.getMessage());
 
-    Map<String, Object> body = new HashMap<>();
-    body.put("status", "error");
-    body.put("errorCode", "premium_required");
-    body.put("message", ex.getMessage());
-    body.put("timestamp", System.currentTimeMillis());
-    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
-  }
-
-  @ExceptionHandler(UnauthenticatedException.class)
-  public ResponseEntity<Map<String, Object>> handleUnauthenticated(UnauthenticatedException ex) {
-    logger.warn("Unauthenticated access attempted: {}", ex.getMessage());
-
-    Map<String, Object> body = new HashMap<>();
-    body.put("status", "error");
-    body.put("errorCode", "unauthenticated");
-    body.put("message", ex.getMessage());
-    body.put("timestamp", System.currentTimeMillis());
-    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
-  }
-
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
-    logger.error("Global exception handler: ", ex);
-
-    Map<String, Object> response = new HashMap<>();
-    response.put("status", "error");
-    response.put("timestamp", System.currentTimeMillis());
-
-    if (ex instanceof FirebaseAuthException) {
-      response.put("message", "Authentication failed: Invalid Firebase token");
-      return ResponseEntity.status(401).body(response);
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", "error");
+        body.put("errorCode", "premium_required");
+        body.put("message", ex.getMessage());
+        body.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
-    if (ex instanceof RuntimeException) {
-      response.put("message", ex.getMessage());
-      return ResponseEntity.status(400).body(response);
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthenticated(UnauthenticatedException ex) {
+        logger.warn("Unauthenticated access attempted: {}", ex.getMessage());
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", "error");
+        body.put("errorCode", "unauthenticated");
+        body.put("message", ex.getMessage());
+        body.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
-    response.put("message", "An unexpected error occurred");
-    return ResponseEntity.status(500).body(response);
-  }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
+        logger.error("Global exception handler: ", ex);
 
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-    Map<String, Object> response = new HashMap<>();
-    response.put("status", "error");
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("timestamp", System.currentTimeMillis());
 
-    List<String> errors = ex.getBindingResult()
-      .getFieldErrors()
-      .stream()
-      .map(error -> error.getField() + ": " + error.getDefaultMessage())
-      .collect(Collectors.toList());
+        if (ex instanceof FirebaseAuthException) {
+            response.put("message", "Authentication failed: Invalid Firebase token");
+            return ResponseEntity.status(401).body(response);
+        }
 
-    response.put("message", "Validation failed");
-    response.put("errors", errors);
+        if (ex instanceof RuntimeException) {
+            response.put("message", ex.getMessage());
+            return ResponseEntity.status(400).body(response);
+        }
 
-    return ResponseEntity.status(400).body(response);
-  }
-
-  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-  public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-    logger.warn("Parameter type mismatch: {} = {}", ex.getName(), ex.getValue(), ex);
-
-    // Sanitize parameter value to prevent exposure of sensitive data
-    String sanitizedValue = sanitizeParameterValue(ex.getValue());
-    String parameterName = ex.getName();
-
-    Map<String, Object> response = new HashMap<>();
-    response.put("status", "error");
-    response.put("errorCode", "invalid_parameter");
-    response.put("message", String.format("Invalid value for parameter '%s'", parameterName));
-    response.put("parameter", parameterName);
-    // Only include sanitized value for debugging, truncated to prevent data leakage
-    if (sanitizedValue != null) {
-      response.put("value", sanitizedValue);
-    }
-    response.put("timestamp", System.currentTimeMillis());
-
-    return ResponseEntity.status(400).body(response);
-  }
-
-  /**
-   * Sanitizes parameter values to prevent accidental exposure of sensitive data.
-   * Truncates long values and redacts potentially sensitive patterns.
-   *
-   * @param value The parameter value to sanitize
-   * @return Sanitized value safe for inclusion in error responses
-   */
-  private String sanitizeParameterValue(Object value) {
-    if (value == null) {
-      return null;
+        response.put("message", "An unexpected error occurred");
+        return ResponseEntity.status(500).body(response);
     }
 
-    String valueStr = String.valueOf(value);
-    
-    // Truncate long values to prevent excessive data exposure
-    int maxLength = 50;
-    if (valueStr.length() > maxLength) {
-      return valueStr.substring(0, maxLength) + "... (truncated)";
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+
+        List<String> errors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.toList());
+
+        response.put("message", "Validation failed");
+        response.put("errors", errors);
+
+        return ResponseEntity.status(400).body(response);
     }
 
-    // Check for potentially sensitive patterns and redact
-    String lowerValue = valueStr.toLowerCase();
-    if (lowerValue.contains("token") || 
-        lowerValue.contains("password") || 
-        lowerValue.contains("secret") ||
-        lowerValue.contains("key") ||
-        lowerValue.matches(".*[a-zA-Z0-9]{20,}.*")) { // Long alphanumeric strings (potential tokens)
-      return "[REDACTED]";
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        logger.warn("Parameter type mismatch: {} = {}", ex.getName(), ex.getValue(), ex);
+
+        // Sanitize parameter value to prevent exposure of sensitive data
+        String sanitizedValue = sanitizeParameterValue(ex.getValue());
+        String parameterName = ex.getName();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("errorCode", "invalid_parameter");
+        response.put("message", String.format("Invalid value for parameter '%s'", parameterName));
+        response.put("parameter", parameterName);
+        // Only include sanitized value for debugging, truncated to prevent data leakage
+        if (sanitizedValue != null) {
+            response.put("value", sanitizedValue);
+        }
+        response.put("timestamp", System.currentTimeMillis());
+
+        return ResponseEntity.status(400).body(response);
     }
 
-    return valueStr;
-  }
+    /**
+     * Sanitizes parameter values to prevent accidental exposure of sensitive data.
+     * Truncates long values and redacts potentially sensitive patterns.
+     *
+     * @param value The parameter value to sanitize
+     * @return Sanitized value safe for inclusion in error responses
+     */
+    private String sanitizeParameterValue(Object value) {
+        if (value == null) {
+            return null;
+        }
 
-  @ExceptionHandler(MissingServletRequestParameterException.class)
-  public ResponseEntity<Map<String, Object>> handleMissingParameter(MissingServletRequestParameterException ex) {
-    logger.warn("Missing required parameter: {}", ex.getParameterName(), ex);
+        String valueStr = String.valueOf(value);
 
-    Map<String, Object> response = new HashMap<>();
-    response.put("status", "error");
-    response.put("errorCode", "missing_parameter");
-    response.put("message", String.format("Missing required parameter: %s", ex.getParameterName()));
-    response.put("parameter", ex.getParameterName());
-    response.put("timestamp", System.currentTimeMillis());
+        // Truncate long values to prevent excessive data exposure
+        int maxLength = 50;
+        if (valueStr.length() > maxLength) {
+            return valueStr.substring(0, maxLength) + "... (truncated)";
+        }
 
-    return ResponseEntity.status(400).body(response);
-  }
+        // Check for potentially sensitive patterns and redact
+        String lowerValue = valueStr.toLowerCase();
+        if (lowerValue.contains("token") ||
+                lowerValue.contains("password") ||
+                lowerValue.contains("secret") ||
+                lowerValue.contains("key") ||
+                lowerValue.matches(".*[a-zA-Z0-9]{20,}.*")) { // Long alphanumeric strings (potential tokens)
+            return "[REDACTED]";
+        }
+
+        return valueStr;
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingParameter(MissingServletRequestParameterException ex) {
+        logger.warn("Missing required parameter: {}", ex.getParameterName(), ex);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("errorCode", "missing_parameter");
+        response.put("message", String.format("Missing required parameter: %s", ex.getParameterName()));
+        response.put("parameter", ex.getParameterName());
+        response.put("timestamp", System.currentTimeMillis());
+
+        return ResponseEntity.status(400).body(response);
+    }
 }

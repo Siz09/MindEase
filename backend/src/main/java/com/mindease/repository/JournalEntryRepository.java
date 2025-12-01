@@ -17,7 +17,7 @@ import java.util.UUID;
 public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID> {
 
     // Paginated results for performance
-    @EntityGraph(attributePaths = {"moodEntry"})
+    @EntityGraph(attributePaths = { "moodEntry" })
     Page<JournalEntry> findByUserIdOrderByCreatedAtDesc(UUID userId, Pageable pageable);
 
     // For infinite scroll - get entries before a certain date
@@ -28,7 +28,7 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
     long countByUserId(UUID userId);
 
     // Get recent entries for dashboard (limited to 5 most recent)
-    @EntityGraph(attributePaths = {"moodEntry"})
+    @EntityGraph(attributePaths = { "moodEntry" })
     List<JournalEntry> findTop5ByUserIdOrderByCreatedAtDesc(UUID userId);
 
     /**

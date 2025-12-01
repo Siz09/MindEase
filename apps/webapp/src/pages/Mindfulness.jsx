@@ -4,7 +4,16 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
 import Lottie from 'lottie-react';
+import { Heart } from 'lucide-react';
 import '../styles/Mindfulness.css';
+import GuidedProgramList from '../components/GuidedProgramList';
+import BreathingTimer from '../components/mindfulness/BreathingTimer';
+import MeditationTimer from '../components/mindfulness/MeditationTimer';
+import MindfulnessAnalytics from '../components/mindfulness/MindfulnessAnalytics';
+import Recommendations from '../components/mindfulness/Recommendations';
+import StreakWidget from '../components/mindfulness/StreakWidget';
+import FavoritesSection from '../components/mindfulness/FavoritesSection';
+import SessionHistory from '../components/mindfulness/SessionHistory';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
@@ -25,9 +34,11 @@ const Mindfulness = () => {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const audioRef = useRef(null);
 
-  // 🧩 API integration state (for future use)
-  // const [selectedSession, setSelectedSession] = useState(null);
-  // const [loading, setLoading] = useState(false);
+  // New state for Guided Programs
+  const [activeTab, setActiveTab] = useState('discover'); // 'discover', 'journey', 'tools', 'favorites'
+  const [guidedPrograms, setGuidedPrograms] = useState([]);
+  const [favorites, setFavorites] = useState(new Set());
+  const [sessionCompletions, setSessionCompletions] = useState(new Set());
 
   // helper: try reading from cache if available
   const readFromCache = async (url) => {
@@ -85,6 +96,18 @@ const Mindfulness = () => {
     }
   }, [token, isOffline, t]);
 
+  // Fetch guided programs
+  const fetchGuidedPrograms = useCallback(async () => {
+    try {
+      const res = await api.get('/guided-programs');
+      if (res.data.success) {
+        setGuidedPrograms(res.data.programs);
+      }
+    } catch (error) {
+      console.error('Error fetching guided programs:', error);
+    }
+  }, []);
+
   // Fetch animation data (with offline cache fallback)
   const fetchAnimationData = async (animationUrl) => {
     const fullUrl = animationUrl.startsWith('http') ? animationUrl : `${API_BASE}${animationUrl}`;
@@ -136,23 +159,43 @@ const Mindfulness = () => {
 
   // Handle audio playback with HTMLAudioElement and cache fallback
   const handleAudioPlay = async (sessionId, audioUrl) => {
-    const fullUrl = audioUrl.startsWith('http') ? audioUrl : `${API_BASE}${audioUrl}`;
+    if (!audioUrl) {
+      toast.error(t('mindfulness.errors.noAudioUrl') || 'Audio URL not available');
+      return;
+    }
+
+    // Build full URL - handle different URL formats
+    let fullUrl;
+    if (audioUrl.startsWith('http://') || audioUrl.startsWith('https://')) {
+      fullUrl = audioUrl;
+    } else if (audioUrl.startsWith('/media/')) {
+      fullUrl = `${API_BASE}${audioUrl}`;
+    } else if (audioUrl.startsWith('/')) {
+      fullUrl = `${API_BASE}${audioUrl}`;
+    } else {
+      fullUrl = `${API_BASE}/media/audio/${audioUrl}`;
+    }
 
     if (playingAudio === sessionId) {
-      audioRef.current?.pause();
-      audioRef.current = null;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+      }
       setPlayingAudio(null);
       return;
     }
 
-    // stop any previous audio
+    // Stop any previous audio
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      URL.revokeObjectURL(audioRef.current.src);
       audioRef.current = null;
     }
 
-    if (isOffline) {
-      try {
+    try {
+      if (isOffline) {
         const match = await caches.match(fullUrl);
         if (!match) {
           toast.info(t('mindfulness.offlineNoAudio') || 'Audio not available offline.');
@@ -161,30 +204,100 @@ const Mindfulness = () => {
         const blob = await match.blob();
         const blobUrl = URL.createObjectURL(blob);
         audioRef.current = new Audio(blobUrl);
-      } catch {
-        toast.info(t('mindfulness.offlineNoAudio') || 'Audio not available offline.');
-        return;
+      } else {
+        // Create audio element with better error handling
+        audioRef.current = new Audio(fullUrl);
+
+        // Add canplaythrough event to verify audio can load
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Audio load timeout'));
+          }, 10000); // 10 second timeout
+
+          audioRef.current.addEventListener(
+            'canplaythrough',
+            () => {
+              clearTimeout(timeout);
+              resolve();
+            },
+            { once: true }
+          );
+
+          audioRef.current.addEventListener(
+            'error',
+            (e) => {
+              clearTimeout(timeout);
+              reject(new Error('Audio load failed'));
+            },
+            { once: true }
+          );
+
+          // Start loading
+          audioRef.current.load();
+        });
       }
-    } else {
-      audioRef.current = new Audio(fullUrl);
-    }
 
-    audioRef.current.onended = () => setPlayingAudio(null);
-    audioRef.current.onerror = (e) => {
-      console.error('Audio playback error', e);
-      toast.error(t('mindfulness.errors.audioPlay') || 'Playback error');
-      setPlayingAudio(null);
-    };
+      // Set up event handlers
+      audioRef.current.onended = () => {
+        setPlayingAudio(null);
+        if (audioRef.current) {
+          URL.revokeObjectURL(audioRef.current.src);
+          audioRef.current = null;
+        }
+      };
 
-    try {
-      await audioRef.current.play();
-      setPlayingAudio(sessionId);
-      setCurrentAnimation(null);
-      setAnimationData(null);
-      toast.info(t('mindfulness.audioPlaying'));
+      audioRef.current.onerror = (e) => {
+        console.error('Audio playback error', e);
+        const errorMsg = audioRef.current?.error
+          ? `Error ${audioRef.current.error.code}: ${getAudioErrorText(audioRef.current.error.code)}`
+          : t('mindfulness.errors.audioPlay') || 'Playback error';
+        toast.error(errorMsg);
+        setPlayingAudio(null);
+        if (audioRef.current) {
+          URL.revokeObjectURL(audioRef.current.src);
+          audioRef.current = null;
+        }
+      };
+
+      // Attempt to play
+      try {
+        await audioRef.current.play();
+        setPlayingAudio(sessionId);
+        setCurrentAnimation(null);
+        setAnimationData(null);
+      } catch (playErr) {
+        console.error('Play promise failed', playErr);
+        throw playErr;
+      }
     } catch (err) {
-      console.error('Play promise failed', err);
-      toast.error(t('mindfulness.errors.audioPlay') || 'Playback error');
+      console.error('Audio playback failed', err);
+      const errorMsg =
+        err.message === 'Audio load failed'
+          ? t('mindfulness.errors.audioLoadFailed') ||
+            'Unable to load audio file. Please check the file format and URL.'
+          : t('mindfulness.errors.audioPlay') || 'Playback error';
+      toast.error(errorMsg);
+      setPlayingAudio(null);
+      if (audioRef.current) {
+        URL.revokeObjectURL(audioRef.current.src);
+        audioRef.current = null;
+      }
+    }
+  };
+
+  // Helper function for audio error codes
+  const getAudioErrorText = (code) => {
+    switch (code) {
+      case 1:
+        return 'MEDIA_ERR_ABORTED - Audio loading aborted';
+      case 2:
+        return 'MEDIA_ERR_NETWORK - Network error loading audio';
+      case 3:
+        return 'MEDIA_ERR_DECODE - Audio decoding error';
+      case 4:
+        return 'MEDIA_ERR_SRC_NOT_SUPPORTED - Audio format not supported';
+      default:
+        return 'Unknown audio error';
     }
   };
 
@@ -201,28 +314,6 @@ const Mindfulness = () => {
       fetchAnimationData(animationUrl);
     }
   };
-
-  // 🧩 Handle session selection with API integration (for future use)
-  // const handleSessionSelect = async (session) => {
-  //   setSelectedSession(session);
-  //   setAnimationData(null);
-  //   setLoading(true);
-  //   try {
-  //     const res = await api.get(`/api/mindfulness/${session.id}`);
-  //     if (session.type === "animation") {
-  //       const anim = await fetch(res.data.url).then(r => r.json());
-  //       setAnimationData(anim);
-  //     } else if (session.type === "audio") {
-  //       const audio = new Audio(res.data.url);
-  //       audio.play();
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     toast.error("Could not load session");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   // Format duration
   const formatDuration = (minutes) => {
@@ -272,20 +363,8 @@ const Mindfulness = () => {
   // Load data on component mount
   useEffect(() => {
     fetchMindfulnessSessions();
-  }, [fetchMindfulnessSessions]);
-
-  // 🧩 Load sessions with API integration
-  useEffect(() => {
-    api
-      .get('/mindfulness/list')
-      .then((res) => {
-        if (res.data && Array.isArray(res.data)) {
-          setSessions(res.data);
-          setFilteredSessions(res.data);
-        }
-      })
-      .catch(() => toast.error('Failed to load mindfulness sessions'));
-  }, []);
+    fetchGuidedPrograms();
+  }, [fetchMindfulnessSessions, fetchGuidedPrograms]);
 
   if (isLoading) {
     return (
@@ -305,227 +384,338 @@ const Mindfulness = () => {
         <p className="mindfulness-subtitle">{t('mindfulness.subtitle')}</p>
       </div>
 
-      {/* Quick Stats */}
-      <div className="quick-stats">
-        <div className="stat-card">
-          <div className="stat-number">{sessions.length}</div>
-          <div className="stat-label">{t('mindfulness.totalSessions')}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-number">{sessions.filter((s) => s.type === 'audio').length}</div>
-          <div className="stat-label">{t('mindfulness.audioSessions')}</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-number">{sessions.filter((s) => s.type === 'animation').length}</div>
-          <div className="stat-label">{t('mindfulness.animationSessions')}</div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="filters-section">
-        <div className="filter-group">
-          <label className="filter-label">{t('mindfulness.filterByCategory')}</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">{t('mindfulness.allCategories')}</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label className="filter-label">{t('mindfulness.filterByType')}</label>
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">{t('mindfulness.allTypes')}</option>
-            <option value="audio">🎵 {t('mindfulness.audio')}</option>
-            <option value="animation">🎨 {t('mindfulness.animation')}</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label className="filter-label">{t('mindfulness.filterByDifficulty')}</label>
-          <select
-            value={selectedDifficulty}
-            onChange={(e) => setSelectedDifficulty(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">{t('mindfulness.allDifficulties')}</option>
-            <option value="beginner">🟢 {t('mindfulness.beginner')}</option>
-            <option value="intermediate">🟡 {t('mindfulness.intermediate')}</option>
-            <option value="advanced">🔴 {t('mindfulness.advanced')}</option>
-          </select>
-        </div>
-
+      {/* Tabs */}
+      <div className="mindfulness-tabs">
         <button
-          onClick={() => {
-            setSelectedCategory('all');
-            setSelectedType('all');
-            setSelectedDifficulty('all');
-          }}
-          className="btn btn-outline clear-filters-btn"
+          className={`tab-btn ${activeTab === 'discover' ? 'active' : ''}`}
+          onClick={() => setActiveTab('discover')}
         >
-          {t('mindfulness.clearFilters')}
+          {t('mindfulness.tabs.discover', 'Discover')}
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'journey' ? 'active' : ''}`}
+          onClick={() => setActiveTab('journey')}
+        >
+          {t('mindfulness.tabs.journey', 'My Journey')}
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'tools' ? 'active' : ''}`}
+          onClick={() => setActiveTab('tools')}
+        >
+          {t('mindfulness.tabs.tools', 'Guided Tools')}
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'favorites' ? 'active' : ''}`}
+          onClick={() => setActiveTab('favorites')}
+        >
+          {t('mindfulness.tabs.favorites', 'Favorites')}
         </button>
       </div>
 
-      {/* Sessions Grid */}
-      <div className="sessions-grid">
-        {filteredSessions.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🧘‍♂️</div>
-            <h3>{t('mindfulness.noSessionsFound')}</h3>
-            <p>{t('mindfulness.tryChangingFilters')}</p>
+      {activeTab === 'discover' && (
+        <>
+          <StreakWidget />
+          <Recommendations
+            onSessionSelect={(session) => {
+              // Scroll to session or handle selection
+              const sessionElement = document.querySelector(`[data-session-id="${session.id}"]`);
+              if (sessionElement) {
+                sessionElement.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+          />
+
+          {/* Quick Stats */}
+          <div className="quick-stats">
+            <div className="stat-card">
+              <div className="stat-number">{sessions.length}</div>
+              <div className="stat-label">{t('mindfulness.totalSessions')}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{sessions.filter((s) => s.type === 'audio').length}</div>
+              <div className="stat-label">{t('mindfulness.audioSessions')}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">
+                {sessions.filter((s) => s.type === 'animation').length}
+              </div>
+              <div className="stat-label">{t('mindfulness.animationSessions')}</div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="filters-section">
+            <div className="filter-group">
+              <label className="filter-label">{t('mindfulness.filterByCategory')}</label>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">{t('mindfulness.allCategories')}</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label className="filter-label">{t('mindfulness.filterByType')}</label>
+              <select
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">{t('mindfulness.allTypes')}</option>
+                <option value="audio">🎵 {t('mindfulness.audio')}</option>
+                <option value="animation">🎨 {t('mindfulness.animation')}</option>
+              </select>
+            </div>
+
+            <div className="filter-group">
+              <label className="filter-label">{t('mindfulness.filterByDifficulty')}</label>
+              <select
+                value={selectedDifficulty}
+                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                className="filter-select"
+              >
+                <option value="all">{t('mindfulness.allDifficulties')}</option>
+                <option value="beginner">🟢 {t('mindfulness.beginner')}</option>
+                <option value="intermediate">🟡 {t('mindfulness.intermediate')}</option>
+                <option value="advanced">🔴 {t('mindfulness.advanced')}</option>
+              </select>
+            </div>
+
             <button
               onClick={() => {
                 setSelectedCategory('all');
                 setSelectedType('all');
                 setSelectedDifficulty('all');
               }}
-              className="btn btn-primary"
+              className="btn btn-outline clear-filters-btn"
             >
-              {t('mindfulness.showAllSessions')}
+              {t('mindfulness.clearFilters')}
             </button>
           </div>
-        ) : (
-          filteredSessions.map((session) => (
-            <div key={session.id} className="session-card">
-              <div className="session-header">
-                <div className="session-type">{getTypeIcon(session.type)}</div>
-                <div
-                  className="session-difficulty"
-                  style={{ backgroundColor: getDifficultyColor(session.difficultyLevel) }}
+
+          {/* Sessions Grid */}
+          <div className="sessions-grid">
+            {filteredSessions.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">🧘‍♂️</div>
+                <h3>{t('mindfulness.noSessionsFound')}</h3>
+                <p>{t('mindfulness.tryChangingFilters')}</p>
+                <button
+                  onClick={() => {
+                    setSelectedCategory('all');
+                    setSelectedType('all');
+                    setSelectedDifficulty('all');
+                  }}
+                  className="btn btn-primary"
                 >
-                  {session.difficultyLevel}
-                </div>
+                  {t('mindfulness.showAllSessions')}
+                </button>
               </div>
+            ) : (
+              filteredSessions.map((session) => (
+                <div key={session.id} className="session-card" data-session-id={session.id}>
+                  <div className="session-header">
+                    <div className="session-type">{getTypeIcon(session.type)}</div>
+                    <div className="session-header-right">
+                      {sessionCompletions.has(session.id) && (
+                        <span className="completion-badge">✓</span>
+                      )}
+                      <button
+                        className="favorite-btn-header"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            const response = await api.post(
+                              `/mindfulness/sessions/${session.id}/favorite`
+                            );
+                            if (response.data.success) {
+                              const newFavorites = new Set(favorites);
+                              if (response.data.isFavorite) {
+                                newFavorites.add(session.id);
+                                toast.success(
+                                  t('mindfulness.addedToFavorites', 'Added to favorites')
+                                );
+                              } else {
+                                newFavorites.delete(session.id);
+                                toast.info(
+                                  t('mindfulness.removedFromFavorites', 'Removed from favorites')
+                                );
+                              }
+                              setFavorites(newFavorites);
+                            }
+                          } catch (error) {
+                            console.error('Error toggling favorite:', error);
+                          }
+                        }}
+                      >
+                        <Heart
+                          size={18}
+                          fill={favorites.has(session.id) ? 'currentColor' : 'none'}
+                          className={favorites.has(session.id) ? 'favorited' : ''}
+                        />
+                      </button>
+                      <div
+                        className="session-difficulty"
+                        style={{ backgroundColor: getDifficultyColor(session.difficultyLevel) }}
+                      >
+                        {session.difficultyLevel}
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="session-content">
-                <h3 className="session-title">{session.title}</h3>
-                <p className="session-description">{session.description}</p>
+                  <div className="session-content">
+                    <h3 className="session-title">{session.title}</h3>
+                    <p className="session-description">{session.description}</p>
 
-                <div className="session-meta">
-                  <span className="session-duration">⏱️ {formatDuration(session.duration)}</span>
-                  <span className="session-category">📁 {session.category}</span>
-                </div>
-              </div>
+                    <div className="session-meta">
+                      <span className="session-duration">
+                        ⏱️ {formatDuration(session.duration)}
+                      </span>
+                      <span className="session-category">📁 {session.category}</span>
+                    </div>
+                  </div>
 
-              <div className="session-actions">
-                {session.type === 'audio' ? (
-                  <button
-                    onClick={() => handleAudioPlay(session.id, session.mediaUrl)}
-                    className={`btn ${playingAudio === session.id ? 'btn-secondary' : 'btn-primary'} play-btn`}
-                  >
-                    {playingAudio === session.id ? '⏸️' : '▶️'}
-                    {playingAudio === session.id
-                      ? t('mindfulness.stopAudio')
-                      : t('mindfulness.playAudio')}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleAnimationPlay(session.id, session.mediaUrl)}
-                    className={`btn ${currentAnimation === session.id ? 'btn-secondary' : 'btn-primary'} play-btn`}
-                  >
-                    {currentAnimation === session.id ? '⏹️' : '🎬'}
-                    {currentAnimation === session.id
-                      ? t('mindfulness.stopAnimation')
-                      : t('mindfulness.playAnimation')}
-                  </button>
-                )}
-              </div>
+                  <div className="session-actions">
+                    {session.type === 'audio' ? (
+                      <button
+                        onClick={async () => {
+                          handleAudioPlay(session.id, session.mediaUrl);
+                          // Track completion when audio ends
+                          if (audioRef.current) {
+                            audioRef.current.onended = async () => {
+                              setPlayingAudio(null);
+                              try {
+                                await api.post(`/mindfulness/sessions/${session.id}/complete`, {
+                                  durationMinutes: session.duration,
+                                });
+                                setSessionCompletions((prev) => new Set(prev).add(session.id));
+                              } catch (error) {
+                                console.error('Error recording completion:', error);
+                              }
+                            };
+                          }
+                        }}
+                        className={`btn ${playingAudio === session.id ? 'btn-secondary' : 'btn-primary'} play-btn`}
+                      >
+                        {playingAudio === session.id ? '⏸️' : '▶️'}
+                        {playingAudio === session.id
+                          ? t('mindfulness.stopAudio')
+                          : t('mindfulness.playAudio')}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleAnimationPlay(session.id, session.mediaUrl)}
+                        className={`btn ${currentAnimation === session.id ? 'btn-secondary' : 'btn-primary'} play-btn`}
+                      >
+                        {currentAnimation === session.id ? '⏹️' : '🎬'}
+                        {currentAnimation === session.id
+                          ? t('mindfulness.stopAnimation')
+                          : t('mindfulness.playAnimation')}
+                      </button>
+                    )}
+                  </div>
 
-              {/* Animation Display */}
-              {currentAnimation === session.id && session.type === 'animation' && (
-                <div className="animation-container">
-                  {animationData ? (
-                    <Lottie
-                      animationData={animationData}
-                      loop={true}
-                      autoplay={true}
-                      style={{ width: '100%', height: '200px' }}
-                    />
-                  ) : (
-                    <div className="animation-placeholder">
-                      <div className="loading-spinner-small"></div>
-                      <p>{t('mindfulness.loadingAnimation')}</p>
+                  {/* Animation Display */}
+                  {currentAnimation === session.id && session.type === 'animation' && (
+                    <div className="animation-container">
+                      {animationData ? (
+                        <Lottie
+                          animationData={animationData}
+                          loop={true}
+                          autoplay={true}
+                          style={{ width: '100%', height: '200px' }}
+                        />
+                      ) : (
+                        <div className="animation-placeholder">
+                          <div className="loading-spinner-small"></div>
+                          <p>{t('mindfulness.loadingAnimation')}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Audio Player Display */}
+                  {playingAudio === session.id && session.type === 'audio' && (
+                    <div className="audio-player">
+                      <div className="audio-visualizer">
+                        <div className="audio-bar"></div>
+                        <div className="audio-bar"></div>
+                        <div className="audio-bar"></div>
+                        <div className="audio-bar"></div>
+                        <div className="audio-bar"></div>
+                      </div>
+                      <p className="audio-playing-text">{t('mindfulness.audioPlayingHint')}</p>
                     </div>
                   )}
                 </div>
-              )}
+              ))
+            )}
+          </div>
+        </>
+      )}
 
-              {/* Audio Player Display */}
-              {playingAudio === session.id && session.type === 'audio' && (
-                <div className="audio-player">
-                  <div className="audio-visualizer">
-                    <div className="audio-bar"></div>
-                    <div className="audio-bar"></div>
-                    <div className="audio-bar"></div>
-                    <div className="audio-bar"></div>
-                    <div className="audio-bar"></div>
-                  </div>
-                  <p className="audio-playing-text">{t('mindfulness.audioPlayingHint')}</p>
-                </div>
-              )}
+      {activeTab === 'journey' && (
+        <>
+          <MindfulnessAnalytics />
+          <SessionHistory />
+        </>
+      )}
+
+      {activeTab === 'tools' && (
+        <div className="guided-tools-section">
+          <div className="tools-grid">
+            <div className="tool-card">
+              <h3>{t('mindfulness.tools.breathing', 'Breathing Exercise')}</h3>
+              <BreathingTimer
+                onComplete={async (data) => {
+                  toast.success(
+                    t('mindfulness.breathing.completed', 'Breathing exercise completed!')
+                  );
+                  // Could track this as a session completion
+                }}
+              />
             </div>
-          ))
-        )}
-      </div>
-
-      {/* Quick Access Section */}
-      <div className="quick-access">
-        <h2>{t('mindfulness.quickAccess')}</h2>
-        <div className="quick-buttons">
-          <button
-            onClick={() => {
-              setSelectedType('audio');
-              setSelectedDifficulty('beginner');
-              setSelectedCategory('all');
-            }}
-            className="quick-btn"
-          >
-            🎵 {t('mindfulness.beginnerAudio')}
-          </button>
-          <button
-            onClick={() => {
-              setSelectedType('animation');
-              setSelectedDifficulty('beginner');
-              setSelectedCategory('all');
-            }}
-            className="quick-btn"
-          >
-            🎨 {t('mindfulness.beginnerAnimations')}
-          </button>
-          <button
-            onClick={() => {
-              setSelectedType('all');
-              setSelectedDifficulty('all');
-              setSelectedCategory('breathing');
-            }}
-            className="quick-btn"
-          >
-            🌬️ {t('mindfulness.breathingExercises')}
-          </button>
-          <button
-            onClick={() => {
-              setSelectedType('all');
-              setSelectedDifficulty('all');
-              setSelectedCategory('quick');
-            }}
-            className="quick-btn"
-          >
-            ⚡ {t('mindfulness.quickSessions')}
-          </button>
+            <div className="tool-card">
+              <h3>{t('mindfulness.tools.meditation', 'Meditation Timer')}</h3>
+              <MeditationTimer
+                onComplete={async (data) => {
+                  toast.success(t('mindfulness.meditation.completed', 'Meditation completed!'));
+                  // Track completion
+                  try {
+                    // Could create a virtual session for meditation timer
+                  } catch (error) {
+                    console.error('Error tracking meditation:', error);
+                  }
+                }}
+                onMoodCheckIn={(type, mood, data) => {
+                  // Handle mood check-in
+                  console.log('Mood check-in:', { type, mood, data });
+                }}
+              />
+            </div>
+          </div>
+          <div className="exercises-section">
+            <h3>{t('mindfulness.exercises', 'Guided Programs')}</h3>
+            <GuidedProgramList programs={guidedPrograms} />
+          </div>
         </div>
-      </div>
+      )}
+
+      {activeTab === 'favorites' && (
+        <FavoritesSection
+          onSessionSelect={(session) => {
+            // Handle session selection from favorites
+            console.log('Selected favorite session:', session);
+          }}
+        />
+      )}
     </div>
   );
 };
