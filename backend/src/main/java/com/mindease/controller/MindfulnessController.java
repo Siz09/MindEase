@@ -210,6 +210,9 @@ public class MindfulnessController {
             Map<String, Object> streak = activityService.getUserStreak(user);
             List<MindfulnessSessionActivity> recentActivities = activityService.getSessionHistory(user, 10);
 
+            // Get actual total session count in the time window
+            Long actualTotalSessions = activityService.countSessionsBetween(user, since, LocalDateTime.now());
+
             // Convert activities to maps for safe serialization
             List<Map<String, Object>> activitiesData = recentActivities.stream()
                     .map(activity -> {
@@ -234,10 +237,11 @@ public class MindfulnessController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("totalMinutes", totalMinutes);
-            response.put("totalSessions", recentActivities.size());
+            response.put("totalSessions", actualTotalSessions != null ? actualTotalSessions : 0L);
             response.put("streak", streak);
-            response.put("averageMinutesPerSession", (recentActivities.isEmpty() || totalMinutes == null || totalMinutes == 0) ? 0
-                    : Math.round((double) totalMinutes / recentActivities.size()));
+            long totalSessionsCount = actualTotalSessions != null ? actualTotalSessions : 0L;
+            response.put("averageMinutesPerSession", (totalSessionsCount == 0 || totalMinutes == null || totalMinutes == 0) ? 0
+                    : Math.round((double) totalMinutes / totalSessionsCount));
             response.put("recentActivities", activitiesData);
 
             return ResponseEntity.ok(response);

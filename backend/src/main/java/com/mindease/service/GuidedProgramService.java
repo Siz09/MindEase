@@ -6,6 +6,9 @@ import com.mindease.model.GuidedStep;
 import com.mindease.repository.GuidedProgramRepository;
 import com.mindease.repository.GuidedSessionRepository;
 import com.mindease.repository.GuidedStepRepository;
+import com.mindease.exception.SessionNotFoundException;
+import com.mindease.exception.ProgramNotFoundException;
+import com.mindease.exception.AccessDeniedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +42,12 @@ public class GuidedProgramService {
 
     @Transactional
     public GuidedSession startSession(UUID userId, UUID programId) {
+        // Verify that the program exists
+        Optional<GuidedProgram> program = guidedProgramRepository.findById(programId);
+        if (program.isEmpty()) {
+            throw new ProgramNotFoundException("Program not found: " + programId);
+        }
+
         GuidedSession session = new GuidedSession();
         session.setUserId(userId);
         session.setProgramId(programId);
@@ -53,9 +62,14 @@ public class GuidedProgramService {
     }
 
     @Transactional
-    public GuidedSession updateSessionStep(UUID sessionId, Integer stepNumber, Map<String, Object> responseData) {
+    public GuidedSession updateSessionStep(UUID userId, UUID sessionId, Integer stepNumber, Map<String, Object> responseData) {
         GuidedSession session = guidedSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
+                .orElseThrow(() -> new SessionNotFoundException("Session not found: " + sessionId));
+
+        // Verify ownership
+        if (!session.getUserId().equals(userId)) {
+            throw new AccessDeniedException("You do not have permission to update this session");
+        }
 
         // Update responses if provided
         if (responseData != null) {

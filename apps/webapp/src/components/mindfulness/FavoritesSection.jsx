@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
@@ -11,27 +11,42 @@ const FavoritesSection = ({ onSessionSelect }) => {
   const [favoriteSessions, setFavoriteSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchFavoriteSessions();
-  }, []);
-
-  const fetchFavoriteSessions = async () => {
+  const fetchFavoriteSessions = useCallback(async () => {
     try {
       setIsLoading(true);
-      // Fetch all sessions and filter favorites on client side for now
-      // In production, you'd have a dedicated endpoint
+      // Try dedicated favorites endpoint first
+      try {
+        const response = await api.get('/mindfulness/favorites');
+        if (response.data.success && response.data.favorites) {
+          setFavoriteSessions(response.data.favorites);
+          return;
+        }
+      } catch (favoritesError) {
+        // Fallback to fetching all sessions and filtering
+        console.log('Favorites endpoint not available, filtering client-side');
+      }
+
+      // Fallback: Fetch all sessions and filter favorites
       const response = await api.get('/mindfulness/list');
-      if (response.data.success) {
-        // For now, we'll need to track favorites separately
-        // This is a simplified version
+      if (response.data.success && response.data.sessions) {
+        const filtered = response.data.sessions.filter(
+          (session) => session.isFavorite === true || session.favorite === true
+        );
+        setFavoriteSessions(filtered);
+      } else {
         setFavoriteSessions([]);
       }
     } catch (error) {
       console.error('Error fetching favorites:', error);
+      setFavoriteSessions([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFavoriteSessions();
+  }, [fetchFavoriteSessions]);
 
   const removeFavorite = async (sessionId) => {
     try {

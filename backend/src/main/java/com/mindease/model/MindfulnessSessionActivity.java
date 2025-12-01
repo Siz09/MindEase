@@ -20,6 +20,7 @@ public class MindfulnessSessionActivity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id", nullable = false)
     private MindfulnessSession session;

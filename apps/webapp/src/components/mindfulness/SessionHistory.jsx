@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
@@ -12,11 +12,7 @@ const SessionHistory = ({ limit = 20 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('all');
 
-  useEffect(() => {
-    fetchHistory();
-  }, [limit]);
-
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await api.get(`/mindfulness/history?limit=${limit}`);
@@ -28,7 +24,11 @@ const SessionHistory = ({ limit = 20 }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [limit]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);

@@ -28,6 +28,7 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
   const [preMood, setPreMood] = useState(null);
   const intervalRef = useRef(null);
   const audioRef = useRef(null);
+  const isBlobUrlRef = useRef(false);
 
   useEffect(() => {
     setTimeRemaining(selectedDuration * 60);
@@ -65,12 +66,16 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
 
       if (audioRef.current) {
         audioRef.current.pause();
-        URL.revokeObjectURL(audioRef.current.src);
+        if (isBlobUrlRef.current && audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src);
+        }
         audioRef.current = null;
+        isBlobUrlRef.current = false;
       }
 
       try {
         audioRef.current = new Audio(soundUrl);
+        isBlobUrlRef.current = soundUrl.startsWith('blob:');
         audioRef.current.loop = true;
         audioRef.current.volume = 0.3;
         audioRef.current.preload = 'auto';
@@ -94,16 +99,22 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
-        URL.revokeObjectURL(audioRef.current.src);
+        if (isBlobUrlRef.current && audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src);
+        }
         audioRef.current = null;
+        isBlobUrlRef.current = false;
       }
     }
 
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
-        URL.revokeObjectURL(audioRef.current.src);
+        if (isBlobUrlRef.current && audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src);
+        }
         audioRef.current = null;
+        isBlobUrlRef.current = false;
       }
     };
   }, [soundEnabled, selectedSound, isPlaying, isPaused]);

@@ -27,9 +27,7 @@ const GuidedProgramList = ({ programs }) => {
         <div key={program.id} className="session-card guided-program-card">
           <div className="session-header">
             <div className="session-type">🧩</div>
-            <div className="session-difficulty" style={{ backgroundColor: '#6366f1' }}>
-              {program.programType}
-            </div>
+            <div className="session-difficulty program-type-badge">{program.programType}</div>
           </div>
 
           <div className="session-content">

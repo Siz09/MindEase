@@ -5,6 +5,8 @@ import com.mindease.model.GuidedSession;
 import com.mindease.model.GuidedStep;
 import com.mindease.service.GuidedProgramService;
 import com.mindease.security.CurrentUserId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,8 @@ import java.util.UUID;
 @RequestMapping("/api/guided-programs")
 public class GuidedProgramController {
 
+    private static final Logger logger = LoggerFactory.getLogger(GuidedProgramController.class);
+
     @Autowired
     private GuidedProgramService guidedProgramService;
 
@@ -31,7 +35,11 @@ public class GuidedProgramController {
             response.put("programs", programs);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error fetching programs: " + e.getMessage());
+            logger.error("Error fetching programs", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "An unexpected error occurred while fetching programs.");
+            return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 
@@ -82,18 +90,53 @@ public class GuidedProgramController {
             @PathVariable UUID sessionId,
             @RequestBody Map<String, Object> payload) {
         try {
-            Integer stepNumber = (Integer) payload.get("stepNumber");
-            @SuppressWarnings("unchecked")
-            Map<String, Object> responseData = (Map<String, Object>) payload.get("response");
+            // Validate payload
+            if (payload == null) {
+                return ResponseEntity.badRequest().body(createErrorResponse("Request body is required"));
+            }
 
-            GuidedSession session = guidedProgramService.updateSessionStep(sessionId, stepNumber, responseData);
+            if (!payload.containsKey("stepNumber")) {
+                return ResponseEntity.badRequest().body(createErrorResponse("stepNumber is required"));
+            }
+
+            if (!payload.containsKey("response")) {
+                return ResponseEntity.badRequest().body(createErrorResponse("response is required"));
+            }
+
+            // Validate and convert stepNumber
+            Object stepNumberObj = payload.get("stepNumber");
+            if (!(stepNumberObj instanceof Number)) {
+                return ResponseEntity.badRequest().body(createErrorResponse("stepNumber must be a number"));
+            }
+            Integer stepNumber = ((Number) stepNumberObj).intValue();
+
+            // Validate response
+            Object responseObj = payload.get("response");
+            if (!(responseObj instanceof Map)) {
+                return ResponseEntity.badRequest().body(createErrorResponse("response must be an object"));
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> responseData = (Map<String, Object>) responseObj;
+
+            UUID userId = CurrentUserId.get();
+            GuidedSession session = guidedProgramService.updateSessionStep(userId, sessionId, stepNumber, responseData);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("session", session);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error updating session: " + e.getMessage());
+            logger.error("Error updating session", e);
+            return ResponseEntity.internalServerError().body(createErrorResponse("An unexpected error occurred while updating session."));
         }
+    }
+
+    private Map<String, Object> createErrorResponse(String message) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("success", false);
+        error.put("message", message);
+        return error;
     }
 }

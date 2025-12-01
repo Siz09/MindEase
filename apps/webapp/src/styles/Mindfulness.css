@@ -257,6 +257,10 @@
   text-transform: capitalize;
 }
 
+.program-type-badge {
+  background-color: var(--primary-blue, #6366f1);
+}
+
 .session-content {
   margin-bottom: 1.5rem;
 }

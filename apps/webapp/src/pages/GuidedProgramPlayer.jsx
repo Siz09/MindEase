@@ -130,8 +130,8 @@ const GuidedProgramPlayer = () => {
 
   if (!program || !currentStep) return null;
 
-  // Calculate progress
-  const progress = ((currentStepIndex + 1) / steps.length) * 100;
+  // Calculate progress with guard for empty steps array
+  const progress = steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0;
 
   return (
     <div className="mindfulness-container guided-program-player">

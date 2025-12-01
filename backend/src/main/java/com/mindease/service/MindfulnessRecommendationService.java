@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -65,7 +66,8 @@ public class MindfulnessRecommendationService {
 
             // 4. Time-based suggestions
             try {
-                recommendations.put("timeBased", getTimeBasedRecommendations());
+                ZoneId userZone = getUserTimezone(user);
+                recommendations.put("timeBased", getTimeBasedRecommendations(userZone));
             } catch (Exception e) {
                 recommendations.put("timeBased", new ArrayList<>());
             }
@@ -230,10 +232,20 @@ public class MindfulnessRecommendationService {
     }
 
     /**
+     * Get user's timezone, defaulting to system default if not available
+     */
+    private ZoneId getUserTimezone(User user) {
+        // Try to get timezone from user preferences or user model
+        // For now, default to system default timezone
+        // TODO: Add timezone field to User or UserMindfulnessPreferences if needed
+        return ZoneId.systemDefault();
+    }
+
+    /**
      * Get time-based recommendations
      */
-    private List<MindfulnessSession> getTimeBasedRecommendations() {
-        LocalTime now = LocalTime.now();
+    private List<MindfulnessSession> getTimeBasedRecommendations(ZoneId userZone) {
+        LocalTime now = LocalTime.now(userZone);
         List<MindfulnessSession> recommendations = new ArrayList<>();
 
         try {

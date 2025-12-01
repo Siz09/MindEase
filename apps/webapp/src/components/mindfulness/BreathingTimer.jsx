@@ -20,6 +20,7 @@ const BreathingTimer = ({ onComplete }) => {
   const [sessionDuration, setSessionDuration] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const intervalRef = useRef(null);
+  const timeoutRef = useRef(null);
   const audioRef = useRef(null);
   const startTimeRef = useRef(null);
 
@@ -37,10 +38,14 @@ const BreathingTimer = ({ onComplete }) => {
       startTimeRef.current = Date.now();
       setCurrentPhase('inhale');
 
-      // Clear any existing intervals first
+      // Clear any existing intervals and timeouts first
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
 
       const currentPattern = BREATHING_PATTERNS[selectedPattern];
@@ -93,10 +98,14 @@ const BreathingTimer = ({ onComplete }) => {
                 intervalRef.current = null;
               }
               // Execute next phase after a brief delay
-              setTimeout(() => {
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+              }
+              timeoutRef.current = setTimeout(() => {
                 if (isPlayingRef.current) {
                   executePhase();
                 }
+                timeoutRef.current = null;
               }, 100);
               return 0;
             }
@@ -111,6 +120,10 @@ const BreathingTimer = ({ onComplete }) => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       setCountdown(0);
     }
 
@@ -118,6 +131,10 @@ const BreathingTimer = ({ onComplete }) => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, [isPlaying, selectedPattern]);

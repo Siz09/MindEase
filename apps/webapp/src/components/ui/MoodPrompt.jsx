@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Smile, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import Button from './Button';
 

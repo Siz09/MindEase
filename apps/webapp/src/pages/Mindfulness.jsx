@@ -158,7 +158,7 @@ const Mindfulness = () => {
   }, [selectedCategory, selectedType, selectedDifficulty, sessions]);
 
   // Handle audio playback with HTMLAudioElement and cache fallback
-  const handleAudioPlay = async (sessionId, audioUrl) => {
+  const handleAudioPlay = async (sessionId, audioUrl, onComplete) => {
     if (!audioUrl) {
       toast.error(t('mindfulness.errors.noAudioUrl') || 'Audio URL not available');
       return;
@@ -190,7 +190,10 @@ const Mindfulness = () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      URL.revokeObjectURL(audioRef.current.src);
+      const src = audioRef.current.src;
+      if (src.startsWith('blob:')) {
+        URL.revokeObjectURL(src);
+      }
       audioRef.current = null;
     }
 
@@ -238,11 +241,18 @@ const Mindfulness = () => {
       }
 
       // Set up event handlers
-      audioRef.current.onended = () => {
+      audioRef.current.onended = async () => {
         setPlayingAudio(null);
         if (audioRef.current) {
-          URL.revokeObjectURL(audioRef.current.src);
+          const src = audioRef.current.src;
+          if (src.startsWith('blob:')) {
+            URL.revokeObjectURL(src);
+          }
           audioRef.current = null;
+        }
+        // Call completion callback if provided
+        if (onComplete) {
+          await onComplete();
         }
       };
 
@@ -254,7 +264,10 @@ const Mindfulness = () => {
         toast.error(errorMsg);
         setPlayingAudio(null);
         if (audioRef.current) {
-          URL.revokeObjectURL(audioRef.current.src);
+          const src = audioRef.current.src;
+          if (src.startsWith('blob:')) {
+            URL.revokeObjectURL(src);
+          }
           audioRef.current = null;
         }
       };
@@ -279,7 +292,10 @@ const Mindfulness = () => {
       toast.error(errorMsg);
       setPlayingAudio(null);
       if (audioRef.current) {
-        URL.revokeObjectURL(audioRef.current.src);
+        const src = audioRef.current.src;
+        if (src.startsWith('blob:')) {
+          URL.revokeObjectURL(src);
+        }
         audioRef.current = null;
       }
     }
@@ -586,21 +602,18 @@ const Mindfulness = () => {
                     {session.type === 'audio' ? (
                       <button
                         onClick={async () => {
-                          handleAudioPlay(session.id, session.mediaUrl);
-                          // Track completion when audio ends
-                          if (audioRef.current) {
-                            audioRef.current.onended = async () => {
-                              setPlayingAudio(null);
-                              try {
-                                await api.post(`/mindfulness/sessions/${session.id}/complete`, {
-                                  durationMinutes: session.duration,
-                                });
-                                setSessionCompletions((prev) => new Set(prev).add(session.id));
-                              } catch (error) {
-                                console.error('Error recording completion:', error);
-                              }
-                            };
-                          }
+                          const sessionId = session.id;
+                          const onComplete = async () => {
+                            try {
+                              await api.post(`/mindfulness/sessions/${sessionId}/complete`, {
+                                durationMinutes: session.duration,
+                              });
+                              setSessionCompletions((prev) => new Set(prev).add(sessionId));
+                            } catch (error) {
+                              console.error('Error recording completion:', error);
+                            }
+                          };
+                          await handleAudioPlay(sessionId, session.mediaUrl, onComplete);
                         }}
                         className={`btn ${playingAudio === session.id ? 'btn-secondary' : 'btn-primary'} play-btn`}
                       >
@@ -689,7 +702,11 @@ const Mindfulness = () => {
                   toast.success(t('mindfulness.meditation.completed', 'Meditation completed!'));
                   // Track completion
                   try {
-                    // Could create a virtual session for meditation timer
+                    // Create a virtual session for meditation timer
+                    await api.post('/mindfulness/sessions/virtual/complete', {
+                      durationMinutes: data.presetDuration,
+                      type: 'meditation',
+                    });
                   } catch (error) {
                     console.error('Error tracking meditation:', error);
                   }

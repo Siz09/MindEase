@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
@@ -11,11 +11,7 @@ const StreakWidget = () => {
   const [streak, setStreak] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStreak();
-  }, []);
-
-  const fetchStreak = async () => {
+  const fetchStreak = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await api.get('/mindfulness/streak');
@@ -27,7 +23,11 @@ const StreakWidget = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchStreak();
+  }, [fetchStreak]);
 
   if (isLoading) {
     return (

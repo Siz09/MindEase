@@ -3,6 +3,9 @@ package com.mindease.controller;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.mindease.exception.PremiumRequiredException;
 import com.mindease.exception.UnauthenticatedException;
+import com.mindease.exception.AccessDeniedException;
+import com.mindease.exception.SessionNotFoundException;
+import com.mindease.exception.ProgramNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -60,9 +63,29 @@ public class GlobalExceptionHandler {
             return ResponseEntity.status(401).body(response);
         }
 
-        if (ex instanceof RuntimeException) {
-            response.put("message", ex.getMessage());
+        if (ex instanceof IllegalArgumentException) {
+            logger.warn("Invalid request: {}", ex.getMessage());
+            response.put("message", "Invalid request");
             return ResponseEntity.status(400).body(response);
+        }
+
+        if (ex instanceof AccessDeniedException) {
+            logger.warn("Access denied: {}", ex.getMessage());
+            response.put("message", "Access denied");
+            return ResponseEntity.status(403).body(response);
+        }
+
+        if (ex instanceof SessionNotFoundException || ex instanceof ProgramNotFoundException) {
+            logger.warn("Resource not found: {}", ex.getMessage());
+            response.put("message", "Resource not found");
+            return ResponseEntity.status(404).body(response);
+        }
+
+        // Log unexpected RuntimeExceptions as errors but return generic message
+        if (ex instanceof RuntimeException) {
+            logger.error("Unexpected runtime exception: ", ex);
+            response.put("message", "An unexpected error occurred");
+            return ResponseEntity.status(500).body(response);
         }
 
         response.put("message", "An unexpected error occurred");

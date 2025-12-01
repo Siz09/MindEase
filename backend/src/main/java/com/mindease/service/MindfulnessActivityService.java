@@ -172,10 +172,18 @@ public class MindfulnessActivityService {
     }
 
     /**
+     * Count sessions between two dates
+     */
+    public Long countSessionsBetween(User user, LocalDateTime start, LocalDateTime end) {
+        List<MindfulnessSessionActivity> activities = activityRepository.findByUserAndCompletedAtBetween(user, start, end);
+        return (long) activities.size();
+    }
+
+    /**
      * Check if user has completed a session
      */
     public boolean hasCompletedSession(User user, UUID sessionId) {
-        return !activityRepository.findBySessionIdOrderByCompletedAtDesc(sessionId).stream()
+        return activityRepository.findBySessionIdOrderByCompletedAtDesc(sessionId).stream()
                 .anyMatch(activity -> activity.getUser().getId().equals(user.getId()));
     }
 }
