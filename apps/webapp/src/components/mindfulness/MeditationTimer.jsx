@@ -145,7 +145,7 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
     };
   }, [soundEnabled, selectedSound, isPlaying, isPaused]);
 
-  const playBellSound = () => {
+  const playBellSound = useCallback(() => {
     // Generate bell tone using Web Audio API
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -158,6 +158,16 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
 
       // Create a more pleasant bell-like sound with multiple frequencies
       const frequencies = [800, 1200, 1600];
+      let completedOscillators = 0;
+      const totalOscillators = frequencies.length;
+
+      const closeContext = async () => {
+        try {
+          await audioContext.close();
+        } catch (err) {
+          console.warn('Error closing AudioContext:', err);
+        }
+      };
 
       frequencies.forEach((freq, index) => {
         const oscillator = audioContext.createOscillator();
@@ -171,23 +181,41 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
 
         const delay = index * 0.05;
         const duration = 1.5;
+        const stopTime = audioContext.currentTime + delay + duration;
+
         gainNode.gain.setValueAtTime(0, audioContext.currentTime + delay);
         gainNode.gain.linearRampToValueAtTime(
           0.2 / frequencies.length,
           audioContext.currentTime + delay + 0.1
         );
-        gainNode.gain.exponentialRampToValueAtTime(
-          0.01,
-          audioContext.currentTime + delay + duration
-        );
+        gainNode.gain.exponentialRampToValueAtTime(0.01, stopTime);
+
+        oscillator.onended = () => {
+          completedOscillators++;
+          if (completedOscillators >= totalOscillators) {
+            // All oscillators finished, close the context
+            closeContext();
+          }
+        };
 
         oscillator.start(audioContext.currentTime + delay);
-        oscillator.stop(audioContext.currentTime + delay + duration);
+        oscillator.stop(stopTime);
       });
+
+      // Fallback: close context after maximum delay + duration if onended doesn't fire
+      const maxDuration = (frequencies.length - 1) * 0.05 + 1.5;
+      setTimeout(
+        () => {
+          closeContext().catch((err) => {
+            console.warn('Error closing AudioContext in fallback:', err);
+          });
+        },
+        (maxDuration + 0.1) * 1000
+      );
     } catch (e) {
       console.warn('Could not generate bell tone:', e);
     }
-  };
+  }, []);
 
   const handlePlayPause = () => {
     if (!isPlaying) {

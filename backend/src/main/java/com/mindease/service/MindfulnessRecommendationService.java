@@ -7,6 +7,8 @@ import com.mindease.repository.MindfulnessSessionActivityRepository;
 import com.mindease.repository.MindfulnessSessionRepository;
 import com.mindease.repository.MoodEntryRepository;
 import com.mindease.repository.UserMindfulnessPreferencesRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(readOnly = true)
 public class MindfulnessRecommendationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(MindfulnessRecommendationService.class);
 
     @Autowired
     private MindfulnessSessionRepository sessionRepository;
@@ -47,6 +51,7 @@ public class MindfulnessRecommendationService {
             try {
                 recommendations.put("moodBased", getMoodBasedRecommendations(user));
             } catch (Exception e) {
+                logger.error("Failed to get mood-based recommendations for user {}", user.getId(), e);
                 recommendations.put("moodBased", new ArrayList<>());
             }
 
@@ -54,6 +59,7 @@ public class MindfulnessRecommendationService {
             try {
                 recommendations.put("continueJourney", getDifficultyProgressionRecommendations(user));
             } catch (Exception e) {
+                logger.error("Failed to get difficulty progression recommendations for user {}", user.getId(), e);
                 recommendations.put("continueJourney", new ArrayList<>());
             }
 
@@ -61,6 +67,7 @@ public class MindfulnessRecommendationService {
             try {
                 recommendations.put("similarSessions", getSimilarSessionRecommendations(user));
             } catch (Exception e) {
+                logger.error("Failed to get similar session recommendations for user {}", user.getId(), e);
                 recommendations.put("similarSessions", new ArrayList<>());
             }
 
@@ -69,6 +76,7 @@ public class MindfulnessRecommendationService {
                 ZoneId userZone = getUserTimezone(user);
                 recommendations.put("timeBased", getTimeBasedRecommendations(userZone));
             } catch (Exception e) {
+                logger.error("Failed to get time-based recommendations for user {}", user.getId(), e);
                 recommendations.put("timeBased", new ArrayList<>());
             }
 
@@ -76,9 +84,11 @@ public class MindfulnessRecommendationService {
             try {
                 recommendations.put("recommendedForYou", getPreferenceBasedRecommendations(preferences));
             } catch (Exception e) {
+                logger.error("Failed to get preference-based recommendations for user {}", user.getId(), e);
                 recommendations.put("recommendedForYou", new ArrayList<>());
             }
         } catch (Exception e) {
+            logger.error("Failed to assemble recommendations for user {}", user.getId(), e);
             // Return empty recommendations if everything fails
             recommendations.put("moodBased", new ArrayList<>());
             recommendations.put("continueJourney", new ArrayList<>());
@@ -228,7 +238,8 @@ public class MindfulnessRecommendationService {
         Set<String> typeSet = preferredTypes.isEmpty() ? Collections.emptySet() : preferredTypes;
 
         List<MindfulnessSession> similarSessions = sessionRepository.findSimilarSessions(
-                categorySet, typeSet, excludedIds);
+                categorySet, typeSet, excludedIds, org.springframework.data.domain.PageRequest.of(0, 5))
+                .getContent();
 
         return similarSessions.stream()
                 .limit(5)

@@ -211,23 +211,7 @@ public class MindfulnessController {
 
             // Convert activities to maps for safe serialization
             List<Map<String, Object>> activitiesData = recentActivities.stream()
-                    .map(activity -> {
-                        Map<String, Object> activityMap = new HashMap<>();
-                        activityMap.put("id", activity.getId());
-                        activityMap.put("completedAt", activity.getCompletedAt());
-                        activityMap.put("durationMinutes", activity.getDurationMinutes());
-                        activityMap.put("rating", activity.getRating());
-                        activityMap.put("moodBefore", activity.getMoodBefore());
-                        activityMap.put("moodAfter", activity.getMoodAfter());
-                        if (activity.getSession() != null) {
-                            Map<String, Object> sessionMap = new HashMap<>();
-                            sessionMap.put("id", activity.getSession().getId());
-                            sessionMap.put("title", activity.getSession().getTitle());
-                            sessionMap.put("category", activity.getSession().getCategory());
-                            activityMap.put("session", sessionMap);
-                        }
-                        return activityMap;
-                    })
+                    .map(this::activityToMap)
                     .collect(java.util.stream.Collectors.toList());
 
             Map<String, Object> response = new HashMap<>();
@@ -236,8 +220,9 @@ public class MindfulnessController {
             response.put("totalSessions", actualTotalSessions != null ? actualTotalSessions : 0L);
             response.put("streak", streak);
             long totalSessionsCount = actualTotalSessions != null ? actualTotalSessions : 0L;
-            response.put("averageMinutesPerSession", (totalSessionsCount == 0 || totalMinutes == null || totalMinutes == 0) ? 0
-                    : Math.round((double) totalMinutes / totalSessionsCount));
+            response.put("averageMinutesPerSession",
+                    (totalSessionsCount == 0 || totalMinutes == null || totalMinutes == 0) ? 0
+                            : Math.round((double) totalMinutes / totalSessionsCount));
             response.put("recentActivities", activitiesData);
 
             return ResponseEntity.ok(response);
@@ -262,8 +247,7 @@ public class MindfulnessController {
             User user = userService.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-            Map<String, List<MindfulnessSession>> recommendations =
-                    recommendationService.getRecommendations(user);
+            Map<String, List<MindfulnessSession>> recommendations = recommendationService.getRecommendations(user);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -369,25 +353,7 @@ public class MindfulnessController {
 
             // Convert activities to maps for safe serialization
             List<Map<String, Object>> historyData = history.stream()
-                    .map(activity -> {
-                        Map<String, Object> activityMap = new HashMap<>();
-                        activityMap.put("id", activity.getId());
-                        activityMap.put("completedAt", activity.getCompletedAt());
-                        activityMap.put("durationMinutes", activity.getDurationMinutes());
-                        activityMap.put("rating", activity.getRating());
-                        activityMap.put("moodBefore", activity.getMoodBefore());
-                        activityMap.put("moodAfter", activity.getMoodAfter());
-                        if (activity.getSession() != null) {
-                            Map<String, Object> sessionMap = new HashMap<>();
-                            sessionMap.put("id", activity.getSession().getId());
-                            sessionMap.put("title", activity.getSession().getTitle());
-                            sessionMap.put("category", activity.getSession().getCategory());
-                            sessionMap.put("type", activity.getSession().getType());
-                            sessionMap.put("duration", activity.getSession().getDuration());
-                            activityMap.put("session", sessionMap);
-                        }
-                        return activityMap;
-                    })
+                    .map(this::activityToMap)
                     .collect(java.util.stream.Collectors.toList());
 
             Map<String, Object> response = new HashMap<>();
@@ -404,6 +370,31 @@ public class MindfulnessController {
         }
     }
 
+    /**
+     * Convert a MindfulnessSessionActivity to a Map for safe serialization.
+     * Includes activity fields and session fields (id, title, category, type,
+     * duration) if session is present.
+     */
+    private Map<String, Object> activityToMap(MindfulnessSessionActivity activity) {
+        Map<String, Object> activityMap = new HashMap<>();
+        activityMap.put("id", activity.getId());
+        activityMap.put("completedAt", activity.getCompletedAt());
+        activityMap.put("durationMinutes", activity.getDurationMinutes());
+        activityMap.put("rating", activity.getRating());
+        activityMap.put("moodBefore", activity.getMoodBefore());
+        activityMap.put("moodAfter", activity.getMoodAfter());
+        if (activity.getSession() != null) {
+            Map<String, Object> sessionMap = new HashMap<>();
+            sessionMap.put("id", activity.getSession().getId());
+            sessionMap.put("title", activity.getSession().getTitle());
+            sessionMap.put("category", activity.getSession().getCategory());
+            sessionMap.put("type", activity.getSession().getType());
+            sessionMap.put("duration", activity.getSession().getDuration());
+            activityMap.put("session", sessionMap);
+        }
+        return activityMap;
+    }
+
     private Map<String, Object> createErrorResponse(String message) {
         Map<String, Object> error = new HashMap<>();
         error.put("success", false);
@@ -412,11 +403,13 @@ public class MindfulnessController {
     }
 
     /**
-     * Safely extract an Integer value from a Map, handling null values and type conversions.
+     * Safely extract an Integer value from a Map, handling null values and type
+     * conversions.
      *
      * @param map The map to extract from
      * @param key The key to look up
-     * @return The integer value, or null if key is absent, value is null, or value is not a Number
+     * @return The integer value, or null if key is absent, value is null, or value
+     *         is not a Number
      * @throws IllegalArgumentException if the value exists but is not a Number
      */
     private Integer extractInteger(Map<String, Object> map, String key) {
@@ -430,6 +423,7 @@ public class MindfulnessController {
         if (value instanceof Number) {
             return ((Number) value).intValue();
         }
-        throw new IllegalArgumentException("Value for key '" + key + "' must be a number, got: " + value.getClass().getSimpleName());
+        throw new IllegalArgumentException(
+                "Value for key '" + key + "' must be a number, got: " + value.getClass().getSimpleName());
     }
 }

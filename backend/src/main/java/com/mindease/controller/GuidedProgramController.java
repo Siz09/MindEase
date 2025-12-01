@@ -80,9 +80,6 @@ public class GuidedProgramController {
     @PostMapping("/{id}/start")
     public ResponseEntity<?> startSession(@PathVariable UUID id) {
         try {
-            if (!isAuthenticated()) {
-                return ResponseEntity.status(401).body(createErrorResponse("User not authenticated"));
-            }
             UUID userId = CurrentUserId.get();
             GuidedSession session = guidedProgramService.startSession(userId, id);
             Map<String, Object> response = new HashMap<>();
@@ -132,9 +129,6 @@ public class GuidedProgramController {
             @SuppressWarnings("unchecked")
             Map<String, Object> responseData = (Map<String, Object>) responseObj;
 
-            if (!isAuthenticated()) {
-                return ResponseEntity.status(401).body(createErrorResponse("User not authenticated"));
-            }
             UUID userId = CurrentUserId.get();
             GuidedSession session = guidedProgramService.updateSessionStep(userId, sessionId, stepNumber, responseData);
 

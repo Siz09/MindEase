@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
@@ -12,11 +12,7 @@ const Recommendations = ({ onSessionSelect }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [favorites, setFavorites] = useState(new Set());
 
-  useEffect(() => {
-    fetchRecommendations();
-  }, []);
-
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await api.get('/mindfulness/recommendations');
@@ -43,7 +39,11 @@ const Recommendations = ({ onSessionSelect }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchRecommendations();
+  }, [fetchRecommendations]);
 
   const toggleFavorite = async (sessionId) => {
     try {

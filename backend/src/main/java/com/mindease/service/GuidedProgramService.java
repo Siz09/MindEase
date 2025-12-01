@@ -67,7 +67,6 @@ public class GuidedProgramService {
         return guidedSessionRepository.findById(sessionId);
     }
 
-    @Transactional
     public GuidedSession updateSessionStep(UUID userId, UUID sessionId, Integer stepNumber, Map<String, Object> responseData) {
         int attempt = 0;
         while (attempt < MAX_RETRY_ATTEMPTS) {
@@ -80,7 +79,7 @@ public class GuidedProgramService {
                     throw new IllegalArgumentException("Session was modified by another operation. Please try again.");
                 }
                 logger.debug("Optimistic locking failure, retrying (attempt {}/{}) for session {}", attempt, MAX_RETRY_ATTEMPTS, sessionId);
-                // Brief pause before retry to reduce contention
+                // Brief pause before retry to reduce contention (outside transactional scope)
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException ie) {
@@ -92,6 +91,7 @@ public class GuidedProgramService {
         throw new IllegalStateException("Unexpected state after retry attempts");
     }
 
+    @Transactional
     private GuidedSession updateSessionStepInternal(UUID userId, UUID sessionId, Integer stepNumber, Map<String, Object> responseData) {
         GuidedSession session = guidedSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new SessionNotFoundException("Session not found: " + sessionId));

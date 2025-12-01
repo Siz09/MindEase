@@ -13,7 +13,7 @@ import java.util.Map;
 @Table(name = "guided_sessions")
 public class GuidedSession {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)

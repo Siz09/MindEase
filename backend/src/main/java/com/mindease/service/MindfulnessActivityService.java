@@ -174,8 +174,7 @@ public class MindfulnessActivityService {
      * Count sessions between two dates
      */
     public Long countSessionsBetween(User user, LocalDateTime start, LocalDateTime end) {
-        List<MindfulnessSessionActivity> activities = activityRepository.findByUserAndCompletedAtBetween(user, start, end);
-        return (long) activities.size();
+        return activityRepository.countByUserAndCompletedAtBetween(user, start, end);
     }
 
     /**

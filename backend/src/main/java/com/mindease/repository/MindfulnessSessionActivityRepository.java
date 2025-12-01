@@ -39,5 +39,8 @@ public interface MindfulnessSessionActivityRepository extends JpaRepository<Mind
     @Query("SELECT COUNT(a) > 0 FROM MindfulnessSessionActivity a WHERE a.user = :user AND a.completedAt >= :start AND a.completedAt <= :end")
     boolean hasActivityInDateRange(@Param("user") User user, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
+    @Query("SELECT COUNT(a) FROM MindfulnessSessionActivity a WHERE a.user = :user AND a.completedAt >= :start AND a.completedAt <= :end")
+    Long countByUserAndCompletedAtBetween(@Param("user") User user, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
     boolean existsByUserAndSessionId(User user, UUID sessionId);
 }

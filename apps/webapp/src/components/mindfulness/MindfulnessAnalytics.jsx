@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../utils/api';
@@ -38,11 +38,7 @@ const MindfulnessAnalytics = ({ days = 30 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState(days);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [selectedPeriod]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await api.get(`/mindfulness/analytics?days=${selectedPeriod}`);
@@ -54,7 +50,11 @@ const MindfulnessAnalytics = ({ days = 30 }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedPeriod]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const formatMinutes = (minutes) => {
     if (!minutes) return '0m';
