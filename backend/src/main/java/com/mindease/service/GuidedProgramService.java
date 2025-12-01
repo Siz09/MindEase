@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -33,6 +34,9 @@ public class GuidedProgramService {
 
     @Autowired
     private GuidedSessionRepository guidedSessionRepository;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     public List<GuidedProgram> getAllActivePrograms() {
         return guidedProgramRepository.findByActiveTrueOrderByDisplayOrderAsc();
@@ -67,18 +71,22 @@ public class GuidedProgramService {
         return guidedSessionRepository.findById(sessionId);
     }
 
-    public GuidedSession updateSessionStep(UUID userId, UUID sessionId, Integer stepNumber, Map<String, Object> responseData) {
+    public GuidedSession updateSessionStep(UUID userId, UUID sessionId, Integer stepNumber,
+            Map<String, Object> responseData) {
         int attempt = 0;
         while (attempt < MAX_RETRY_ATTEMPTS) {
             try {
-                return updateSessionStepInternal(userId, sessionId, stepNumber, responseData);
+                return transactionTemplate.execute(status -> {
+                    return updateSessionStepInternal(userId, sessionId, stepNumber, responseData);
+                });
             } catch (OptimisticLockingFailureException e) {
                 attempt++;
                 if (attempt >= MAX_RETRY_ATTEMPTS) {
                     logger.warn("Optimistic locking failure after {} attempts for session {}", attempt, sessionId);
                     throw new IllegalArgumentException("Session was modified by another operation. Please try again.");
                 }
-                logger.debug("Optimistic locking failure, retrying (attempt {}/{}) for session {}", attempt, MAX_RETRY_ATTEMPTS, sessionId);
+                logger.debug("Optimistic locking failure, retrying (attempt {}/{}) for session {}", attempt,
+                        MAX_RETRY_ATTEMPTS, sessionId);
                 // Brief pause before retry to reduce contention (outside transactional scope)
                 try {
                     Thread.sleep(50);
@@ -91,8 +99,8 @@ public class GuidedProgramService {
         throw new IllegalStateException("Unexpected state after retry attempts");
     }
 
-    @Transactional
-    private GuidedSession updateSessionStepInternal(UUID userId, UUID sessionId, Integer stepNumber, Map<String, Object> responseData) {
+    private GuidedSession updateSessionStepInternal(UUID userId, UUID sessionId, Integer stepNumber,
+            Map<String, Object> responseData) {
         GuidedSession session = guidedSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new SessionNotFoundException("Session not found: " + sessionId));
 
