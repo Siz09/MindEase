@@ -1,5 +1,8 @@
 package com.mindease.controller;
 
+import com.mindease.exception.AccessDeniedException;
+import com.mindease.exception.ProgramNotFoundException;
+import com.mindease.exception.SessionNotFoundException;
 import com.mindease.model.GuidedProgram;
 import com.mindease.model.GuidedSession;
 import com.mindease.model.GuidedStep;
@@ -65,7 +68,8 @@ public class GuidedProgramController {
             response.put("steps", steps);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error fetching steps: " + e.getMessage());
+            logger.error("Error fetching steps", e);
+            return ResponseEntity.internalServerError().body(createErrorResponse("Error fetching steps"));
         }
     }
 
@@ -79,9 +83,12 @@ public class GuidedProgramController {
             response.put("session", session);
             return ResponseEntity.ok(response);
         } catch (IllegalStateException e) {
-            return ResponseEntity.status(401).body("User not authenticated");
+            return ResponseEntity.status(401).body(createErrorResponse("User not authenticated"));
+        } catch (ProgramNotFoundException e) {
+            return ResponseEntity.status(404).body(createErrorResponse("Program not found: " + e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error starting session: " + e.getMessage());
+            logger.error("Error starting session", e);
+            return ResponseEntity.internalServerError().body(createErrorResponse("Error starting session"));
         }
     }
 
@@ -132,6 +139,10 @@ public class GuidedProgramController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        } catch (SessionNotFoundException e) {
+            return ResponseEntity.status(404).body(createErrorResponse(e.getMessage()));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(403).body(createErrorResponse(e.getMessage()));
         } catch (Exception e) {
             logger.error("Error updating session", e);
             return ResponseEntity.internalServerError()

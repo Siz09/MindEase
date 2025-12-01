@@ -61,10 +61,27 @@
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+  border-radius: 4px;
 }
 
 .favorite-btn:hover {
   color: var(--primary-green);
+}
+
+.favorite-btn:focus {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
+}
+
+.favorite-btn:focus-visible {
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorite-btn {
+    transition: none;
+  }
 }
 
 .favorite-btn .favorited {

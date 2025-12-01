@@ -165,14 +165,10 @@ public class MindfulnessController {
             User user = userService.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-            Integer durationMinutes = request != null && request.containsKey("durationMinutes")
-                    ? (Integer) request.get("durationMinutes") : null;
-            Integer rating = request != null && request.containsKey("rating")
-                    ? (Integer) request.get("rating") : null;
-            Integer moodBefore = request != null && request.containsKey("moodBefore")
-                    ? (Integer) request.get("moodBefore") : null;
-            Integer moodAfter = request != null && request.containsKey("moodAfter")
-                    ? (Integer) request.get("moodAfter") : null;
+            Integer durationMinutes = extractInteger(request, "durationMinutes");
+            Integer rating = extractInteger(request, "rating");
+            Integer moodBefore = extractInteger(request, "moodBefore");
+            Integer moodAfter = extractInteger(request, "moodAfter");
 
             MindfulnessSessionActivity activity = activityService.recordCompletion(
                     user, sessionId, durationMinutes, rating, moodBefore, moodAfter);
@@ -413,5 +409,27 @@ public class MindfulnessController {
         error.put("success", false);
         error.put("message", message);
         return error;
+    }
+
+    /**
+     * Safely extract an Integer value from a Map, handling null values and type conversions.
+     *
+     * @param map The map to extract from
+     * @param key The key to look up
+     * @return The integer value, or null if key is absent, value is null, or value is not a Number
+     * @throws IllegalArgumentException if the value exists but is not a Number
+     */
+    private Integer extractInteger(Map<String, Object> map, String key) {
+        if (map == null || !map.containsKey(key)) {
+            return null;
+        }
+        Object value = map.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        throw new IllegalArgumentException("Value for key '" + key + "' must be a number, got: " + value.getClass().getSimpleName());
     }
 }

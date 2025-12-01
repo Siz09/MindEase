@@ -715,9 +715,17 @@ const Mindfulness = () => {
                     console.error('Error tracking meditation:', error);
                   }
                 }}
-                onMoodCheckIn={(type, mood, data) => {
-                  // Handle mood check-in
-                  console.log('Mood check-in:', { type, mood, data });
+                onMoodCheckIn={(type, moodOrCallback, data) => {
+                  // Handle mood check-in with flexible signature
+                  // For 'pre' flow: moodOrCallback is a callback function
+                  // For 'post' flow: moodOrCallback is the mood value, data contains additional info
+                  if (typeof moodOrCallback === 'function') {
+                    // Pre-flow: callback function provided
+                    moodOrCallback(data?.mood || data);
+                  } else if (moodOrCallback !== undefined) {
+                    // Post-flow: mood value provided
+                    console.log('Mood check-in:', { type, mood: moodOrCallback, data });
+                  }
                 }}
               />
             </div>

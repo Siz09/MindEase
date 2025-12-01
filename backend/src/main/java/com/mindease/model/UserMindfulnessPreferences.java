@@ -2,6 +2,7 @@ package com.mindease.model;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.UUID;
 public class UserMindfulnessPreferences {
     @Id
     @GeneratedValue
+    @UuidGenerator
     private UUID id;
 
     @OneToOne(fetch = FetchType.LAZY)

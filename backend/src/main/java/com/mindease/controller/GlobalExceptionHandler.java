@@ -50,44 +50,62 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
-        logger.error("Global exception handler: ", ex);
-
+    @ExceptionHandler(FirebaseAuthException.class)
+    public ResponseEntity<Map<String, Object>> handleFirebaseAuthException(FirebaseAuthException ex) {
+        logger.warn("Authentication failed: Invalid Firebase token", ex);
         Map<String, Object> response = new HashMap<>();
         response.put("status", "error");
         response.put("timestamp", System.currentTimeMillis());
+        response.put("message", "Authentication failed: Invalid Firebase token");
+        return ResponseEntity.status(401).body(response);
+    }
 
-        if (ex instanceof FirebaseAuthException) {
-            response.put("message", "Authentication failed: Invalid Firebase token");
-            return ResponseEntity.status(401).body(response);
-        }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        logger.warn("Invalid request: {}", ex.getMessage());
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("timestamp", System.currentTimeMillis());
+        response.put("message", "Invalid request");
+        return ResponseEntity.status(400).body(response);
+    }
 
-        if (ex instanceof IllegalArgumentException) {
-            logger.warn("Invalid request: {}", ex.getMessage());
-            response.put("message", "Invalid request");
-            return ResponseEntity.status(400).body(response);
-        }
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+        logger.warn("Access denied: {}", ex.getMessage());
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("timestamp", System.currentTimeMillis());
+        response.put("message", "Access denied");
+        return ResponseEntity.status(403).body(response);
+    }
 
-        if (ex instanceof AccessDeniedException) {
-            logger.warn("Access denied: {}", ex.getMessage());
-            response.put("message", "Access denied");
-            return ResponseEntity.status(403).body(response);
-        }
+    @ExceptionHandler({SessionNotFoundException.class, ProgramNotFoundException.class})
+    public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(Exception ex) {
+        logger.warn("Resource not found: {}", ex.getMessage());
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("timestamp", System.currentTimeMillis());
+        response.put("message", "Resource not found");
+        return ResponseEntity.status(404).body(response);
+    }
 
-        if (ex instanceof SessionNotFoundException || ex instanceof ProgramNotFoundException) {
-            logger.warn("Resource not found: {}", ex.getMessage());
-            response.put("message", "Resource not found");
-            return ResponseEntity.status(404).body(response);
-        }
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        logger.error("Unexpected runtime exception: ", ex);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("timestamp", System.currentTimeMillis());
+        response.put("message", "An unexpected error occurred");
+        return ResponseEntity.status(500).body(response);
+    }
 
-        // Log unexpected RuntimeExceptions as errors but return generic message
-        if (ex instanceof RuntimeException) {
-            logger.error("Unexpected runtime exception: ", ex);
-            response.put("message", "An unexpected error occurred");
-            return ResponseEntity.status(500).body(response);
-        }
-
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleAllExceptions(Exception ex) {
+        logger.error("Global exception handler: ", ex);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("timestamp", System.currentTimeMillis());
         response.put("message", "An unexpected error occurred");
         return ResponseEntity.status(500).body(response);
     }

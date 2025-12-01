@@ -74,7 +74,7 @@ const MindfulnessAnalytics = ({ days = 30 }) => {
     // Group by date
     const activitiesByDate = {};
     analytics.recentActivities.forEach((activity) => {
-      const date = new Date(activity.completedAt).toLocaleDateString('en-US', {
+      const date = new Date(activity.completedAt).toLocaleDateString(undefined, {
         month: 'short',
         day: 'numeric',
       });
@@ -147,7 +147,7 @@ const MindfulnessAnalytics = ({ days = 30 }) => {
     }
 
     const moodChanges = activitiesWithMood.map((activity) => ({
-      date: new Date(activity.completedAt).toLocaleDateString('en-US', {
+      date: new Date(activity.completedAt).toLocaleDateString(undefined, {
         month: 'short',
         day: 'numeric',
       }),

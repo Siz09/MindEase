@@ -3,8 +3,10 @@ package com.mindease.repository;
 import com.mindease.model.MindfulnessSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -20,4 +22,14 @@ public interface MindfulnessSessionRepository extends JpaRepository<MindfulnessS
   List<String> findDistinctCategories();
 
   List<MindfulnessSession> findAllByOrderByDurationAsc();
+
+  @Query("SELECT m FROM MindfulnessSession m WHERE " +
+         "(SIZE(:categorySet) = 0 OR m.category IN :categorySet) AND " +
+         "(SIZE(:typeSet) = 0 OR m.type IN :typeSet) AND " +
+         "(SIZE(:excludedIds) = 0 OR m.id NOT IN :excludedIds) " +
+         "ORDER BY m.duration ASC")
+  List<MindfulnessSession> findSimilarSessions(
+      @Param("categorySet") Set<String> categorySet,
+      @Param("typeSet") Set<String> typeSet,
+      @Param("excludedIds") Set<UUID> excludedIds);
 }

@@ -15,6 +15,15 @@ const AMBIENT_SOUNDS = {
 
 const PRESET_DURATIONS = [5, 10, 15, 20, 30, 45, 60];
 
+/**
+ * MeditationTimer Component
+ *
+ * @param {Function} onComplete - Callback when meditation completes. Receives { duration, presetDuration }
+ * @param {Function} onMoodCheckIn - Mood check-in callback with unified signature:
+ *   onMoodCheckIn(phase: 'pre'|'post', payload: object, callback?: function)
+ *   - For 'pre' phase: payload is empty object {}, callback is required function(mood)
+ *   - For 'post' phase: payload contains { preMood, duration, postMood }, callback is optional
+ */
 const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
   const { t } = useTranslation();
   const [customDuration, setCustomDuration] = useState(10);
@@ -125,8 +134,13 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
     setShowMoodCheckIn(true);
 
     if (onComplete) {
+      // Calculate duration: if timer naturally completed (timeRemaining <= 1), use full duration
+      // Otherwise compute elapsed time
+      const duration =
+        timeRemaining <= 1 ? selectedDuration * 60 : selectedDuration * 60 - timeRemaining;
+
       onComplete({
-        duration: selectedDuration * 60 - timeRemaining,
+        duration,
         presetDuration: selectedDuration,
       });
     }
@@ -179,8 +193,8 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
   const handlePlayPause = () => {
     if (!isPlaying) {
       // Starting meditation - ask for mood if not already set
-      if (preMood === null && onMoodCheckIn) {
-        onMoodCheckIn('pre', (mood) => {
+      if (preMood === null && typeof onMoodCheckIn === 'function') {
+        onMoodCheckIn('pre', {}, (mood) => {
           setPreMood(mood);
           setIsPlaying(true);
           setIsPaused(false);
@@ -202,10 +216,15 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
   };
 
   const handleMoodSubmit = (postMood) => {
-    if (onMoodCheckIn && onMoodCheckIn !== true) {
-      onMoodCheckIn('post', postMood, {
+    if (typeof onMoodCheckIn === 'function') {
+      // Calculate duration: if timer naturally completed, use full duration
+      const duration =
+        timeRemaining <= 1 ? selectedDuration * 60 : selectedDuration * 60 - timeRemaining;
+
+      onMoodCheckIn('post', {
         preMood,
-        duration: selectedDuration * 60 - timeRemaining,
+        postMood,
+        duration,
       });
     }
     setShowMoodCheckIn(false);
@@ -275,10 +294,14 @@ const MeditationTimer = ({ onComplete, onMoodCheckIn }) => {
                 max="120"
                 value={customDuration}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value) || 1;
-                  setCustomDuration(value);
+                  const parsed = parseInt(e.target.value);
+                  if (isNaN(parsed)) {
+                    return;
+                  }
+                  const clamped = Math.min(120, Math.max(1, parsed));
+                  setCustomDuration(clamped);
                   if (!isPlaying) {
-                    setSelectedDuration(value);
+                    setSelectedDuration(clamped);
                   }
                 }}
                 disabled={isPlaying}

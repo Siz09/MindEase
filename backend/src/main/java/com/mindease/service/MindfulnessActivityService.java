@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -183,7 +182,6 @@ public class MindfulnessActivityService {
      * Check if user has completed a session
      */
     public boolean hasCompletedSession(User user, UUID sessionId) {
-        return activityRepository.findBySessionIdOrderByCompletedAtDesc(sessionId).stream()
-                .anyMatch(activity -> activity.getUser().getId().equals(user.getId()));
+        return activityRepository.existsByUserAndSessionId(user, sessionId);
     }
 }

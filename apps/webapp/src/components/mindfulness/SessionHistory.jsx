@@ -6,7 +6,7 @@ import { Calendar, Clock, Star } from 'lucide-react';
 import '../../styles/mindfulness/SessionHistory.css';
 
 const SessionHistory = ({ limit = 20 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { token } = useAuth();
   const [history, setHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,7 +32,8 @@ const SessionHistory = ({ limit = 20 }) => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    const locale = i18n.language || 'en-US';
+    return date.toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

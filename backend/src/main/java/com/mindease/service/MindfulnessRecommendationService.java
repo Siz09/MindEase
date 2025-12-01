@@ -221,12 +221,16 @@ public class MindfulnessRecommendationService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // Find similar sessions
-        List<MindfulnessSession> allSessions = sessionRepository.findAllByOrderByDurationAsc();
-        return allSessions.stream()
-                .filter(session -> !completedSessionIds.contains(session.getId()))
-                .filter(session -> preferredCategories.contains(session.getCategory()) ||
-                        preferredTypes.contains(session.getType()))
+        // Find similar sessions using optimized repository query
+        // Use empty sets instead of null to avoid JPQL issues
+        Set<UUID> excludedIds = completedSessionIds.isEmpty() ? Collections.emptySet() : completedSessionIds;
+        Set<String> categorySet = preferredCategories.isEmpty() ? Collections.emptySet() : preferredCategories;
+        Set<String> typeSet = preferredTypes.isEmpty() ? Collections.emptySet() : preferredTypes;
+
+        List<MindfulnessSession> similarSessions = sessionRepository.findSimilarSessions(
+                categorySet, typeSet, excludedIds);
+
+        return similarSessions.stream()
                 .limit(5)
                 .collect(Collectors.toList());
     }
@@ -297,9 +301,10 @@ public class MindfulnessRecommendationService {
     private List<MindfulnessSession> getPreferenceBasedRecommendations(UserMindfulnessPreferences preferences) {
         List<MindfulnessSession> recommendations = new ArrayList<>();
 
-        // Based on preferred categories
-        if (!preferences.getPreferredCategories().isEmpty()) {
-            preferences.getPreferredCategories().forEach(category -> {
+        // Based on preferred categories - null-safe check
+        List<String> preferredCategories = preferences.getPreferredCategories();
+        if (preferredCategories != null && !preferredCategories.isEmpty()) {
+            preferredCategories.forEach(category -> {
                 recommendations.addAll(sessionRepository.findByCategoryOrderByDurationAsc(category)
                         .stream().limit(2).collect(Collectors.toList()));
             });

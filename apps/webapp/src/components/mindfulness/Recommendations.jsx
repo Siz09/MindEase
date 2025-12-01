@@ -22,6 +22,21 @@ const Recommendations = ({ onSessionSelect }) => {
       const response = await api.get('/mindfulness/recommendations');
       if (response.data.success) {
         setRecommendations(response.data.recommendations);
+
+        // Build favorites Set from API response
+        const favoriteIds = new Set();
+        if (response.data.recommendations) {
+          Object.values(response.data.recommendations).forEach((sessions) => {
+            if (Array.isArray(sessions)) {
+              sessions.forEach((session) => {
+                if (session.favorite === true && session.id) {
+                  favoriteIds.add(session.id);
+                }
+              });
+            }
+          });
+        }
+        setFavorites(favoriteIds);
       }
     } catch (error) {
       console.error('Error fetching recommendations:', error);
