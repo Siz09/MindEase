@@ -534,3 +534,109 @@ input:disabled + .toggle-slider {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
+
+/* AI Provider Settings Styles */
+.ai-provider-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.provider-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.provider-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.provider-card:hover {
+  border-color: var(--primary-green);
+  background-color: rgba(16, 185, 129, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+
+.provider-card.selected {
+  border-color: var(--primary-green);
+  background-color: rgba(16, 185, 129, 0.1);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.provider-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.provider-info {
+  flex: 1;
+}
+
+.provider-info h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.provider-info p {
+  margin: 0.25rem 0 0.5rem 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.provider-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--primary-green);
+  color: white;
+  border-radius: 12px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.selected-indicator {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 24px;
+  height: 24px;
+  background: var(--primary-green);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.current-provider-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--gray-100);
+  border-radius: var(--radius-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.current-provider-info .info-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.current-provider-info .info-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}

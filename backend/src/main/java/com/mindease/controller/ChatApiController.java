@@ -6,7 +6,7 @@ import com.mindease.model.User;
 import com.mindease.repository.ChatSessionRepository;
 import com.mindease.repository.MessageRepository;
 import com.mindease.repository.UserRepository;
-import com.mindease.service.ChatBotService;
+import com.mindease.service.AIProviderManager;
 import com.mindease.service.UserService;
 import com.mindease.service.PremiumAccessService;
 import com.mindease.config.ChatConfig;
@@ -62,7 +62,7 @@ public class ChatApiController {
     private UserRepository userRepository;
 
     @Autowired
-    private ChatBotService chatBotService;
+    private AIProviderManager aiProviderManager;
 
     @Autowired
     private UserService userService;
@@ -122,7 +122,7 @@ public class ChatApiController {
             chatSessionRepository.save(chatSession);
 
             // Check for crisis
-            boolean isCrisis = chatBotService.isCrisisMessage(request.getMessage());
+            boolean isCrisis = aiProviderManager.isCrisisMessage(request.getMessage());
             logger.info("Crisis detection result: {}", isCrisis);
 
             // Enforce soft daily message limit for free users (non-crisis only)
@@ -211,12 +211,13 @@ public class ChatApiController {
                 }
             }
 
-            // Generate AI response with context
+            // Generate AI response with context using AIProviderManager
             logger.info("Generating AI response with {} history messages...", recentHistory.size());
-            ChatResponse aiResponse = chatBotService.generateResponse(
+            ChatResponse aiResponse = aiProviderManager.generateResponse(
                     request.getMessage(),
                     user.getId().toString(),
-                    recentHistory);
+                    recentHistory,
+                    null);
             logger.info("Generated AI response: {}", aiResponse.getContent());
 
             Message botMessage = new Message(chatSession, aiResponse.getContent(), false);

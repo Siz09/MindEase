@@ -68,6 +68,30 @@ public class User {
     @Column(name = "email_verified", nullable = false)
     private boolean emailVerified = false;
 
+    // AI Provider preference
+    @Enumerated(EnumType.STRING)
+    @Column(name = "preferred_ai_provider")
+    private com.mindease.model.enums.AIProvider preferredAIProvider;
+
+    // User profile fields for ML risk model (optional)
+    @Column(name = "age")
+    private Integer age;
+
+    @Column(name = "gender", length = 50)
+    private String gender;
+
+    @Column(name = "course", length = 100)
+    private String course;
+
+    @Column(name = "year", length = 20)
+    private String year;
+
+    @Column(name = "cgpa")
+    private Double cgpa;
+
+    @Column(name = "marital_status", length = 50)
+    private String maritalStatus;
+
     // Constructors
     public User() {
         this.createdAt = LocalDateTime.now();
@@ -226,6 +250,62 @@ public class User {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
+    }
+
+    public com.mindease.model.enums.AIProvider getPreferredAIProvider() {
+        return preferredAIProvider;
+    }
+
+    public void setPreferredAIProvider(com.mindease.model.enums.AIProvider preferredAIProvider) {
+        this.preferredAIProvider = preferredAIProvider;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getCourse() {
+        return course;
+    }
+
+    public void setCourse(String course) {
+        this.course = course;
+    }
+
+    public String getYear() {
+        return year;
+    }
+
+    public void setYear(String year) {
+        this.year = year;
+    }
+
+    public Double getCgpa() {
+        return cgpa;
+    }
+
+    public void setCgpa(Double cgpa) {
+        this.cgpa = cgpa;
+    }
+
+    public String getMaritalStatus() {
+        return maritalStatus;
+    }
+
+    public void setMaritalStatus(String maritalStatus) {
+        this.maritalStatus = maritalStatus;
     }
 
     private void validateBanFieldConsistency() {

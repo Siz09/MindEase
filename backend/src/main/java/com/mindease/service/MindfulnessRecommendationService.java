@@ -128,7 +128,8 @@ public class MindfulnessRecommendationService {
                 }
             } else if (currentMood <= 6) {
                 // Neutral mood - suggest balanced sessions
-                List<MindfulnessSession> beginner = sessionRepository.findByDifficultyLevelOrderByDurationAsc("beginner");
+                List<MindfulnessSession> beginner = sessionRepository
+                        .findByDifficultyLevelOrderByDurationAsc("beginner");
                 if (!beginner.isEmpty()) {
                     recommendations.addAll(beginner.stream().limit(3).collect(Collectors.toList()));
                 }
@@ -142,7 +143,8 @@ public class MindfulnessRecommendationService {
                 if (!gratitude.isEmpty()) {
                     recommendations.addAll(gratitude.stream().limit(3).collect(Collectors.toList()));
                 }
-                List<MindfulnessSession> mindfulness = sessionRepository.findByCategoryOrderByDurationAsc("mindfulness");
+                List<MindfulnessSession> mindfulness = sessionRepository
+                        .findByCategoryOrderByDurationAsc("mindfulness");
                 if (!mindfulness.isEmpty()) {
                     recommendations.addAll(mindfulness.stream().limit(2).collect(Collectors.toList()));
                 }
@@ -174,7 +176,8 @@ public class MindfulnessRecommendationService {
         // Find most common difficulty level
         String currentLevel = completedActivities.stream()
                 .map(activity -> {
-                    if (activity.getSession() == null) return null;
+                    if (activity.getSession() == null)
+                        return null;
                     return activity.getSession().getDifficultyLevel();
                 })
                 .filter(Objects::nonNull)
@@ -208,7 +211,8 @@ public class MindfulnessRecommendationService {
         // Get categories and types from completed sessions
         Set<String> preferredCategories = completedActivities.stream()
                 .map(activity -> {
-                    if (activity.getSession() == null) return null;
+                    if (activity.getSession() == null)
+                        return null;
                     return activity.getSession().getCategory();
                 })
                 .filter(Objects::nonNull)
@@ -216,7 +220,8 @@ public class MindfulnessRecommendationService {
 
         Set<String> preferredTypes = completedActivities.stream()
                 .map(activity -> {
-                    if (activity.getSession() == null) return null;
+                    if (activity.getSession() == null)
+                        return null;
                     return activity.getSession().getType();
                 })
                 .filter(Objects::nonNull)
@@ -225,25 +230,24 @@ public class MindfulnessRecommendationService {
         // Get completed session IDs to exclude
         Set<UUID> completedSessionIds = completedActivities.stream()
                 .map(activity -> {
-                    if (activity.getSession() == null) return null;
+                    if (activity.getSession() == null)
+                        return null;
                     return activity.getSession().getId();
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // Find similar sessions using optimized repository query
-        // Use empty sets instead of null to avoid JPQL issues
-        Set<UUID> excludedIds = completedSessionIds.isEmpty() ? Collections.emptySet() : completedSessionIds;
-        Set<String> categorySet = preferredCategories.isEmpty() ? Collections.emptySet() : preferredCategories;
-        Set<String> typeSet = preferredTypes.isEmpty() ? Collections.emptySet() : preferredTypes;
-
-        List<MindfulnessSession> similarSessions = sessionRepository.findSimilarSessions(
-                categorySet, typeSet, excludedIds, org.springframework.data.domain.PageRequest.of(0, 5))
-                .getContent();
-
-        return similarSessions.stream()
-                .limit(5)
-                .collect(Collectors.toList());
+        // TEMPORARILY DISABLED - findSimilarSessions has query issues
+        // Fallback: return sessions from preferred category
+        if (!preferredCategories.isEmpty()) {
+            String category = preferredCategories.iterator().next();
+            return sessionRepository.findByCategoryOrderByDurationAsc(category)
+                    .stream()
+                    .filter(session -> !completedSessionIds.contains(session.getId()))
+                    .limit(5)
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
     }
 
     /**
@@ -278,7 +282,8 @@ public class MindfulnessRecommendationService {
                 }
             } else if (now.isAfter(LocalTime.of(12, 0)) && now.isBefore(LocalTime.of(18, 0))) {
                 // Afternoon - balanced sessions
-                List<MindfulnessSession> mindfulness = sessionRepository.findByCategoryOrderByDurationAsc("mindfulness");
+                List<MindfulnessSession> mindfulness = sessionRepository
+                        .findByCategoryOrderByDurationAsc("mindfulness");
                 if (!mindfulness.isEmpty()) {
                     recommendations.addAll(mindfulness.stream()
                             .filter(s -> s.getDuration() != null && s.getDuration() <= 15)

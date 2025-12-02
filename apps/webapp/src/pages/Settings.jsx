@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { patchQuietHours } from '../utils/api';
+import api from '../utils/api';
 import { toast } from 'react-toastify';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import {
@@ -22,6 +23,10 @@ const Settings = () => {
   const [quietStart, setQuietStart] = useState('22:00');
   const [quietEnd, setQuietEnd] = useState('07:00');
   const [quietHoursLoading, setQuietHoursLoading] = useState(false);
+
+  // AI Provider state
+  const [aiProvider, setAiProvider] = useState('OPENAI');
+  const [aiProviderLoading, setAiProviderLoading] = useState(false);
 
   // Convert anonymous account state
   const [showConvertForm, setShowConvertForm] = useState(false);
@@ -84,6 +89,22 @@ const Settings = () => {
     }
     setCurrentLanguage(i18n.language || 'en');
   }, [currentUser, i18n.language]);
+
+  // Fetch AI provider preference
+  useEffect(() => {
+    const fetchAIProvider = async () => {
+      try {
+        const response = await api.get('/chat/provider');
+        setAiProvider(response.data.currentProvider || 'OPENAI');
+      } catch (error) {
+        console.error('Failed to fetch AI provider:', error);
+      }
+    };
+
+    if (currentUser) {
+      fetchAIProvider();
+    }
+  }, [currentUser]);
 
   const handleToggleAnonymousMode = async () => {
     if (!currentUser) return;
@@ -262,6 +283,20 @@ const Settings = () => {
 
   const handleTestVoice = () => {
     speak(t('chat.testVoiceSample'));
+  };
+
+  const handleAIProviderChange = async (newProvider) => {
+    setAiProviderLoading(true);
+    try {
+      await api.put('/chat/provider', { provider: newProvider });
+      setAiProvider(newProvider);
+      toast.success('AI provider updated successfully');
+    } catch (error) {
+      console.error('Failed to update AI provider:', error);
+      toast.error('Failed to update AI provider');
+    } finally {
+      setAiProviderLoading(false);
+    }
   };
 
   if (!currentUser) {
@@ -457,6 +492,73 @@ const Settings = () => {
                   <span className="language-name">{t('settings.language.nepali')}</span>
                   {currentLanguage === 'ne' && <span className="current-indicator">✓</span>}
                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Provider Settings */}
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">🤖 AI Assistant Provider</h2>
+            </div>
+
+            <div className="ai-provider-settings">
+              <p className="setting-description">
+                Choose which AI powers your mental health conversations. You can switch between
+                providers at any time.
+              </p>
+
+              <div className="provider-options">
+                <div
+                  className={`provider-card ${aiProvider === 'OPENAI' ? 'selected' : ''}`}
+                  onClick={() => !aiProviderLoading && handleAIProviderChange('OPENAI')}
+                  style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
+                >
+                  <div className="provider-icon">⚡</div>
+                  <div className="provider-info">
+                    <h3>OpenAI (Cloud)</h3>
+                    <p>Fast, cloud-based responses (1-3s)</p>
+                    <span className="provider-badge">Recommended</span>
+                  </div>
+                  {aiProvider === 'OPENAI' && <div className="selected-indicator">✓</div>}
+                </div>
+
+                <div
+                  className={`provider-card ${aiProvider === 'LOCAL' ? 'selected' : ''}`}
+                  onClick={() => !aiProviderLoading && handleAIProviderChange('LOCAL')}
+                  style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
+                >
+                  <div className="provider-icon">🔒</div>
+                  <div className="provider-info">
+                    <h3>MindEase AI (Local)</h3>
+                    <p>Private, with evidence-based citations (3-7s)</p>
+                    <span className="provider-badge">Privacy Focused</span>
+                  </div>
+                  {aiProvider === 'LOCAL' && <div className="selected-indicator">✓</div>}
+                </div>
+
+                <div
+                  className={`provider-card ${aiProvider === 'AUTO' ? 'selected' : ''}`}
+                  onClick={() => !aiProviderLoading && handleAIProviderChange('AUTO')}
+                  style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
+                >
+                  <div className="provider-icon">🎯</div>
+                  <div className="provider-info">
+                    <h3>Auto Selection</h3>
+                    <p>System chooses the best option for you</p>
+                    <span className="provider-badge">Smart</span>
+                  </div>
+                  {aiProvider === 'AUTO' && <div className="selected-indicator">✓</div>}
+                </div>
+              </div>
+
+              <div className="current-provider-info">
+                <span className="info-label">Current Provider:</span>
+                <span className="info-value">
+                  {aiProvider === 'OPENAI' && '⚡ OpenAI (Fast & Reliable)'}
+                  {aiProvider === 'LOCAL' && '🔒 MindEase AI (Private)'}
+                  {aiProvider === 'AUTO' && '🎯 Auto Selection (Smart)'}
+                </span>
               </div>
             </div>
           </div>

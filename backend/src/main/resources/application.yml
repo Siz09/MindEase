@@ -172,6 +172,23 @@ openai:
   max-tokens: 150
   temperature: 0.7
 
+# AI Provider Configuration
+mindease:
+  ai:
+    providers:
+      openai:
+        enabled: true
+        fallback-priority: 1
+      local:
+        enabled: ${LOCAL_AI_ENABLED:true}
+        fallback-priority: 2
+        url: ${LOCAL_AI_URL:http://localhost:8001}
+        timeout: 10000
+    selection-strategy: USER_PREFERENCE
+    auto-selection:
+      prefer-local-when-profile-available: true
+      load-balance-percentage: 50
+
 # Stripe Configuration
 stripe:
   checkout:
