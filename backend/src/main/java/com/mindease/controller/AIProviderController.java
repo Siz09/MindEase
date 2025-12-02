@@ -1,5 +1,6 @@
 package com.mindease.controller;
 
+import com.mindease.config.AIProviderConfig;
 import com.mindease.dto.CurrentProviderResponse;
 import com.mindease.dto.ProviderUpdateResponse;
 import com.mindease.model.User;
@@ -19,6 +20,9 @@ public class AIProviderController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private AIProviderConfig aiProviderConfig;
+
     @GetMapping
     public ResponseEntity<CurrentProviderResponse> getCurrentProvider(Authentication authentication) {
         String email = authentication.getName();
@@ -30,20 +34,19 @@ public class AIProviderController {
 
         User user = userOpt.get();
         AIProvider provider = user.getPreferredAIProvider() != null
-            ? user.getPreferredAIProvider()
-            : AIProvider.OPENAI;
+                ? user.getPreferredAIProvider()
+                : AIProvider.OPENAI;
 
         CurrentProviderResponse response = new CurrentProviderResponse(
-            provider.name(),
-            AIProvider.values()
-        );
+                provider.name(),
+                AIProvider.values());
 
         return ResponseEntity.ok(response);
     }
 
     @PutMapping
     public ResponseEntity<ProviderUpdateResponse> updateProvider(@RequestBody ProviderRequest request,
-                                           Authentication authentication) {
+            Authentication authentication) {
         String email = authentication.getName();
         Optional<User> userOpt = userRepository.findByEmail(email);
 
@@ -55,10 +58,18 @@ public class AIProviderController {
 
         try {
             if (request.getProvider() == null || request.getProvider().isBlank()) {
-                return ResponseEntity.badRequest().body(new ProviderUpdateResponse("error", "Provider cannot be null or empty"));
+                return ResponseEntity.badRequest()
+                        .body(new ProviderUpdateResponse("error", "Provider cannot be null or empty"));
             }
 
             AIProvider provider = AIProvider.valueOf(request.getProvider().toUpperCase());
+            
+            // Validate that the provider is enabled (unless it's AUTO)
+            if (provider != AIProvider.AUTO && !isProviderEnabled(provider)) {
+                return ResponseEntity.badRequest()
+                        .body(new ProviderUpdateResponse("error", "Provider " + provider + " is not currently enabled"));
+            }
+            
             user.setPreferredAIProvider(provider);
             userRepository.save(user);
 
@@ -66,8 +77,15 @@ public class AIProviderController {
 
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(new ProviderUpdateResponse("error", "Invalid provider: " + request.getProvider()));
+            return ResponseEntity.badRequest()
+                    .body(new ProviderUpdateResponse("error", "Invalid provider: " + request.getProvider()));
         }
+    }
+
+    private boolean isProviderEnabled(AIProvider provider) {
+        String providerName = provider.name().toLowerCase();
+        AIProviderConfig.ProviderSettings settings = aiProviderConfig.getProviders().get(providerName);
+        return settings != null && settings.isEnabled();
     }
 
     public static class ProviderRequest {

@@ -237,17 +237,30 @@ public class MindfulnessRecommendationService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // TEMPORARILY DISABLED - findSimilarSessions has query issues
-        // Fallback: return sessions from preferred category
-        if (!preferredCategories.isEmpty()) {
-            String category = preferredCategories.iterator().next();
-            return sessionRepository.findByCategoryOrderByDurationAsc(category)
-                    .stream()
-                    .filter(session -> !completedSessionIds.contains(session.getId()))
-                    .limit(5)
-                    .collect(Collectors.toList());
-        }
-        return new ArrayList<>();
+        // TEMPORARILY DISABLED - findSimilarSessions has Hibernate 6.6 compatibility issues
+        // Enhanced fallback: use multiple categories and types
+        List<MindfulnessSession> candidates = new ArrayList<>();
+        
+        // Gather sessions from all preferred categories
+        preferredCategories.stream()
+                .limit(3) // Limit categories to avoid excessive queries
+                .forEach(category -> {
+                    candidates.addAll(sessionRepository.findByCategoryOrderByDurationAsc(category));
+                });
+        
+        // Also gather sessions from preferred types
+        preferredTypes.stream()
+                .limit(3)
+                .forEach(type -> {
+                    candidates.addAll(sessionRepository.findByTypeOrderByDurationAsc(type));
+                });
+        
+        // Filter out completed sessions and return top 5
+        return candidates.stream()
+                .distinct()
+                .filter(session -> !completedSessionIds.contains(session.getId()))
+                .limit(5)
+                .collect(Collectors.toList());
     }
 
     /**

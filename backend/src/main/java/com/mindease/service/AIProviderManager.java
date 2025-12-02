@@ -5,6 +5,7 @@ import com.mindease.dto.ChatResponse;
 import com.mindease.model.Message;
 import com.mindease.model.User;
 import com.mindease.model.enums.AIProvider;
+import com.mindease.model.enums.SelectionStrategy;
 import com.mindease.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class AIProviderManager {
@@ -33,12 +35,13 @@ public class AIProviderManager {
     private LocalAIChatBotService localAIService;
 
     private final Random random = new Random();
+    private final AtomicLong roundRobinCounter = new AtomicLong(0);
 
     public ChatResponse generateResponse(String message, String userId, List<Message> history,
                                          Map<String, String> userContext) {
 
         AIProvider selectedProvider = selectProvider(userId, userContext);
-        log.info("Selected AI provider for user {}: {}", userId, selectedProvider);
+        log.info("Selected AI provider: {}", selectedProvider);
 
         try {
             return generateWithProvider(selectedProvider, message, userId, history, userContext);
@@ -49,8 +52,9 @@ public class AIProviderManager {
     }
 
     private AIProvider selectProvider(String userId, Map<String, String> userContext) {
+        Optional<User> userOpt = Optional.empty();
         try {
-            Optional<User> userOpt = userRepository.findById(UUID.fromString(userId));
+            userOpt = userRepository.findById(UUID.fromString(userId));
             if (userOpt.isPresent() && userOpt.get().getPreferredAIProvider() != null) {
                 AIProvider userPref = userOpt.get().getPreferredAIProvider();
 
@@ -62,24 +66,27 @@ public class AIProviderManager {
             log.warn("Could not fetch user preference: {}", e.getMessage());
         }
 
-        String strategy = config.getSelectionStrategy();
+        SelectionStrategy strategy = config.getSelectionStrategy();
 
-        if ("AUTO".equals(strategy)) {
-            return autoSelectProvider(userId, userContext);
-        } else if ("ROUND_ROBIN".equals(strategy)) {
+        if (strategy == SelectionStrategy.AUTO) {
+            return autoSelectProvider(userOpt, userContext);
+        } else if (strategy == SelectionStrategy.ROUND_ROBIN) {
             return roundRobinSelect();
         }
 
-        return AIProvider.OPENAI;
+        // Default to OpenAI if enabled, otherwise select first enabled provider
+        if (isProviderEnabled("openai")) {
+            return AIProvider.OPENAI;
+        }
+        return getFirstEnabledProvider();
     }
 
-    private AIProvider autoSelectProvider(String userId, Map<String, String> userContext) {
+    private AIProvider autoSelectProvider(Optional<User> userOpt, Map<String, String> userContext) {
         if (config.getAutoSelection().isPreferLocalWhenProfileAvailable()) {
             try {
-                Optional<User> userOpt = userRepository.findById(UUID.fromString(userId));
                 if (userOpt.isPresent()) {
                     User user = userOpt.get();
-                    if (hasDetailedProfile(user)) {
+                    if (hasDetailedProfile(user) && isProviderEnabled("local")) {
                         return AIProvider.LOCAL;
                     }
                 }
@@ -93,11 +100,32 @@ public class AIProviderManager {
             return AIProvider.LOCAL;
         }
 
-        return AIProvider.OPENAI;
+        // Check if OpenAI is enabled before returning it
+        if (isProviderEnabled("openai")) {
+            return AIProvider.OPENAI;
+        }
+
+        // If OpenAI is disabled, return first enabled provider
+        return getFirstEnabledProvider();
     }
 
     private AIProvider roundRobinSelect() {
-        return System.currentTimeMillis() % 2 == 0 ? AIProvider.OPENAI : AIProvider.LOCAL;
+        List<AIProvider> enabledProviders = new ArrayList<>();
+
+        if (isProviderEnabled("openai")) {
+            enabledProviders.add(AIProvider.OPENAI);
+        }
+        if (isProviderEnabled("local")) {
+            enabledProviders.add(AIProvider.LOCAL);
+        }
+
+        if (enabledProviders.isEmpty()) {
+            throw new IllegalStateException("No enabled providers available for round-robin selection");
+        }
+
+        long count = roundRobinCounter.getAndIncrement();
+        int index = (int) (count % enabledProviders.size());
+        return enabledProviders.get(index);
     }
 
     private ChatResponse generateWithProvider(AIProvider provider, String message, String userId,
@@ -151,6 +179,16 @@ public class AIProviderManager {
         return user.getAge() != null &&
                user.getCourse() != null &&
                user.getCgpa() != null;
+    }
+
+    private AIProvider getFirstEnabledProvider() {
+        if (isProviderEnabled("openai")) {
+            return AIProvider.OPENAI;
+        }
+        if (isProviderEnabled("local")) {
+            return AIProvider.LOCAL;
+        }
+        throw new IllegalStateException("No enabled AI providers available");
     }
 
     /**

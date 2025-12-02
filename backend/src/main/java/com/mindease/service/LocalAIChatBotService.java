@@ -43,7 +43,7 @@ public class LocalAIChatBotService implements ChatBotService {
 
     @Override
     public ChatResponse generateResponse(String message, String userId, List<Message> history,
-                                         Map<String, String> userContext) {
+            Map<String, String> userContext) {
         try {
             AIProviderConfig.ProviderSettings localProvider = aiProviderConfig.getProviders().get("local");
             if (localProvider == null || localProvider.getUrl() == null) {
@@ -52,21 +52,21 @@ public class LocalAIChatBotService implements ChatBotService {
             String serviceUrl = localProvider.getUrl();
 
             List<LocalAIChatRequest.ConversationMessage> apiHistory = history.stream()
-                .filter(m -> m.getContent() != null && !m.getContent().isBlank())
-                .map(m -> LocalAIChatRequest.ConversationMessage.builder()
-                    .role(Boolean.TRUE.equals(m.getIsUserMessage()) ? "user" : "assistant")
-                    .content(m.getContent())
-                    .build())
-                .collect(Collectors.toList());
+                    .filter(m -> m.getContent() != null && !m.getContent().isBlank())
+                    .map(m -> LocalAIChatRequest.ConversationMessage.builder()
+                            .role(Boolean.TRUE.equals(m.getIsUserMessage()) ? "user" : "assistant")
+                            .content(m.getContent())
+                            .build())
+                    .collect(Collectors.toList());
 
             Map<String, Object> profile = buildUserProfile(userId, userContext);
 
             LocalAIChatRequest request = LocalAIChatRequest.builder()
-                .user_id(userId)
-                .message(message)
-                .profile(profile)
-                .history(apiHistory)
-                .build();
+                    .user_id(userId)
+                    .message(message)
+                    .profile(profile)
+                    .history(apiHistory)
+                    .build();
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -74,7 +74,7 @@ public class LocalAIChatBotService implements ChatBotService {
 
             log.info("Calling Local AI Service at: {}/chat", serviceUrl);
             ResponseEntity<LocalAIChatResponse> responseEntity = restTemplate.postForEntity(
-                serviceUrl + "/chat", entity, LocalAIChatResponse.class);
+                    serviceUrl + "/chat", entity, LocalAIChatResponse.class);
 
             LocalAIChatResponse response = responseEntity.getBody();
 
@@ -92,14 +92,18 @@ public class LocalAIChatBotService implements ChatBotService {
             return new ChatResponse(finalReply, isCrisis, "local-llama3.2");
 
         } catch (Exception e) {
-            log.error("Local AI Service failed for user {}: {}", userId, e.getMessage(), e);
+            log.error("Local AI Service failed: {}", e.getMessage(), e);
             throw new RuntimeException("Local AI unavailable: " + e.getMessage(), e);
         }
     }
 
     @Override
     public boolean isCrisisMessage(String message) {
-        return false;
+        if (message == null) return false;
+        String lower = message.toLowerCase();
+        return lower.contains("suicide") || lower.contains("kill myself") ||
+               lower.contains("want to die") || lower.contains("end it all") ||
+               lower.contains("harm myself");
     }
 
     private Map<String, Object> buildUserProfile(String userId, Map<String, String> userContext) {
@@ -111,32 +115,38 @@ public class LocalAIChatBotService implements ChatBotService {
             try {
                 uuid = UUID.fromString(userId);
             } catch (IllegalArgumentException e) {
-                log.warn("Invalid UUID format for userId: {}", userId);
+                log.warn("Invalid UUID format for userId");
                 return profile;
             }
-            
+
             Optional<User> userOpt = userRepository.findById(uuid);
 
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
-                if (user.getAge() != null) profile.put("age", user.getAge());
-                if (user.getGender() != null) profile.put("gender", user.getGender());
-                if (user.getCourse() != null) profile.put("course", user.getCourse());
-                if (user.getYear() != null) profile.put("year", user.getYear());
-                if (user.getCgpa() != null) profile.put("cgpa", user.getCgpa());
-                if (user.getMaritalStatus() != null) profile.put("marital_status", user.getMaritalStatus());
+                if (user.getAge() != null)
+                    profile.put("age", user.getAge());
+                if (user.getGender() != null)
+                    profile.put("gender", user.getGender());
+                if (user.getCourse() != null)
+                    profile.put("course", user.getCourse());
+                if (user.getYear() != null)
+                    profile.put("year", user.getYear());
+                if (user.getCgpa() != null)
+                    profile.put("cgpa", user.getCgpa());
+                if (user.getMaritalStatus() != null)
+                    profile.put("marital_status", user.getMaritalStatus());
             }
 
             if (userContext != null) {
                 // Filter userContext to only allow expected fields to prevent injection
                 Set<String> allowedKeys = Set.of("current_mood", "session_context", "recent_activity");
                 userContext.entrySet().stream()
-                    .filter(e -> allowedKeys.contains(e.getKey()))
-                    .forEach(e -> profile.put(e.getKey(), e.getValue()));
+                        .filter(e -> allowedKeys.contains(e.getKey()))
+                        .forEach(e -> profile.put(e.getKey(), e.getValue()));
             }
 
         } catch (Exception e) {
-            log.warn("Could not build user profile for {}: {}", userId, e.getMessage());
+            log.warn("Could not build user profile: {}", e.getMessage());
         }
 
         return profile;
@@ -146,17 +156,19 @@ public class LocalAIChatBotService implements ChatBotService {
         StringBuilder formatted = new StringBuilder(response.getReply());
 
         if (response.getMeta() != null &&
-            response.getMeta().getCitations() != null &&
-            !response.getMeta().getCitations().isEmpty()) {
+                response.getMeta().getCitations() != null &&
+                !response.getMeta().getCitations().isEmpty()) {
 
             formatted.append("\n\n**📚 References:**");
 
             for (LocalAIChatResponse.Citation citation : response.getMeta().getCitations()) {
+                String title = citation.getTitle() != null ? citation.getTitle() : "Unknown";
+                String source = citation.getSource() != null ? citation.getSource() : "Unknown";
                 formatted.append("\n- ")
-                    .append(citation.getTitle())
-                    .append(" (")
-                    .append(citation.getSource())
-                    .append(")");
+                        .append(title)
+                        .append(" (")
+                        .append(source)
+                        .append(")");
             }
         }
 
