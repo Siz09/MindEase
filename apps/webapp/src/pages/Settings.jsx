@@ -98,13 +98,15 @@ const Settings = () => {
         setAiProvider(response.data.currentProvider || 'OPENAI');
       } catch (error) {
         console.error('Failed to fetch AI provider:', error);
+        setAiProvider(null);
+        toast.error(t('settings.notifications.aiProviderLoadFailed'));
       }
     };
 
     if (currentUser) {
       fetchAIProvider();
     }
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   const handleToggleAnonymousMode = async () => {
     if (!currentUser) return;
@@ -290,10 +292,10 @@ const Settings = () => {
     try {
       await api.put('/chat/provider', { provider: newProvider });
       setAiProvider(newProvider);
-      toast.success('AI provider updated successfully');
+      toast.success(t('settings.notifications.aiProviderUpdated'));
     } catch (error) {
       console.error('Failed to update AI provider:', error);
-      toast.error('Failed to update AI provider');
+      toast.error(t('settings.notifications.aiProviderUpdateFailed'));
     } finally {
       setAiProviderLoading(false);
     }
@@ -512,6 +514,13 @@ const Settings = () => {
                 <div
                   className={`provider-card ${aiProvider === 'OPENAI' ? 'selected' : ''}`}
                   onClick={() => !aiProviderLoading && handleAIProviderChange('OPENAI')}
+                  onKeyDown={(e) =>
+                    e.key === 'Enter' && !aiProviderLoading && handleAIProviderChange('OPENAI')
+                  }
+                  role="button"
+                  tabIndex={aiProviderLoading ? -1 : 0}
+                  aria-pressed={aiProvider === 'OPENAI'}
+                  aria-disabled={aiProviderLoading}
                   style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
                 >
                   <div className="provider-icon">⚡</div>
@@ -526,6 +535,13 @@ const Settings = () => {
                 <div
                   className={`provider-card ${aiProvider === 'LOCAL' ? 'selected' : ''}`}
                   onClick={() => !aiProviderLoading && handleAIProviderChange('LOCAL')}
+                  onKeyDown={(e) =>
+                    e.key === 'Enter' && !aiProviderLoading && handleAIProviderChange('LOCAL')
+                  }
+                  role="button"
+                  tabIndex={aiProviderLoading ? -1 : 0}
+                  aria-pressed={aiProvider === 'LOCAL'}
+                  aria-disabled={aiProviderLoading}
                   style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
                 >
                   <div className="provider-icon">🔒</div>
@@ -540,6 +556,13 @@ const Settings = () => {
                 <div
                   className={`provider-card ${aiProvider === 'AUTO' ? 'selected' : ''}`}
                   onClick={() => !aiProviderLoading && handleAIProviderChange('AUTO')}
+                  onKeyDown={(e) =>
+                    e.key === 'Enter' && !aiProviderLoading && handleAIProviderChange('AUTO')
+                  }
+                  role="button"
+                  tabIndex={aiProviderLoading ? -1 : 0}
+                  aria-pressed={aiProvider === 'AUTO'}
+                  aria-disabled={aiProviderLoading}
                   style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
                 >
                   <div className="provider-icon">🎯</div>
@@ -558,6 +581,7 @@ const Settings = () => {
                   {aiProvider === 'OPENAI' && '⚡ OpenAI (Fast & Reliable)'}
                   {aiProvider === 'LOCAL' && '🔒 MindEase AI (Private)'}
                   {aiProvider === 'AUTO' && '🎯 Auto Selection (Smart)'}
+                  {aiProvider === null && '⚠️ Unable to load provider'}
                 </span>
               </div>
             </div>

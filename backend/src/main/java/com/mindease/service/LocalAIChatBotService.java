@@ -45,7 +45,11 @@ public class LocalAIChatBotService implements ChatBotService {
     public ChatResponse generateResponse(String message, String userId, List<Message> history,
                                          Map<String, String> userContext) {
         try {
-            String serviceUrl = aiProviderConfig.getProviders().get("local").getUrl();
+            AIProviderConfig.ProviderSettings localProvider = aiProviderConfig.getProviders().get("local");
+            if (localProvider == null || localProvider.getUrl() == null) {
+                throw new IllegalStateException("Local AI provider not properly configured");
+            }
+            String serviceUrl = localProvider.getUrl();
 
             List<LocalAIChatRequest.ConversationMessage> apiHistory = history.stream()
                 .filter(m -> m.getContent() != null && !m.getContent().isBlank())
@@ -79,10 +83,10 @@ public class LocalAIChatBotService implements ChatBotService {
             }
 
             String finalReply = formatResponseWithCitations(response);
-            boolean isCrisis = "CRISIS".equals(response.getMeta().getSafety());
+            boolean isCrisis = response.getMeta() != null && "CRISIS".equals(response.getMeta().getSafety());
 
-            if (response.getMeta().getRisk_score() != null) {
-                log.info("User {} risk score: {}", userId, response.getMeta().getRisk_score());
+            if (response.getMeta() != null && response.getMeta().getRisk_score() != null) {
+                log.info("Risk score calculated: {}", response.getMeta().getRisk_score());
             }
 
             return new ChatResponse(finalReply, isCrisis, "local-llama3.2");
@@ -102,7 +106,16 @@ public class LocalAIChatBotService implements ChatBotService {
         Map<String, Object> profile = new HashMap<>();
 
         try {
-            Optional<User> userOpt = userRepository.findById(UUID.fromString(userId));
+            // Validate UUID format
+            UUID uuid;
+            try {
+                uuid = UUID.fromString(userId);
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid UUID format for userId: {}", userId);
+                return profile;
+            }
+            
+            Optional<User> userOpt = userRepository.findById(uuid);
 
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
@@ -115,7 +128,11 @@ public class LocalAIChatBotService implements ChatBotService {
             }
 
             if (userContext != null) {
-                profile.putAll(userContext);
+                // Filter userContext to only allow expected fields to prevent injection
+                Set<String> allowedKeys = Set.of("current_mood", "session_context", "recent_activity");
+                userContext.entrySet().stream()
+                    .filter(e -> allowedKeys.contains(e.getKey()))
+                    .forEach(e -> profile.put(e.getKey(), e.getValue()));
             }
 
         } catch (Exception e) {
