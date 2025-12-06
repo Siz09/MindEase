@@ -1,6 +1,7 @@
 package com.mindease.repository;
 
-import com.mindease.model.AdminSettings;
+import com.mindease.admin.model.AdminSettings;
+import com.mindease.admin.repository.AdminSettingsRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;

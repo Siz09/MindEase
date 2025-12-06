@@ -1,10 +1,11 @@
 package com.mindease.controller;
 
-import com.mindease.model.Role;
-import com.mindease.model.User;
-import com.mindease.service.FirebaseService;
-import com.mindease.service.UserService;
-import com.mindease.util.JwtUtil;
+import com.mindease.auth.controller.AuthController;
+import com.mindease.auth.model.Role;
+import com.mindease.auth.model.User;
+import com.mindease.auth.service.FirebaseService;
+import com.mindease.auth.service.UserService;
+import com.mindease.shared.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,8 +61,8 @@ class AuthControllerTest {
                 """;
 
         mvc.perform(post("/api/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("success"))
                 .andExpect(jsonPath("$.token").value("jwt-token"))
@@ -85,8 +86,8 @@ class AuthControllerTest {
                 """;
 
         mvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value("error"))
                 .andExpect(jsonPath("$.code").value("USER_NOT_FOUND"));

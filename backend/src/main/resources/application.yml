@@ -90,7 +90,7 @@ logging:
   level:
     com.mindease: DEBUG
     org.springframework.security: DEBUG
-    com.mindease.service.RetentionPolicyService: INFO
+    com.mindease.shared.service.RetentionPolicyService: INFO
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
@@ -104,10 +104,10 @@ mood:
       - standalone
   prediction:
     insights:
-      insufficient-data: "Keep tracking your mood for a few more days to get personalized insights!"
-      stable: "Your mood has been relatively stable recently."
+      insufficient-data: 'Keep tracking your mood for a few more days to get personalized insights!'
+      stable: 'Your mood has been relatively stable recently.'
       improving: "Your mood seems to be on an upward trend! Keep doing what you're doing."
-      declining: "It looks like things have been tough lately. Consider practicing some mindfulness or reaching out to a friend."
+      declining: 'It looks like things have been tough lately. Consider practicing some mindfulness or reaching out to a friend.'
     trend-threshold: 0.1
 
 # AI prompts configuration
@@ -115,8 +115,8 @@ ai:
   prompts:
     journal-summary: "Summarize the following journal entry in under 100 words, with empathy and focus on emotions and themes.\n\nJournal entry: {content}"
     mood-insight: "Based on this journal entry, briefly describe the writer's emotional state and offer one gentle self-care suggestion (under 50 words).\n\nJournal entry: {content}"
-    journal-summary-system: "You are an empathetic mental health assistant. Provide concise, supportive summaries."
-    mood-insight-system: "You analyze journal entries to detect emotions and suggest one gentle self-care tip."
+    journal-summary-system: 'You are an empathetic mental health assistant. Provide concise, supportive summaries.'
+    mood-insight-system: 'You analyze journal entries to detect emotions and suggest one gentle self-care tip.'
 
 # Chat configuration
 chat:
@@ -184,6 +184,8 @@ mindease:
         fallback-priority: 2
         url: ${LOCAL_AI_URL:http://localhost:8001}
         timeout: 10000
+        connect-timeout: ${LOCAL_AI_CONNECT_TIMEOUT:5000}
+        read-timeout: ${LOCAL_AI_READ_TIMEOUT:60000}
     selection-strategy: USER_PREFERENCE
     auto-selection:
       prefer-local-when-profile-available: true

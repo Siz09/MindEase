@@ -1,10 +1,11 @@
 package com.mindease.controller;
 
-import com.mindease.model.MoodEntry;
-import com.mindease.model.User;
-import com.mindease.repository.MoodEntryRepository;
-import com.mindease.repository.UserRepository;
-import com.mindease.service.UserService;
+import com.mindease.auth.model.User;
+import com.mindease.auth.repository.UserRepository;
+import com.mindease.auth.service.UserService;
+import com.mindease.mood.controller.MoodController;
+import com.mindease.mood.model.MoodEntry;
+import com.mindease.mood.repository.MoodEntryRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

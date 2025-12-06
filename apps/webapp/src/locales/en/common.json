@@ -466,7 +466,10 @@
         "currentSettings": "Current Settings",
         "startTimeLabel": "Start Time",
         "endTimeLabel": "End Time"
-      }
+      },
+      "aiProviderUpdated": "AI provider updated successfully",
+      "aiProviderUpdateFailed": "Failed to update AI provider",
+      "aiProviderLoadFailed": "Could not load AI provider preference. Please try again."
     },
     "voice": {
       "inputDescription": "Enable voice input to dictate messages using your microphone",

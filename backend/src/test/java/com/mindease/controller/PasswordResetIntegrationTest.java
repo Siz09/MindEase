@@ -1,9 +1,9 @@
 package com.mindease.controller;
 
-import com.mindease.model.PasswordResetRequest;
-import com.mindease.repository.PasswordResetRequestRepository;
-import com.mindease.repository.RefreshTokenRepository;
-import com.mindease.service.PasswordResetService;
+import com.mindease.auth.model.PasswordResetRequest;
+import com.mindease.auth.repository.PasswordResetRequestRepository;
+import com.mindease.auth.repository.RefreshTokenRepository;
+import com.mindease.auth.service.PasswordResetService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -159,8 +159,36 @@ const Chat = () => {
         throw new Error(result.message || 'Failed to send message');
       }
 
-      // Message will be added via WebSocket, just mark as sent
-      const realMessageId = result.data?.userMessage?.id;
+      // Messages should come via WebSocket, but add fallback if WebSocket isn't working
+      const userMessage = result.data?.userMessage;
+      const botMessage = result.data?.botMessage;
+
+      // Fallback: If WebSocket isn't connected, add messages directly from HTTP response
+      if (!isConnected || !stompClientRef.current) {
+        console.warn('⚠️ WebSocket not connected, adding messages from HTTP response');
+        if (userMessage) {
+          const normalizedUserMsg = normalizeMessage(userMessage);
+          setMessages((prev) => {
+            if (!prev.some((m) => m.id === normalizedUserMsg.id)) {
+              return trimMessages([...prev, normalizedUserMsg]);
+            }
+            return prev;
+          });
+        }
+        if (botMessage) {
+          const normalizedBotMsg = normalizeMessage(botMessage);
+          setMessages((prev) => {
+            if (!prev.some((m) => m.id === normalizedBotMsg.id)) {
+              return trimMessages([...prev, normalizedBotMsg]);
+            }
+            return prev;
+          });
+          setTimeout(() => scrollToBottom(), 100);
+        }
+      }
+
+      // Mark user message as sent
+      const realMessageId = userMessage?.id;
       if (realMessageId) {
         setMessageStatuses((prev) => {
           // Don't regress from DELIVERED to SENT
@@ -856,7 +884,8 @@ const Chat = () => {
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
-        onConnect: () => {
+        onConnect: (frame) => {
+          console.log('✅ WebSocket connected successfully', frame);
           setIsConnected(true);
           isConnectingRef.current = false;
           isIntentionallyDisconnectingRef.current = false; // Reset flag on successful connection
@@ -873,10 +902,18 @@ const Chat = () => {
           }
 
           const userTopic = `/topic/user/${currentUser.id}`;
+          console.log('🔌 Subscribing to WebSocket topic:', userTopic);
+
+          // Verify client is active
+          if (!client.connected) {
+            console.error('❌ Client not connected after onConnect callback!');
+            return;
+          }
 
           // Track subscriptions for cleanup
           const messageSubscription = client.subscribe(userTopic, (message) => {
             try {
+              console.log('📨 WebSocket message received:', message.body);
               const parsedMessage = JSON.parse(message.body);
               const messageId = parsedMessage.id;
 
@@ -886,31 +923,42 @@ const Chat = () => {
                 return;
               }
 
-              // Also check if message with same content already exists in messages array
-              // This handles race conditions between HTTP response and WebSocket
-              const isDuplicate = messages.some(
-                (m) =>
-                  m.id === messageId ||
-                  (m.content === parsedMessage.content &&
-                    m.isUserMessage === parsedMessage.isUserMessage &&
-                    Math.abs(new Date(m.createdAt) - new Date(parsedMessage.createdAt)) < 1000)
-              );
-
-              if (isDuplicate) {
-                console.debug('Duplicate message content detected and skipped:', messageId);
-                processedMessageIds.current.set(messageId, { timestamp: Date.now() });
-                return;
-              }
-
-              processedMessageIds.current.set(messageId, { timestamp: Date.now() });
-
-              // Normalize and keep all safety metadata
+              // Normalize message first (before duplicate check)
               const normalizedMessage = normalizeMessage({
                 ...parsedMessage,
                 id: messageId,
               });
 
-              setMessages((prev) => trimMessages([...prev, normalizedMessage]));
+              // Use functional update to access current messages state
+              setMessages((prevMessages) => {
+                // Check if message with same content already exists in current messages array
+                // This handles race conditions between HTTP response and WebSocket
+                const isDuplicate = prevMessages.some(
+                  (m) =>
+                    m.id === messageId ||
+                    (m.content === normalizedMessage.content &&
+                      m.isUserMessage === normalizedMessage.isUserMessage &&
+                      Math.abs(new Date(m.createdAt) - new Date(normalizedMessage.createdAt)) <
+                        1000)
+                );
+
+                if (isDuplicate) {
+                  console.debug('Duplicate message content detected and skipped:', messageId);
+                  processedMessageIds.current.set(messageId, { timestamp: Date.now() });
+                  return prevMessages; // Return unchanged state
+                }
+
+                processedMessageIds.current.set(messageId, { timestamp: Date.now() });
+
+                console.log(
+                  '✅ Adding new message to chat:',
+                  normalizedMessage.id,
+                  normalizedMessage.content.substring(0, 50)
+                );
+                const updatedMessages = trimMessages([...prevMessages, normalizedMessage]);
+                console.log('📊 Total messages after update:', updatedMessages.length);
+                return updatedMessages;
+              });
 
               // Mark message as delivered if it's from the server
               if (normalizedMessage.isUserMessage) {
@@ -920,6 +968,15 @@ const Chat = () => {
               // Store last bot message for repeat command
               if (!normalizedMessage.isUserMessage) {
                 lastBotMessageRef.current = normalizedMessage;
+              }
+
+              // Ensure scroll happens for new messages (especially bot messages)
+              if (!normalizedMessage.isUserMessage) {
+                // Small delay to ensure DOM has updated
+                setTimeout(() => {
+                  preventAutoScrollRef.current = false;
+                  scrollToBottom();
+                }, 100);
               }
 
               // Only auto-play in voice conversation mode to respect accessibility guidelines
@@ -976,10 +1033,14 @@ const Chat = () => {
                 }
               }
             } catch (error) {
-              console.error('Error parsing message:', error);
+              console.error('❌ Error processing WebSocket message:', error);
+              console.error('Message body:', message.body);
+              toast.error('Error receiving message. Please refresh the page.');
             }
           });
           subscriptionsRef.current.push(messageSubscription);
+          console.log('✅ WebSocket subscription active for:', userTopic);
+          console.log('📋 Active subscriptions count:', subscriptionsRef.current.length);
 
           // Subscribe to typing indicator
           const typingSubscription = client.subscribe(userTopic + '/typing', (message) => {
@@ -1093,7 +1154,19 @@ const Chat = () => {
   // Single WebSocket connection effect
   useEffect(() => {
     if (token && currentUser && !stompClientRef.current && !isConnectingRef.current) {
+      console.log('🔄 Attempting WebSocket connection...', {
+        hasToken: !!token,
+        hasUser: !!currentUser,
+        userId: currentUser?.id,
+      });
       connectWebSocket();
+    } else {
+      console.log('⏸️ WebSocket connection skipped:', {
+        hasToken: !!token,
+        hasUser: !!currentUser,
+        hasClient: !!stompClientRef.current,
+        isConnecting: isConnectingRef.current,
+      });
     }
 
     return () => {

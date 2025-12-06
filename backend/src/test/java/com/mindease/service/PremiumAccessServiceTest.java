@@ -1,5 +1,7 @@
 package com.mindease.service;
 
+import com.mindease.subscription.service.PremiumAccessService;
+import com.mindease.subscription.service.SubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

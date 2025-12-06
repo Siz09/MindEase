@@ -1,16 +1,17 @@
 package com.mindease.controller;
 
-import com.mindease.config.ChatConfig;
-import com.mindease.model.ChatSession;
-import com.mindease.model.Message;
-import com.mindease.model.User;
-import com.mindease.repository.ChatSessionRepository;
-import com.mindease.repository.MessageRepository;
-import com.mindease.repository.UserRepository;
-import com.mindease.service.ChatBotService;
-import com.mindease.service.CrisisFlaggingService;
-import com.mindease.service.PremiumAccessService;
-import com.mindease.service.UserService;
+import com.mindease.auth.model.User;
+import com.mindease.auth.repository.UserRepository;
+import com.mindease.auth.service.UserService;
+import com.mindease.chat.controller.ChatApiController;
+import com.mindease.chat.model.ChatSession;
+import com.mindease.chat.model.Message;
+import com.mindease.chat.repository.ChatSessionRepository;
+import com.mindease.chat.repository.MessageRepository;
+import com.mindease.chat.service.ChatBotService;
+import com.mindease.crisis.service.CrisisFlaggingService;
+import com.mindease.subscription.service.PremiumAccessService;
+import com.mindease.shared.config.ChatConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,8 +74,8 @@ class ChatApiControllerTest {
                 """;
 
         mvc.perform(post("/api/chat/send")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value("error"))
                 .andExpect(jsonPath("$.message").value("User not found"));

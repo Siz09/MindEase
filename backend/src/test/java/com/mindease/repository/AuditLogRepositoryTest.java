@@ -1,6 +1,7 @@
 package com.mindease.repository;
 
-import com.mindease.model.AuditLog;
+import com.mindease.admin.model.AuditLog;
+import com.mindease.admin.repository.AuditLogRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;

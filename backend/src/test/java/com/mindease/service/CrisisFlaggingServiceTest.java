@@ -1,11 +1,12 @@
 package com.mindease.service;
 
-import com.mindease.model.AdminSettings;
-import com.mindease.model.CrisisFlag;
-import com.mindease.repository.AdminSettingsRepository;
-import com.mindease.repository.CrisisFlagRepository;
-import com.mindease.safety.CrisisKeywordDetector;
-import com.mindease.safety.RiskScorer;
+import com.mindease.crisis.model.CrisisFlag;
+import com.mindease.crisis.service.CrisisFlaggingService;
+import com.mindease.crisis.service.CrisisKeywordDetector;
+import com.mindease.crisis.service.RiskScorer;
+import com.mindease.admin.model.AdminSettings;
+import com.mindease.admin.repository.AdminSettingsRepository;
+import com.mindease.crisis.repository.CrisisFlagRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

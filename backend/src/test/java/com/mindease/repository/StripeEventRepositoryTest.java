@@ -1,5 +1,6 @@
 package com.mindease.repository;
 
+import com.mindease.subscription.repository.StripeEventRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assumptions;
 import org.springframework.beans.factory.annotation.Autowired;

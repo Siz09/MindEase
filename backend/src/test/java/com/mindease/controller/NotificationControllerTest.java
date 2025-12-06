@@ -1,9 +1,10 @@
 package com.mindease.controller;
 
-import com.mindease.model.Notification;
-import com.mindease.model.User;
-import com.mindease.repository.NotificationRepository;
-import com.mindease.service.UserService;
+import com.mindease.auth.model.User;
+import com.mindease.auth.service.UserService;
+import com.mindease.notification.controller.NotificationController;
+import com.mindease.notification.model.Notification;
+import com.mindease.notification.repository.NotificationRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,9 +37,6 @@ class NotificationControllerTest {
 
     @MockBean
     UserService userService;
-
-    @MockBean
-    com.mindease.repository.UserRepository userRepository;
 
     @Test
     @WithMockUser(username = "user@example.com")

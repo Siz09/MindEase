@@ -297,7 +297,10 @@
         "currentSettings": "हालका सेटिङ्गहरू",
         "startTimeLabel": "सुरु समय",
         "endTimeLabel": "अन्त्य समय"
-      }
+      },
+      "aiProviderUpdated": "AI प्रदायक सफलतापूर्वक अपडेट गरियो",
+      "aiProviderUpdateFailed": "AI प्रदायक अपडेट गर्न असफल",
+      "aiProviderLoadFailed": "AI प्रदायक प्राथमिकता लोड गर्न सकिएन। कृपया पुन: प्रयास गर्नुहोस्।"
     },
     "voice": {
       "inputDescription": "तपाईंको माइक्रोफोन प्रयोग गरेर सन्देशहरू लेख्न आवाज इनपुट सक्षम गर्नुहोस्",

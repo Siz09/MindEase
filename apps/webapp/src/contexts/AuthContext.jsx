@@ -157,7 +157,11 @@ export const AuthProvider = ({ children }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          const response = await axios.get(`${API_BASE_URL}/api/auth/me`);
+          const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+            headers: {
+              Authorization: `Bearer ${storedToken}`,
+            },
+          });
           // Handle both old format (response.data.user) and new format (response.data directly)
           const userData = response.data.user || response.data;
           setCurrentUser(userData);
@@ -676,12 +680,25 @@ export const AuthProvider = ({ children }) => {
       // Get new Firebase token
       const firebaseToken = await firebaseUser.getIdToken(true); // Force refresh
 
+      // Get current JWT token for authentication
+      const currentToken = token || localStorage.getItem('token');
+
       // Call backend to convert account
-      const response = await axios.post(`${API_BASE_URL}/api/auth/convert-anonymous`, {
-        email,
-        password,
-        firebaseToken,
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/api/auth/convert-anonymous`,
+        {
+          email,
+          password,
+          firebaseToken,
+        },
+        {
+          headers: currentToken
+            ? {
+                Authorization: `Bearer ${currentToken}`,
+              }
+            : {},
+        }
+      );
 
       const { token: jwtToken, refreshToken: refreshTokenValue, user: userData } = response.data;
 
@@ -797,7 +814,15 @@ export const AuthProvider = ({ children }) => {
     try {
       // Call backend logout to revoke refresh tokens
       if (token) {
-        await axios.post(`${API_BASE_URL}/api/auth/logout`);
+        await axios.post(
+          `${API_BASE_URL}/api/auth/logout`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
       }
     } catch (error) {
       console.error('Logout error:', error);

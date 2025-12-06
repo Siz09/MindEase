@@ -1,7 +1,7 @@
 package com.mindease.controller;
 
-import com.mindease.repository.StripeEventRepository;
-import com.mindease.service.SubscriptionService;
+import com.mindease.subscription.repository.StripeEventRepository;
+import com.mindease.subscription.service.SubscriptionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 
@@ -26,4 +26,3 @@ class StripeWebhookControllerTest {
     assertThat(res.getBody()).contains("invalid signature");
   }
 }
-

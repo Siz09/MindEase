@@ -18,6 +18,14 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 - **WebSocket Support**: Real-time chat functionality
 - **AI Integration**: Modular chatbot service with OpenAI integration
 - **Database**: PostgreSQL with JPA/Hibernate
+- **Feature-based package layout**:
+  - `auth` – auth models, services, controller
+  - `chat` – chat controller, services, models, AI integration
+  - `mood` – mood tracking & analytics
+  - `journal`, `mindfulness`, `subscription`, `notification`, `crisis`
+  - `admin` – admin dashboard, management, crisis tooling
+  - `dev` – development/test-only helpers
+  - `shared` – cross-cutting config, security, DTOs, utilities
 
 ## 🚀 Features
 

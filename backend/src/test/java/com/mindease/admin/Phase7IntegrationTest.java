@@ -1,9 +1,9 @@
 package com.mindease.admin;
 
-import com.mindease.model.AuditLog;
-import com.mindease.model.CrisisFlag;
-import com.mindease.repository.AuditLogRepository;
-import com.mindease.repository.CrisisFlagRepository;
+import com.mindease.crisis.model.CrisisFlag;
+import com.mindease.admin.model.AuditLog;
+import com.mindease.admin.repository.AuditLogRepository;
+import com.mindease.crisis.repository.CrisisFlagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -62,4 +62,3 @@ class Phase7IntegrationTest {
         return a;
     }
 }
-

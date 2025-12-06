@@ -1,7 +1,7 @@
 package com.mindease.controller;
 
-import com.mindease.model.Role;
-import com.mindease.model.User;
+import com.mindease.auth.model.Role;
+import com.mindease.auth.model.User;
 import com.mindease.service.CustomUserDetails;
 import com.mindease.service.SubscriptionService;
 import org.junit.jupiter.api.AfterEach;
@@ -51,4 +51,3 @@ class SubscriptionControllerTest {
     assertThat(res.getBody()).containsEntry("status", "active");
   }
 }
-

@@ -1,0 +1,227 @@
+package com.mindease.admin.controller;
+
+import com.mindease.admin.dto.CrisisStatsResponse;
+import com.mindease.admin.dto.KeywordStat;
+import com.mindease.chat.model.ChatSession;
+import com.mindease.chat.repository.ChatSessionRepository;
+import com.mindease.chat.repository.MessageRepository;
+import com.mindease.crisis.model.CrisisFlag;
+import com.mindease.crisis.repository.CrisisFlagRepository;
+import com.mindease.shared.events.CrisisFlagCreatedEvent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+@RestController
+@RequestMapping("/api/admin/crisis-flags")
+public class AdminCrisisController {
+
+    private final CrisisFlagRepository repo;
+    private final ChatSessionRepository chatSessionRepository;
+    private final MessageRepository messageRepository;
+    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+    private static final int MAX_SSE_CONNECTIONS = 100;
+    private static final String STATUS_RESOLVED = "RESOLVED";
+
+    public AdminCrisisController(CrisisFlagRepository repo, ChatSessionRepository chatSessionRepository,
+            MessageRepository messageRepository) {
+        this.repo = repo;
+        this.chatSessionRepository = chatSessionRepository;
+        this.messageRepository = messageRepository;
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public Page<CrisisFlag> list(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
+            @RequestParam(required = false) String timeRange) {
+        int pageSize = Math.max(1, Math.min(size, 200));
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        DateWindow window = computeDateWindow(from, to, timeRange);
+        return repo.findByCreatedAtBetweenOrderByCreatedAtDesc(window.from(), window.to(), pageable);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public CrisisFlag getOne(@PathVariable UUID id) {
+        return repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+    }
+
+    @GetMapping("/{id}/transcript")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Map<String, Object>> getTranscript(@PathVariable UUID id) {
+        CrisisFlag flag = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+
+        ChatSession session = chatSessionRepository.findById(flag.getChatId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat session not found"));
+
+        return messageRepository.findByChatSessionOrderByCreatedAtAsc(session).stream()
+                .map(m -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", m.getId());
+                    map.put("content", m.getContent());
+                    map.put("sender", m.getIsUserMessage() ? "user" : "bot");
+                    map.put("createdAt", m.getCreatedAt());
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @PostMapping("/{id}/resolve")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public Map<String, Object> resolve(@PathVariable UUID id) {
+        CrisisFlag flag = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+        if (STATUS_RESOLVED.equals(flag.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Flag already resolved");
+        }
+        flag.setStatus(STATUS_RESOLVED);
+        repo.save(flag);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "ok");
+        response.put("action", "resolved");
+        return response;
+    }
+
+    @PostMapping("/{id}/escalate")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Transactional
+    public Map<String, Object> escalate(@PathVariable UUID id) {
+        CrisisFlag flag = repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+        if (flag.isEscalated()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Flag already escalated");
+        }
+        flag.setEscalated(true);
+        repo.save(flag);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "ok");
+        response.put("action", "escalated");
+        return response;
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public CrisisFlag update(@PathVariable UUID id,
+            @org.springframework.web.bind.annotation.RequestBody Map<String, Object> body) {
+        // At the moment, crisis flags are immutable; this endpoint simply returns the
+        // current record
+        // so that the contract exists for the admin UI.
+        return repo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Flag not found"));
+    }
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public CrisisStatsResponse stats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
+            @RequestParam(required = false) String timeRange) {
+        DateWindow window = computeDateWindow(from, to, timeRange);
+        return repo.computeStats(window.from(), window.to());
+    }
+
+    @GetMapping("/keywords")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<KeywordStat> topKeywords(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
+            @RequestParam(defaultValue = "10") int limit) {
+        OffsetDateTime f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
+        int max = Math.max(1, Math.min(limit, 50));
+        Pageable pageable = PageRequest.of(0, max);
+        return repo.findTopKeywords(f, t, pageable);
+    }
+
+    @GetMapping(path = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public SseEmitter stream() {
+        if (emitters.size() >= MAX_SSE_CONNECTIONS) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Maximum SSE connections reached");
+        }
+        SseEmitter emitter = new SseEmitter(0L); // no timeout; client controls
+        emitter.onCompletion(() -> emitters.remove(emitter));
+        emitter.onTimeout(() -> emitters.remove(emitter));
+        try {
+            emitter.send(SseEmitter.event().name("open").data("ok"));
+            emitters.add(emitter);
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+        }
+        return emitter;
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onNewFlag(CrisisFlagCreatedEvent evt) {
+        CrisisFlag flag = evt.getFlag();
+        emitters.forEach(emitter -> {
+            try {
+                emitter.send(SseEmitter.event().name("flag").data(flag));
+            } catch (IOException e) {
+                emitter.complete();
+            }
+        });
+    }
+
+    private record DateWindow(OffsetDateTime from, OffsetDateTime to) {
+    }
+
+    private DateWindow computeDateWindow(OffsetDateTime from, OffsetDateTime to, String timeRange) {
+        OffsetDateTime f;
+        OffsetDateTime t;
+        if (from == null && to == null && timeRange != null && !timeRange.isBlank()) {
+            t = OffsetDateTime.now(ZoneOffset.UTC);
+            f = switch (timeRange) {
+                case "1h" -> t.minusHours(1);
+                case "24h" -> t.minusHours(24);
+                case "7d" -> t.minusDays(7);
+                case "all" -> OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+                default -> t.minusHours(24);
+            };
+        } else if (from == null && to == null) {
+            f = OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+            t = OffsetDateTime.now(ZoneOffset.UTC);
+        } else {
+            f = (from != null) ? from : OffsetDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+            t = (to != null) ? to : OffsetDateTime.now(ZoneOffset.UTC);
+        }
+        if (f.isAfter(t)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "from must be before or equal to to");
+        }
+        return new DateWindow(f, t);
+    }
+}

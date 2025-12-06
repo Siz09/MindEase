@@ -1,10 +1,11 @@
 package com.mindease.controller;
 
-import com.mindease.config.MethodSecurityConfig;
-import com.mindease.dto.ActiveUsersPoint;
-import com.mindease.dto.AiUsagePoint;
-import com.mindease.dto.MoodCorrelationPoint;
-import com.mindease.repository.AnalyticsRepository;
+import com.mindease.admin.controller.AdminDashboardController;
+import com.mindease.admin.dto.ActiveUsersPoint;
+import com.mindease.admin.dto.AiUsagePoint;
+import com.mindease.mood.dto.MoodCorrelationPoint;
+import com.mindease.admin.repository.AnalyticsRepository;
+import com.mindease.shared.config.MethodSecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-@WebMvcTest(controllers = AdminAnalyticsController.class)
+@WebMvcTest(controllers = AdminDashboardController.class)
 @Import(MethodSecurityConfig.class)
 class AdminAnalyticsControllerTest {
 
@@ -36,7 +37,7 @@ class AdminAnalyticsControllerTest {
     @WithMockUser(roles = "ADMIN")
     void activeUsersOk() throws Exception {
         Mockito.when(analytics.dailyActiveUsers(Mockito.any(), Mockito.any()))
-                .thenReturn(List.of(new ActiveUsersPoint(LocalDate.of(2025,1,1), 5)));
+                .thenReturn(List.of(new ActiveUsersPoint(LocalDate.of(2025, 1, 1), 5)));
         mvc.perform(get("/api/admin/active-users").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].day").value("2025-01-01"))
@@ -55,7 +56,7 @@ class AdminAnalyticsControllerTest {
     @WithMockUser(roles = "ADMIN")
     void aiUsageOk() throws Exception {
         Mockito.when(analytics.dailyAiUsage(Mockito.any(), Mockito.any()))
-                .thenReturn(List.of(new AiUsagePoint(LocalDate.of(2025,1,2), 12)));
+                .thenReturn(List.of(new AiUsagePoint(LocalDate.of(2025, 1, 2), 12)));
         mvc.perform(get("/api/admin/ai-usage").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].day").value("2025-01-02"))
@@ -67,7 +68,7 @@ class AdminAnalyticsControllerTest {
     @WithMockUser(roles = "ADMIN")
     void moodCorrelationOk() throws Exception {
         Mockito.when(analytics.moodCorrelation(Mockito.any(), Mockito.any()))
-                .thenReturn(List.of(new MoodCorrelationPoint(LocalDate.of(2025,1,3), 3.7, 20)));
+                .thenReturn(List.of(new MoodCorrelationPoint(LocalDate.of(2025, 1, 3), 3.7, 20)));
         mvc.perform(get("/api/admin/mood-correlation").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].day").value("2025-01-03"))

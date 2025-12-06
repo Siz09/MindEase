@@ -1,8 +1,8 @@
 package com.mindease.admin;
 
-import com.mindease.model.AuditLog;
-import com.mindease.repository.AnalyticsRepository;
-import com.mindease.repository.AuditLogRepository;
+import com.mindease.admin.model.AuditLog;
+import com.mindease.admin.repository.AnalyticsRepository;
+import com.mindease.admin.repository.AuditLogRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,4 +38,3 @@ class AnalyticsRepositoryTest {
         assertThat(points.get(points.size() - 1).calls()).isGreaterThanOrEqualTo(3);
     }
 }
-

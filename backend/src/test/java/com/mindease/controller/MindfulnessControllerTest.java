@@ -1,7 +1,8 @@
 package com.mindease.controller;
 
-import com.mindease.model.MindfulnessSession;
-import com.mindease.service.MindfulnessService;
+import com.mindease.mindfulness.controller.MindfulnessController;
+import com.mindease.mindfulness.model.MindfulnessSession;
+import com.mindease.mindfulness.service.MindfulnessService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

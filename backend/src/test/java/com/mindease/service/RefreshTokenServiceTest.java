@@ -1,9 +1,9 @@
 package com.mindease.service;
 
-import com.mindease.model.RefreshToken;
-import com.mindease.model.Role;
-import com.mindease.model.User;
-import com.mindease.repository.RefreshTokenRepository;
+import com.mindease.auth.model.RefreshToken;
+import com.mindease.auth.model.Role;
+import com.mindease.auth.model.User;
+import com.mindease.auth.repository.RefreshTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

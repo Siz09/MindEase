@@ -1,5 +1,6 @@
 package com.mindease.service;
 
+import com.mindease.chat.service.GuardrailService;
 import com.mindease.model.ModerationAction;
 import com.mindease.model.RiskLevel;
 import org.junit.jupiter.api.Test;

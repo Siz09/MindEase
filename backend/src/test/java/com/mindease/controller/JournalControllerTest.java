@@ -1,9 +1,10 @@
 package com.mindease.controller;
 
-import com.mindease.model.JournalEntry;
-import com.mindease.service.JournalService;
-import com.mindease.service.UserService;
-import com.mindease.util.AuthUtil;
+import com.mindease.auth.service.UserService;
+import com.mindease.journal.controller.JournalController;
+import com.mindease.journal.model.JournalEntry;
+import com.mindease.journal.service.JournalService;
+import com.mindease.shared.util.AuthUtil;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,8 +47,8 @@ class JournalControllerTest {
                 """;
 
         mvc.perform(post("/api/journal/add")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.message").value("Journal content cannot be empty"));
@@ -86,8 +87,8 @@ class JournalControllerTest {
                 """;
 
         mvc.perform(post("/api/journal/add")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.entry.content").value("Hello world"))

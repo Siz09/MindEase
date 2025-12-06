@@ -1,9 +1,9 @@
 package com.mindease.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mindease.repository.RefreshTokenRepository;
-import com.mindease.repository.UserRepository;
-import com.mindease.service.FirebaseService;
+import com.mindease.auth.repository.RefreshTokenRepository;
+import com.mindease.auth.repository.UserRepository;
+import com.mindease.auth.service.FirebaseService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

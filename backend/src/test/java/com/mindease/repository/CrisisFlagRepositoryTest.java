@@ -1,6 +1,7 @@
 package com.mindease.repository;
 
-import com.mindease.model.CrisisFlag;
+import com.mindease.crisis.model.CrisisFlag;
+import com.mindease.crisis.repository.CrisisFlagRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -35,4 +36,3 @@ class CrisisFlagRepositoryTest {
         assertThat(latest.get().getKeywordDetected()).isEqualTo("self-harm");
     }
 }
-
