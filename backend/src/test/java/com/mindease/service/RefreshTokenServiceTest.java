@@ -4,6 +4,7 @@ import com.mindease.auth.model.RefreshToken;
 import com.mindease.auth.model.Role;
 import com.mindease.auth.model.User;
 import com.mindease.auth.repository.RefreshTokenRepository;
+import com.mindease.auth.service.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -168,7 +169,7 @@ class RefreshTokenServiceTest {
     @Test
     void testRevokeAllUserTokens_Success() {
         when(refreshTokenRepository.revokeAllTokensForUser(eq(testUser), any(LocalDateTime.class)))
-            .thenReturn(3);
+                .thenReturn(3);
 
         int count = refreshTokenService.revokeAllUserTokens(testUser);
 

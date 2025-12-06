@@ -2,7 +2,7 @@ package com.mindease.service;
 
 import com.mindease.chat.model.Message;
 import com.mindease.chat.service.SafetyClassificationService;
-import com.mindease.model.RiskLevel;
+import com.mindease.crisis.model.RiskLevel;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

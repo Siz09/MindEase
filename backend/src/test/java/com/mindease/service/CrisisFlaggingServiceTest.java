@@ -7,6 +7,8 @@ import com.mindease.crisis.service.RiskScorer;
 import com.mindease.admin.model.AdminSettings;
 import com.mindease.admin.repository.AdminSettingsRepository;
 import com.mindease.crisis.repository.CrisisFlagRepository;
+import com.mindease.notification.service.NotificationService;
+import com.mindease.notification.service.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,12 +40,16 @@ class CrisisFlaggingServiceTest {
         RiskScorer scorer = text -> Optional.of(0.92);
         ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
         when(settingsRepo.findByFeatureName("CRISIS_ALERTS_ENABLED"))
-                .thenReturn(Optional.of(new AdminSettings(){
-                    { setFeatureName("CRISIS_ALERTS_ENABLED"); setEnabled(true); }
+                .thenReturn(Optional.of(new AdminSettings() {
+                    {
+                        setFeatureName("CRISIS_ALERTS_ENABLED");
+                        setEnabled(true);
+                    }
                 }));
         when(flagRepo.existsByChatIdAndKeywordDetectedIgnoreCase(any(), any())).thenReturn(false);
 
-        service = new CrisisFlaggingService(detector, scorer, flagRepo, settingsRepo, notificationService, emailService, publisher);
+        service = new CrisisFlaggingService(detector, scorer, flagRepo, settingsRepo, notificationService, emailService,
+                publisher);
     }
 
     @Test

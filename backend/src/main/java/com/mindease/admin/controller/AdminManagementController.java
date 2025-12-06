@@ -314,35 +314,6 @@ public class AdminManagementController {
                 saved.getDailyReportTime() != null ? saved.getDailyReportTime().toString() : null);
     }
 
-    // === Audit logs (from AdminAuditController) ===
-
-    @GetMapping("/audit-logs")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> listAuditLogs(
-            @RequestParam(required = false) UUID userId,
-            @RequestParam(required = false) String actionType,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to,
-            @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "" + DEFAULT_AUDIT_SIZE) int size) {
-        int pageSize = Math.max(1, Math.min(size, MAX_AUDIT_SIZE));
-        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-        OffsetDateTime effectiveFrom = from;
-        OffsetDateTime effectiveTo = to;
-        if (effectiveFrom != null && effectiveTo != null && effectiveFrom.isAfter(effectiveTo)) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", "'from' must not be after 'to'"));
-        }
-        Slice<AuditLog> slice = auditLogRepository.findByFilters(
-                userId,
-                actionType,
-                effectiveFrom,
-                effectiveTo,
-                pageable);
-        return ResponseEntity.ok(slice);
-    }
-
     // === Helper methods reused from AdminUserController ===
 
     private void setBannedFlag(UUID userId, boolean banned, Authentication authentication) {

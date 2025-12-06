@@ -1,8 +1,8 @@
 package com.mindease.service;
 
 import com.mindease.chat.service.GuardrailService;
-import com.mindease.model.ModerationAction;
-import com.mindease.model.RiskLevel;
+import com.mindease.crisis.model.ModerationAction;
+import com.mindease.crisis.model.RiskLevel;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,7 +27,7 @@ class GuardrailServiceTest {
         String response = "You should take 50mg of Prozac daily";
         GuardrailService.GuardrailResult result = guardrailService.checkResponse(response, RiskLevel.NONE);
         assertTrue(result.getAction() == ModerationAction.BLOCKED ||
-                   result.getAction() == ModerationAction.FLAGGED);
+                result.getAction() == ModerationAction.FLAGGED);
     }
 
     @Test
@@ -35,7 +35,7 @@ class GuardrailServiceTest {
         String response = "Based on your symptoms, you have clinical depression";
         GuardrailService.GuardrailResult result = guardrailService.checkResponse(response, RiskLevel.NONE);
         assertTrue(result.getAction() == ModerationAction.BLOCKED ||
-                   result.getAction() == ModerationAction.FLAGGED);
+                result.getAction() == ModerationAction.FLAGGED);
     }
 
     @Test
@@ -70,14 +70,16 @@ class GuardrailServiceTest {
     void testEmptyResponseReturnsNone() {
         String response = "";
         GuardrailService.GuardrailResult result = guardrailService.checkResponse(response, RiskLevel.NONE);
-        // Empty responses are currently treated as blocked and replaced with a safe fallback.
+        // Empty responses are currently treated as blocked and replaced with a safe
+        // fallback.
         assertEquals(ModerationAction.BLOCKED, result.getAction());
     }
 
     @Test
     void testNullResponseReturnsNone() {
         GuardrailService.GuardrailResult result = guardrailService.checkResponse(null, RiskLevel.NONE);
-        // Null responses are currently treated as blocked and replaced with a safe fallback.
+        // Null responses are currently treated as blocked and replaced with a safe
+        // fallback.
         assertEquals(ModerationAction.BLOCKED, result.getAction());
     }
 
