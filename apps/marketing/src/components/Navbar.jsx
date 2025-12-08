@@ -50,21 +50,9 @@ export default function Navbar() {
 
         <div className="me-navbar-actions">
           <LanguageSwitcher />
-          {(() => {
-            const loginUrl = getLoginUrl();
-            return (
-              <a
-                href={loginUrl}
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.location.href = loginUrl;
-                }}
-                className="me-button me-button-primary"
-              >
-                {t('nav.openApp')}
-              </a>
-            );
-          })()}
+          <a href={getLoginUrl()} className="me-button me-button-primary">
+            {t('nav.openApp')}
+          </a>
           <button
             className="me-navbar-toggle"
             onClick={() => setIsOpen(!isOpen)}
@@ -89,21 +77,13 @@ export default function Navbar() {
               {link.label}
             </NavLink>
           ))}
-          {(() => {
-            const loginUrl = getLoginUrl();
-            return (
-              <a
-                href={loginUrl}
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.location.href = loginUrl;
-                }}
-                className="me-button me-button-primary"
-              >
-                {t('nav.openApp')}
-              </a>
-            );
-          })()}
+          <a
+            href={getLoginUrl()}
+            onClick={() => setIsOpen(false)}
+            className="me-button me-button-primary"
+          >
+            {t('nav.openApp')}
+          </a>
         </div>
       </div>
     </nav>

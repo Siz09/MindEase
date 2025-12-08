@@ -307,21 +307,9 @@ export default function WhyMindease() {
           transition={{ delay: 0.6 }}
           style={{ marginTop: 'var(--spacing-4xl)', textAlign: 'center' }}
         >
-          {(() => {
-            const registerUrl = getRegisterUrl();
-            return (
-              <a
-                href={registerUrl}
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.location.href = registerUrl;
-                }}
-                className="me-button me-button-primary"
-              >
-                {t('why.cta')}
-              </a>
-            );
-          })()}
+          <a href={getRegisterUrl()} className="me-button me-button-primary">
+            {t('why.cta')}
+          </a>
         </motion.div>
       </div>
     </>

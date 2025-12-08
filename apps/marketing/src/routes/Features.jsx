@@ -2,7 +2,6 @@
 
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useTranslation } from 'react-i18next';
-// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import {
   MessageCircle,
@@ -189,21 +188,9 @@ export default function Features() {
           <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
             {t('features.ctaDesc') || 'Start your free journey with MindEase today.'}
           </p>
-          {(() => {
-            const registerUrl = getRegisterUrl();
-            return (
-              <a
-                href={registerUrl}
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.location.href = registerUrl;
-                }}
-                className="me-button me-button-primary"
-              >
-                {t('features.startFree') || 'Start Free'}
-              </a>
-            );
-          })()}
+          <a href={getRegisterUrl()} className="me-button me-button-primary">
+            {t('features.startFree') || 'Start Free'}
+          </a>
         </motion.div>
       </div>
     </>
