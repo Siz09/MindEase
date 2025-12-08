@@ -50,21 +50,21 @@ export default function Navbar() {
 
         <div className="me-navbar-actions">
           <LanguageSwitcher />
-          <a
-            href={getLoginUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const url = getLoginUrl();
-              console.log('[Navbar] Navigating to:', url);
-              window.location.href = url;
-            }}
-            className="me-button me-button-primary"
-          >
-            {t('nav.openApp')}
-          </a>
+          {(() => {
+            const loginUrl = getLoginUrl();
+            return (
+              <a
+                href={loginUrl}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = loginUrl;
+                }}
+                className="me-button me-button-primary"
+              >
+                {t('nav.openApp')}
+              </a>
+            );
+          })()}
           <button
             className="me-navbar-toggle"
             onClick={() => setIsOpen(!isOpen)}
@@ -89,21 +89,21 @@ export default function Navbar() {
               {link.label}
             </NavLink>
           ))}
-          <a
-            href={getLoginUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const url = getLoginUrl();
-              console.log('[Navbar Mobile] Navigating to:', url);
-              window.location.href = url;
-            }}
-            className="me-button me-button-primary"
-          >
-            {t('nav.openApp')}
-          </a>
+          {(() => {
+            const loginUrl = getLoginUrl();
+            return (
+              <a
+                href={loginUrl}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = loginUrl;
+                }}
+                className="me-button me-button-primary"
+              >
+                {t('nav.openApp')}
+              </a>
+            );
+          })()}
         </div>
       </div>
     </nav>

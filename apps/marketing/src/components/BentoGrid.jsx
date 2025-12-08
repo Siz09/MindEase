@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { MessageCircle, BarChart2, BookOpen, Zap, Shield, Globe } from 'lucide-react';
 import { getRegisterUrl } from '../utils/appUrls';
@@ -89,23 +90,23 @@ export default function BentoGrid() {
         >
           {t('bento.cta') || 'Ready to start your wellness journey?'}
         </motion.p>
-        <motion.a
-          href={getRegisterUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const url = getRegisterUrl();
-            console.log('[BentoGrid] Navigating to:', url);
-            window.location.href = url;
-          }}
-          className="me-button me-button-primary"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          {t('bento.ctaButton') || 'Get Started Now'}
-        </motion.a>
+        {(() => {
+          const registerUrl = getRegisterUrl();
+          return (
+            <motion.a
+              href={registerUrl}
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = registerUrl;
+              }}
+              className="me-button me-button-primary"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {t('bento.ctaButton') || 'Get Started Now'}
+            </motion.a>
+          );
+        })()}
       </div>
     </section>
   );

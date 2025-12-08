@@ -2,6 +2,7 @@
 
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useTranslation } from 'react-i18next';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { TrendingUp, Users, Zap, Lock } from 'lucide-react';
 import { getRegisterUrl } from '../utils/appUrls';
@@ -306,21 +307,21 @@ export default function WhyMindease() {
           transition={{ delay: 0.6 }}
           style={{ marginTop: 'var(--spacing-4xl)', textAlign: 'center' }}
         >
-          <a
-            href={getRegisterUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const url = getRegisterUrl();
-              console.log('[WhyMindease] Navigating to:', url);
-              window.location.href = url;
-            }}
-            className="me-button me-button-primary"
-          >
-            {t('why.cta')}
-          </a>
+          {(() => {
+            const registerUrl = getRegisterUrl();
+            return (
+              <a
+                href={registerUrl}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = registerUrl;
+                }}
+                className="me-button me-button-primary"
+              >
+                {t('why.cta')}
+              </a>
+            );
+          })()}
         </motion.div>
       </div>
     </>

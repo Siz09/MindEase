@@ -2,6 +2,7 @@
 
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useTranslation } from 'react-i18next';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import {
   MessageCircle,
@@ -157,7 +158,7 @@ export default function Features() {
             {t('features.coreFeatures') || 'Core Features'}
           </h2>
           <div className="me-bento-grid">
-            {features.map((feature, idx) => (
+            {features.map((feature, _idx) => (
               <motion.div
                 key={feature.key}
                 variants={itemVariants}
@@ -188,21 +189,21 @@ export default function Features() {
           <p style={{ color: 'var(--color-text-secondary)', marginBottom: 'var(--spacing-lg)' }}>
             {t('features.ctaDesc') || 'Start your free journey with MindEase today.'}
           </p>
-          <a
-            href={getRegisterUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const url = getRegisterUrl();
-              console.log('[Features] Navigating to:', url);
-              window.location.href = url;
-            }}
-            className="me-button me-button-primary"
-          >
-            {t('features.startFree') || 'Start Free'}
-          </a>
+          {(() => {
+            const registerUrl = getRegisterUrl();
+            return (
+              <a
+                href={registerUrl}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = registerUrl;
+                }}
+                className="me-button me-button-primary"
+              >
+                {t('features.startFree') || 'Start Free'}
+              </a>
+            );
+          })()}
         </motion.div>
       </div>
     </>

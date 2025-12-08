@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
+// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { ArrowRight, Lock, Languages, Zap } from 'lucide-react';
 import { getRegisterUrl } from '../utils/appUrls';
@@ -49,24 +50,24 @@ export default function Hero() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="me-hero-actions"
         >
-          <motion.a
-            href={getRegisterUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const url = getRegisterUrl();
-              console.log('[Hero] Navigating to:', url);
-              window.location.href = url;
-            }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="me-button me-button-primary"
-          >
-            {t('hero.primaryCta')}
-            <ArrowRight size={20} />
-          </motion.a>
+          {(() => {
+            const registerUrl = getRegisterUrl();
+            return (
+              <motion.a
+                href={registerUrl}
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.location.href = registerUrl;
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="me-button me-button-primary"
+              >
+                {t('hero.primaryCta')}
+                <ArrowRight size={20} />
+              </motion.a>
+            );
+          })()}
 
           <motion.a
             href="#features"
