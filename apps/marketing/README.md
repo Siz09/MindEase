@@ -84,6 +84,8 @@ npm run -w @mindease/marketing dev
 
 The site will be available at `http://localhost:5173`
 
+**Note**: The marketing app runs on port 5173, while the webapp runs on port 5174 to avoid conflicts.
+
 ## Building
 
 Build the static site for production:
@@ -178,7 +180,12 @@ npm run -w @mindease/marketing preview
 
 3. **No Breaking Changes**: This marketing site does not import or depend on any code from `apps/webapp`.
 
-4. **Environment Variables**: Configure app links in components as needed (currently set to `http://localhost:5173` for local development).
+4. **Environment Variables**:
+   - `VITE_MINDEASE_APP_URL`: The base URL for the MindEase webapp.
+     - Default: `http://localhost:5174` (webapp runs on port 5174 to avoid conflicts with marketing on 5173)
+     - Set this to your production webapp URL when deploying
+     - A `.env` file is automatically created with the correct local development URL
+     - For production, update `.env` with: `VITE_MINDEASE_APP_URL=https://your-webapp-url.com`
 
 ## SEO & Performance
 

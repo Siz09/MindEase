@@ -18,4 +18,15 @@ adminApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+adminApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle network errors, timeouts, and other errors
+    if (error.code === 'ECONNABORTED' || error.message === 'Network Error') {
+      console.error('Admin API request failed:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default adminApi;

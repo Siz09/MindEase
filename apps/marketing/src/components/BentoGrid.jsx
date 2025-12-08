@@ -3,6 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { MessageCircle, BarChart2, BookOpen, Zap, Shield, Globe } from 'lucide-react';
+import { getRegisterUrl } from '../utils/appUrls';
 
 export default function BentoGrid() {
   const { t } = useTranslation();
@@ -89,15 +90,16 @@ export default function BentoGrid() {
           {t('bento.cta') || 'Ready to start your wellness journey?'}
         </motion.p>
         <motion.a
-          href={(() => {
-            try {
-              const base = import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173';
-              return new URL('/login', base).href;
-            } catch (error) {
-              console.error('Invalid VITE_MINDEASE_APP_URL:', error);
-              return 'http://localhost:5173/login';
-            }
-          })()}
+          href={getRegisterUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const url = getRegisterUrl();
+            console.log('[BentoGrid] Navigating to:', url);
+            window.location.href = url;
+          }}
           className="me-button me-button-primary"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

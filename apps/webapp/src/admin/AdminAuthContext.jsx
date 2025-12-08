@@ -42,15 +42,28 @@ export function AdminAuthProvider({ children }) {
     async function check() {
       try {
         const stored = localStorage.getItem('adminToken');
-        if (!stored) return;
+        if (!stored) {
+          if (!cancelled) setLoading(false);
+          return;
+        }
         // Set token state early so consumers know we have a session candidate
         if (!cancelled) setAdminToken(stored);
 
         // Optimistically bootstrap role/email from JWT claims to avoid redirect flicker on new tabs
         const claims = decodeJwt(stored);
+        // If token can't be decoded or doesn't have admin role, clear it immediately
+        if (!claims || (!claims.role && !claims.authority)) {
+          localStorage.removeItem('adminToken');
+          if (!cancelled) {
+            setAdminToken(null);
+            setAdminUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+
         if (
           !cancelled &&
-          claims &&
           (claims.role === 'ADMIN' ||
             claims.role === 'ROLE_ADMIN' ||
             claims.authority === 'ROLE_ADMIN')
@@ -64,17 +77,40 @@ export function AdminAuthProvider({ children }) {
                   ? 'ROLE_ADMIN'
                   : undefined,
           });
+        } else {
+          // Token exists but user is not admin - clear it
+          localStorage.removeItem('adminToken');
+          if (!cancelled) {
+            setAdminToken(null);
+            setAdminUser(null);
+            setLoading(false);
+          }
+          return;
         }
 
         const { data } = await adminApi.get('/auth/me');
         if (!cancelled) {
-          setAdminUser(data.user);
+          // Handle both old format (data.user) and new format (data directly)
+          const userData = data.user || data;
+          setAdminUser(userData);
           setAdminToken(stored);
         }
       } catch (e) {
-        // Only clear token on explicit 401/403; keep it for transient network errors
+        console.error('Admin auth check failed:', e);
         const status = e?.response?.status;
-        if (status === 401 || status === 403) {
+        // If API call fails, clear token and user to prevent infinite loading
+        // The optimistic user from JWT is just for UI flicker prevention
+        // If the real API call fails, we should treat it as auth failure
+        if (status === 401 || status === 403 || !e?.response) {
+          // Auth error or network error - clear everything
+          localStorage.removeItem('adminToken');
+          if (!cancelled) {
+            setAdminToken(null);
+            setAdminUser(null);
+          }
+        } else {
+          // For other server errors (500, etc.), also clear to prevent stuck state
+          // User can retry by logging in again
           localStorage.removeItem('adminToken');
           if (!cancelled) {
             setAdminToken(null);

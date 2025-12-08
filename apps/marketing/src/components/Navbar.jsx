@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import LanguageSwitcher from './LanguageSwitcher';
+import { getLoginUrl } from '../utils/appUrls';
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -50,10 +51,16 @@ export default function Navbar() {
         <div className="me-navbar-actions">
           <LanguageSwitcher />
           <a
-            href={
-              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
-                .href
-            }
+            href={getLoginUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const url = getLoginUrl();
+              console.log('[Navbar] Navigating to:', url);
+              window.location.href = url;
+            }}
             className="me-button me-button-primary"
           >
             {t('nav.openApp')}
@@ -83,10 +90,16 @@ export default function Navbar() {
             </NavLink>
           ))}
           <a
-            href={
-              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
-                .href
-            }
+            href={getLoginUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const url = getLoginUrl();
+              console.log('[Navbar Mobile] Navigating to:', url);
+              window.location.href = url;
+            }}
             className="me-button me-button-primary"
           >
             {t('nav.openApp')}

@@ -14,6 +14,7 @@ import {
   Heart,
   Smartphone,
 } from 'lucide-react';
+import { getRegisterUrl } from '../utils/appUrls';
 
 export default function Features() {
   const { t } = useTranslation();
@@ -188,10 +189,16 @@ export default function Features() {
             {t('features.ctaDesc') || 'Start your free journey with MindEase today.'}
           </p>
           <a
-            href={
-              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
-                .href
-            }
+            href={getRegisterUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const url = getRegisterUrl();
+              console.log('[Features] Navigating to:', url);
+              window.location.href = url;
+            }}
             className="me-button me-button-primary"
           >
             {t('features.startFree') || 'Start Free'}

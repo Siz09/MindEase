@@ -3,6 +3,7 @@
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowRight, Lock, Languages, Zap } from 'lucide-react';
+import { getRegisterUrl } from '../utils/appUrls';
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -49,10 +50,16 @@ export default function Hero() {
           className="me-hero-actions"
         >
           <motion.a
-            href={
-              new URL('/login', import.meta.env.VITE_MINDEASE_APP_URL || 'http://localhost:5173')
-                .href
-            }
+            href={getRegisterUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const url = getRegisterUrl();
+              console.log('[Hero] Navigating to:', url);
+              window.location.href = url;
+            }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="me-button me-button-primary"
