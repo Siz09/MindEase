@@ -63,15 +63,15 @@
 }
 
 .stat-value.trend-up {
-  color: #16a34a;
+  color: var(--status-up);
 }
 
 .stat-value.trend-down {
-  color: #dc2626;
+  color: var(--status-down);
 }
 
 .stat-value.trend-stable {
-  color: #f59e0b;
+  color: var(--primary-green);
 }
 
 .stat-label {
