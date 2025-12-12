@@ -25,10 +25,16 @@
   margin: 0 auto;
 }
 
-/* ========== JOURNAL INSIGHTS & YOUR INSIGHTS (Reverted to original) ========== */
+/* ========== JOURNAL INSIGHTS & YOUR INSIGHTS (Combined) ========== */
 .daily-summary-card {
   background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
   border: 1px solid rgba(21, 128, 61, 0.1);
+}
+
+.combined-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--spacing-md);
 }
 
 .journal-stats-grid {
@@ -42,6 +48,11 @@
   padding: var(--spacing-md);
   background-color: var(--bg-secondary);
   border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .stat-value {
@@ -51,10 +62,34 @@
   color: var(--primary-green);
 }
 
+.stat-value.trend-up {
+  color: #16a34a;
+}
+
+.stat-value.trend-down {
+  color: #dc2626;
+}
+
+.stat-value.trend-stable {
+  color: #f59e0b;
+}
+
 .stat-label {
   font-size: var(--font-size-sm);
   opacity: 0.9;
   color: var(--text-secondary);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .combined-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  .stat-value {
+    font-size: var(--font-size-xl);
+  }
 }
 
 /* ========== INSIGHTS CONTENT SPACING ========== */

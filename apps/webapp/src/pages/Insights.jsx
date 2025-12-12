@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../utils/api';
-import MoodStats from '../components/MoodStats';
 import MoodCharts from '../components/MoodCharts';
 import '../styles/Insights.css';
 
@@ -151,7 +150,7 @@ const Insights = () => {
         </div>
 
         <div className="insights-content">
-          {journalStats && (
+          {(journalStats || stats) && (
             <section className="insights-section">
               <div className="card daily-summary-card">
                 <div className="card-header">
@@ -162,33 +161,59 @@ const Insights = () => {
                   </div>
                 </div>
 
-                {journalStats && (
-                  <div className="journal-stats-grid">
-                    <div className="stat-item">
-                      <div className="stat-value">{journalStats.todayEntries}</div>
-                      <div className="stat-label">
-                        {t('insights.entriesToday') || 'Entries Today'}
+                <div className="combined-stats-grid">
+                  {journalStats && (
+                    <>
+                      <div className="stat-item">
+                        <div className="stat-value">{journalStats.todayEntries}</div>
+                        <div className="stat-label">
+                          {t('insights.entriesToday') || 'Entries Today'}
+                        </div>
                       </div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-value">{journalStats.totalEntries}</div>
-                      <div className="stat-label">
-                        {t('insights.totalEntries') || 'Total Entries'}
+                      <div className="stat-item">
+                        <div className="stat-value">{journalStats.totalEntries}</div>
+                        <div className="stat-label">
+                          {t('insights.totalEntries') || 'Total Entries'}
+                        </div>
                       </div>
-                    </div>
-                    <div className="stat-item">
-                      <div className="stat-value">{journalStats.avgEntriesPerDay}</div>
-                      <div className="stat-label">{t('insights.avgPerDay') || 'Avg Per Day'}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
+                      <div className="stat-item">
+                        <div className="stat-value">{journalStats.avgEntriesPerDay}</div>
+                        <div className="stat-label">{t('insights.avgPerDay') || 'Avg Per Day'}</div>
+                      </div>
+                    </>
+                  )}
 
-          {stats && (
-            <section className="insights-section">
-              <MoodStats stats={stats} isLoading={isLoading} />
+                  {stats && (
+                    <>
+                      <div className="stat-item">
+                        <div className="stat-value">{stats.average ?? '—'}</div>
+                        <div className="stat-label">{t('mood.averageMood') || 'Average Mood'}</div>
+                      </div>
+                      <div className="stat-item">
+                        <div className="stat-value">{stats.total ?? 0}</div>
+                        <div className="stat-label">
+                          {t('mood.entriesLogged') || 'Entries Logged'}
+                        </div>
+                      </div>
+                      <div className="stat-item">
+                        <div
+                          className={`stat-value trend-${stats.trend}`}
+                          aria-label={
+                            stats.trend === 'up'
+                              ? t('mood.trendUp')
+                              : stats.trend === 'down'
+                                ? t('mood.trendDown')
+                                : t('mood.trendStable')
+                          }
+                        >
+                          {stats.trend === 'up' ? '↗' : stats.trend === 'down' ? '↘' : '→'}
+                        </div>
+                        <div className="stat-label">{t('mood.trend') || 'Trend'}</div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </section>
           )}
 
