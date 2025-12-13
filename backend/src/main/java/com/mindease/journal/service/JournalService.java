@@ -5,6 +5,7 @@ import com.mindease.auth.repository.UserRepository;
 import com.mindease.journal.model.JournalEntry;
 import com.mindease.journal.repository.JournalEntryRepository;
 import com.mindease.chat.service.OpenAIService;
+import com.mindease.shared.service.PythonAIServiceClient;
 import com.mindease.mood.model.MoodEntry;
 import com.mindease.mood.repository.MoodEntryRepository;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -30,7 +32,10 @@ public class JournalService {
     private JournalEntryRepository journalEntryRepository;
 
     @Autowired
-    private OpenAIService openAIService;
+    private PythonAIServiceClient pythonAIServiceClient;
+
+    @Autowired(required = false)
+    private OpenAIService openAIService; // Keep for fallback
 
     @Autowired
     private MoodEntryRepository moodEntryRepository;
@@ -110,12 +115,22 @@ public class JournalService {
         try {
             logger.info("Generating AI summary for journal entry: {}", entry.getId());
 
-            // Generate summary
-            var summaryFuture = openAIService.generateJournalSummary(entry.getContent());
-            var insightFuture = openAIService.generateMoodInsight(entry.getContent());
+            // Call Python AI service for summaries
+            Optional<String> summaryOpt = pythonAIServiceClient.generateJournalSummary(entry.getContent());
+            Optional<String> insightOpt = pythonAIServiceClient.generateMoodInsight(entry.getContent());
 
-            String summary = summaryFuture.orElse("Summary unavailable at this time.");
-            String insight = insightFuture.orElse("Mood insight unavailable at this time.");
+            // Fallback to Java OpenAIService if Python service unavailable
+            if (summaryOpt.isEmpty() && openAIService != null) {
+                logger.debug("Python service unavailable, falling back to Java OpenAIService for summary");
+                summaryOpt = openAIService.generateJournalSummary(entry.getContent());
+            }
+            if (insightOpt.isEmpty() && openAIService != null) {
+                logger.debug("Python service unavailable, falling back to Java OpenAIService for insight");
+                insightOpt = openAIService.generateMoodInsight(entry.getContent());
+            }
+
+            String summary = summaryOpt.orElse("Summary unavailable at this time.");
+            String insight = insightOpt.orElse("Mood insight unavailable at this time.");
 
             // Update the entry with AI-generated content
             entry.setAiSummary(summary);

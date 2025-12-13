@@ -191,6 +191,17 @@ mindease:
       prefer-local-when-profile-available: true
       load-balance-percentage: 50
 
+# Python AI Service Configuration
+python:
+  ai:
+    service:
+      url: ${PYTHON_AI_SERVICE_URL:http://localhost:8000}
+      timeout: 30000
+  analytics:
+    service:
+      url: ${PYTHON_ANALYTICS_SERVICE_URL:http://localhost:8002}
+      timeout: 60000
+
 # Stripe Configuration
 stripe:
   checkout:

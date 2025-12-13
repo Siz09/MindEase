@@ -3,6 +3,7 @@ package com.mindease.chat.service;
 import com.mindease.chat.dto.ChatResponse;
 import com.mindease.chat.model.Message;
 import com.mindease.shared.config.ChatConfig;
+import com.mindease.shared.service.PythonAIServiceClient;
 import com.theokanning.openai.completion.chat.ChatCompletionRequest;
 import com.theokanning.openai.completion.chat.ChatMessage;
 import com.theokanning.openai.completion.chat.ChatMessageRole;
@@ -16,11 +17,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class OpenAIChatBotService implements ChatBotService {
 
     @Autowired
     private ChatConfig chatConfig;
+
+    @Autowired
+    private PythonAIServiceClient pythonAIServiceClient;
 
     private static final Logger log = LoggerFactory.getLogger(OpenAIChatBotService.class);
 
@@ -31,125 +36,126 @@ public class OpenAIChatBotService implements ChatBotService {
 
     @Override
     public ChatResponse generateResponse(String message, String userId, List<Message> history,
-            java.util.Map<String, String> userContext) {
+            Map<String, String> userContext) {
         try {
-            OpenAiService service = getOrCreateService();
-            if (service == null) {
-                log.warn("OpenAI API key missing (chat.openai.api-key); returning fallback response");
-                String fallbackContent = "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
-                boolean isCrisis = isCrisisMessage(message);
-                return new ChatResponse(fallbackContent, isCrisis, "fallback:no_api_key");
-            }
+            // Call Python AI service instead of OpenAI directly
+            log.debug("Calling Python AI service for chat generation");
+            return pythonAIServiceClient.generateChatResponse(message, userId, history, userContext);
+        } catch (Exception e) {
+            log.error("Python AI service failed, attempting fallback to direct OpenAI: {}", e.getMessage(), e);
 
-            // Build context string
-            StringBuilder contextBuilder = new StringBuilder();
-            if (userContext != null && !userContext.isEmpty()) {
-                contextBuilder.append("\nUser Context:\n");
-                // Sanitize userContext to prevent PII leakage to third-party OpenAI service
-                // Only include non-sensitive context fields - filter out emails, identifiers,
-                // and personal data
-                java.util.Set<String> sensitiveKeys = java.util.Set.of("email", "userId", "user_id", "id", "phone",
-                        "phoneNumber", "ssn", "address", "personalInfo", "pii");
-                userContext.entrySet().stream()
-                        .filter(entry -> entry.getKey() != null && entry.getValue() != null
-                                && !sensitiveKeys.contains(entry.getKey().toLowerCase()))
-                        .forEach(entry -> contextBuilder.append("- ").append(entry.getKey()).append(": ")
-                                .append(sanitizeContextValue(entry.getValue())).append("\n"));
-            }
+            // Fallback to direct OpenAI if Python service unavailable
+            try {
+                OpenAiService service = getOrCreateService();
+                if (service == null) {
+                    log.warn("OpenAI API key missing (chat.openai.api-key); returning fallback response");
+                    String fallbackContent = "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
+                    boolean isCrisis = isCrisisMessage(message);
+                    return new ChatResponse(fallbackContent, isCrisis, "fallback:no_api_key");
+                }
 
-            // Persona + safety-first system prompt derived from your spec
-            String persona = String.join("\n",
-                    "You are Mindease — a compassionate, emotionally intelligent mental health companion.",
-                    "You are not a therapist or medical professional. Do not diagnose or give medical advice.",
-                    "Goals: help users explore emotions, validate feelings, gently guide reflection and resilience, and ensure safety.",
-                    "Tone: Calm • Warm • Empathetic • Respectful • Grounded.",
-                    "Behavioral rules:",
-                    "- Empathy first: respond to the emotion, not just the content.",
-                    "- Ask before going deeper; never pressure.",
-                    "- Short to medium, conversational responses (avoid long monologues).",
-                    "- Use grounding or reflection when overwhelmed; be hope-oriented.",
-                    "- If crisis indicators appear, acknowledge pain and encourage immediate human help.",
-                    "Response format: 1) Acknowledge emotion 2) One reflective/grounding prompt 3) Encouraging close.")
-                    + contextBuilder.toString();
+                // Build context string
+                StringBuilder contextBuilder = new StringBuilder();
+                if (userContext != null && !userContext.isEmpty()) {
+                    contextBuilder.append("\nUser Context:\n");
+                    // Sanitize userContext to prevent PII leakage to third-party OpenAI service
+                    // Only include non-sensitive context fields - filter out emails, identifiers,
+                    // and personal data
+                    java.util.Set<String> sensitiveKeys = java.util.Set.of("email", "userId", "user_id", "id", "phone",
+                            "phoneNumber", "ssn", "address", "personalInfo", "pii");
+                    userContext.entrySet().stream()
+                            .filter(entry -> entry.getKey() != null && entry.getValue() != null
+                                    && !sensitiveKeys.contains(entry.getKey().toLowerCase()))
+                            .forEach(entry -> contextBuilder.append("- ").append(entry.getKey()).append(": ")
+                                    .append(sanitizeContextValue(entry.getValue())).append("\n"));
+                }
 
-            String behaviorTag = mapBehaviorTag(message);
-            boolean crisis = isCrisisMessage(message);
+                // Persona + safety-first system prompt derived from your spec
+                String persona = String.join("\n",
+                        "You are Mindease — a compassionate, emotionally intelligent mental health companion.",
+                        "You are not a therapist or medical professional. Do not diagnose or give medical advice.",
+                        "Goals: help users explore emotions, validate feelings, gently guide reflection and resilience, and ensure safety.",
+                        "Tone: Calm • Warm • Empathetic • Respectful • Grounded.",
+                        "Behavioral rules:",
+                        "- Empathy first: respond to the emotion, not just the content.",
+                        "- Ask before going deeper; never pressure.",
+                        "- Short to medium, conversational responses (avoid long monologues).",
+                        "- Use grounding or reflection when overwhelmed; be hope-oriented.",
+                        "- If crisis indicators appear, acknowledge pain and encourage immediate human help.",
+                        "Response format: 1) Acknowledge emotion 2) One reflective/grounding prompt 3) Encouraging close.")
+                        + contextBuilder.toString();
 
-            ChatMessage systemPersona = new ChatMessage(ChatMessageRole.SYSTEM.value(), persona);
-            ChatMessage systemBehavior = new ChatMessage(
-                    ChatMessageRole.SYSTEM.value(),
-                    "Behavior tags: " + behaviorTag + (crisis ? " [safety-check]" : ""));
+                String behaviorTag = mapBehaviorTag(message);
+                boolean crisis = isCrisisMessage(message);
 
-            // Build conversation: system → prior history → latest user
-            List<ChatMessage> msgs = new ArrayList<>();
-            msgs.add(systemPersona);
-            msgs.add(systemBehavior);
+                ChatMessage systemPersona = new ChatMessage(ChatMessageRole.SYSTEM.value(), persona);
+                ChatMessage systemBehavior = new ChatMessage(
+                        ChatMessageRole.SYSTEM.value(),
+                        "Behavior tags: " + behaviorTag + (crisis ? " [safety-check]" : ""));
 
-            // Bound history size to reduce token usage
-            int maxHistorySize = 20;
-            List<Message> boundedHistory = history == null ? java.util.Collections.emptyList()
-                    : (history.size() > maxHistorySize
-                            ? history.subList(history.size() - maxHistorySize, history.size())
-                            : history);
+                // Build conversation: system → prior history → latest user
+                List<ChatMessage> msgs = new ArrayList<>();
+                msgs.add(systemPersona);
+                msgs.add(systemBehavior);
 
-            boolean hasCurrentAlready = false;
-            if (boundedHistory != null) {
-                // Check if the last user message in history equals the current message
-                for (int i = boundedHistory.size() - 1; i >= 0; i--) {
-                    Message m = boundedHistory.get(i);
-                    if (Boolean.TRUE.equals(m.getIsUserMessage())) {
-                        if (m.getContent() != null && message != null && m.getContent().equals(message)) {
-                            hasCurrentAlready = true;
+                // Bound history size to reduce token usage
+                int maxHistorySize = 20;
+                List<Message> boundedHistory = history == null ? java.util.Collections.emptyList()
+                        : (history.size() > maxHistorySize
+                                ? history.subList(history.size() - maxHistorySize, history.size())
+                                : history);
+
+                boolean hasCurrentAlready = false;
+                if (boundedHistory != null) {
+                    // Check if the last user message in history equals the current message
+                    for (int i = boundedHistory.size() - 1; i >= 0; i--) {
+                        Message m = boundedHistory.get(i);
+                        if (Boolean.TRUE.equals(m.getIsUserMessage())) {
+                            if (m.getContent() != null && message != null && m.getContent().equals(message)) {
+                                hasCurrentAlready = true;
+                            }
+                            break;
                         }
-                        break;
+                    }
+                    for (Message m : boundedHistory) {
+                        String role = Boolean.TRUE.equals(m.getIsUserMessage()) ? ChatMessageRole.USER.value()
+                                : ChatMessageRole.ASSISTANT.value();
+                        if (m.getContent() == null || m.getContent().isBlank())
+                            continue;
+                        msgs.add(new ChatMessage(role, m.getContent()));
                     }
                 }
-                for (Message m : boundedHistory) {
-                    String role = Boolean.TRUE.equals(m.getIsUserMessage()) ? ChatMessageRole.USER.value()
-                            : ChatMessageRole.ASSISTANT.value();
-                    if (m.getContent() == null || m.getContent().isBlank())
-                        continue;
-                    msgs.add(new ChatMessage(role, m.getContent()));
+
+                // Append the current user turn explicitly at the end only if not already
+                // present
+                if (!hasCurrentAlready) {
+                    msgs.add(new ChatMessage(ChatMessageRole.USER.value(), message));
                 }
+
+                ChatCompletionRequest completionRequest = ChatCompletionRequest.builder()
+                        .model(chatConfig.getOpenai().getModel())
+                        .messages(msgs)
+                        .temperature(chatConfig.getOpenai().getTemperature())
+                        .topP(0.9)
+                        .maxTokens(chatConfig.getOpenai().getMaxTokens())
+                        .build();
+
+                var completion = service.createChatCompletion(completionRequest);
+                if (completion.getChoices() == null || completion.getChoices().isEmpty()) {
+                    throw new IllegalStateException("OpenAI returned no choices");
+                }
+                ChatMessage responseMessage = completion.getChoices().get(0).getMessage();
+
+                String content = responseMessage.getContent() != null ? responseMessage.getContent().trim() : "";
+                boolean isCrisis = crisis;
+
+                return new ChatResponse(content, isCrisis, "openai:mindease");
+            } catch (Exception fallbackException) {
+                log.error("Fallback OpenAI call also failed: {}", fallbackException.getMessage(), fallbackException);
+                String fallbackContent = "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
+                boolean isCrisis = isCrisisMessage(message);
+                return new ChatResponse(fallbackContent, isCrisis, "fallback:error");
             }
-
-            // Append the current user turn explicitly at the end only if not already
-            // present
-            if (!hasCurrentAlready) {
-                msgs.add(new ChatMessage(ChatMessageRole.USER.value(), message));
-            }
-
-            ChatCompletionRequest completionRequest = ChatCompletionRequest.builder()
-                    .model(chatConfig.getOpenai().getModel())
-                    .messages(msgs)
-                    .temperature(chatConfig.getOpenai().getTemperature())
-                    .topP(0.9)
-                    .maxTokens(chatConfig.getOpenai().getMaxTokens())
-                    .build();
-
-            var completion = service.createChatCompletion(completionRequest);
-            if (completion.getChoices() == null || completion.getChoices().isEmpty()) {
-                throw new IllegalStateException("OpenAI returned no choices");
-            }
-            ChatMessage responseMessage = completion.getChoices().get(0).getMessage();
-
-            String content = responseMessage.getContent() != null ? responseMessage.getContent().trim() : "";
-            boolean isCrisis = crisis;
-
-            return new ChatResponse(content, isCrisis, "openai:mindease");
-
-        } catch (Exception e) {
-            log.error("OpenAI chat completion failed: {}", e.getMessage(), e);
-            String msg = e.getMessage();
-            if (msg != null && msg.toLowerCase(Locale.ROOT).contains("you exceeded your current quota")) {
-                log.error("=== OPENAI QUOTA EXCEEDED ===");
-                log.error("Your OpenAI API key has exceeded its current quota.");
-                log.error("Please check your OpenAI plan/billing for the key configured in OPENAI_API_KEY.");
-                log.error("While quota is exceeded, MindEase will fall back to the simple local bot.");
-            }
-            String fallbackContent = "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
-            boolean isCrisis = isCrisisMessage(message);
-            return new ChatResponse(fallbackContent, isCrisis, "fallback:error");
         }
     }
 

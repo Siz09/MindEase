@@ -7,6 +7,7 @@ import com.mindease.admin.dto.RecentAlertDto;
 import com.mindease.crisis.model.CrisisFlag;
 import com.mindease.admin.repository.AnalyticsRepository;
 import com.mindease.crisis.repository.CrisisFlagRepository;
+import com.mindease.shared.service.PythonAnalyticsServiceClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -31,13 +32,16 @@ import java.util.stream.Collectors;
 @Tag(name = "Admin Dashboard")
 public class AdminDashboardController {
 
-    private final AnalyticsRepository analyticsRepository;
+    private final AnalyticsRepository analyticsRepository; // Keep for fallback
     private final CrisisFlagRepository crisisFlagRepository;
+    private final PythonAnalyticsServiceClient pythonAnalyticsServiceClient;
 
     public AdminDashboardController(AnalyticsRepository analyticsRepository,
-                                    CrisisFlagRepository crisisFlagRepository) {
+            CrisisFlagRepository crisisFlagRepository,
+            PythonAnalyticsServiceClient pythonAnalyticsServiceClient) {
         this.analyticsRepository = analyticsRepository;
         this.crisisFlagRepository = crisisFlagRepository;
+        this.pythonAnalyticsServiceClient = pythonAnalyticsServiceClient;
     }
 
     private static OffsetDateTime nowUtc() {
@@ -60,8 +64,9 @@ public class AdminDashboardController {
         OffsetDateTime from28 = to.minusDays(28);
 
         // Active users and AI usage over the last 28 days for simple trend calc
-        List<ActiveUsersPoint> activeLast28 = analyticsRepository.dailyActiveUsers(from28, to);
-        var aiLast28 = analyticsRepository.dailyAiUsage(from28, to);
+        // Use Python analytics service
+        List<ActiveUsersPoint> activeLast28 = pythonAnalyticsServiceClient.dailyActiveUsers(from28, to);
+        var aiLast28 = pythonAnalyticsServiceClient.dailyAiUsage(from28, to);
 
         // Helper to get last and previous values
         long activeMostRecent = activeLast28.isEmpty() ? 0L : activeLast28.get(activeLast28.size() - 1).activeUsers();
@@ -76,14 +81,12 @@ public class AdminDashboardController {
         // Daily signups: number of users created today vs yesterday
         LocalDate today = to.toLocalDate();
         LocalDate yesterday = today.minusDays(1);
-        long signupsToday = analyticsRepository.countUsersCreatedBetween(
+        long signupsToday = pythonAnalyticsServiceClient.countUsersCreatedBetween(
                 startOfDay(today),
-                startOfDay(today.plusDays(1))
-        );
-        long signupsYesterday = analyticsRepository.countUsersCreatedBetween(
+                startOfDay(today.plusDays(1)));
+        long signupsYesterday = pythonAnalyticsServiceClient.countUsersCreatedBetween(
                 startOfDay(yesterday),
-                startOfDay(today)
-        );
+                startOfDay(today));
         Double signupsTrend = percentChange(signupsYesterday, signupsToday);
 
         // Crisis flags last 24h vs previous 24h
@@ -101,8 +104,7 @@ public class AdminDashboardController {
                 activeTrend,
                 signupsTrend,
                 crisisTrend,
-                aiTrend
-        );
+                aiTrend);
     }
 
     private static Double percentChange(long previous, long current) {
@@ -117,26 +119,22 @@ public class AdminDashboardController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "User activity trend", description = "Daily active users for the last 30 days")
     public List<ActiveUsersPoint> activityTrend(
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
-    ) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
         OffsetDateTime t = to != null ? to : nowUtc();
         OffsetDateTime f = from != null ? from : t.minusDays(30);
         long daysBetween = ChronoUnit.DAYS.between(f, t);
         if (daysBetween > 365 || daysBetween < 0) {
             throw new IllegalArgumentException("Date range must be between 0 and 365 days");
         }
-        return analyticsRepository.dailyActiveUsers(f, t);
+        return pythonAnalyticsServiceClient.dailyActiveUsers(f, t);
     }
 
     @GetMapping("/dashboard/recent-alerts")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Recent alerts", description = "Recent crisis alerts used for dashboard cards")
     public List<RecentAlertDto> recentAlerts(
-            @RequestParam(defaultValue = "10") int limit
-    ) {
+            @RequestParam(defaultValue = "10") int limit) {
         int size = Math.max(1, Math.min(limit, 50));
         // Use crisis flags as the primary source of critical alerts
         return crisisFlagRepository.findTopNByOrderByCreatedAtDesc(size).stream()
@@ -174,8 +172,7 @@ public class AdminDashboardController {
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Trending topics", description = "Top crisis keywords used as trending wellness topics")
     public List<KeywordStat> trendingTopics(
-            @RequestParam(defaultValue = "10") int limit
-    ) {
+            @RequestParam(defaultValue = "10") int limit) {
         OffsetDateTime to = nowUtc();
         OffsetDateTime from = to.minusDays(30);
         int max = Math.max(1, Math.min(limit, 20));
@@ -191,8 +188,7 @@ public class AdminDashboardController {
                 title,
                 message,
                 flag.getCreatedAt(),
-                flag.getUserId()
-        );
+                flag.getUserId());
     }
 
     // === Analytics endpoints (moved from AdminAnalyticsController) ===
@@ -222,12 +218,11 @@ public class AdminDashboardController {
     @Operation(summary = "Daily active users", description = "Distinct users per day over the date range")
     public List<ActiveUsersPoint> activeUsers(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
-    ) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
         var f = from != null ? from : defaultFrom();
         var t = to != null ? to : defaultTo();
         validateDateRange(f, t);
-        return analyticsRepository.dailyActiveUsers(f, t);
+        return pythonAnalyticsServiceClient.dailyActiveUsers(f, t);
     }
 
     @GetMapping("/ai-usage")
@@ -235,12 +230,11 @@ public class AdminDashboardController {
     @Operation(summary = "AI usage", description = "Number of AI/chat calls per day over the date range")
     public List<com.mindease.admin.dto.AiUsagePoint> aiUsage(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
-    ) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
         var f = from != null ? from : defaultFrom();
         var t = to != null ? to : defaultTo();
         validateDateRange(f, t);
-        return analyticsRepository.dailyAiUsage(f, t);
+        return pythonAnalyticsServiceClient.dailyAiUsage(f, t);
     }
 
     @GetMapping("/mood-correlation")
@@ -248,20 +242,18 @@ public class AdminDashboardController {
     @Operation(summary = "Mood correlation", description = "Avg mood per day and chat counts for correlation analysis")
     public List<com.mindease.mood.dto.MoodCorrelationPoint> moodCorrelation(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
-    ) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
         var f = from != null ? from : defaultFrom();
         var t = to != null ? to : defaultTo();
         validateDateRange(f, t);
-        return analyticsRepository.moodCorrelation(f, t);
+        return pythonAnalyticsServiceClient.moodCorrelation(f, t);
     }
 
     @GetMapping("/analytics/overview")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Analytics overview", description = "High-level analytics metrics used by the admin UI")
     public com.mindease.admin.dto.AnalyticsOverviewResponse analyticsOverview(
-            @RequestParam(defaultValue = "30d") String range
-    ) {
+            @RequestParam(defaultValue = "30d") String range) {
         OffsetDateTime to = defaultTo();
         OffsetDateTime from;
         switch (range) {
@@ -276,7 +268,7 @@ public class AdminDashboardController {
         var dauSeries = analyticsRepository.dailyActiveUsers(to.minusDays(1), to);
         long dau = dauSeries.isEmpty() ? 0L : dauSeries.get(dauSeries.size() - 1).activeUsers();
 
-        long mau = analyticsRepository.distinctActiveUsers(from, to);
+        long mau = pythonAnalyticsServiceClient.distinctActiveUsers(from, to);
 
         Double retention = null;
         Double churn = null;
@@ -289,12 +281,11 @@ public class AdminDashboardController {
     @Operation(summary = "User growth", description = "Alias for daily active users over the requested range")
     public List<ActiveUsersPoint> userGrowth(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to
-    ) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
         var f = from != null ? from : defaultFrom();
         var t = to != null ? to : defaultTo();
         validateDateRange(f, t);
-        return analyticsRepository.dailyActiveUsers(f, t);
+        return pythonAnalyticsServiceClient.dailyActiveUsers(f, t);
     }
 
     @GetMapping("/analytics/feature-usage")
@@ -303,8 +294,7 @@ public class AdminDashboardController {
     public Map<String, Object> featureUsage() {
         return Map.of(
                 "status", "not_implemented",
-                "message", "Feature usage analytics not yet implemented."
-        );
+                "message", "Feature usage analytics not yet implemented.");
     }
 
     @GetMapping("/analytics/crisis-trends")

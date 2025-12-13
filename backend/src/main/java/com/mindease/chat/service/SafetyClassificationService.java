@@ -4,6 +4,7 @@ import com.mindease.chat.model.Message;
 import com.mindease.crisis.model.CrisisResource;
 import com.mindease.crisis.model.RiskLevel;
 import com.mindease.crisis.repository.CrisisResourceRepository;
+import com.mindease.shared.service.PythonAIServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,7 @@ import java.util.regex.Pattern;
 
 /**
  * Service for classifying message risk levels and providing crisis resources.
- * Uses keyword-based detection with configurable patterns.
+ * Uses Python AI service for classification, with Java fallback.
  */
 @Service
 public class SafetyClassificationService {
@@ -27,6 +28,9 @@ public class SafetyClassificationService {
 
     @Autowired
     private CrisisResourceRepository crisisResourceRepository;
+
+    @Autowired(required = false)
+    private PythonAIServiceClient pythonAIServiceClient;
 
     // Risk classification keywords by level
     private static final Map<RiskLevel, List<String>> RISK_KEYWORDS = new HashMap<>();
@@ -59,6 +63,7 @@ public class SafetyClassificationService {
 
     /**
      * Classify a message's risk level based on content and context.
+     * Uses Python AI service if available, falls back to Java implementation.
      *
      * @param content       The message content to classify
      * @param recentHistory Recent messages for context (optional)
@@ -69,6 +74,25 @@ public class SafetyClassificationService {
             return RiskLevel.NONE;
         }
 
+        // Try Python service first
+        if (pythonAIServiceClient != null) {
+            try {
+                log.debug("Using Python AI service for safety classification");
+                return pythonAIServiceClient.classifySafety(content, recentHistory);
+            } catch (Exception e) {
+                log.warn("Python AI service unavailable for safety classification, using Java fallback: {}",
+                        e.getMessage());
+            }
+        }
+
+        // Fallback to Java implementation
+        return classifyMessageJava(content, recentHistory);
+    }
+
+    /**
+     * Java-based classification implementation (fallback).
+     */
+    private RiskLevel classifyMessageJava(String content, List<Message> recentHistory) {
         String normalized = content.toLowerCase(Locale.ROOT);
 
         // Check from highest risk to lowest
