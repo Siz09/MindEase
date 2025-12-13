@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Admin Dashboard")
 public class AdminDashboardController {
 
-    private final AnalyticsRepository analyticsRepository; // Keep for fallback
+    private final AnalyticsRepository analyticsRepository;
     private final CrisisFlagRepository crisisFlagRepository;
     private final PythonAnalyticsServiceClient pythonAnalyticsServiceClient;
 
@@ -265,7 +265,7 @@ public class AdminDashboardController {
         }
         validateDateRange(from, to);
 
-        var dauSeries = analyticsRepository.dailyActiveUsers(to.minusDays(1), to);
+        var dauSeries = pythonAnalyticsServiceClient.dailyActiveUsers(to.minusDays(1), to);
         long dau = dauSeries.isEmpty() ? 0L : dauSeries.get(dauSeries.size() - 1).activeUsers();
 
         long mau = pythonAnalyticsServiceClient.distinctActiveUsers(from, to);

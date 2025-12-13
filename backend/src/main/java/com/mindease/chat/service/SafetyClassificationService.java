@@ -79,9 +79,8 @@ public class SafetyClassificationService {
             try {
                 log.debug("Using Python AI service for safety classification");
                 return pythonAIServiceClient.classifySafety(content, recentHistory);
-            } catch (Exception e) {
-                log.warn("Python AI service unavailable for safety classification, using Java fallback: {}",
-                        e.getMessage());
+            } catch (RuntimeException e) {
+                log.warn("Python AI service failed for safety classification, using Java fallback", e);
             }
         }
 

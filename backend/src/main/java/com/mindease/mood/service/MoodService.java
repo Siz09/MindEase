@@ -41,7 +41,8 @@ public class MoodService {
     @Autowired(required = false)
     private PythonAnalyticsServiceClient pythonAnalyticsServiceClient;
 
-    // ---- MoodEntry operations (from OptimizedMoodService + existing controller) ----
+    // ---- MoodEntry operations (from OptimizedMoodService + existing controller)
+    // ----
 
     public MoodEntry saveMoodEntry(User user, Integer moodValue, String notes) {
         MoodEntry entry = new MoodEntry(user, moodValue, notes);
@@ -101,7 +102,7 @@ public class MoodService {
     // ---- MoodCheckIn operations (from MoodTrackingService) ----
 
     public MoodCheckIn createCheckIn(User user, Integer score, List<String> tags,
-                                     String checkinType, ChatSession session) {
+            String checkinType, ChatSession session) {
         if (score == null || score < 1 || score > 5) {
             throw new IllegalArgumentException("Mood score must be between 1 and 5");
         }
@@ -277,9 +278,14 @@ public class MoodService {
         // Use Python analytics service if available
         if (pythonAnalyticsServiceClient != null) {
             try {
-                return pythonAnalyticsServiceClient.getMoodTrend(user.getId(), days);
+                Map<String, Double> pythonResult = pythonAnalyticsServiceClient.getMoodTrend(user.getId(), days);
+                if (pythonResult != null && !pythonResult.isEmpty()) {
+                    return pythonResult;
+                }
+                log.warn("Python analytics returned null/empty result for mood trend, using Java fallback");
             } catch (Exception e) {
-                log.warn("Python analytics service unavailable for mood trend, using Java fallback: {}", e.getMessage());
+                log.warn("Python analytics service unavailable for mood trend, using Java fallback: {}",
+                        e.getMessage());
             }
         }
 
@@ -348,20 +354,31 @@ public class MoodService {
 
     // ---- Mood prediction (delegating existing logic) ----
 
+    private static final int MOOD_PREDICTION_DAYS = 14;
+
     public Map<String, Object> predictMood(User user) {
         // Use Python analytics service if available
         if (pythonAnalyticsServiceClient != null) {
             try {
-                Map<String, Object> pythonResult = pythonAnalyticsServiceClient.predictMood(user.getId(), 14);
-                // Map Python response keys to match Java format if needed
-                return pythonResult;
+                Map<String, Object> pythonResult = pythonAnalyticsServiceClient.predictMood(user.getId(),
+                        MOOD_PREDICTION_DAYS);
+                // Validate that Python response has required keys
+                if (pythonResult != null &&
+                        pythonResult.containsKey("prediction") &&
+                        pythonResult.containsKey("trend") &&
+                        pythonResult.containsKey("insight")) {
+                    return pythonResult;
+                }
+                log.warn(
+                        "Python analytics returned invalid response structure for mood prediction, using Java fallback");
             } catch (Exception e) {
-                log.warn("Python analytics service unavailable for mood prediction, using Java fallback: {}", e.getMessage());
+                log.warn("Python analytics service unavailable for mood prediction, using Java fallback: {}",
+                        e.getMessage());
             }
         }
 
         // Fallback to Java implementation
-        LocalDateTime fourteenDaysAgo = LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(14);
+        LocalDateTime fourteenDaysAgo = LocalDateTime.now(java.time.ZoneOffset.UTC).minusDays(MOOD_PREDICTION_DAYS);
         List<MoodEntry> entries = moodEntryRepository.findByUserAndCreatedAtAfterOrderByCreatedAtAsc(user,
                 fourteenDaysAgo);
 

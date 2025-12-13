@@ -40,7 +40,8 @@ public class OpenAIChatBotService implements ChatBotService {
         try {
             // Call Python AI service instead of OpenAI directly
             log.debug("Calling Python AI service for chat generation");
-            return pythonAIServiceClient.generateChatResponse(message, userId, history, userContext);
+            Map<String, String> sanitizedContext = sanitizeUserContext(userContext);
+            return pythonAIServiceClient.generateChatResponse(message, userId, history, sanitizedContext);
         } catch (Exception e) {
             log.error("Python AI service failed, attempting fallback to direct OpenAI: {}", e.getMessage(), e);
 
@@ -59,13 +60,8 @@ public class OpenAIChatBotService implements ChatBotService {
                 if (userContext != null && !userContext.isEmpty()) {
                     contextBuilder.append("\nUser Context:\n");
                     // Sanitize userContext to prevent PII leakage to third-party OpenAI service
-                    // Only include non-sensitive context fields - filter out emails, identifiers,
-                    // and personal data
-                    java.util.Set<String> sensitiveKeys = java.util.Set.of("email", "userId", "user_id", "id", "phone",
-                            "phoneNumber", "ssn", "address", "personalInfo", "pii");
-                    userContext.entrySet().stream()
-                            .filter(entry -> entry.getKey() != null && entry.getValue() != null
-                                    && !sensitiveKeys.contains(entry.getKey().toLowerCase()))
+                    Map<String, String> sanitizedContext = sanitizeUserContext(userContext);
+                    sanitizedContext.entrySet().stream()
                             .forEach(entry -> contextBuilder.append("- ").append(entry.getKey()).append(": ")
                                     .append(sanitizeContextValue(entry.getValue())).append("\n"));
                 }
@@ -202,6 +198,32 @@ public class OpenAIChatBotService implements ChatBotService {
         if (m.contains("good") || m.contains("better") || m.contains("grateful") || m.contains("happy"))
             return "[encouraging][reflective]";
         return "[empathetic]";
+    }
+
+    /**
+     * Sanitizes user context to prevent PII leakage to third-party services.
+     * Only includes non-sensitive context fields - filters out emails, identifiers,
+     * and personal data.
+     *
+     * @param userContext the user context map to sanitize
+     * @return sanitized context map with sensitive fields removed
+     */
+    private Map<String, String> sanitizeUserContext(Map<String, String> userContext) {
+        if (userContext == null || userContext.isEmpty()) {
+            return Map.of();
+        }
+        // Only include non-sensitive context fields - filter out emails, identifiers,
+        // and personal data
+        java.util.Set<String> sensitiveKeys = java.util.Set.of("email", "userId", "user_id", "id", "phone",
+                "phoneNumber", "ssn", "address", "personalInfo", "pii");
+        return userContext.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && entry.getValue() != null
+                        && !sensitiveKeys.contains(entry.getKey().toLowerCase()))
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        java.util.LinkedHashMap::new));
     }
 
     /**
