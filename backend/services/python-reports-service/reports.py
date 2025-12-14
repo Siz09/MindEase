@@ -13,7 +13,8 @@ import uuid
 logger = logging.getLogger(__name__)
 
 # Create Jinja2 environment with auto-escaping enabled
-jinja_env = Environment(autoescape=select_autoescape(['html', 'xml']))
+# Note: autoescape=True ensures escaping works even with from_string() (no filename)
+jinja_env = Environment(autoescape=True)
 
 
 def generate_admin_dashboard_report(data: Dict) -> Dict:
@@ -78,7 +79,7 @@ def generate_admin_dashboard_report(data: Dict) -> Dict:
             "report_type": "admin_dashboard",
             "format": "html",
             "content": "",
-            "generated_at": datetime.now(),
+            "generated_at": datetime.now().isoformat(),
             "status": "failed",
             "error": str(e)
         }
@@ -88,7 +89,7 @@ def generate_admin_dashboard_report(data: Dict) -> Dict:
         "report_type": "admin_dashboard",
         "format": "html",
         "content": html_content,
-        "generated_at": datetime.now(),
+        "generated_at": datetime.now().isoformat(),
         "status": "completed"
     }
 
@@ -143,7 +144,7 @@ def generate_user_insights_report(user_id: str, data: Dict) -> Dict:
             "report_type": "user_insights",
             "format": "html",
             "content": "",
-            "generated_at": datetime.now(),
+            "generated_at": datetime.now().isoformat(),
             "status": "failed",
             "error": str(e)
         }
@@ -153,7 +154,7 @@ def generate_user_insights_report(user_id: str, data: Dict) -> Dict:
         "report_type": "user_insights",
         "format": "html",
         "content": html_content,
-        "generated_at": datetime.now(),
+        "generated_at": datetime.now().isoformat(),
         "status": "completed"
     }
 
@@ -211,7 +212,7 @@ def generate_analytics_summary_report(data: Dict) -> Dict:
             "report_type": "analytics_summary",
             "format": "html",
             "content": "",
-            "generated_at": datetime.now(),
+            "generated_at": datetime.now().isoformat(),
             "status": "failed",
             "error": str(e)
         }
@@ -221,6 +222,6 @@ def generate_analytics_summary_report(data: Dict) -> Dict:
         "report_type": "analytics_summary",
         "format": "html",
         "content": html_content,
-        "generated_at": datetime.now(),
+        "generated_at": datetime.now().isoformat(),
         "status": "completed"
     }

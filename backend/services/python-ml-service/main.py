@@ -38,12 +38,15 @@ async def health_check():
 @app.post("/ml/train/risk-model", response_model=TrainingResponse)
 async def train_risk_model_endpoint(
     request: TrainingRequest,
-    # Add authentication dependency:
+    # TODO: Implement authentication - this endpoint is currently unprotected
+    # Uncomment and implement when auth module is available:
+    # from auth import verify_token
+    # from fastapi import Depends
     # user=Depends(verify_token)
 ):
     """
     Train risk prediction model.
-    Requires authentication.
+    WARNING: Currently unprotected - requires authentication implementation.
     """
     try:
         result = train_risk_model(request.training_data)
@@ -56,12 +59,15 @@ async def train_risk_model_endpoint(
 @app.post("/ml/train/mood-predictor", response_model=TrainingResponse)
 async def train_mood_predictor_endpoint(
     request: TrainingRequest,
-    # Add authentication dependency:
+    # TODO: Implement authentication - this endpoint is currently unprotected
+    # Uncomment and implement when auth module is available:
+    # from auth import verify_token
+    # from fastapi import Depends
     # user=Depends(verify_token)
 ):
     """
     Train mood prediction model.
-    Requires authentication.
+    WARNING: Currently unprotected - requires authentication implementation.
     """
     try:
         result = train_mood_predictor(request.training_data)

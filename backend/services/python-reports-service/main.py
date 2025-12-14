@@ -2,7 +2,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from threading import Lock
+import asyncio
 from collections import OrderedDict
 from enum import Enum
 import os
@@ -32,23 +32,23 @@ app.add_middleware(
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Thread-safe report storage with bounded size
-reports_lock = Lock()
+# Async-safe report storage with bounded size
+reports_lock = asyncio.Lock()
 reports_store = OrderedDict()
 MAX_REPORTS = 1000
 
 
-def store_report(report_id: str, report: dict):
-    """Thread-safe report storage with eviction policy"""
-    with reports_lock:
+async def store_report(report_id: str, report: dict):
+    """Async-safe report storage with eviction policy"""
+    async with reports_lock:
+        if len(reports_store) >= MAX_REPORTS:
+            reports_store.popitem(last=False)  # Remove oldest before adding
         reports_store[report_id] = report
-        if len(reports_store) > MAX_REPORTS:
-            reports_store.popitem(last=False)  # Remove oldest
 
 
-def get_report(report_id: str):
-    """Thread-safe report retrieval"""
-    with reports_lock:
+async def get_report(report_id: str):
+    """Async-safe report retrieval"""
+    async with reports_lock:
         return reports_store.get(report_id)
 
 
@@ -93,7 +93,7 @@ async def generate_admin_dashboard(
         }
 
         result = generate_admin_dashboard_report(data)
-        store_report(result["report_id"], result)
+        await store_report(result["report_id"], result)
 
         return ReportResponse(**result)
 
@@ -132,7 +132,7 @@ async def generate_user_insights(
         }
 
         result = generate_user_insights_report(request.user_id, data)
-        store_report(result["report_id"], result)
+        await store_report(result["report_id"], result)
 
         return ReportResponse(**result)
 
@@ -169,7 +169,7 @@ async def generate_analytics_summary(
         }
 
         result = generate_analytics_summary_report(data)
-        store_report(result["report_id"], result)
+        await store_report(result["report_id"], result)
 
         return ReportResponse(**result)
 
@@ -190,7 +190,7 @@ async def download_report(
     Download generated report.
     Users can only download their own reports.
     """
-    report = get_report(report_id)
+    report = await get_report(report_id)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
 
