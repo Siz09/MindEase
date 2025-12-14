@@ -10,7 +10,18 @@ app = Celery("background_jobs")
 app.config_from_object("celeryconfig")
 
 # Import tasks
-# Note: Using absolute imports since this file is run directly as a script
+# Note: Using absolute imports since this file is run directly as a script.
+# IMPORTANT: Verify that absolute imports work in your execution environment.
+# Absolute imports require these modules to be on sys.path, which typically
+# isn't the case when running a script directly from its own directory.
+#
+# Common solutions:
+# 1. Run as a module (recommended): From the parent directory, use:
+#    python -m python-background-jobs.scheduler
+# 2. Add to sys.path: Add the directory to sys.path before imports
+# 3. Use PYTHONPATH: Set PYTHONPATH environment variable when running
+#
+# If imports fail with ModuleNotFoundError, use one of the above solutions.
 from retention import cleanup_old_data
 from inactivity import detect_inactive_users
 from auto_mood import create_auto_entries

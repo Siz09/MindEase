@@ -43,13 +43,13 @@ def cleanup_old_data():
         logger.info(f"Found {len(user_ids)} anonymous users to clean up")
 
         deleted_count = 0
-        for user_id in user_ids:
+        for idx, user_id in enumerate(user_ids, start=1):
             try:
                 with engine.begin() as trans_conn:  # Use transaction per user
-                    cleanup_single_user(user_id, trans_conn)
+                    cleanup_single_user(user_id, trans_conn, idx)
                     deleted_count += 1
             except Exception as e:
-                logger.error(f"Failed to clean up anonymous user {user_id} during retention cleanup: {str(e)}", exc_info=True)
+                logger.error(f"Failed to clean up anonymous user #{idx} during retention cleanup: {str(e)}", exc_info=True)
 
         execution_time = (datetime.now() - start_time).total_seconds()
         logger.info(f"Retention policy cleanup completed. Deleted {deleted_count} users in {execution_time:.2f}s")
@@ -70,10 +70,15 @@ def cleanup_old_data():
         }
 
 
-def cleanup_single_user(user_id, conn):
+def cleanup_single_user(user_id, conn, user_index=None):
     """
     Clean up all data for a single anonymous user.
     Matches RetentionPolicyService.cleanupSingleUser()
+    
+    Args:
+        user_id: The user ID to clean up
+        conn: Database connection
+        user_index: Optional index for logging (for privacy compliance)
     """
     # Delete in order: journal entries, mood entries, user context, messages, chat sessions, user
     # Use transactions to ensure atomicity
@@ -104,4 +109,7 @@ def cleanup_single_user(user_id, conn):
     conn.execute(delete_user_sql, {"user_id": user_id})
 
     # Transaction commits automatically when exiting 'with' block
-    logger.debug(f"Cleaned up data for anonymous user {user_id}")
+    if user_index:
+        logger.debug(f"Cleaned up data for anonymous user #{user_index}")
+    else:
+        logger.debug("Cleaned up data for anonymous user")
