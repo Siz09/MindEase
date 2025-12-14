@@ -6,14 +6,17 @@ Generates HTML and PDF reports for admin dashboard, user insights, and analytics
 import logging
 from datetime import datetime, date
 from typing import Dict, Optional
-from jinja2 import Template
+from jinja2 import Environment, select_autoescape
 import os
 import uuid
 
 logger = logging.getLogger(__name__)
 
+# Create Jinja2 environment with auto-escaping enabled
+jinja_env = Environment(autoescape=select_autoescape(['html', 'xml']))
 
-def generate_admin_dashboard_report(data: Dict, format: str = "html") -> Dict:
+
+def generate_admin_dashboard_report(data: Dict) -> Dict:
     """
     Generate admin dashboard report.
     """
@@ -59,26 +62,38 @@ def generate_admin_dashboard_report(data: Dict, format: str = "html") -> Dict:
     </html>
     """
 
-    template = Template(template_content)
-    html_content = template.render(
-        generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        active_users=data.get("active_users", 0),
-        signups=data.get("signups", 0),
-        crisis_flags=data.get("crisis_flags", 0),
-        ai_usage=data.get("ai_usage", 0)
-    )
+    try:
+        template = jinja_env.from_string(template_content)
+        html_content = template.render(
+            generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            active_users=data.get("active_users", 0),
+            signups=data.get("signups", 0),
+            crisis_flags=data.get("crisis_flags", 0),
+            ai_usage=data.get("ai_usage", 0)
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate admin dashboard report: {e}")
+        return {
+            "report_id": report_id,
+            "report_type": "admin_dashboard",
+            "format": "html",
+            "content": "",
+            "generated_at": datetime.now(),
+            "status": "failed",
+            "error": str(e)
+        }
 
     return {
         "report_id": report_id,
         "report_type": "admin_dashboard",
-        "format": format,
+        "format": "html",
         "content": html_content,
         "generated_at": datetime.now(),
         "status": "completed"
     }
 
 
-def generate_user_insights_report(user_id: str, data: Dict, format: str = "html") -> Dict:
+def generate_user_insights_report(user_id: str, data: Dict) -> Dict:
     """
     Generate user insights report.
     """
@@ -113,25 +128,37 @@ def generate_user_insights_report(user_id: str, data: Dict, format: str = "html"
     </html>
     """
 
-    template = Template(template_content)
-    html_content = template.render(
-        user_id=user_id,
-        generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        mood_trend=data.get("mood_trend", "No data available"),
-        activity_summary=data.get("activity_summary", "No data available")
-    )
+    try:
+        template = jinja_env.from_string(template_content)
+        html_content = template.render(
+            user_id=user_id,
+            generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            mood_trend=data.get("mood_trend", "No data available"),
+            activity_summary=data.get("activity_summary", "No data available")
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate user insights report: {e}")
+        return {
+            "report_id": report_id,
+            "report_type": "user_insights",
+            "format": "html",
+            "content": "",
+            "generated_at": datetime.now(),
+            "status": "failed",
+            "error": str(e)
+        }
 
     return {
         "report_id": report_id,
         "report_type": "user_insights",
-        "format": format,
+        "format": "html",
         "content": html_content,
         "generated_at": datetime.now(),
         "status": "completed"
     }
 
 
-def generate_analytics_summary_report(data: Dict, format: str = "html") -> Dict:
+def generate_analytics_summary_report(data: Dict) -> Dict:
     """
     Generate analytics summary report.
     """
@@ -171,16 +198,28 @@ def generate_analytics_summary_report(data: Dict, format: str = "html") -> Dict:
     </html>
     """
 
-    template = Template(template_content)
-    html_content = template.render(
-        generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        metrics=data.get("metrics", {})
-    )
+    try:
+        template = jinja_env.from_string(template_content)
+        html_content = template.render(
+            generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            metrics=data.get("metrics", {})
+        )
+    except Exception as e:
+        logger.error(f"Failed to generate analytics summary report: {e}")
+        return {
+            "report_id": report_id,
+            "report_type": "analytics_summary",
+            "format": "html",
+            "content": "",
+            "generated_at": datetime.now(),
+            "status": "failed",
+            "error": str(e)
+        }
 
     return {
         "report_id": report_id,
         "report_type": "analytics_summary",
-        "format": format,
+        "format": "html",
         "content": html_content,
         "generated_at": datetime.now(),
         "status": "completed"

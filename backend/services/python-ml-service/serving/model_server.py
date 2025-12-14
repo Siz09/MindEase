@@ -6,18 +6,25 @@ import logging
 import pickle
 import os
 from typing import Dict, Optional
+from threading import Lock
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
 MODELS_DIR = os.getenv("ML_MODELS_DIR", "./models")
 models_cache = {}
+cache_lock = Lock()
 
 
 def load_model(model_id: str):
     """Load model from disk or cache"""
-    if model_id in models_cache:
-        return models_cache[model_id]
+    # Prevent path traversal
+    if not model_id or '/' in model_id or '\\' in model_id or model_id.startswith('.'):
+        raise ValueError(f"Invalid model_id: {model_id}")
+
+    with cache_lock:
+        if model_id in models_cache:
+            return models_cache[model_id]
 
     model_path = os.path.join(MODELS_DIR, f"{model_id}.pkl")
     if not os.path.exists(model_path):
@@ -26,7 +33,12 @@ def load_model(model_id: str):
     with open(model_path, 'rb') as f:
         model = pickle.load(f)
 
-    models_cache[model_id] = model
+    # Validate the loaded model has required methods
+    if not hasattr(model, 'predict'):
+        raise ValueError(f"Loaded object for {model_id} does not have a predict method")
+
+    with cache_lock:
+        models_cache[model_id] = model
     return model
 
 
@@ -43,8 +55,13 @@ def predict_risk(model_id: str, features: Dict) -> Dict:
 
         # Predict
         prediction = model.predict(feature_array)[0]
-        probabilities = model.predict_proba(feature_array)[0]
-        confidence = float(max(probabilities))
+
+        # Not all models support predict_proba
+        if hasattr(model, 'predict_proba'):
+            probabilities = model.predict_proba(feature_array)[0]
+            confidence = float(max(probabilities))
+        else:
+            confidence = None
 
         return {
             "prediction": float(prediction),

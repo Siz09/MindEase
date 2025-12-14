@@ -11,10 +11,9 @@ import os
 logger = logging.getLogger(__name__)
 
 # Database connection
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://mindease:secret@localhost:5432/mindease"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is required")
 engine = create_engine(DATABASE_URL)
 
 
@@ -31,59 +30,50 @@ def create_auto_entries():
         start_of_day = datetime.combine(today, datetime.min.time())
         end_of_day = datetime.combine(today, datetime.max.time())
 
-        # Get all non-anonymous users
-        users_sql = text("""
-            SELECT id, email
-            FROM users
-            WHERE anonymous_mode IS NULL OR anonymous_mode = false
-        """)
-
         created_entries = 0
 
-        with engine.connect() as conn:
-            users_result = conn.execute(users_sql)
+        with engine.begin() as conn:
+            # Single query to get users without mood entries today
+            users_without_entries_sql = text("""
+                SELECT u.id, u.email
+                FROM users u
+                WHERE (u.anonymous_mode IS NULL OR u.anonymous_mode = false)
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM mood_entries me
+                      WHERE me.user_id = u.id
+                        AND me.created_at BETWEEN :start_of_day AND :end_of_day
+                  )
+            """)
+
+            users_result = conn.execute(
+                users_without_entries_sql,
+                {
+                    "start_of_day": start_of_day,
+                    "end_of_day": end_of_day
+                }
+            )
 
             for row in users_result:
                 user_id = row[0]
                 email = row[1]
 
-                # Check if user already has a mood entry today
-                check_entry_sql = text("""
-                    SELECT COUNT(*)
-                    FROM mood_entries
-                    WHERE user_id = :user_id
-                      AND created_at BETWEEN :start_of_day AND :end_of_day
+                create_entry_sql = text("""
+                    INSERT INTO mood_entries (user_id, mood_value, notes, created_at)
+                    VALUES (:user_id, :mood_value, :notes, :created_at)
                 """)
 
-                count_result = conn.execute(
-                    check_entry_sql,
+                conn.execute(
+                    create_entry_sql,
                     {
                         "user_id": user_id,
-                        "start_of_day": start_of_day.strftime("%Y-%m-%d %H:%M:%S"),
-                        "end_of_day": end_of_day.strftime("%Y-%m-%d %H:%M:%S")
+                        "mood_value": 5,
+                        "notes": "Automatic daily mood check-in. How are you feeling today?",
+                        "created_at": datetime.now()
                     }
                 )
-                count = count_result.scalar()
-
-                if count == 0:
-                    # Create auto mood entry
-                    create_entry_sql = text("""
-                        INSERT INTO mood_entries (user_id, mood_value, notes, created_at)
-                        VALUES (:user_id, :mood_value, :notes, :created_at)
-                    """)
-
-                    conn.execute(
-                        create_entry_sql,
-                        {
-                            "user_id": user_id,
-                            "mood_value": 5,
-                            "notes": "Automatic daily mood check-in. How are you feeling today?",
-                            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        }
-                    )
-                    conn.commit()
-                    created_entries += 1
-                    logger.info(f"Created auto mood entry for user: {email}")
+                created_entries += 1
+                logger.info(f"Created auto mood entry for user_id: {user_id}")
 
         execution_time = (datetime.now() - start_time).total_seconds()
         logger.info(f"Auto mood entry creation completed. Created {created_entries} entries in {execution_time:.2f}s")

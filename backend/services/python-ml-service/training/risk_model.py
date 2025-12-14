@@ -4,7 +4,7 @@ Risk prediction model training.
 Trains a model to predict user risk levels based on message content and history.
 """
 import logging
-import pickle
+import joblib
 import os
 from datetime import datetime
 from typing import Dict, Optional
@@ -37,6 +37,16 @@ def train_risk_model(training_data: Optional[Dict] = None) -> Dict:
             X = np.array(training_data.get("features", []))
             y = np.array(training_data.get("labels", []))
 
+            # Validate input data
+            if X.size == 0 or y.size == 0:
+                raise ValueError("Training data features and labels cannot be empty")
+            if len(X) != len(y):
+                raise ValueError(f"Features and labels length mismatch: {len(X)} vs {len(y)}")
+            if len(X.shape) != 2:
+                raise ValueError(f"Features must be 2D array, got shape {X.shape}")
+            if np.any(np.isnan(X)) or np.any(np.isnan(y)):
+                raise ValueError("Training data contains NaN values")
+
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
@@ -57,8 +67,7 @@ def train_risk_model(training_data: Optional[Dict] = None) -> Dict:
         model_id = f"risk_model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         model_path = os.path.join(MODELS_DIR, f"{model_id}.pkl")
 
-        with open(model_path, 'wb') as f:
-            pickle.dump(model, f)
+        joblib.dump(model, model_path)
 
         return {
             "model_id": model_id,

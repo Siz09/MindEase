@@ -11,10 +11,9 @@ import os
 logger = logging.getLogger(__name__)
 
 # Database connection
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://mindease:secret@localhost:5432/mindease"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is required")
 engine = create_engine(DATABASE_URL)
 
 
@@ -50,7 +49,7 @@ def cleanup_old_data():
                     cleanup_single_user(user_id, trans_conn)
                     deleted_count += 1
             except Exception as e:
-                logger.error(f"Failed to clean up user {user_id}: {str(e)}", exc_info=True)
+                logger.error(f"Failed to clean up anonymous user during retention cleanup: {str(e)}", exc_info=True)
 
         execution_time = (datetime.now() - start_time).total_seconds()
         logger.info(f"Retention policy cleanup completed. Deleted {deleted_count} users in {execution_time:.2f}s")
@@ -105,4 +104,4 @@ def cleanup_single_user(user_id, conn):
     conn.execute(delete_user_sql, {"user_id": user_id})
 
     # Transaction commits automatically when exiting 'with' block
-    logger.debug(f"Cleaned up data for anonymous user: {user_id}")
+    logger.debug("Cleaned up data for anonymous user")

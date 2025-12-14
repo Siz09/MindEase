@@ -1,7 +1,6 @@
 # backend/services/python-background-jobs/models.py
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
 
 
 class JobResponse(BaseModel):

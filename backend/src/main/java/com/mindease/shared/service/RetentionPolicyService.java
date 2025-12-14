@@ -47,7 +47,8 @@ public class RetentionPolicyService {
 
     /**
      * Scheduled task to clean up old data based on retention policy.
-     * Now delegates to Python service if available, otherwise uses Java implementation.
+     * Now delegates to Python service if available, otherwise uses Java
+     * implementation.
      * Runs every day at 2:00 AM
      */
     @Scheduled(cron = "0 0 2 * * ?") // Every day at 2:00 AM
@@ -57,8 +58,8 @@ public class RetentionPolicyService {
             try {
                 logger.info("Triggering Python service for retention cleanup");
                 Map<String, Object> result = pythonBackgroundJobsClient.triggerRetentionCleanup();
-                Boolean success = (Boolean) result.get("success");
-                if (Boolean.TRUE.equals(success)) {
+                Object successObj = result.get("success");
+                if (Boolean.TRUE.equals(successObj)) {
                     logger.info("Python retention cleanup completed: {}", result.get("message"));
                     return;
                 } else {

@@ -11,10 +11,9 @@ import os
 logger = logging.getLogger(__name__)
 
 # Database connection
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://mindease:secret@localhost:5432/mindease"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is required")
 engine = create_engine(DATABASE_URL)
 
 # Configuration
@@ -74,12 +73,12 @@ def detect_inactive_users():
 
                 # Skip if already notified
                 if user_id in notified_user_ids:
-                    logger.debug(f"User {email} already received inactivity notification")
+                    logger.debug(f"User {user_id} already received inactivity notification")
                     continue
 
                 # Skip anonymous users
                 if anonymous_mode:
-                    logger.debug(f"Skipping anonymous user: {email}")
+                    logger.debug(f"Skipping anonymous user: {user_id}")
                     continue
 
                 # Check quiet hours
@@ -87,7 +86,7 @@ def detect_inactive_users():
                 user_quiet_end = quiet_hours_end if quiet_hours_end is not None else QUIET_HOURS_END
 
                 if is_within_quiet_hours(user_quiet_start, user_quiet_end):
-                    logger.debug(f"Skipping quiet hours for user: {email}")
+                    logger.debug(f"Skipping quiet hours for user: {user_id}")
                     continue
 
                 # Create notification
@@ -108,9 +107,9 @@ def detect_inactive_users():
                     )
                     conn.commit()
                     notifications_created += 1
-                    logger.info(f"Created inactivity notification for user: {email}")
+                    logger.info(f"Created inactivity notification for user: {user_id}")
                 except Exception as e:
-                    logger.error(f"Failed to create notification for user {email}: {str(e)}", exc_info=True)
+                    logger.error(f"Failed to create notification for user {user_id}: {str(e)}", exc_info=True)
                     conn.rollback()
 
         execution_time = (datetime.now() - start_time).total_seconds()

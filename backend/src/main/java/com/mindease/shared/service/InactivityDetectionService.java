@@ -47,13 +47,15 @@ public class InactivityDetectionService {
     }
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
-    public void setPythonBackgroundJobsClient(com.mindease.shared.service.PythonBackgroundJobsClient pythonBackgroundJobsClient) {
+    public void setPythonBackgroundJobsClient(
+            com.mindease.shared.service.PythonBackgroundJobsClient pythonBackgroundJobsClient) {
         this.pythonBackgroundJobsClient = pythonBackgroundJobsClient;
     }
 
     /**
      * Runs hourly to detect inactive users and create gentle notifications.
-     * Now delegates to Python service if available, otherwise uses Java implementation.
+     * Now delegates to Python service if available, otherwise uses Java
+     * implementation.
      */
     @Scheduled(cron = "0 0 * * * *")
     @Transactional
@@ -63,8 +65,9 @@ public class InactivityDetectionService {
             try {
                 logger.info("Triggering Python service for inactivity detection");
                 Map<String, Object> result = pythonBackgroundJobsClient.triggerInactivityDetection();
-                Boolean success = (Boolean) result.get("success");
-                if (Boolean.TRUE.equals(success)) {
+                Object successObj = result.get("success");
+                boolean success = Boolean.TRUE.equals(successObj) || "true".equals(successObj);
+                if (success) {
                     logger.info("Python inactivity detection completed: {}", result.get("message"));
                     return;
                 } else {

@@ -41,12 +41,17 @@ public class AutoMoodService {
             try {
                 logger.info("Triggering Python service for auto mood creation");
                 Map<String, Object> result = pythonBackgroundJobsClient.triggerAutoMoodCreation();
-                Boolean success = (Boolean) result.get("success");
-                if (Boolean.TRUE.equals(success)) {
-                    logger.info("Python auto mood creation completed: {}", result.get("message"));
-                    return;
+                if (result != null) {
+                    Object successObj = result.get("success");
+                    if (Boolean.TRUE.equals(successObj)) {
+                        logger.info("Python auto mood creation completed: {}", result.get("message"));
+                        return;
+                    } else {
+                        logger.warn("Python auto mood creation failed, falling back to Java: {}",
+                                result.get("message"));
+                    }
                 } else {
-                    logger.warn("Python auto mood creation failed, falling back to Java: {}", result.get("message"));
+                    logger.warn("Python service returned null result, falling back to Java");
                 }
             } catch (Exception e) {
                 logger.warn("Python background jobs service unavailable, using Java fallback: {}", e.getMessage());

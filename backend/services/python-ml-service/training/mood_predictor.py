@@ -36,6 +36,14 @@ def train_mood_predictor(training_data: Optional[Dict] = None) -> Dict:
             X = np.array(training_data.get("features", []))
             y = np.array(training_data.get("labels", []))
 
+            # Validate training data
+            if X.size == 0 or y.size == 0:
+                raise ValueError("Training data must contain non-empty 'features' and 'labels'")
+            if X.shape[0] != y.shape[0]:
+                raise ValueError(f"Features and labels must have same number of samples. Got {X.shape[0]} and {y.shape[0]}")
+            if len(X.shape) != 2:
+                raise ValueError(f"Features must be 2D array, got shape {X.shape}")
+
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
@@ -65,7 +73,7 @@ def train_mood_predictor(training_data: Optional[Dict] = None) -> Dict:
             "model_type": "mood_predictor",
             "status": "completed",
             "accuracy": float(r2),  # Use R² as accuracy metric
-            "trained_at": datetime.now(),
+            "trained_at": datetime.now().isoformat(),
             "message": f"Mood predictor trained successfully with R²: {r2:.2%}"
         }
 

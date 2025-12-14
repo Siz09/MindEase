@@ -1,6 +1,6 @@
 # backend/services/python-ml-service/models.py
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+from typing import Optional, Dict
 from datetime import datetime
 
 

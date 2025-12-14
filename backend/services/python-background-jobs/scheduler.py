@@ -10,9 +10,9 @@ app = Celery("background_jobs")
 app.config_from_object("celeryconfig")
 
 # Import tasks
-from retention import cleanup_old_data
-from inactivity import detect_inactive_users
-from auto_mood import create_auto_entries
+from .retention import cleanup_old_data
+from .inactivity import detect_inactive_users
+from .auto_mood import create_auto_entries
 
 # Register tasks
 app.task(name="retention.cleanup_old_data")(cleanup_old_data)
@@ -20,4 +20,4 @@ app.task(name="inactivity.detect_inactive_users")(detect_inactive_users)
 app.task(name="auto_mood.create_auto_entries")(create_auto_entries)
 
 if __name__ == "__main__":
-    app.start()
+    app.start(['beat', 'worker'])
