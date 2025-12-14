@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class RetentionPolicyService {
@@ -25,6 +26,9 @@ public class RetentionPolicyService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired(required = false)
+    private com.mindease.shared.service.PythonBackgroundJobsClient pythonBackgroundJobsClient;
 
     @Autowired
     private MoodEntryRepository moodEntryRepository;
@@ -42,12 +46,31 @@ public class RetentionPolicyService {
     private UserContextRepository userContextRepository;
 
     /**
-     * Scheduled task to clean up old data based on retention policy
+     * Scheduled task to clean up old data based on retention policy.
+     * Now delegates to Python service if available, otherwise uses Java implementation.
      * Runs every day at 2:00 AM
      */
     @Scheduled(cron = "0 0 2 * * ?") // Every day at 2:00 AM
     public void cleanUpOldData() {
-        logger.info("Retention policy cleanup started");
+        // Try Python service first
+        if (pythonBackgroundJobsClient != null) {
+            try {
+                logger.info("Triggering Python service for retention cleanup");
+                Map<String, Object> result = pythonBackgroundJobsClient.triggerRetentionCleanup();
+                Boolean success = (Boolean) result.get("success");
+                if (Boolean.TRUE.equals(success)) {
+                    logger.info("Python retention cleanup completed: {}", result.get("message"));
+                    return;
+                } else {
+                    logger.warn("Python retention cleanup failed, falling back to Java: {}", result.get("message"));
+                }
+            } catch (Exception e) {
+                logger.warn("Python background jobs service unavailable, using Java fallback: {}", e.getMessage());
+            }
+        }
+
+        // Fallback to Java implementation
+        logger.info("Retention policy cleanup started (Java implementation)");
 
         LocalDateTime threshold = LocalDateTime.now().minusDays(30);
         List<User> anonymousUsers = userRepository.findByAnonymousModeTrueAndCreatedAtBefore(threshold);

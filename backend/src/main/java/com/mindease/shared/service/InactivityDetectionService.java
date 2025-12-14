@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,6 +29,8 @@ public class InactivityDetectionService {
     private final UserActivityRepository userActivityRepository;
     private final NotificationService notificationService;
     private final NotificationRepository notificationRepository;
+
+    private com.mindease.shared.service.PythonBackgroundJobsClient pythonBackgroundJobsClient;
 
     @Value("${inactivity.quiet-hours.start:22}")
     private int quietHoursStart; // Default 10 PM
@@ -43,13 +46,37 @@ public class InactivityDetectionService {
         this.notificationRepository = notificationRepository;
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setPythonBackgroundJobsClient(com.mindease.shared.service.PythonBackgroundJobsClient pythonBackgroundJobsClient) {
+        this.pythonBackgroundJobsClient = pythonBackgroundJobsClient;
+    }
+
     /**
      * Runs hourly to detect inactive users and create gentle notifications.
+     * Now delegates to Python service if available, otherwise uses Java implementation.
      */
     @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public void detectInactiveUsers() {
-        logger.info("🕒 Running Inactivity Detection Job...");
+        // Try Python service first
+        if (pythonBackgroundJobsClient != null) {
+            try {
+                logger.info("Triggering Python service for inactivity detection");
+                Map<String, Object> result = pythonBackgroundJobsClient.triggerInactivityDetection();
+                Boolean success = (Boolean) result.get("success");
+                if (Boolean.TRUE.equals(success)) {
+                    logger.info("Python inactivity detection completed: {}", result.get("message"));
+                    return;
+                } else {
+                    logger.warn("Python inactivity detection failed, falling back to Java: {}", result.get("message"));
+                }
+            } catch (Exception e) {
+                logger.warn("Python background jobs service unavailable, using Java fallback: {}", e.getMessage());
+            }
+        }
+
+        // Fallback to Java implementation
+        logger.info("🕒 Running Inactivity Detection Job... (Java implementation)");
 
         LocalDateTime threshold = LocalDateTime.now().minusDays(3);
         int notificationsCreated = 0;

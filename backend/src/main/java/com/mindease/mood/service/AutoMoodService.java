@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AutoMoodService {
@@ -26,13 +27,34 @@ public class AutoMoodService {
     @Autowired
     private MoodEntryRepository moodEntryRepository;
 
+    @Autowired(required = false)
+    private com.mindease.shared.service.PythonBackgroundJobsClient pythonBackgroundJobsClient;
+
     public void manualTrigger() {
         createAutoMoodEntries();
     }
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void createAutoMoodEntries() {
-        logger.info("Starting automatic mood entry creation at {}", LocalDateTime.now());
+        // Try Python service first
+        if (pythonBackgroundJobsClient != null) {
+            try {
+                logger.info("Triggering Python service for auto mood creation");
+                Map<String, Object> result = pythonBackgroundJobsClient.triggerAutoMoodCreation();
+                Boolean success = (Boolean) result.get("success");
+                if (Boolean.TRUE.equals(success)) {
+                    logger.info("Python auto mood creation completed: {}", result.get("message"));
+                    return;
+                } else {
+                    logger.warn("Python auto mood creation failed, falling back to Java: {}", result.get("message"));
+                }
+            } catch (Exception e) {
+                logger.warn("Python background jobs service unavailable, using Java fallback: {}", e.getMessage());
+            }
+        }
+
+        // Fallback to Java implementation
+        logger.info("Starting automatic mood entry creation at {} (Java implementation)", LocalDateTime.now());
 
         try {
             List<User> users = userRepository.findAll();
@@ -68,4 +90,3 @@ public class AutoMoodService {
         }
     }
 }
-

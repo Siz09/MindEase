@@ -201,6 +201,10 @@ python:
     service:
       url: ${PYTHON_ANALYTICS_SERVICE_URL:http://localhost:8002}
       timeout: 60000
+  background-jobs:
+    service:
+      url: ${PYTHON_BACKGROUND_JOBS_SERVICE_URL:http://localhost:8003}
+      timeout: 300000
 
 # Stripe Configuration
 stripe:
