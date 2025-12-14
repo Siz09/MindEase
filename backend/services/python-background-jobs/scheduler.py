@@ -15,11 +15,23 @@ app.config_from_object("celeryconfig")
 # Absolute imports require these modules to be on sys.path, which typically
 # isn't the case when running a script directly from its own directory.
 #
-# Common solutions:
-# 1. Run as a module (recommended): From the parent directory, use:
-#    python -m python-background-jobs.scheduler
-# 2. Add to sys.path: Add the directory to sys.path before imports
-# 3. Use PYTHONPATH: Set PYTHONPATH environment variable when running
+# NOTE: The directory name "python-background-jobs" contains hyphens, which are
+# invalid in Python module names. This prevents using the -m flag approach.
+# Python interprets hyphens as subtraction operators, causing ModuleNotFoundError.
+#
+# Working solutions:
+# 1. Run from the directory: cd to this directory and run:
+#    python scheduler.py
+#    (This works because the current directory is on sys.path)
+# 2. Add to sys.path: Add the directory to sys.path before imports:
+#    import sys
+#    import os
+#    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# 3. Use PYTHONPATH: Set PYTHONPATH environment variable when running:
+#    PYTHONPATH=/path/to/python-background-jobs python scheduler.py
+# 4. Use Celery command (recommended for production):
+#    celery -A scheduler worker
+#    celery -A scheduler beat
 #
 # If imports fail with ModuleNotFoundError, use one of the above solutions.
 from retention import cleanup_old_data

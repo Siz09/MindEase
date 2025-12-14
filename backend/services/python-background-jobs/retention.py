@@ -74,7 +74,7 @@ def cleanup_single_user(user_id, conn, user_index=None):
     """
     Clean up all data for a single anonymous user.
     Matches RetentionPolicyService.cleanupSingleUser()
-    
+
     Args:
         user_id: The user ID to clean up
         conn: Database connection
