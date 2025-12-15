@@ -11,7 +11,7 @@ export default function Footer() {
       <div className="me-footer-grid">
         <div className="me-footer-column">
           <div className="me-footer-brand">
-            <div className="me-footer-logo">M</div>
+            <img src="/mindease-logo.png" alt="MindEase Logo" className="me-footer-logo" />
             <span>MindEase</span>
           </div>
           <p className="me-footer-text">

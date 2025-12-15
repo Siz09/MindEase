@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 import LanguageSwitcher from './LanguageSwitcher';
 import { getLoginUrl } from '../utils/appUrls';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
 
 export default function Navbar() {
   const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function Navbar() {
     <nav className={`me-navbar ${isScrolled ? 'scrolled' : ''}`}>
       <div className="me-navbar-inner">
         <NavLink to="/" className="me-navbar-brand">
-          <div className="me-navbar-logo">M</div>
+          <img src="/mindease-logo.png" alt="MindEase Logo" className="me-navbar-logo" />
           <span>MindEase</span>
         </NavLink>
 
@@ -50,40 +52,39 @@ export default function Navbar() {
 
         <div className="me-navbar-actions">
           <LanguageSwitcher />
-          <a href={getLoginUrl()} className="me-button me-button-primary">
-            {t('nav.openApp')}
-          </a>
-          <button
-            className="me-navbar-toggle"
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Toggle menu"
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-        </div>
-      </div>
-
-      <div className={`me-navbar-mobile ${isOpen ? 'open' : ''}`}>
-        <div className="me-navbar-mobile-content">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              onClick={() => setIsOpen(false)}
-              className={({ isActive }) => `me-navbar-link ${isActive ? 'active' : ''}`}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-          <a
-            href={getLoginUrl()}
-            onClick={() => setIsOpen(false)}
-            className="me-button me-button-primary"
-          >
-            {t('nav.openApp')}
-          </a>
+          <Button asChild size="sm" className="hidden md:inline-flex">
+            <a href={getLoginUrl()}>{t('nav.openApp')}</a>
+          </Button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <nav className="flex flex-col gap-4 mt-8">
+                {navLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    className={({ isActive }) =>
+                      `text-lg font-medium transition-colors hover:text-primary ${
+                        isActive ? 'text-primary' : 'text-foreground'
+                      }`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+                <div className="pt-4 border-t">
+                  <Button asChild size="sm" className="w-full">
+                    <a href={getLoginUrl()}>{t('nav.openApp')}</a>
+                  </Button>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>

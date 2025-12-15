@@ -2,10 +2,11 @@
 
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useTranslation } from 'react-i18next';
-// eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import { TrendingUp, Users, Zap, Lock } from 'lucide-react';
 import { getRegisterUrl } from '../utils/appUrls';
+import Stats from '../components/Stats';
+import { Button } from '@/components/ui/button';
 
 export default function WhyMindease() {
   const { t } = useTranslation();
@@ -53,6 +54,8 @@ export default function WhyMindease() {
       </Helmet>
 
       <div className="container" style={{ paddingTop: 'var(--spacing-4xl)' }}>
+        <Stats />
+
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -144,14 +147,12 @@ export default function WhyMindease() {
               variants={itemVariants}
               style={{
                 padding: 'var(--spacing-2xl)',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
+                background: 'rgba(251, 191, 36, 0.1)',
+                border: '1px solid rgba(251, 191, 36, 0.3)',
                 borderRadius: 'var(--radius-2xl)',
               }}
             >
-              <p
-                style={{ color: 'rgba(239, 68, 68, 0.8)', textAlign: 'center', fontWeight: '600' }}
-              >
+              <p style={{ color: 'rgba(180, 83, 9, 0.9)', textAlign: 'center', fontWeight: '600' }}>
                 {t('why.problemTitle') || 'The Challenge'}
               </p>
               <p
@@ -185,7 +186,7 @@ export default function WhyMindease() {
               variants={itemVariants}
               style={{
                 padding: 'var(--spacing-2xl)',
-                background: 'rgba(0, 212, 255, 0.1)',
+                background: 'rgba(21, 128, 61, 0.1)',
                 border: '1px solid var(--color-accent)',
                 borderRadius: 'var(--radius-2xl)',
                 order: 2,
@@ -307,9 +308,9 @@ export default function WhyMindease() {
           transition={{ delay: 0.6 }}
           style={{ marginTop: 'var(--spacing-4xl)', textAlign: 'center' }}
         >
-          <a href={getRegisterUrl()} className="me-button me-button-primary">
-            {t('why.cta')}
-          </a>
+          <Button asChild size="lg">
+            <a href={getRegisterUrl()}>{t('why.cta')}</a>
+          </Button>
         </motion.div>
       </div>
     </>
