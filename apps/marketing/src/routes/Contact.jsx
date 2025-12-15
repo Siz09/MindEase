@@ -44,12 +44,14 @@ export default function Contact() {
       title: 'Support',
       desc: 'Get help with the app',
       link: '#',
+      comingSoon: true,
     },
     {
       icon: <Users size={32} style={{ color: 'var(--color-accent)' }} />,
       title: 'Community',
       desc: 'Join our user community',
       link: '#',
+      comingSoon: true,
     },
   ];
 
@@ -104,17 +106,35 @@ export default function Contact() {
           className="me-bento-grid"
           style={{ marginBottom: 'var(--spacing-3xl)' }}
         >
-          {contactMethods.map((method, idx) => (
-            <motion.a key={idx} href={method.link} variants={itemVariants} className="no-underline">
-              <Card className="h-full">
-                <CardContent>
-                  <div className="mb-6 text-primary">{method.icon}</div>
-                  <h3 className="text-lg font-semibold mb-3 text-foreground">{method.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{method.desc}</p>
-                </CardContent>
-              </Card>
-            </motion.a>
-          ))}
+          {contactMethods.map((method, idx) => {
+            const handleClick = (e) => {
+              if (method.comingSoon) {
+                e.preventDefault();
+                alert('Coming soon! This feature will be available shortly.');
+              }
+            };
+
+            return (
+              <motion.a
+                key={idx}
+                href={method.link}
+                onClick={handleClick}
+                variants={itemVariants}
+                className="no-underline"
+              >
+                <Card className="h-full">
+                  <CardContent>
+                    <div className="mb-6 text-primary">{method.icon}</div>
+                    <h3 className="text-lg font-semibold mb-3 text-foreground">{method.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{method.desc}</p>
+                    {method.comingSoon && (
+                      <p className="text-xs text-muted-foreground mt-2 italic">Coming soon</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.a>
+            );
+          })}
         </motion.div>
 
         <div
@@ -144,7 +164,7 @@ export default function Contact() {
                 >
                   <Alert className="bg-primary/10 border-primary text-primary">
                     <AlertDescription>
-                      Message sent successfully! We'll get back to you soon.
+                      Message sent successfully! We&apos;ll get back to you soon.
                     </AlertDescription>
                   </Alert>
                 </motion.div>

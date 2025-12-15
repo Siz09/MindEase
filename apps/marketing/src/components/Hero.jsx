@@ -2,7 +2,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { ArrowRight, Lock, Languages, Zap } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { getRegisterUrl } from '../utils/appUrls';
 import { Button } from '@/components/ui/button';
 
@@ -28,8 +28,11 @@ export default function Hero() {
         <div className="me-hero-gradient" style={{ top: '10%', right: '-10%', opacity: 0.5 }} />
         <div className="me-hero-gradient" style={{ bottom: '20%', left: '-15%', opacity: 0.3 }} />
         <img
-          src="https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=1200&q=80"
-          alt="Peaceful meditation"
+          src="/images/hero-bg.jpg"
+          alt=""
+          width={1200}
+          height={800}
+          loading="eager"
           style={{
             position: 'absolute',
             top: 0,
@@ -39,6 +42,9 @@ export default function Hero() {
             objectFit: 'cover',
             opacity: 0.15,
             zIndex: 0,
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
           }}
         />
       </div>

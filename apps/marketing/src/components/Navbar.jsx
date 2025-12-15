@@ -12,6 +12,7 @@ import { Menu } from 'lucide-react';
 export default function Navbar() {
   const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,7 +56,7 @@ export default function Navbar() {
           <Button asChild size="sm" className="hidden md:inline-flex">
             <a href={getLoginUrl()}>{t('nav.openApp')}</a>
           </Button>
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-5 w-5" />
@@ -73,6 +74,7 @@ export default function Navbar() {
                         isActive ? 'text-primary' : 'text-foreground'
                       }`
                     }
+                    onClick={() => setIsSheetOpen(false)}
                   >
                     {link.label}
                   </NavLink>

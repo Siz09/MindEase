@@ -16,7 +16,6 @@ export default function Testimonials() {
         t('testimonials.user1.content') ||
         'MindEase has been a game-changer for me. Having someone to talk to anytime, without judgment, has helped me manage my anxiety so much better.',
       rating: 5,
-      avatar: 'SK',
       image:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face',
     },
@@ -27,7 +26,6 @@ export default function Testimonials() {
         t('testimonials.user2.content') ||
         'The bilingual support is amazing. I can express myself better in Nepali, and the AI understands the cultural context perfectly.',
       rating: 5,
-      avatar: 'RM',
       image:
         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
     },
@@ -38,7 +36,6 @@ export default function Testimonials() {
         t('testimonials.user3.content') ||
         'As someone who works with students, I appreciate how MindEase makes mental health support accessible. The privacy features give me confidence.',
       rating: 5,
-      avatar: 'PS',
       image:
         'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face',
     },
@@ -108,7 +105,7 @@ export default function Testimonials() {
                     ))}
                   </div>
                   <p className="text-muted-foreground leading-relaxed mb-6 relative z-10">
-                    "{testimonial.content}"
+                    &ldquo;{testimonial.content}&rdquo;
                   </p>
                 </CardContent>
                 <CardFooter className="flex items-center gap-4 pt-0 border-t relative z-10">

@@ -11,7 +11,13 @@ export default function Footer() {
       <div className="me-footer-grid">
         <div className="me-footer-column">
           <div className="me-footer-brand">
-            <img src="/mindease-logo.png" alt="MindEase Logo" className="me-footer-logo" />
+            <img
+              src="/mindease-logo.png"
+              alt="MindEase Logo"
+              className="me-footer-logo"
+              width={32}
+              height={32}
+            />
             <span>MindEase</span>
           </div>
           <p className="me-footer-text">
