@@ -2,7 +2,7 @@
 
 import { Helmet } from '@dr.pogodin/react-helmet';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, MessageSquare, Users } from 'lucide-react';
 import { useState } from 'react';
 import FAQ from '../components/FAQ';
@@ -99,21 +99,23 @@ export default function Contact() {
           </motion.p>
         </motion.div>
 
-        {showComingSoonAlert && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            style={{ marginBottom: 'var(--spacing-lg)' }}
-          >
-            <Alert className="bg-primary/10 border-primary text-primary">
-              <AlertDescription>
-                {t('contact.comingSoon.message') ||
-                  'Coming soon! This feature will be available shortly.'}
-              </AlertDescription>
-            </Alert>
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {showComingSoonAlert && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{ marginBottom: 'var(--spacing-lg)' }}
+            >
+              <Alert className="bg-primary/10 border-primary text-primary">
+                <AlertDescription>
+                  {t('contact.comingSoon.message') ||
+                    'Coming soon! This feature will be available shortly.'}
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <motion.div
           variants={containerVariants}
