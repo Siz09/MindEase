@@ -17,6 +17,7 @@ export default function Contact() {
   const { t } = useTranslation();
   const [formState, setFormState] = useState({ name: '', email: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [showComingSoonAlert, setShowComingSoonAlert] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -98,6 +99,22 @@ export default function Contact() {
           </motion.p>
         </motion.div>
 
+        {showComingSoonAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            style={{ marginBottom: 'var(--spacing-lg)' }}
+          >
+            <Alert className="bg-primary/10 border-primary text-primary">
+              <AlertDescription>
+                {t('contact.comingSoon.message') ||
+                  'Coming soon! This feature will be available shortly.'}
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
+
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -110,7 +127,8 @@ export default function Contact() {
             const handleClick = (e) => {
               if (method.comingSoon) {
                 e.preventDefault();
-                alert('Coming soon! This feature will be available shortly.');
+                setShowComingSoonAlert(true);
+                setTimeout(() => setShowComingSoonAlert(false), 3000);
               }
             };
 
@@ -128,7 +146,9 @@ export default function Contact() {
                     <h3 className="text-lg font-semibold mb-3 text-foreground">{method.title}</h3>
                     <p className="text-muted-foreground leading-relaxed">{method.desc}</p>
                     {method.comingSoon && (
-                      <p className="text-xs text-muted-foreground mt-2 italic">Coming soon</p>
+                      <p className="text-xs text-muted-foreground mt-2 italic">
+                        {t('contact.comingSoon.label') || 'Coming soon'}
+                      </p>
                     )}
                   </CardContent>
                 </Card>
