@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import logging
 import asyncio
+from dotenv import load_dotenv
+
+# Load environment variables from .env file before importing modules that need them
+load_dotenv()
 
 from retention import cleanup_old_data
 from inactivity import detect_inactive_users

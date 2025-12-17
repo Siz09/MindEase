@@ -26,3 +26,10 @@ backend/src/main/resources/firebase-service-account.json
 testsprite_tests
 
 .cursor
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
