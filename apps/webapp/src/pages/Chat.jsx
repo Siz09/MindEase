@@ -1931,7 +1931,7 @@ const Chat = () => {
                   width: '0.5rem',
                   backgroundColor: 'var(--gray-400)',
                   borderRadius: '50%',
-                  animation: 'bounce 1.4s infinite ease-in-out',
+                  animation: 'typing 1.4s infinite ease-in-out',
                   animationDelay: '0ms',
                 }}
               ></div>
@@ -1941,7 +1941,7 @@ const Chat = () => {
                   width: '0.5rem',
                   backgroundColor: 'var(--gray-400)',
                   borderRadius: '50%',
-                  animation: 'bounce 1.4s infinite ease-in-out',
+                  animation: 'typing 1.4s infinite ease-in-out',
                   animationDelay: '150ms',
                 }}
               ></div>
@@ -1951,7 +1951,7 @@ const Chat = () => {
                   width: '0.5rem',
                   backgroundColor: 'var(--gray-400)',
                   borderRadius: '50%',
-                  animation: 'bounce 1.4s infinite ease-in-out',
+                  animation: 'typing 1.4s infinite ease-in-out',
                   animationDelay: '300ms',
                 }}
               ></div>

@@ -25,10 +25,10 @@ const ChatBubble = ({
 }) => {
   const isUser = message?.isUserMessage;
 
-  const formatTime = (timestamp) => {
+  const formatTime = (timestamp, locale = 'en-US') => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], {
+    return date.toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true,
