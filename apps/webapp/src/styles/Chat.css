@@ -1,37 +1,12 @@
-/* Chat Page Styles */
+/* Chat Page Styles - Simplified like Messenger/Instagram */
 .chat-page {
-  background: linear-gradient(
-    135deg,
-    var(--bg-primary) 0%,
-    var(--bg-secondary) 50%,
-    var(--bg-primary) 100%
-  );
-  min-height: 100vh;
-  padding: 0;
-}
-
-.chat-page .container {
-  max-width: 100%;
-  padding: 0;
-  height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-/* Chat Container */
-.chat-container {
-  flex: 1;
-  max-width: 100%;
-  margin: 0;
-  width: 100%;
-  background: var(--bg-card);
-  border-radius: 0;
-  box-shadow: none;
+  background-color: var(--bg-card);
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  margin-top: 0;
   position: relative;
+  border-radius: var(--radius-lg);
 }
 
 .voice-conversation-toggle {
@@ -86,10 +61,12 @@
   flex: 1;
   padding: var(--spacing-xl);
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
   scroll-behavior: smooth;
+  min-height: 0;
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -552,6 +529,28 @@
   to {
     opacity: 1;
     transform: translate(-50%, 0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
   }
 }
 

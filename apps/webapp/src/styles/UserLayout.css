@@ -22,8 +22,12 @@
 .main-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: var(--spacing-xl);
   background-color: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 /* Responsive Design */

@@ -6,12 +6,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
+import { Send, Mic, Bot } from 'lucide-react';
 import '../styles/Chat.css';
 import { apiGet } from '../lib/api';
 import useVoiceRecorder from '../hooks/useVoiceRecorder';
 import useTextToSpeech from '../hooks/useTextToSpeech';
 import VoicePlayer from '../components/VoicePlayer';
 import VoiceModeTutorial from '../components/VoiceModeTutorial';
+import ChatBubble from '../components/ui/ChatBubble';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import { cn } from '../lib/utils';
 import {
   mapI18nToSpeechLang,
   requestMicrophonePermission,
@@ -1605,426 +1610,460 @@ const Chat = () => {
   };
 
   return (
-    <div className="page chat-page">
-      <div className="container">
-        <div className="chat-container">
-          {/* Connection Status Indicator */}
-          {(!isConnected || reconnectAttempts.current > 0) && (
-            <div
+    <div
+      className="chat-page"
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--bg-card)',
+        overflow: 'hidden',
+        borderRadius: 'var(--radius-lg)',
+      }}
+    >
+      {/* Status Indicators - Positioned absolutely */}
+      {/* Connection Status Indicator */}
+      {(!isConnected || reconnectAttempts.current > 0) && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '0.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 50,
+            padding: '0.5rem 1rem',
+            borderRadius: '1rem',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: 'var(--shadow-md)',
+            backgroundColor:
+              reconnectAttempts.current > 0 ? 'var(--color-warning-bg)' : 'var(--color-error-bg)',
+            color:
+              reconnectAttempts.current > 0 ? 'var(--color-warning-text)' : 'var(--color-error)',
+          }}
+        >
+          <div
+            style={{
+              width: '0.5rem',
+              height: '0.5rem',
+              borderRadius: '50%',
+              backgroundColor:
+                reconnectAttempts.current > 0 ? 'var(--color-warning)' : 'var(--color-error)',
+              animation: reconnectAttempts.current > 0 ? 'pulse 2s infinite' : 'none',
+            }}
+          />
+          {reconnectAttempts.current > 0
+            ? `Reconnecting... (attempt ${reconnectAttempts.current})`
+            : 'Disconnected from chat'}
+        </div>
+      )}
+
+      {/* Offline Indicator */}
+      {!isOnline && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '0.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 50,
+            padding: '0.5rem 1rem',
+            borderRadius: '1rem',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: 'var(--shadow-md)',
+            backgroundColor: 'var(--color-warning-bg)',
+            color: 'var(--color-warning-text)',
+          }}
+        >
+          <div
+            style={{
+              width: '0.5rem',
+              height: '0.5rem',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-warning)',
+            }}
+          />
+          Offline Mode
+          {offlineQueueCount > 0 && (
+            <span
               style={{
-                position: 'absolute',
-                top: '10px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 1000,
-                padding: '8px 16px',
-                borderRadius: '20px',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                backgroundColor: reconnectAttempts.current > 0 ? '#fef3c7' : '#fee2e2',
-                color: reconnectAttempts.current > 0 ? '#92400e' : '#991b1b',
-                animation: 'slideDown 0.3s ease-out',
+                marginLeft: '0.25rem',
+                padding: '0.125rem 0.375rem',
+                backgroundColor: 'var(--color-warning)',
+                color: 'white',
+                borderRadius: '0.625rem',
+                fontSize: '0.75rem',
+                fontWeight: 600,
               }}
             >
-              <div
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: reconnectAttempts.current > 0 ? '#f59e0b' : '#ef4444',
-                  animation: reconnectAttempts.current > 0 ? 'pulse 2s infinite' : 'none',
-                }}
-              />
-              {reconnectAttempts.current > 0
-                ? `Reconnecting... (attempt ${reconnectAttempts.current})`
-                : 'Disconnected from chat'}
-            </div>
+              {offlineQueueCount} queued
+            </span>
           )}
+        </div>
+      )}
 
-          {/* Offline Indicator */}
-          {!isOnline && (
+      {/* Voice Conversation Mode Indicator */}
+      {isVoiceConversationActive && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '0.5rem',
+            right: '0.5rem',
+            zIndex: 50,
+            padding: '0.5rem 1rem',
+            borderRadius: '1rem',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: 'var(--shadow-md)',
+            backgroundColor: 'var(--color-success-bg)',
+            color: 'var(--color-success)',
+          }}
+        >
+          <div
+            style={{
+              width: '0.5rem',
+              height: '0.5rem',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-success)',
+              animation: isRecording ? 'pulse 2s infinite' : 'none',
+            }}
+          />
+          {isRecording
+            ? '🎤 Listening...'
+            : isPlaying
+              ? '🔊 Speaking...'
+              : isTranscribing
+                ? '⏳ Processing...'
+                : '✓ Voice Mode Active'}
+          <button
+            onClick={handleToggleVoiceConversation}
+            style={{
+              marginLeft: '0.5rem',
+              padding: '0.25rem 0.75rem',
+              fontSize: '0.75rem',
+              backgroundColor: 'var(--color-error)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.75rem',
+              cursor: 'pointer',
+              fontWeight: 600,
+              transition: 'background-color 0.2s',
+            }}
+            onMouseEnter={(e) => (e.target.style.backgroundColor = '#dc2626')}
+            onMouseLeave={(e) => (e.target.style.backgroundColor = 'var(--color-error)')}
+            title="Stop voice conversation"
+          >
+            Stop
+          </button>
+        </div>
+      )}
+
+      {/* Messages Container - Messenger style */}
+      <div
+        className="chat-messages"
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          padding: '1rem',
+          backgroundColor: 'var(--bg-primary)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          minHeight: 0,
+        }}
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+      >
+        {loadingHistory && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem 0',
+            }}
+          >
             <div
               style={{
-                position: 'absolute',
-                top: '10px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 1001,
-                padding: '8px 16px',
-                borderRadius: '20px',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                backgroundColor: '#fef3c7',
-                color: '#92400e',
-                animation: 'slideDown 0.3s ease-out',
+                width: '1.5rem',
+                height: '1.5rem',
+                border: '2px solid var(--primary-green)',
+                borderTopColor: 'transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
               }}
+            ></div>
+            <span
+              style={{ marginLeft: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}
             >
-              <div
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: '#f59e0b',
-                }}
-              />
-              Offline Mode
-              {offlineQueueCount > 0 && (
-                <span
-                  style={{
-                    marginLeft: '4px',
-                    padding: '2px 6px',
-                    backgroundColor: '#f59e0b',
-                    color: 'white',
-                    borderRadius: '10px',
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                  }}
-                >
-                  {offlineQueueCount} queued
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Voice Conversation Mode Indicator */}
-          {isVoiceConversationActive && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                zIndex: 1000,
-                padding: '8px 16px',
-                borderRadius: '20px',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                backgroundColor: '#dcfce7',
-                color: '#166534',
-                animation: 'slideDown 0.3s ease-out',
-              }}
-            >
-              <div
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: '#10b981',
-                  animation: isRecording ? 'pulse 2s infinite' : 'none',
-                }}
-              />
-              {isRecording
-                ? '🎤 Listening...'
-                : isPlaying
-                  ? '🔊 Speaking...'
-                  : isTranscribing
-                    ? '⏳ Processing...'
-                    : '✓ Voice Mode Active'}
-              <button
-                onClick={handleToggleVoiceConversation}
-                style={{
-                  marginLeft: '8px',
-                  padding: '4px 12px',
-                  fontSize: '0.75rem',
-                  background: '#ef4444',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                }}
-                title="Stop voice conversation"
-              >
-                Stop
-              </button>
-            </div>
-          )}
-
-          <div className="chat-messages" ref={messagesContainerRef} onScroll={handleScroll}>
-            {loadingHistory && (
-              <div className="loading-history">
-                <div className="loading-spinner"></div>
-                <span>{t('chat.loadingOlderMessages') || 'Loading older messages...'}</span>
-              </div>
-            )}
-            {messages.length === 0 ? (
-              <div className="empty-chat">
-                <div className="empty-chat-content">
-                  <div className="empty-icon">
-                    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                      <circle cx="32" cy="32" r="28" fill="var(--primary-green)" opacity="0.1" />
-                      <path
-                        d="M20 32h24M20 24h24M20 40h16"
-                        stroke="var(--primary-green)"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="empty-title">{t('chat.emptyTitle')}</h3>
-                  <p className="empty-description">{t('chat.emptyDescription')}</p>
-                  <div className="suggested-messages">
-                    <button
-                      className="suggested-message"
-                      onClick={() => sendMessage(t('chat.quickResponses.anxiety'))}
-                    >
-                      {t('chat.quickResponses.anxiety')}
-                    </button>
-                    <button
-                      className="suggested-message"
-                      onClick={() => sendMessage(t('chat.quickResponses.relax'))}
-                    >
-                      {t('chat.quickResponses.relax')}
-                    </button>
-                    <button
-                      className="suggested-message"
-                      onClick={() => sendMessage(t('chat.quickResponses.motivation'))}
-                    >
-                      {t('chat.quickResponses.motivation')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`message ${message.isUserMessage ? 'user-message' : 'bot-message'} ${
-                    message.isCrisisFlagged ? 'crisis-message' : ''
-                  }`}
-                >
-                  {!message.isUserMessage && (
-                    <div className="message-avatar">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" fill="var(--primary-green)" opacity="0.2" />
-                        <path
-                          d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"
-                          stroke="var(--primary-green)"
-                          strokeWidth="2"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="message-content">
-                    <div className="message-bubble">
-                      <div className="message-text">{message.content}</div>
-                      {/* Visible safety / risk info inside the bubble, without changing layout classes */}
-                      {renderRiskLabel(message)}
-                      {renderModerationNote(message)}
-                      {renderCrisisResources(message)}
-                    </div>
-                    <div className="message-meta">
-                      <span className="message-time">{formatTime(message.createdAt)}</span>
-                      {message.isUserMessage && (
-                        <>
-                          <span
-                            className="message-status"
-                            style={{
-                              color: getStatusColor(messageStatuses[message.id]),
-                              fontSize: '0.75rem',
-                              marginLeft: '4px',
-                            }}
-                            title={getStatusText(messageStatuses[message.id])}
-                          >
-                            {getStatusIcon(messageStatuses[message.id]) || '✓'}
-                          </span>
-                          {messageStatuses[message.id] === MESSAGE_STATUS.FAILED && (
-                            <button
-                              onClick={() => {
-                                // Retry sending the message
-                                sendMessageToServer(message.content);
-                                // Remove the failed message
-                                setMessages((prev) => prev.filter((m) => m.id !== message.id));
-                                setMessageStatuses((prev) => {
-                                  const newStatuses = { ...prev };
-                                  delete newStatuses[message.id];
-                                  return newStatuses;
-                                });
-                              }}
-                              style={{
-                                marginLeft: '8px',
-                                padding: '2px 8px',
-                                fontSize: '0.7rem',
-                                background: '#ef4444',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                              }}
-                              title="Retry sending message"
-                            >
-                              Retry
-                            </button>
-                          )}
-                        </>
-                      )}
-                      {!message.isUserMessage && voiceOutputEnabled && isTTSSupported && (
-                        <VoicePlayer
-                          compact
-                          isPlaying={currentPlayingMessageId === message.id && isPlaying}
-                          isPaused={currentPlayingMessageId === message.id && isPaused}
-                          onPlay={() => handlePlayMessage(message.id, message.content)}
-                          onPause={() => pauseSpeech()}
-                          onStop={handleStopMessage}
-                        />
-                      )}
-                    </div>
-                  </div>
-                  {message.isCrisisFlagged && (
-                    <div className="crisis-warning">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M8 1l7 14H1L8 1z" fill="#dc2626" />
-                        <path d="M8 6v3M8 11h.01" stroke="white" strokeWidth="1.5" />
-                      </svg>
-                      {t('chat.crisisWarning')}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-            {isTyping && (
-              <div className="message bot-message typing-message">
-                <div className="message-avatar">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" fill="var(--primary-green)" opacity="0.2" />
-                    <path
-                      d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"
-                      stroke="var(--primary-green)"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </div>
-                <div className="message-content">
-                  <div className="message-bubble typing-bubble">
-                    <div className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                  </div>
-                  <div className="message-meta">
-                    <span className="message-time">{t('chat.typing')}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
+              {t('chat.loadingOlderMessages') || 'Loading older messages...'}
+            </span>
           </div>
-
-          <div className="chat-input-container">
-            <div className="chat-input-wrapper">
-              <button className="attachment-btn" disabled>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        )}
+        {messages.length === 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+            }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <svg
+                  width="64"
+                  height="64"
+                  viewBox="0 0 64 64"
+                  fill="none"
+                  style={{ margin: '0 auto' }}
+                >
+                  <circle cx="32" cy="32" r="28" fill="var(--primary-green)" opacity="0.1" />
                   <path
-                    d="M10 2v16M2 10h16"
-                    stroke="currentColor"
+                    d="M20 32h24M20 24h24M20 40h16"
+                    stroke="var(--primary-green)"
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
                 </svg>
-              </button>
-              {isVoiceConversationMode && (
-                <button
-                  className={`voice-conversation-toggle ${isVoiceConversationActive ? 'active' : ''}`}
-                  onClick={handleToggleVoiceConversation}
-                  title={
-                    isVoiceConversationActive
-                      ? t('chat.stopVoiceConversation')
-                      : t('chat.startVoiceConversation')
-                  }
-                >
-                  {isVoiceConversationActive ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <rect x="6" y="6" width="12" height="12" fill="currentColor" rx="2" />
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="none"
-                      />
-                      <path
-                        d="M19 10v2a7 7 0 0 1-14 0v-2"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        fill="none"
-                      />
-                      <path d="M12 19v3m-4 0h8" stroke="currentColor" strokeWidth="2" />
-                    </svg>
-                  )}
-                </button>
-              )}
-              <div style={{ position: 'relative', width: '100%' }}>
-                <textarea
-                  ref={inputRef}
-                  value={inputValue}
-                  onChange={handleInputChange}
-                  onKeyPress={handleKeyPress}
-                  placeholder={
-                    interimTranscript && isRecording
-                      ? interimTranscript
-                      : t('chat.inputPlaceholder')
-                  }
-                  className="chat-input"
-                  rows="1"
-                  disabled={!isConnected || isTranscribing}
-                />
-                {interimTranscript && isRecording && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '100%',
-                      left: 0,
-                      right: 0,
-                      marginBottom: '4px',
-                      padding: '6px 12px',
-                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                      border: '1px solid rgba(16, 185, 129, 0.3)',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      color: '#059669',
-                      fontStyle: 'italic',
-                      maxHeight: '60px',
-                      overflow: 'auto',
-                    }}
-                  >
-                    <span style={{ fontWeight: 500, marginRight: '4px' }}>Listening:</span>
-                    {interimTranscript}
-                  </div>
-                )}
               </div>
-              <button
-                onClick={sendMessage}
-                disabled={!inputValue.trim() || !isConnected || isTranscribing}
-                className={`send-button ${inputValue.trim() ? 'active' : ''}`}
+              <h3
+                style={{
+                  fontSize: '1.125rem',
+                  fontWeight: 600,
+                  marginBottom: '0.5rem',
+                  color: 'var(--text-primary)',
+                }}
               >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+                {t('chat.emptyTitle')}
+              </h3>
+              <p
+                style={{
+                  fontSize: '0.875rem',
+                  color: 'var(--text-secondary)',
+                  marginBottom: '1rem',
+                }}
+              >
+                {t('chat.emptyDescription')}
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => sendMessage(t('chat.quickResponses.anxiety'))}
                 >
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" fill="currentColor" />
-                </svg>
-              </button>
+                  {t('chat.quickResponses.anxiety')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => sendMessage(t('chat.quickResponses.relax'))}
+                >
+                  {t('chat.quickResponses.relax')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => sendMessage(t('chat.quickResponses.motivation'))}
+                >
+                  {t('chat.quickResponses.motivation')}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          messages.map((message) => (
+            <ChatBubble
+              key={message.id}
+              message={message}
+              messageStatus={messageStatuses[message.id]}
+              onRetry={() => {
+                sendMessageToServer(message.content);
+                setMessages((prev) => prev.filter((m) => m.id !== message.id));
+                setMessageStatuses((prev) => {
+                  const newStatuses = { ...prev };
+                  delete newStatuses[message.id];
+                  return newStatuses;
+                });
+              }}
+              onPlayVoice={() => handlePlayMessage(message.id, message.content)}
+              onPauseVoice={() => pauseSpeech()}
+              onStopVoice={handleStopMessage}
+              isPlaying={currentPlayingMessageId === message.id && isPlaying}
+              isPaused={currentPlayingMessageId === message.id && isPaused}
+              voiceEnabled={voiceOutputEnabled && isTTSSupported}
+              getStatusIcon={getStatusIcon}
+              getStatusColor={getStatusColor}
+              getStatusText={getStatusText}
+              MESSAGE_STATUS={MESSAGE_STATUS}
+              renderRiskLabel={renderRiskLabel}
+              renderModerationNote={renderModerationNote}
+              renderCrisisResources={renderCrisisResources}
+            />
+          ))
+        )}
+        {isTyping && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.875rem',
+              color: 'var(--text-muted)',
+            }}
+          >
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              <div
+                style={{
+                  height: '0.5rem',
+                  width: '0.5rem',
+                  backgroundColor: 'var(--gray-400)',
+                  borderRadius: '50%',
+                  animation: 'bounce 1.4s infinite ease-in-out',
+                  animationDelay: '0ms',
+                }}
+              ></div>
+              <div
+                style={{
+                  height: '0.5rem',
+                  width: '0.5rem',
+                  backgroundColor: 'var(--gray-400)',
+                  borderRadius: '50%',
+                  animation: 'bounce 1.4s infinite ease-in-out',
+                  animationDelay: '150ms',
+                }}
+              ></div>
+              <div
+                style={{
+                  height: '0.5rem',
+                  width: '0.5rem',
+                  backgroundColor: 'var(--gray-400)',
+                  borderRadius: '50%',
+                  animation: 'bounce 1.4s infinite ease-in-out',
+                  animationDelay: '300ms',
+                }}
+              ></div>
+            </div>
+            <span>AI is typing...</span>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area - Messenger/Instagram style */}
+      <div
+        style={{
+          borderTop: '1px solid var(--gray-300)',
+          padding: '0.75rem 1rem',
+          backgroundColor: 'var(--bg-card)',
+          flexShrink: 0,
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 10,
+        }}
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            sendMessage();
+          }}
+          style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}
+        >
+          <div style={{ position: 'relative', flex: 1 }}>
+            <textarea
+              ref={inputRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                interimTranscript && isRecording ? interimTranscript : t('chat.inputPlaceholder')
+              }
+              disabled={!isConnected || isTranscribing}
+              rows={1}
+              style={{
+                width: '100%',
+                padding: '0.625rem 1rem',
+                borderRadius: '1.25rem',
+                border: 'none',
+                backgroundColor: 'var(--gray-100)',
+                color: 'var(--text-primary)',
+                fontSize: '0.9375rem',
+                fontFamily: 'var(--font-family)',
+                resize: 'none',
+                minHeight: '2.5rem',
+                maxHeight: '7.5rem',
+                outline: 'none',
+                transition: 'background-color 0.2s',
+                lineHeight: '1.5',
+              }}
+              onFocus={(e) => {
+                e.target.style.backgroundColor = 'var(--gray-200)';
+              }}
+              onBlur={(e) => {
+                e.target.style.backgroundColor = 'var(--gray-100)';
+              }}
+            />
+            {interimTranscript && isRecording && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: 0,
+                  right: 0,
+                  marginBottom: 'var(--spacing-xs)',
+                  padding: 'var(--spacing-sm)',
+                  backgroundColor: 'var(--color-success-bg)',
+                  border: '1px solid var(--color-success-border-light)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 'var(--font-size-sm)',
+                  color: 'var(--color-success)',
+                  fontStyle: 'italic',
+                  maxHeight: '60px',
+                  overflow: 'auto',
+                }}
+              >
+                <span className="font-medium mr-1">Listening:</span>
+                {interimTranscript}
+              </div>
+            )}
+          </div>
+          <Button
+            type="submit"
+            size="icon"
+            variant="primary"
+            disabled={!inputValue.trim() || !isConnected || isTranscribing}
+            style={{ backgroundColor: 'var(--primary-green)' }}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+          {isVoiceConversationMode && (
+            <Button
+              type="button"
+              size="icon"
+              variant={isVoiceConversationActive ? 'danger' : 'outline'}
+              onClick={handleToggleVoiceConversation}
+              title={
+                isVoiceConversationActive
+                  ? t('chat.stopVoiceConversation')
+                  : t('chat.startVoiceConversation')
+              }
+            >
+              <Mic className="h-4 w-4" />
+            </Button>
+          )}
+        </form>
       </div>
       <VoiceModeTutorial
         isOpen={showVoiceTutorial}
