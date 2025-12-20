@@ -14,8 +14,16 @@ const safeJsonParse = (value, fallback) => {
   }
 };
 
+const createFallbackMessageId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `msg-${crypto.randomUUID()}`;
+  }
+  return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+};
+
 export const normalizeChatMessage = (m) => {
-  const id = m?.id;
+  const rawId = m?.id;
+  const id = rawId === null || rawId === undefined ? createFallbackMessageId() : String(rawId);
   const content = m?.content ?? m?.message ?? m?.text ?? '';
 
   return {

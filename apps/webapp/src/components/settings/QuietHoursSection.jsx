@@ -42,7 +42,7 @@ const QuietHoursSection = ({ currentUser }) => {
             <input
               type="time"
               className="form-input"
-              value={quietStart}
+              value={quietStart || ''}
               onChange={(e) => setQuietStart(e.target.value)}
             />
           </div>
@@ -52,7 +52,7 @@ const QuietHoursSection = ({ currentUser }) => {
             <input
               type="time"
               className="form-input"
-              value={quietEnd}
+              value={quietEnd || ''}
               onChange={(e) => setQuietEnd(e.target.value)}
             />
           </div>

@@ -105,7 +105,7 @@ export const useTokenRefresh = ({
           originalRequest._retry = true;
           isRefreshingRef.current = true;
 
-          const storedRefreshToken = localStorage.getItem('refreshToken') || refreshToken;
+          const storedRefreshToken = refreshToken || localStorage.getItem('refreshToken');
 
           if (!storedRefreshToken) {
             isRefreshingRef.current = false;

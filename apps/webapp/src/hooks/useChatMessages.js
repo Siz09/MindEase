@@ -4,6 +4,15 @@ import { MESSAGE_STATUS } from '../utils/messageStatus';
 
 const MAX_MESSAGES_IN_MEMORY = 200; // Keep last 200 messages in memory
 
+const toMessageId = (value) => (value === null || value === undefined ? null : String(value));
+
+const createFallbackMessageId = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `msg-${crypto.randomUUID()}`;
+  }
+  return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+};
+
 /**
  * Custom hook for managing chat messages state and operations
  *
@@ -24,7 +33,11 @@ export const useChatMessages = () => {
 
   // Normalize message format from various sources
   const normalizeMessage = useCallback((m) => {
-    const id = m.id;
+    const rawId = m?.id;
+    const id = rawId === null || rawId === undefined ? createFallbackMessageId() : String(rawId);
+    if (rawId === null || rawId === undefined) {
+      console.warn('Message received without ID:', m);
+    }
     return {
       id,
       content: m.content || m.message || m.text || 'Empty message',
@@ -63,7 +76,7 @@ export const useChatMessages = () => {
         setMessageStatuses((prev) => {
           const cleaned = {};
           Object.keys(prev).forEach((id) => {
-            if (keptIds.has(Number(id)) || keptIds.has(id)) {
+            if (keptIds.has(id)) {
               cleaned[id] = prev[id];
             }
           });
@@ -81,7 +94,8 @@ export const useChatMessages = () => {
   // Add a new message with deduplication
   const addMessage = useCallback(
     (message) => {
-      const messageId = message.id;
+      const normalizedMessage = normalizeMessage(message);
+      const messageId = normalizedMessage.id;
 
       // Check if message was already processed
       if (messageId && processedMessageIds.current.has(messageId)) {
@@ -89,11 +103,10 @@ export const useChatMessages = () => {
         return false;
       }
 
-      // Normalize message format before inserting into state
-      const normalizedMessage = normalizeMessage({
-        ...message,
-        id: messageId,
-      });
+      // Mark as processed immediately to prevent race conditions
+      if (messageId) {
+        processedMessageIds.current.set(messageId, { timestamp: Date.now() });
+      }
 
       // Use functional update to access current messages state
       setMessages((prevMessages) => {
@@ -110,10 +123,6 @@ export const useChatMessages = () => {
         if (isDuplicate) {
           console.debug('Duplicate message content detected and skipped:', messageId);
           return prevMessages; // Return unchanged state
-        }
-
-        if (messageId) {
-          processedMessageIds.current.set(messageId, { timestamp: Date.now() });
         }
 
         console.log(
@@ -134,12 +143,28 @@ export const useChatMessages = () => {
   // Add multiple messages (e.g., from history)
   const addMessages = useCallback(
     (messagesList) => {
-      const normalized = messagesList.map((m) => normalizeMessage(m));
+      const normalized = (Array.isArray(messagesList) ? messagesList : []).map((m) =>
+        normalizeMessage(m)
+      );
+      const candidates = [];
+      const seenIds = new Set();
+
+      for (const msg of normalized) {
+        if (!msg?.id) continue;
+        if (seenIds.has(msg.id)) continue;
+        seenIds.add(msg.id);
+        if (processedMessageIds.current.has(msg.id)) continue;
+        processedMessageIds.current.set(msg.id, { timestamp: Date.now() });
+        candidates.push(msg);
+      }
+
+      if (candidates.length === 0) return;
+
       setMessages((prev) => {
-        if (prev.length === 0) return trimMessages(normalized);
-        const newIds = new Set(normalized.map((m) => m.id));
+        if (prev.length === 0) return trimMessages(candidates);
+        const newIds = new Set(candidates.map((m) => m.id));
         const prevFiltered = prev.filter((m) => !newIds.has(m.id));
-        const merged = [...prevFiltered, ...normalized];
+        const merged = [...prevFiltered, ...candidates];
         merged.sort((a, b) => {
           const aTime = Date.parse(a.createdAt);
           const bTime = Date.parse(b.createdAt);
@@ -154,14 +179,48 @@ export const useChatMessages = () => {
     [normalizeMessage, trimMessages]
   );
 
+  // Prepend older messages (history pagination)
+  const prependMessages = useCallback(
+    (messagesList) => {
+      const normalized = (Array.isArray(messagesList) ? messagesList : []).map((m) =>
+        normalizeMessage(m)
+      );
+      const candidates = [];
+      const seenIds = new Set();
+
+      for (const msg of normalized) {
+        if (!msg?.id) continue;
+        if (seenIds.has(msg.id)) continue;
+        seenIds.add(msg.id);
+        if (processedMessageIds.current.has(msg.id)) continue;
+        processedMessageIds.current.set(msg.id, { timestamp: Date.now() });
+        candidates.push(msg);
+      }
+
+      if (candidates.length === 0) return;
+
+      setMessages((prev) => {
+        if (prev.length === 0) return candidates;
+        const prevIds = new Set(prev.map((m) => m.id));
+        const toPrepend = candidates.filter((m) => !prevIds.has(m.id));
+        if (toPrepend.length === 0) return prev;
+        return [...toPrepend, ...prev];
+      });
+    },
+    [normalizeMessage]
+  );
+
   // Update message status
   const updateMessageStatus = useCallback((messageId, status) => {
+    const id = toMessageId(messageId);
+    if (id === null) return;
+
     setMessageStatuses((prev) => {
       // Don't regress from DELIVERED to SENT
-      if (prev[messageId] === MESSAGE_STATUS.DELIVERED && status === MESSAGE_STATUS.SENT) {
+      if (prev[id] === MESSAGE_STATUS.DELIVERED && status === MESSAGE_STATUS.SENT) {
         return prev;
       }
-      return { ...prev, [messageId]: status };
+      return { ...prev, [id]: status };
     });
   }, []);
 
@@ -183,10 +242,13 @@ export const useChatMessages = () => {
 
   // Remove a message
   const removeMessage = useCallback((messageId) => {
-    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    const id = toMessageId(messageId);
+    if (id === null) return;
+
+    setMessages((prev) => prev.filter((m) => m.id !== id));
     setMessageStatuses((prev) => {
       const newStatuses = { ...prev };
-      delete newStatuses[messageId];
+      delete newStatuses[id];
       return newStatuses;
     });
   }, []);
@@ -200,15 +262,17 @@ export const useChatMessages = () => {
 
   // Check if message was already processed
   const isMessageProcessed = useCallback((messageId) => {
-    return processedMessageIds.current.has(messageId);
+    const id = toMessageId(messageId);
+    if (id === null) return false;
+    return processedMessageIds.current.has(id);
   }, []);
 
   // Cleanup old processed message IDs periodically (every 5 minutes)
   useEffect(() => {
     const cleanupInterval = setInterval(
       () => {
-        const fiveMinutesAgo = 5 * 60 * 1000;
-        const removed = processedMessageIds.current.removeOlderThan(fiveMinutesAgo);
+        const maxAgeMs = 5 * 60 * 1000;
+        const removed = processedMessageIds.current.removeOlderThan(maxAgeMs);
         if (removed > 0) {
           console.log(`Cleaned up ${removed} old message IDs from cache`);
         }
@@ -224,13 +288,10 @@ export const useChatMessages = () => {
     messages,
     messageStatuses,
 
-    // Setters (for direct state updates if needed)
-    setMessages,
-    setMessageStatuses,
-
     // Operations
     addMessage,
     addMessages,
+    prependMessages,
     removeMessage,
     clearMessages,
     updateMessageStatus,
@@ -241,8 +302,5 @@ export const useChatMessages = () => {
     normalizeMessage,
     trimMessages,
     isMessageProcessed,
-
-    // Internal refs (for advanced usage)
-    processedMessageIds,
   };
 };

@@ -41,8 +41,25 @@ const Chat = () => {
   const preventAutoScrollRef = useRef(false);
   const prevScrollHeightRef = useRef(0);
   const shouldAutoScrollRef = useRef(true);
+  const isMountedRef = useRef(false);
+  const inFlightSendRequestsRef = useRef(new Set());
 
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      for (const controller of inFlightSendRequestsRef.current) {
+        try {
+          controller.abort();
+        } catch {
+          // ignore
+        }
+      }
+      inFlightSendRequestsRef.current.clear();
+    };
+  }, []);
 
   const {
     messages,
@@ -50,7 +67,7 @@ const Chat = () => {
     addMessage,
     addMessages,
     removeMessage,
-    setMessages,
+    prependMessages,
     normalizeMessage,
     isMessageProcessed,
     updateMessageStatus,
@@ -61,7 +78,7 @@ const Chat = () => {
     token,
     currentUser,
     addMessages,
-    setMessages,
+    prependMessages,
     normalizeMessage,
     isMessageProcessed,
     messagesContainerRef,
@@ -110,8 +127,16 @@ const Chat = () => {
 
       updateMessageStatus(localId, MESSAGE_STATUS.SENDING);
 
+      const abortController = new AbortController();
+      inFlightSendRequestsRef.current.add(abortController);
+
       try {
-        const res = await apiPost('/api/chat/send', { message: trimmed }, token);
+        const res = await apiPost('/api/chat/send', { message: trimmed }, token, {
+          signal: abortController.signal,
+          timeout: 30000,
+        });
+        if (!isMountedRef.current) return;
+
         const userMessage = res?.data?.userMessage;
         const botMessage = res?.data?.botMessage;
         const crisisMessage = res?.data?.crisisMessage;
@@ -137,9 +162,13 @@ const Chat = () => {
 
         setInputValue('');
       } catch (err) {
+        if (err.name === 'AbortError') return;
+        if (!isMountedRef.current) return;
         console.error('Failed to send message:', err);
         updateMessageStatus(localId, MESSAGE_STATUS.FAILED);
         toast.error(t('chat.messageFailed'));
+      } finally {
+        inFlightSendRequestsRef.current.delete(abortController);
       }
     },
     [
@@ -267,9 +296,15 @@ const Chat = () => {
   }, [voice]);
 
   useEffect(() => {
+    let mounted = true;
     if (!voice.tts.isPlaying) {
-      setSpeakingMessageId(null);
+      if (mounted) {
+        setSpeakingMessageId(null);
+      }
     }
+    return () => {
+      mounted = false;
+    };
   }, [voice.tts.isPlaying]);
 
   const selectQuickMessage = useCallback((msg) => setInputValue(msg), []);

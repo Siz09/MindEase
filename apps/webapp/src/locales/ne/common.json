@@ -307,6 +307,7 @@
       "languageChanged": "भाषा सफलतापूर्वक परिवर्तन गरियो",
       "languageChangeFailed": "भाषा परिवर्तन गर्न असफल",
       "settingsUpdated": "सेटिङ्गहरू सफलतापूर्वक अपडेट गरियो",
+      "accountConverted": "खाता सफलतापूर्वक रूपान्तरण गरियो",
       "updateFailed": "सेटिङ्गहरू अपडेट गर्न असफल",
       "quietHours": {
         "title": "शान्त घण्टाहरू",

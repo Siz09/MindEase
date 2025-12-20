@@ -40,9 +40,9 @@ export const firebaseLinkCurrentUserWithEmailPassword = async (email, password) 
 
   const { EmailAuthProvider, linkWithCredential } = await import('firebase/auth');
   const credential = EmailAuthProvider.credential(email, password);
-  await linkWithCredential(firebaseUser, credential);
+  const result = await linkWithCredential(firebaseUser, credential);
 
-  return firebaseUser;
+  return result.user;
 };
 
 export const firebaseSignOut = async () => {

@@ -31,9 +31,9 @@ const LanguageSettingsSection = () => {
         <div className="current-language">
           <span className="info-label">{t('settings.language.currentLanguage')}:</span>
           <span className="info-value">
-            {currentLanguage === 'en'
-              ? t('settings.language.english')
-              : t('settings.language.nepali')}
+            {currentLanguage === 'en' && t('settings.language.english')}
+            {currentLanguage === 'ne' && t('settings.language.nepali')}
+            {currentLanguage !== 'en' && currentLanguage !== 'ne' && currentLanguage}
           </span>
         </div>
 

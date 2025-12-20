@@ -30,19 +30,19 @@ const ChatEmptyState = ({ onSelectMessage }) => {
         <h3 className="empty-title">{t('chat.emptyTitle')}</h3>
         <p className="empty-description">{t('chat.emptyDescription')}</p>
 
-        <div className="suggested-messages" role="list">
+        <ul className="suggested-messages">
           {quickResponses.map((msg, index) => (
-            <button
-              key={quickResponseKeys[index]}
-              type="button"
-              className="suggested-message"
-              role="listitem"
-              onClick={() => onSelectMessage?.(msg)}
-            >
-              {msg}
-            </button>
+            <li key={quickResponseKeys[index]}>
+              <button
+                type="button"
+                className="suggested-message"
+                onClick={() => onSelectMessage?.(msg)}
+              >
+                {msg}
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </div>
   );

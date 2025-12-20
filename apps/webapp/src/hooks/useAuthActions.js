@@ -62,19 +62,14 @@ export const useAuthActions = ({
 
         const role = userData?.role || userData?.authority;
         if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
-          toast.update(toastId, {
-            render: 'Signed in as admin',
-            type: 'success',
-            isLoading: false,
-            autoClose: 1500,
-          });
-          return {
-            success: true,
-            user: userData,
-            token: jwtToken,
-            refreshToken: refreshTokenValue,
-            isAdmin: true,
-          };
+          const result = handleAuthSuccess(
+            jwtToken,
+            userData,
+            refreshTokenValue,
+            toastId,
+            'Signed in as admin'
+          );
+          return { ...result, isAdmin: true };
         }
 
         return handleAuthSuccess(

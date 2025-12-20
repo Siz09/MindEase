@@ -105,9 +105,10 @@ export const useWebSocket = ({
           setIsConnected(true);
           isConnectingRef.current = false;
           isIntentionallyDisconnectingRef.current = false; // Reset flag on successful connection
+          const wasReconnecting = reconnectAttempts.current > 0;
           resetReconnectState(); // Reset backoff on successful connection
 
-          if (reconnectAttempts.current > 0) {
+          if (wasReconnecting) {
             toast.success('Reconnected successfully!');
           }
 

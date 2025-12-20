@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
@@ -7,18 +7,25 @@ const AIProviderSection = ({ currentUser }) => {
   const { t } = useTranslation();
   const [aiProvider, setAiProvider] = useState(null);
   const [aiProviderLoading, setAiProviderLoading] = useState(false);
+  const isMountedRef = useRef(false);
 
   useEffect(() => {
-    let isMounted = true;
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchAIProvider = async () => {
       try {
         const response = await api.get('/chat/provider');
-        if (isMounted) {
+        if (isMountedRef.current) {
           setAiProvider(response.data.currentProvider || 'OPENAI');
         }
       } catch (error) {
         console.error('Failed to fetch AI provider:', error);
-        if (isMounted) {
+        if (isMountedRef.current) {
           setAiProvider(null);
           toast.error(t('settings.notifications.aiProviderLoadFailed'));
         }
@@ -26,22 +33,25 @@ const AIProviderSection = ({ currentUser }) => {
     };
 
     if (currentUser) fetchAIProvider();
-    return () => {
-      isMounted = false;
-    };
-  }, [currentUser]);
+  }, [currentUser, t]);
 
   const handleAIProviderChange = async (newProvider) => {
     setAiProviderLoading(true);
     try {
       await api.put('/chat/provider', { provider: newProvider });
-      setAiProvider(newProvider);
-      toast.success(t('settings.notifications.aiProviderUpdated'));
+      if (isMountedRef.current) {
+        setAiProvider(newProvider);
+        toast.success(t('settings.notifications.aiProviderUpdated'));
+      }
     } catch (error) {
       console.error('Failed to update AI provider:', error);
-      toast.error(t('settings.notifications.aiProviderUpdateFailed'));
+      if (isMountedRef.current) {
+        toast.error(t('settings.notifications.aiProviderUpdateFailed'));
+      }
     } finally {
-      setAiProviderLoading(false);
+      if (isMountedRef.current) {
+        setAiProviderLoading(false);
+      }
     }
   };
 
@@ -61,9 +71,12 @@ const AIProviderSection = ({ currentUser }) => {
           <div
             className={`provider-card ${aiProvider === 'OPENAI' ? 'selected' : ''}`}
             onClick={() => !aiProviderLoading && handleAIProviderChange('OPENAI')}
-            onKeyDown={(e) =>
-              e.key === 'Enter' && !aiProviderLoading && handleAIProviderChange('OPENAI')
-            }
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !aiProviderLoading) {
+                e.preventDefault();
+                handleAIProviderChange('OPENAI');
+              }
+            }}
             role="button"
             tabIndex={aiProviderLoading ? -1 : 0}
             aria-pressed={aiProvider === 'OPENAI'}
@@ -82,9 +95,12 @@ const AIProviderSection = ({ currentUser }) => {
           <div
             className={`provider-card ${aiProvider === 'LOCAL' ? 'selected' : ''}`}
             onClick={() => !aiProviderLoading && handleAIProviderChange('LOCAL')}
-            onKeyDown={(e) =>
-              e.key === 'Enter' && !aiProviderLoading && handleAIProviderChange('LOCAL')
-            }
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !aiProviderLoading) {
+                e.preventDefault();
+                handleAIProviderChange('LOCAL');
+              }
+            }}
             role="button"
             tabIndex={aiProviderLoading ? -1 : 0}
             aria-pressed={aiProvider === 'LOCAL'}
@@ -103,9 +119,12 @@ const AIProviderSection = ({ currentUser }) => {
           <div
             className={`provider-card ${aiProvider === 'AUTO' ? 'selected' : ''}`}
             onClick={() => !aiProviderLoading && handleAIProviderChange('AUTO')}
-            onKeyDown={(e) =>
-              e.key === 'Enter' && !aiProviderLoading && handleAIProviderChange('AUTO')
-            }
+            onKeyDown={(e) => {
+              if ((e.key === 'Enter' || e.key === ' ') && !aiProviderLoading) {
+                e.preventDefault();
+                handleAIProviderChange('AUTO');
+              }
+            }}
             role="button"
             tabIndex={aiProviderLoading ? -1 : 0}
             aria-pressed={aiProvider === 'AUTO'}

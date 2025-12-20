@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import i18next from 'i18next';
 import { useSession } from '../hooks/useSession';
 import { useTokenRefresh } from '../hooks/useTokenRefresh';
 import { authApiMe } from '../utils/auth/authApi';
@@ -29,10 +30,11 @@ export const AuthProvider = ({ children }) => {
   // Helper to get translated error message
   const getErrorMessage = useCallback(
     (errorCode, fallback) => {
-    if (errorCode && t(`auth.errors.${errorCode}`, { defaultValue: null })) {
-      return t(`auth.errors.${errorCode}`);
-    }
-    return fallback;
+      const key = `auth.errors.${errorCode}`;
+      if (errorCode && i18next.exists(key)) {
+        return t(key);
+      }
+      return fallback;
     },
     [t]
   );
@@ -119,7 +121,13 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
     checkAuth();
-  }, [location.pathname, clearSessionState, showWelcomeBackOnce, markAuthenticated, showSessionExpiredOnce]);
+  }, [
+    location.pathname,
+    clearSessionState,
+    showWelcomeBackOnce,
+    markAuthenticated,
+    showSessionExpiredOnce,
+  ]);
 
   const value = {
     currentUser,

@@ -32,6 +32,6 @@ export const getTokenExpirationMs = (token) => {
 
 export const isTokenExpired = (token, skewMs = 0) => {
   const expMs = getTokenExpirationMs(token);
-  if (!expMs) return false;
+  if (!expMs) return true;
   return Date.now() + skewMs >= expMs;
 };

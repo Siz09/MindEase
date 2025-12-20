@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { apiGet } from '../lib/api';
 import { extractTotalPages } from '../utils/chat/messageNormalizer';
@@ -17,7 +17,7 @@ import { extractTotalPages } from '../utils/chat/messageNormalizer';
  * @param {string} options.token - Authentication token
  * @param {Object} options.currentUser - Current user object
  * @param {Function} options.addMessages - Function to add messages (from useChatMessages)
- * @param {Function} options.setMessages - Function to set messages directly (for prepending)
+ * @param {Function} options.prependMessages - Function to prepend messages (for history pagination)
  * @param {Function} options.normalizeMessage - Function to normalize message format
  * @param {Function} options.isMessageProcessed - Function to check if message was processed
  * @param {Object} options.messagesContainerRef - Ref to messages container element
@@ -29,7 +29,7 @@ export const useChatHistory = ({
   token,
   currentUser,
   addMessages,
-  setMessages,
+  prependMessages,
   normalizeMessage,
   isMessageProcessed,
   messagesContainerRef,
@@ -40,18 +40,27 @@ export const useChatHistory = ({
   const [hasMoreHistory, setHasMoreHistory] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const loadingHistoryRef = useRef(false);
 
   // Load initial chat history
   const loadHistory = useCallback(async () => {
-    if (loadingHistory) return;
+    if (loadingHistoryRef.current) return;
     try {
+      loadingHistoryRef.current = true;
       setLoadingHistory(true);
       const pageSize = 50;
       // Request newest first; reverse to chronological for UI
       const res = await apiGet(`/api/chat/history?page=0&size=${pageSize}&sort=desc`, token);
       const totalPages = extractTotalPages(res) ?? 1;
       const items = Array.isArray(res?.data) ? res.data.slice().reverse() : [];
-      addMessages(items);
+      const normalized = items
+        .map((m) => {
+          const id = m?.id;
+          if (id !== null && id !== undefined && isMessageProcessed(id)) return null;
+          return normalizeMessage(m);
+        })
+        .filter(Boolean);
+      addMessages(normalized);
       setHistoryPage(0);
       setHasMoreHistory(totalPages > 1);
       setInitialLoadComplete(true);
@@ -60,13 +69,15 @@ export const useChatHistory = ({
       toast.error('Failed to load chat history');
     } finally {
       setLoadingHistory(false);
+      loadingHistoryRef.current = false;
     }
-  }, [token, loadingHistory, addMessages]);
+  }, [token, addMessages, isMessageProcessed, normalizeMessage]);
 
   // Load older messages (prepend to existing messages)
   const loadOlderHistory = useCallback(async () => {
-    if (historyPage === null || loadingHistory) return;
+    if (historyPage === null || loadingHistoryRef.current) return;
     try {
+      loadingHistoryRef.current = true;
       setLoadingHistory(true);
       const nextPage = historyPage + 1; // older when using sort=desc on API
       const el = messagesContainerRef?.current;
@@ -76,14 +87,20 @@ export const useChatHistory = ({
       const items = Array.isArray(res?.data) ? res.data.slice().reverse() : [];
       const normalized = items
         .map((m) => {
-          if (isMessageProcessed(m.id)) return null;
+          const id = m?.id;
+          if (id !== null && id !== undefined && isMessageProcessed(id)) return null;
           return normalizeMessage(m);
         })
         .filter(Boolean);
 
-      if (normalized.length === 0) {
+      setHistoryPage(nextPage);
+      if (typeof totalPages === 'number') {
+        setHasMoreHistory(nextPage < totalPages - 1);
+      } else if (normalized.length === 0) {
         setHasMoreHistory(false);
-      } else {
+      }
+
+      if (normalized.length > 0) {
         // Prevent auto-scroll and store scroll position for restoration
         if (preventAutoScrollRef) {
           preventAutoScrollRef.current = true;
@@ -92,17 +109,14 @@ export const useChatHistory = ({
           prevScrollHeightRef.current = prevScrollHeight;
         }
         // Prepend older messages (special case for history pagination)
-        setMessages((prev) => [...normalized, ...prev]);
-        setHistoryPage(nextPage);
-        if (typeof totalPages === 'number') {
-          setHasMoreHistory(nextPage < totalPages - 1);
-        }
+        prependMessages(normalized);
       }
     } catch (err) {
       console.error('Failed to load older history:', err);
       toast.error('Failed to load older messages');
     } finally {
       setLoadingHistory(false);
+      loadingHistoryRef.current = false;
     }
   }, [
     historyPage,
@@ -110,10 +124,9 @@ export const useChatHistory = ({
     messagesContainerRef,
     preventAutoScrollRef,
     prevScrollHeightRef,
-    loadingHistory,
     isMessageProcessed,
     normalizeMessage,
-    setMessages,
+    prependMessages,
   ]);
 
   // Auto-load history when auth becomes available

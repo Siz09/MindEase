@@ -9,10 +9,10 @@ const VoiceControls = ({
   isTranscribing = false,
   error = null,
   interimTranscript = '',
-  onToggle,
-  onStartRecording,
-  onStopRecording,
-  onCancelRecording,
+  onToggle = () => {},
+  onStartRecording = () => {},
+  onStopRecording = () => {},
+  onCancelRecording = () => {},
 }) => {
   const { t } = useTranslation();
 

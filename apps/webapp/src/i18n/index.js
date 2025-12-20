@@ -7,8 +7,12 @@ const SUPPORTED_LANGUAGES = ['en', 'ne'];
 
 const getInitialLanguage = () => {
   if (typeof window === 'undefined') return 'en';
-  const stored = localStorage.getItem('i18nextLng');
-  return SUPPORTED_LANGUAGES.includes(stored) ? stored : 'en';
+  try {
+    const stored = localStorage.getItem('i18nextLng');
+    return SUPPORTED_LANGUAGES.includes(stored) ? stored : 'en';
+  } catch {
+    return 'en';
+  }
 };
 
 i18n.use(initReactI18next).init({

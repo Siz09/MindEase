@@ -8,12 +8,22 @@ export const useQuietHours = ({ currentUser, t }) => {
   const [quietHoursLoading, setQuietHoursLoading] = useState(false);
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setQuietStart('22:00');
+      setQuietEnd('07:00');
+      return;
+    }
+
     if (currentUser.quietHoursStart?.length >= 5) {
       setQuietStart(currentUser.quietHoursStart.slice(0, 5));
+    } else {
+      setQuietStart('22:00');
     }
+
     if (currentUser.quietHoursEnd?.length >= 5) {
       setQuietEnd(currentUser.quietHoursEnd.slice(0, 5));
+    } else {
+      setQuietEnd('07:00');
     }
   }, [currentUser]);
 

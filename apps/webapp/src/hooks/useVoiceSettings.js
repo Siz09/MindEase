@@ -1,11 +1,31 @@
 import { useCallback, useEffect, useState } from 'react';
 import { loadVoiceSettings, saveVoiceSettings } from '../utils/voiceSettingsManager';
 
+const FALLBACK_SETTINGS = {
+  voiceInputEnabled: false,
+  voiceOutputEnabled: false,
+  speechRate: 1.0,
+  volume: 1.0,
+  selectedVoice: null,
+};
+
 export const useVoiceSettings = () => {
-  const [settings, setSettings] = useState(() => loadVoiceSettings());
+  const [settings, setSettings] = useState(() => {
+    try {
+      return loadVoiceSettings();
+    } catch (error) {
+      console.error('Failed to load voice settings:', error);
+      return FALLBACK_SETTINGS;
+    }
+  });
 
   const refresh = useCallback(() => {
-    setSettings(loadVoiceSettings());
+    try {
+      setSettings(loadVoiceSettings());
+    } catch (error) {
+      console.error('Failed to refresh voice settings:', error);
+      setSettings(FALLBACK_SETTINGS);
+    }
   }, []);
 
   useEffect(() => {
@@ -15,8 +35,16 @@ export const useVoiceSettings = () => {
   }, [refresh]);
 
   const update = useCallback((partial) => {
-    saveVoiceSettings(partial);
-    setSettings((prev) => ({ ...prev, ...partial }));
+    try {
+      const saved = saveVoiceSettings(partial);
+      if (saved === false) {
+        console.error('Failed to save voice settings:', partial);
+        return;
+      }
+      setSettings((prev) => ({ ...prev, ...partial }));
+    } catch (error) {
+      console.error('Failed to save voice settings:', error);
+    }
   }, []);
 
   return {
@@ -34,4 +62,3 @@ export const useVoiceSettings = () => {
     setSelectedVoiceName: (selectedVoice) => update({ selectedVoice }),
   };
 };
-

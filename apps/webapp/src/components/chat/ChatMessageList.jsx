@@ -29,12 +29,13 @@ const ChatMessageList = ({
 
   return (
     <div className="chat-messages" ref={containerRef} onScroll={onScroll}>
-      {hasMoreHistory && (
+      {hasMoreHistory && onLoadOlder && (
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <button
             type="button"
             onClick={onLoadOlder}
             disabled={loadingHistory}
+            aria-busy={loadingHistory}
             className="suggested-message"
             style={{ maxWidth: 260 }}
           >

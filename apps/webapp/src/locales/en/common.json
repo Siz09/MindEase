@@ -476,6 +476,7 @@
       "languageChanged": "Language changed successfully",
       "languageChangeFailed": "Failed to change language",
       "settingsUpdated": "Settings updated successfully",
+      "accountConverted": "Account converted successfully",
       "updateFailed": "Failed to update settings",
       "quietHours": {
         "title": "Quiet Hours",

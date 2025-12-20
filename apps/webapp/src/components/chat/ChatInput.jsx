@@ -14,7 +14,9 @@ const ChatInput = ({
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSend?.();
+      if (!disabled && value?.trim()) {
+        onSend?.();
+      }
     }
   };
 
@@ -27,11 +29,17 @@ const ChatInput = ({
             className={`voice-conversation-toggle ${voiceConversationActive ? 'active' : ''}`}
             onClick={() => onToggleVoiceConversation?.()}
             aria-pressed={voiceConversationActive}
+            aria-label={
+              voiceConversationActive
+                ? t('chat.stopVoiceConversation')
+                : t('chat.startVoiceConversation')
+            }
             title={
               voiceConversationActive
                 ? t('chat.stopVoiceConversation')
                 : t('chat.startVoiceConversation')
             }
+            disabled={disabled}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path
@@ -58,6 +66,7 @@ const ChatInput = ({
           className="chat-input"
           rows={1}
           disabled={disabled}
+          aria-label={t('chat.inputPlaceholder')}
         />
 
         <button
@@ -68,7 +77,7 @@ const ChatInput = ({
           aria-label={t('chat.sendMessage')}
           title={t('chat.sendMessage')}
         >
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <path d="M2 10l16-8-8 8 8 8-16-8z" fill="currentColor" />
           </svg>
         </button>

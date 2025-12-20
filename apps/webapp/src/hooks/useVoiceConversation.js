@@ -111,6 +111,7 @@ export const useVoiceConversation = ({
   );
 
   const stopVoiceConversationRef = useRef(() => {});
+  const startRecordingRef = useRef(() => {});
 
   const voiceRecorder = useVoiceRecorder({
     language,
@@ -135,10 +136,14 @@ export const useVoiceConversation = ({
       }
 
       if (isVoiceConversationActiveRef.current) {
-        voiceRecorder.startRecording();
+        startRecordingRef.current();
       }
     },
   });
+
+  useEffect(() => {
+    startRecordingRef.current = voiceRecorder.startRecording;
+  }, [voiceRecorder.startRecording]);
 
   const startVoiceConversation = useCallback(() => {
     if (!canUseVoiceConversation) {
@@ -156,7 +161,7 @@ export const useVoiceConversation = ({
     setVoiceError(null);
     setConsecutiveFailures(0);
     toast.success(t('chat.voiceConversationStarted'));
-    voiceRecorder.startRecording();
+    startRecordingRef.current();
   }, [canUseVoiceConversation, t, voiceRecorder]);
 
   const stopVoiceConversation = useCallback(() => {
@@ -211,8 +216,9 @@ export const useVoiceConversation = ({
         toast.info(t('chat.voicePausedHidden'));
       } else if (autoPausedForHiddenTabRef.current) {
         autoPausedForHiddenTabRef.current = false;
+        if (tts.isPaused) tts.resume();
         if (!voiceRecorder.isRecording && !voiceRecorder.isTranscribing) {
-          voiceRecorder.startRecording();
+          startRecordingRef.current();
         }
       }
     };

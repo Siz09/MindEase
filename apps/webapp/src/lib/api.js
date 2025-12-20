@@ -1,11 +1,34 @@
-export async function apiPost(path, body = {}, token) {
+const DEFAULT_TIMEOUT_MS = 30000;
+
+const createTimeoutError = () => {
+  const error = new Error('Request timeout');
+  error.name = 'TimeoutError';
+  return error;
+};
+
+export async function apiPost(path, body = {}, token, options = {}) {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   if (!baseUrl) {
     throw new Error('VITE_API_BASE_URL is not defined');
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutMs = Number.isFinite(options?.timeout) ? options.timeout : DEFAULT_TIMEOUT_MS;
+  const externalSignal = options?.signal;
+  const abortListener = () => controller.abort();
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', abortListener, { once: true });
+    }
+  }
+
+  const timeoutId =
+    Number.isFinite(timeoutMs) && timeoutMs > 0
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
 
   try {
     const res = await fetch(`${baseUrl}${path}`, {
@@ -35,22 +58,41 @@ export async function apiPost(path, body = {}, token) {
     }
   } catch (err) {
     if (err.name === 'AbortError') {
-      throw new Error('Request timeout');
+      if (externalSignal?.aborted) throw err;
+      throw createTimeoutError();
     }
     throw err;
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', abortListener);
+    }
   }
 }
 
-export async function apiGet(path, token) {
+export async function apiGet(path, token, options = {}) {
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
   if (!baseUrl) {
     throw new Error('VITE_API_BASE_URL is not defined');
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const timeoutMs = Number.isFinite(options?.timeout) ? options.timeout : DEFAULT_TIMEOUT_MS;
+  const externalSignal = options?.signal;
+  const abortListener = () => controller.abort();
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', abortListener, { once: true });
+    }
+  }
+
+  const timeoutId =
+    Number.isFinite(timeoutMs) && timeoutMs > 0
+      ? setTimeout(() => controller.abort(), timeoutMs)
+      : null;
 
   try {
     const res = await fetch(`${baseUrl}${path}`, {
@@ -77,10 +119,14 @@ export async function apiGet(path, token) {
     }
   } catch (err) {
     if (err.name === 'AbortError') {
-      throw new Error('Request timeout');
+      if (externalSignal?.aborted) throw err;
+      throw createTimeoutError();
     }
     throw err;
   } finally {
-    clearTimeout(timeoutId);
+    if (timeoutId) clearTimeout(timeoutId);
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', abortListener);
+    }
   }
 }

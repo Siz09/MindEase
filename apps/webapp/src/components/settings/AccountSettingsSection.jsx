@@ -78,6 +78,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
     try {
       const result = await convertAnonymousToFull(convertEmail, convertPassword);
       if (result.success) {
+        toast.success(t('settings.notifications.accountConverted'));
         setShowConvertForm(false);
         setConvertEmail('');
         setConvertPassword('');
