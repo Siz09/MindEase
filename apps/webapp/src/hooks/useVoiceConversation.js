@@ -159,6 +159,7 @@ export const useVoiceConversation = ({
     isVoiceConversationActiveRef.current = true;
     setIsVoiceConversationActive(true);
     autoPausedForHiddenTabRef.current = false;
+    autoPausedTtsForHiddenTabRef.current = false;
     setVoiceError(null);
     setConsecutiveFailures(0);
     toast.success(t('chat.voiceConversationStarted'));
@@ -173,6 +174,8 @@ export const useVoiceConversation = ({
     } catch {
       // ignore
     }
+    autoPausedForHiddenTabRef.current = false;
+    autoPausedTtsForHiddenTabRef.current = false;
     tts.stop();
     toast.info(t('chat.voiceConversationStopped'));
   }, [tts, voiceRecorder, t]);
