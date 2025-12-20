@@ -57,8 +57,12 @@ export const useOfflineQueue = () => {
           const nextRetry = (item.retryCount || 0) + 1;
           if (nextRetry >= MAX_RETRIES) {
             toast.error('Failed to send queued message after multiple attempts.');
+            removeFromOfflineQueue(item.id);
+            refreshCount();
           } else {
-            toast.info(`Queued message failed. Will retry later (attempt ${nextRetry}/${MAX_RETRIES}).`);
+            toast.info(
+              `Queued message failed. Will retry later (attempt ${nextRetry}/${MAX_RETRIES}).`
+            );
           }
         }
       }
@@ -86,4 +90,3 @@ export const useOfflineQueue = () => {
     processQueue,
   };
 };
-

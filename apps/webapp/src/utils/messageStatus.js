@@ -4,6 +4,7 @@
  */
 
 export const MESSAGE_STATUS = {
+  QUEUED: 'queued',
   SENDING: 'sending',
   SENT: 'sent',
   DELIVERED: 'delivered',
@@ -15,6 +16,8 @@ export const MESSAGE_STATUS = {
  */
 export const getStatusIcon = (status) => {
   switch (status) {
+    case MESSAGE_STATUS.QUEUED:
+      return '⏳'; // Queued (offline)
     case MESSAGE_STATUS.SENDING:
       return '○'; // Empty circle
     case MESSAGE_STATUS.SENT:
@@ -33,6 +36,7 @@ export const getStatusIcon = (status) => {
  */
 export const getStatusColor = (status) => {
   switch (status) {
+    case MESSAGE_STATUS.QUEUED:
     case MESSAGE_STATUS.SENDING:
       return '#9ca3af'; // Gray
     case MESSAGE_STATUS.SENT:
@@ -51,6 +55,8 @@ export const getStatusColor = (status) => {
  */
 export const getStatusText = (status) => {
   switch (status) {
+    case MESSAGE_STATUS.QUEUED:
+      return 'Queued';
     case MESSAGE_STATUS.SENDING:
       return 'Sending...';
     case MESSAGE_STATUS.SENT:

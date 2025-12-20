@@ -38,7 +38,7 @@ const ChatMessageList = ({
             className="suggested-message"
             style={{ maxWidth: 260 }}
           >
-            {loadingHistory ? t('chat.loadingOlderMessages') : 'Load older messages'}
+            {loadingHistory ? t('chat.loadingOlderMessages') : t('chat.loadOlderMessages')}
           </button>
         </div>
       )}

@@ -25,7 +25,7 @@ const ChatInput = ({
           <button
             type="button"
             className={`voice-conversation-toggle ${voiceConversationActive ? 'active' : ''}`}
-            onClick={onToggleVoiceConversation}
+            onClick={() => onToggleVoiceConversation?.()}
             aria-pressed={voiceConversationActive}
             title={
               voiceConversationActive
@@ -78,4 +78,3 @@ const ChatInput = ({
 };
 
 export default ChatInput;
-

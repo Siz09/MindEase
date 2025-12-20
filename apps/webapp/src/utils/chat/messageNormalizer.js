@@ -23,7 +23,7 @@ export const normalizeChatMessage = (m) => {
     content: content || 'Empty message',
     isUserMessage: Boolean(m?.isUserMessage ?? (m?.sender ? m.sender === 'user' : false)),
     sender: m?.sender ?? (m?.isUserMessage ? 'user' : 'bot'),
-    createdAt: m?.createdAt ?? new Date().toISOString(),
+    createdAt: m?.createdAt ?? '1970-01-01T00:00:00.000Z',
     isCrisisFlagged: Boolean(m?.isCrisisFlagged),
     riskLevel: m?.riskLevel ?? 'NONE',
     moderationAction: m?.moderationAction ?? 'NONE',
@@ -41,4 +41,3 @@ export const extractTotalPages = (res) =>
     : Number.isFinite(res?.totalPages)
       ? res.totalPages
       : undefined;
-

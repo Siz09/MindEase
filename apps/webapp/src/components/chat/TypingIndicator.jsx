@@ -24,7 +24,7 @@ const TypingIndicator = () => {
           </div>
         </div>
         <div className="message-meta">
-          <span className="message-time">{t('chat.typing')}</span>
+          <span className="message-status">{t('chat.typing')}</span>
         </div>
       </div>
     </div>
@@ -32,4 +32,3 @@ const TypingIndicator = () => {
 };
 
 export default TypingIndicator;
-

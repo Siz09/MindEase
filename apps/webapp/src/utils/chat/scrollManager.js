@@ -16,6 +16,5 @@ export const isNearBottom = (container, thresholdPx = 140) => {
 export const restoreScrollAfterPrepend = (container, previousScrollHeight) => {
   if (!container) return;
   const delta = container.scrollHeight - previousScrollHeight;
-  container.scrollTop = Math.max(0, delta);
+  container.scrollTop += delta;
 };
-

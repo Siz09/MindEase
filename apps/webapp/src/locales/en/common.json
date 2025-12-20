@@ -56,6 +56,11 @@
     "invalidEmailFormatHint": "Please enter a valid email address (e.g., user@example.com)",
     "passwordRequired": "Password is required.",
     "passwordNotMeetRequirements": "Password does not meet the requirements.",
+    "allFieldsRequired": "All fields are required",
+    "invalidEmail": "Please enter a valid email address",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "convertAccountFailed": "Failed to convert account",
+    "unexpectedError": "An unexpected error occurred",
     "requirement": {
       "minLength": "At least 8 characters",
       "uppercase": "One uppercase letter (A-Z)",
@@ -302,6 +307,9 @@
     "subtitle": "Talk with our mental health assistant",
     "connected": "Connected",
     "disconnected": "Disconnected",
+    "offlineQueueTooltip": "Messages will be sent when reconnected",
+    "offlineQueueLabel_one": "{{count}} queued",
+    "offlineQueueLabel_other": "{{count}} queued",
     "emptyTitle": "Start a conversation",
     "emptyDescription": "Send a message to start chatting with our mental health assistant",
     "inputPlaceholder": "Type your message here...",
@@ -372,6 +380,7 @@
     "testVoiceSample": "This is a test of the text-to-speech voice.",
     "voiceBadge": "Voice",
     "loadingOlderMessages": "Loading older messages...",
+    "loadOlderMessages": "Load older messages",
     "startVoiceConversation": "Start Voice Conversation",
     "stopVoiceConversation": "Stop Voice Conversation",
     "voiceConversationStarted": "Voice conversation mode started",
@@ -433,11 +442,26 @@
       "dataRetention": "Data Retention",
       "dataRetentionDescription": "Your data is kept secure and can be deleted at any time."
     },
+    "convert": {
+      "title": "Convert to Full Account",
+      "description": "You're currently using an anonymous account. Convert to a full account to:",
+      "benefits": {
+        "keepData": "Keep your data permanently",
+        "accessAnywhere": "Access your account from any device",
+        "recommendations": "Receive personalized recommendations",
+        "notifications": "Enable email notifications"
+      },
+      "cta": "Convert to Full Account",
+      "submit": "Convert Account",
+      "converting": "Converting..."
+    },
     "language": {
       "title": "Language Preferences",
       "currentLanguage": "Current Language",
       "english": "English",
       "nepali": "à¤¨à¥‡à¤ªà¤¾à¤²à¥€ (Nepali)",
+      "selectEnglish": "Select English",
+      "selectNepali": "Select Nepali",
       "changeLanguage": "Change Language"
     },
     "actions": {
@@ -450,6 +474,7 @@
       "anonymousModeEnabled": "Anonymous mode enabled",
       "anonymousModeDisabled": "Anonymous mode disabled",
       "languageChanged": "Language changed successfully",
+      "languageChangeFailed": "Failed to change language",
       "settingsUpdated": "Settings updated successfully",
       "updateFailed": "Failed to update settings",
       "quietHours": {

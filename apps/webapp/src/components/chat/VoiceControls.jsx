@@ -26,6 +26,7 @@ const VoiceControls = ({
           className={`voice-conversation-toggle ${active ? 'active' : ''}`}
           onClick={onToggle}
           aria-pressed={active}
+          aria-label={active ? t('chat.stopVoiceConversation') : t('chat.startVoiceConversation')}
           title={active ? t('chat.stopVoiceConversation') : t('chat.startVoiceConversation')}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -67,4 +68,3 @@ const VoiceControls = ({
 };
 
 export default VoiceControls;
-

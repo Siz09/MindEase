@@ -5,23 +5,31 @@ import api from '../../utils/api';
 
 const AIProviderSection = ({ currentUser }) => {
   const { t } = useTranslation();
-  const [aiProvider, setAiProvider] = useState('OPENAI');
+  const [aiProvider, setAiProvider] = useState(null);
   const [aiProviderLoading, setAiProviderLoading] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchAIProvider = async () => {
       try {
         const response = await api.get('/chat/provider');
-        setAiProvider(response.data.currentProvider || 'OPENAI');
+        if (isMounted) {
+          setAiProvider(response.data.currentProvider || 'OPENAI');
+        }
       } catch (error) {
         console.error('Failed to fetch AI provider:', error);
-        setAiProvider(null);
-        toast.error(t('settings.notifications.aiProviderLoadFailed'));
+        if (isMounted) {
+          setAiProvider(null);
+          toast.error(t('settings.notifications.aiProviderLoadFailed'));
+        }
       }
     };
 
     if (currentUser) fetchAIProvider();
-  }, [currentUser, t]);
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser]);
 
   const handleAIProviderChange = async (newProvider) => {
     setAiProviderLoading(true);
@@ -129,4 +137,3 @@ const AIProviderSection = ({ currentUser }) => {
 };
 
 export default AIProviderSection;
-

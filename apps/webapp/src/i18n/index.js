@@ -3,6 +3,14 @@ import { initReactI18next } from 'react-i18next';
 import enCommon from '../locales/en/common.json';
 import neCommon from '../locales/ne/common.json';
 
+const SUPPORTED_LANGUAGES = ['en', 'ne'];
+
+const getInitialLanguage = () => {
+  if (typeof window === 'undefined') return 'en';
+  const stored = localStorage.getItem('i18nextLng');
+  return SUPPORTED_LANGUAGES.includes(stored) ? stored : 'en';
+};
+
 i18n.use(initReactI18next).init({
   resources: {
     en: {
@@ -12,7 +20,7 @@ i18n.use(initReactI18next).init({
       translation: neCommon,
     },
   },
-  lng: 'en',
+  lng: getInitialLanguage(),
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false,

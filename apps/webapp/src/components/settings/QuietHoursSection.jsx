@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
 import { useQuietHours } from '../../hooks/useQuietHours';
 
 const QuietHoursSection = ({ currentUser }) => {
@@ -24,13 +25,13 @@ const QuietHoursSection = ({ currentUser }) => {
               <span className="quiet-hours-label">
                 {t('settings.notifications.quietHours.startTimeLabel')}:
               </span>
-              <span className="quiet-hours-value">{quietStart}</span>
+              <span className="quiet-hours-value">{quietStart || '--:--'}</span>
             </div>
             <div className="quiet-hours-time">
               <span className="quiet-hours-label">
                 {t('settings.notifications.quietHours.endTimeLabel')}:
               </span>
-              <span className="quiet-hours-value">{quietEnd}</span>
+              <span className="quiet-hours-value">{quietEnd || '--:--'}</span>
             </div>
           </div>
         </div>
@@ -67,5 +68,11 @@ const QuietHoursSection = ({ currentUser }) => {
   );
 };
 
-export default QuietHoursSection;
+QuietHoursSection.propTypes = {
+  currentUser: PropTypes.shape({
+    quietHoursStart: PropTypes.string,
+    quietHoursEnd: PropTypes.string,
+  }),
+};
 
+export default QuietHoursSection;

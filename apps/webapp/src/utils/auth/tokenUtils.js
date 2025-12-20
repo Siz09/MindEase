@@ -18,7 +18,7 @@ export const decodeJwtPayload = (token) => {
     );
     return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Error decoding token:', error);
+    console.error('Error decoding token: invalid format or encoding');
     return null;
   }
 };
@@ -35,4 +35,3 @@ export const isTokenExpired = (token, skewMs = 0) => {
   if (!expMs) return false;
   return Date.now() + skewMs >= expMs;
 };
-

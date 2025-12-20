@@ -250,7 +250,8 @@
 }
 
 .message-status {
-  color: var(--primary-green);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
 }

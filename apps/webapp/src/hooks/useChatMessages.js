@@ -25,9 +25,6 @@ export const useChatMessages = () => {
   // Normalize message format from various sources
   const normalizeMessage = useCallback((m) => {
     const id = m.id;
-    if (id) {
-      processedMessageIds.current.set(id, { timestamp: Date.now() });
-    }
     return {
       id,
       content: m.content || m.message || m.text || 'Empty message',
@@ -38,7 +35,17 @@ export const useChatMessages = () => {
       moderationAction: m.moderationAction || 'NONE',
       moderationReason: m.moderationReason,
       crisisResources:
-        m.crisisResources || (m.crisisResourcesJson ? JSON.parse(m.crisisResourcesJson) : []),
+        m.crisisResources ||
+        (m.crisisResourcesJson
+          ? (() => {
+              try {
+                return JSON.parse(m.crisisResourcesJson);
+              } catch (error) {
+                console.error('Failed to parse crisisResourcesJson:', error);
+                return [];
+              }
+            })()
+          : []),
       createdAt: m.createdAt || new Date().toISOString(),
       sender: m.sender || (m.isUserMessage ? 'user' : 'bot'),
     };
@@ -77,12 +84,12 @@ export const useChatMessages = () => {
       const messageId = message.id;
 
       // Check if message was already processed
-      if (processedMessageIds.current.has(messageId)) {
+      if (messageId && processedMessageIds.current.has(messageId)) {
         console.debug('Duplicate message detected and skipped:', messageId);
         return false;
       }
 
-      // Normalize message first (before duplicate check)
+      // Normalize message format before inserting into state
       const normalizedMessage = normalizeMessage({
         ...message,
         id: messageId,
@@ -102,11 +109,12 @@ export const useChatMessages = () => {
 
         if (isDuplicate) {
           console.debug('Duplicate message content detected and skipped:', messageId);
-          processedMessageIds.current.set(messageId, { timestamp: Date.now() });
           return prevMessages; // Return unchanged state
         }
 
-        processedMessageIds.current.set(messageId, { timestamp: Date.now() });
+        if (messageId) {
+          processedMessageIds.current.set(messageId, { timestamp: Date.now() });
+        }
 
         console.log(
           '✅ Adding new message to chat:',
@@ -128,13 +136,22 @@ export const useChatMessages = () => {
     (messagesList) => {
       const normalized = messagesList.map((m) => normalizeMessage(m));
       setMessages((prev) => {
-        if (prev.length === 0) return normalized;
+        if (prev.length === 0) return trimMessages(normalized);
         const newIds = new Set(normalized.map((m) => m.id));
         const prevFiltered = prev.filter((m) => !newIds.has(m.id));
-        return [...normalized, ...prevFiltered];
+        const merged = [...prevFiltered, ...normalized];
+        merged.sort((a, b) => {
+          const aTime = Date.parse(a.createdAt);
+          const bTime = Date.parse(b.createdAt);
+          if (!Number.isFinite(aTime) && !Number.isFinite(bTime)) return 0;
+          if (!Number.isFinite(aTime)) return -1;
+          if (!Number.isFinite(bTime)) return 1;
+          return aTime - bTime;
+        });
+        return trimMessages(merged);
       });
     },
-    [normalizeMessage]
+    [normalizeMessage, trimMessages]
   );
 
   // Update message status

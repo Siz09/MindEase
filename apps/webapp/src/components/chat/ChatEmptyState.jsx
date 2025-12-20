@@ -1,18 +1,16 @@
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const ChatEmptyState = ({ onSelectMessage }) => {
   const { t } = useTranslation();
 
-  const quickResponses = useMemo(
-    () => [
-      t('chat.quickResponses.anxiety'),
-      t('chat.quickResponses.motivation'),
-      t('chat.quickResponses.relax'),
-      t('chat.quickResponses.grateful'),
-    ],
-    [t]
-  );
+  const quickResponseKeys = [
+    'chat.quickResponses.anxiety',
+    'chat.quickResponses.motivation',
+    'chat.quickResponses.relax',
+    'chat.quickResponses.grateful',
+  ];
+
+  const quickResponses = quickResponseKeys.map((key) => t(key));
 
   return (
     <div className="empty-chat">
@@ -33,11 +31,12 @@ const ChatEmptyState = ({ onSelectMessage }) => {
         <p className="empty-description">{t('chat.emptyDescription')}</p>
 
         <div className="suggested-messages" role="list">
-          {quickResponses.map((msg) => (
+          {quickResponses.map((msg, index) => (
             <button
-              key={msg}
+              key={quickResponseKeys[index]}
               type="button"
               className="suggested-message"
+              role="listitem"
               onClick={() => onSelectMessage?.(msg)}
             >
               {msg}
@@ -50,4 +49,3 @@ const ChatEmptyState = ({ onSelectMessage }) => {
 };
 
 export default ChatEmptyState;
-

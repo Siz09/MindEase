@@ -17,9 +17,7 @@ const ChatHeader = ({ isConnected = false, offlineQueueCount = 0 }) => {
     >
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700 }}>
-            {t('chat.title')}
-          </h2>
+          <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700 }}>{t('chat.title')}</h2>
           <span
             style={{
               display: 'inline-flex',
@@ -37,7 +35,9 @@ const ChatHeader = ({ isConnected = false, offlineQueueCount = 0 }) => {
                 width: 8,
                 height: 8,
                 borderRadius: '50%',
-                backgroundColor: isConnected ? 'var(--primary-green, #10b981)' : '#ef4444',
+                backgroundColor: isConnected
+                  ? 'var(--primary-green, #10b981)'
+                  : 'var(--danger-red, #ef4444)',
               }}
             />
             {isConnected ? t('chat.connected') : t('chat.disconnected')}
@@ -59,9 +59,9 @@ const ChatHeader = ({ isConnected = false, offlineQueueCount = 0 }) => {
             padding: '0.35rem 0.6rem',
             borderRadius: '999px',
           }}
-          title="Messages will be sent when reconnected"
+          title={t('chat.offlineQueueTooltip')}
         >
-          {offlineQueueCount} queued
+          {t('chat.offlineQueueLabel', { count: offlineQueueCount })}
         </div>
       )}
     </div>
@@ -69,4 +69,3 @@ const ChatHeader = ({ isConnected = false, offlineQueueCount = 0 }) => {
 };
 
 export default ChatHeader;
-

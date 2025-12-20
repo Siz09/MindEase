@@ -9,8 +9,12 @@ export const useQuietHours = ({ currentUser, t }) => {
 
   useEffect(() => {
     if (!currentUser) return;
-    if (currentUser.quietHoursStart) setQuietStart(currentUser.quietHoursStart.slice(0, 5));
-    if (currentUser.quietHoursEnd) setQuietEnd(currentUser.quietHoursEnd.slice(0, 5));
+    if (currentUser.quietHoursStart?.length >= 5) {
+      setQuietStart(currentUser.quietHoursStart.slice(0, 5));
+    }
+    if (currentUser.quietHoursEnd?.length >= 5) {
+      setQuietEnd(currentUser.quietHoursEnd.slice(0, 5));
+    }
   }, [currentUser]);
 
   const saveQuietHours = useCallback(async () => {
@@ -37,7 +41,7 @@ export const useQuietHours = ({ currentUser, t }) => {
     } catch (error) {
       console.error('Failed to update quiet hours:', error);
       toast.error(t('settings.notifications.quietHours.error'));
-      return { success: false, error: error.message };
+      return { success: false, error: error?.message || String(error) };
     } finally {
       setQuietHoursLoading(false);
     }
@@ -52,4 +56,3 @@ export const useQuietHours = ({ currentUser, t }) => {
     saveQuietHours,
   };
 };
-

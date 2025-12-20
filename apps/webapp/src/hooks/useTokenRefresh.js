@@ -150,8 +150,15 @@ export const useTokenRefresh = ({
                 break;
               case 422:
                 errorMessage = data?.message || 'Validation failed';
-                if (data?.errors) {
+                if (Array.isArray(data?.errors)) {
                   errorMessage += ': ' + data.errors.join(', ');
+                } else if (data?.errors && typeof data.errors === 'object') {
+                  const flattened = Object.values(data.errors)
+                    .flatMap((value) => (Array.isArray(value) ? value : [value]))
+                    .filter(Boolean);
+                  if (flattened.length) {
+                    errorMessage += ': ' + flattened.join(', ');
+                  }
                 }
                 break;
               case 500:
@@ -178,4 +185,3 @@ export const useTokenRefresh = ({
     };
   }, [refreshToken, setAuthTokens, clearSession, onSessionExpired, pathname]);
 };
-

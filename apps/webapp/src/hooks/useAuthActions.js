@@ -122,8 +122,11 @@ export const useAuthActions = ({
 
       try {
         const loginResponseData = await authApiLogin({ firebaseToken });
-        const { token: jwtToken, refreshToken: refreshTokenValue, user: userData } =
-          loginResponseData;
+        const {
+          token: jwtToken,
+          refreshToken: refreshTokenValue,
+          user: userData,
+        } = loginResponseData;
         return handleAuthSuccess(
           jwtToken,
           userData,
@@ -141,8 +144,11 @@ export const useAuthActions = ({
             firebaseToken,
             anonymousMode: true,
           });
-          const { token: jwtToken, refreshToken: refreshTokenValue, user: userData } =
-            registerResponseData;
+          const {
+            token: jwtToken,
+            refreshToken: refreshTokenValue,
+            user: userData,
+          } = registerResponseData;
           return handleAuthSuccess(
             jwtToken,
             userData,
@@ -216,7 +222,10 @@ export const useAuthActions = ({
           } else if (error.code === 'auth/invalid-email') {
             errorMessage = t('auth.invalidEmailFormat');
           } else if (error.code === 'auth/weak-password') {
-            errorMessage = getErrorMessage('WEAK_PASSWORD', 'Password should be at least 6 characters.');
+            errorMessage = getErrorMessage(
+              'WEAK_PASSWORD',
+              'Password should be at least 6 characters.'
+            );
           } else if (error.response?.data?.message) {
             errorMessage = error.response.data.message;
           } else if (error.message) {
@@ -295,11 +304,17 @@ export const useAuthActions = ({
 
         if (!errorCode) {
           if (error.code === 'auth/email-already-in-use') {
-            errorMessage = getErrorMessage('EMAIL_IN_USE', 'This email is already in use. Please use a different email.');
+            errorMessage = getErrorMessage(
+              'EMAIL_IN_USE',
+              'This email is already in use. Please use a different email.'
+            );
           } else if (error.code === 'auth/invalid-email') {
             errorMessage = t('auth.invalidEmailFormat');
           } else if (error.code === 'auth/weak-password') {
-            errorMessage = getErrorMessage('WEAK_PASSWORD', 'Password should be at least 6 characters.');
+            errorMessage = getErrorMessage(
+              'WEAK_PASSWORD',
+              'Password should be at least 6 characters.'
+            );
           } else if (error.code === 'auth/requires-recent-login') {
             errorMessage = 'Please log out and log back in before converting your account.';
           } else if (error.response?.data?.message) {
@@ -346,7 +361,10 @@ export const useAuthActions = ({
         } else if (error.code === 'auth/invalid-email') {
           errorMessage = t('auth.invalidEmailFormat');
         } else if (error.code === 'auth/too-many-requests') {
-          errorMessage = getErrorMessage('RATE_LIMIT_EXCEEDED', 'Too many requests. Please try again later.');
+          errorMessage = getErrorMessage(
+            'RATE_LIMIT_EXCEEDED',
+            'Too many requests. Please try again later.'
+          );
         } else if (error.message) {
           errorMessage = error.message;
         }
@@ -369,7 +387,11 @@ export const useAuthActions = ({
 
     clearSessionState();
     resetSessionFlags();
-    await firebaseSignOut();
+    try {
+      await firebaseSignOut();
+    } catch (error) {
+      console.warn('Firebase sign-out failed:', error);
+    }
     toast.info('You have been logged out');
   }, [token, clearSessionState, resetSessionFlags]);
 

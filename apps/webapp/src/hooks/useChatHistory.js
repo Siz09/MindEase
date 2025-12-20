@@ -65,7 +65,7 @@ export const useChatHistory = ({
 
   // Load older messages (prepend to existing messages)
   const loadOlderHistory = useCallback(async () => {
-    if (historyPage === null) return;
+    if (historyPage === null || loadingHistory) return;
     try {
       setLoadingHistory(true);
       const nextPage = historyPage + 1; // older when using sort=desc on API
@@ -110,6 +110,7 @@ export const useChatHistory = ({
     messagesContainerRef,
     preventAutoScrollRef,
     prevScrollHeightRef,
+    loadingHistory,
     isMessageProcessed,
     normalizeMessage,
     setMessages,

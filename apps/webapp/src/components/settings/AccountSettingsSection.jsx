@@ -46,13 +46,13 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
     setConvertError('');
 
     if (!convertEmail || !convertPassword || !convertConfirmPassword) {
-      setConvertError('All fields are required');
+      setConvertError(t('auth.allFieldsRequired'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(convertEmail)) {
-      setConvertError('Please enter a valid email address');
+      setConvertError(t('auth.invalidEmail'));
       return;
     }
 
@@ -61,7 +61,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
       hasUpperCase: /[A-Z]/.test(convertPassword),
       hasLowerCase: /[a-z]/.test(convertPassword),
       hasNumber: /\d/.test(convertPassword),
-      hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(convertPassword),
+      hasSpecialChar: /[^A-Za-z0-9\s]/.test(convertPassword),
     };
 
     if (!Object.values(passwordRules).every(Boolean)) {
@@ -70,7 +70,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
     }
 
     if (convertPassword !== convertConfirmPassword) {
-      setConvertError('Passwords do not match');
+      setConvertError(t('auth.passwordsDoNotMatch'));
       return;
     }
 
@@ -84,10 +84,11 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
         setConvertConfirmPassword('');
         setAnonymousMode(false);
       } else {
-        setConvertError(result.error || 'Failed to convert account');
+        setConvertError(result.error || t('auth.convertAccountFailed'));
       }
-    } catch {
-      setConvertError('An unexpected error occurred');
+    } catch (error) {
+      console.error('Error converting anonymous account:', error);
+      setConvertError(error?.message || t('auth.unexpectedError'));
     } finally {
       setConvertLoading(false);
     }
@@ -100,23 +101,21 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
         (!currentUser.email || currentUser.email.startsWith('anonymous_')) && (
           <div className="card">
             <div className="card-header">
-              <h2 className="card-title">Convert to Full Account</h2>
+              <h2 className="card-title">{t('settings.convert.title')}</h2>
             </div>
 
             <div className="convert-anonymous-info">
-              <p className="setting-description">
-                You're currently using an anonymous account. Convert to a full account to:
-              </p>
+              <p className="setting-description">{t('settings.convert.description')}</p>
               <ul className="benefits-list">
-                <li>Keep your data permanently</li>
-                <li>Access your account from any device</li>
-                <li>Receive personalized recommendations</li>
-                <li>Enable email notifications</li>
+                <li>{t('settings.convert.benefits.keepData')}</li>
+                <li>{t('settings.convert.benefits.accessAnywhere')}</li>
+                <li>{t('settings.convert.benefits.recommendations')}</li>
+                <li>{t('settings.convert.benefits.notifications')}</li>
               </ul>
 
               {!showConvertForm ? (
                 <button className="btn btn-primary" onClick={() => setShowConvertForm(true)}>
-                  Convert to Full Account
+                  {t('settings.convert.cta')}
                 </button>
               ) : (
                 <div className="convert-form">
@@ -124,7 +123,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
 
                   <div className="form-group">
                     <label htmlFor="convert-email" className="form-label">
-                      Email
+                      {t('auth.email')}
                     </label>
                     <input
                       id="convert-email"
@@ -138,7 +137,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
 
                   <div className="form-group">
                     <label htmlFor="convert-password" className="form-label">
-                      Password
+                      {t('auth.password')}
                     </label>
                     <input
                       id="convert-password"
@@ -152,7 +151,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
 
                   <div className="form-group">
                     <label htmlFor="convert-confirm-password" className="form-label">
-                      Confirm Password
+                      {t('auth.confirmPassword')}
                     </label>
                     <input
                       id="convert-confirm-password"
@@ -170,7 +169,9 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
                       onClick={handleConvertAnonymous}
                       disabled={convertLoading}
                     >
-                      {convertLoading ? 'Converting...' : 'Convert Account'}
+                      {convertLoading
+                        ? t('settings.convert.converting')
+                        : t('settings.convert.submit')}
                     </button>
                     <button
                       className="btn btn-secondary"
@@ -183,7 +184,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
                       }}
                       disabled={convertLoading}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                   </div>
                 </div>
@@ -201,7 +202,9 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
           <label className="form-label toggle-label">
             <div className="toggle-info">
               <span className="toggle-title">{t('settings.privacy.anonymousMode')}</span>
-              <p className="setting-description">{t('settings.privacy.anonymousModeDescription')}</p>
+              <p className="setting-description">
+                {t('settings.privacy.anonymousModeDescription')}
+              </p>
             </div>
             <div className="toggle-switch">
               <input

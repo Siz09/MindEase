@@ -97,7 +97,7 @@ export const useWebSocket = ({
         connectHeaders: {
           Authorization: `Bearer ${token}`,
         },
-        reconnectDelay: 5000,
+        reconnectDelay: 0, // Disable built-in reconnection; use custom exponential backoff
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
         onConnect: (frame) => {
@@ -205,7 +205,7 @@ export const useWebSocket = ({
           } else {
             toast.error('Chat connection error');
             // Schedule reconnection with backoff for other errors
-            if (connectWebSocketRef.current) {
+            if (connectWebSocketRef.current && !reconnectTimeoutRef.current) {
               const delay = getReconnectDelay();
               reconnectAttempts.current += 1;
               console.log(

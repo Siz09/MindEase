@@ -39,7 +39,12 @@
     "haveAccount": "पहिले नै खाता छ?",
     "feature1": "आफ्नो दैनिक मूड ट्र्याक गर्नुहोस्",
     "feature2": "आफ्नो व्यक्तिगत डायरीमा लेख्नुहोस्",
-    "feature3": "व्यक्तिगत अन्तर्दृष्टि प्राप्त गर्नुहोस्"
+    "feature3": "व्यक्तिगत अन्तर्दृष्टि प्राप्त गर्नुहोस्",
+    "allFieldsRequired": "सबै क्षेत्रहरू आवश्यक छन्",
+    "invalidEmail": "कृपया मान्य इमेल ठेगाना प्रविष्ट गर्नुहोस्",
+    "passwordsDoNotMatch": "पासवर्डहरू मिलेनन्",
+    "convertAccountFailed": "खाता रूपान्तरण गर्न असफल",
+    "unexpectedError": "एक अप्रत्याशित त्रुटि भयो"
   },
   "mood": {
     "title": "मूड ट्र्याकर",
@@ -133,6 +138,9 @@
     "subtitle": "हाम्रो मानसिक स्वास्थ्य सहयोगकर्तासँग कुरा गर्नुहोस्",
     "connected": "जडान भयो",
     "disconnected": "जडान विच्छेद भयो",
+    "offlineQueueTooltip": "पुनः जडान भएपछि सन्देशहरू पठाइनेछन्",
+    "offlineQueueLabel_one": "{{count}} क्यूमा",
+    "offlineQueueLabel_other": "{{count}} क्यूमा",
     "emptyTitle": "कुराकानी सुरु गर्नुहोस्",
     "emptyDescription": "हाम्रो मानसिक स्वास्थ्य सहयोगकर्तासँग च्याटिंग सुरु गर्न सन्देश पठाउनुहोस्",
     "inputPlaceholder": "यहाँ आफ्नो सन्देश टाइप गर्नुहोस्...",
@@ -203,6 +211,7 @@
     "testVoiceSample": "यो टेक्स्ट-टु-स्पीच आवाजको परीक्षण हो।",
     "voiceBadge": "आवाज",
     "loadingOlderMessages": "पुरानो सन्देशहरू लोड गर्दै...",
+    "loadOlderMessages": "पुराना सन्देशहरू लोड गर्नुहोस्",
     "startVoiceConversation": "आवाज वार्तालाप सुरु गर्नुहोस्",
     "stopVoiceConversation": "आवाज वार्तालाप रोक्नुहोस्",
     "voiceConversationStarted": "आवाज वार्तालाप मोड सुरु भयो",
@@ -264,11 +273,26 @@
       "dataRetention": "डेटा संरक्षण",
       "dataRetentionDescription": "तपाईंको डेटा सुरक्षित राखिएको छ र कुनै पनि समयमा मेटाउन सकिन्छ।"
     },
+    "convert": {
+      "title": "पूर्ण खातामा रूपान्तरण गर्नुहोस्",
+      "description": "तपाईं हाल बेनामी खाता प्रयोग गर्दै हुनुहुन्छ। पूर्ण खातामा रूपान्तरण गरेर:",
+      "benefits": {
+        "keepData": "आफ्नो डेटा स्थायी रूपमा सुरक्षित राख्नुहोस्",
+        "accessAnywhere": "कुनै पनि उपकरणबाट आफ्नो खाता पहुँच गर्नुहोस्",
+        "recommendations": "व्यक्तिगत सुझावहरू प्राप्त गर्नुहोस्",
+        "notifications": "इमेल सूचनाहरू सक्षम गर्नुहोस्"
+      },
+      "cta": "पूर्ण खातामा रूपान्तरण गर्नुहोस्",
+      "submit": "खाता रूपान्तरण गर्नुहोस्",
+      "converting": "रूपान्तरण हुँदैछ..."
+    },
     "language": {
       "title": "भाषा प्राथमिकताहरू",
       "currentLanguage": "हालको भाषा",
       "english": "English (अंग्रेजी)",
       "nepali": "नेपाली",
+      "selectEnglish": "अंग्रेजी छान्नुहोस्",
+      "selectNepali": "नेपाली छान्नुहोस्",
       "changeLanguage": "भाषा परिवर्तन गर्नुहोस्"
     },
     "actions": {
@@ -281,6 +305,7 @@
       "anonymousModeEnabled": "बेनामी मोड सक्षम गरियो",
       "anonymousModeDisabled": "बेनामी मोड असक्षम गरियो",
       "languageChanged": "भाषा सफलतापूर्वक परिवर्तन गरियो",
+      "languageChangeFailed": "भाषा परिवर्तन गर्न असफल",
       "settingsUpdated": "सेटिङ्गहरू सफलतापूर्वक अपडेट गरियो",
       "updateFailed": "सेटिङ्गहरू अपडेट गर्न असफल",
       "quietHours": {

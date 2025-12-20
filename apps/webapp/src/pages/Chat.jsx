@@ -15,7 +15,11 @@ import { useOfflineQueue } from '../hooks/useOfflineQueue';
 import { useVoiceConversation } from '../hooks/useVoiceConversation';
 import { MESSAGE_STATUS } from '../utils/messageStatus';
 import { mapI18nToSpeechLang } from '../utils/speechUtils';
-import { isNearBottom, restoreScrollAfterPrepend, scrollToBottom } from '../utils/chat/scrollManager';
+import {
+  isNearBottom,
+  restoreScrollAfterPrepend,
+  scrollToBottom,
+} from '../utils/chat/scrollManager';
 
 import ChatHeader from '../components/chat/ChatHeader';
 import ChatMessageList from '../components/chat/ChatMessageList';
@@ -88,12 +92,11 @@ const Chat = () => {
           createdAt: new Date().toISOString(),
           sender: 'user',
         });
-        updateMessageStatus(queuedId, MESSAGE_STATUS.FAILED);
+        updateMessageStatus(queuedId, MESSAGE_STATUS.QUEUED);
         return;
       }
 
-      const localId =
-        optimisticId || `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const localId = optimisticId || `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
       if (!optimisticId) {
         addMessage({
