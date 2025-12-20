@@ -34,8 +34,11 @@ export const useChatMessages = () => {
   // Normalize message format from various sources
   const normalizeMessage = useCallback((m) => {
     const rawId = m?.id;
-    const id = rawId === null || rawId === undefined ? createFallbackMessageId() : String(rawId);
-    if (rawId === null || rawId === undefined) {
+    const id =
+      rawId === null || rawId === undefined || rawId === ''
+        ? createFallbackMessageId()
+        : String(rawId);
+    if (rawId === null || rawId === undefined || rawId === '') {
       console.warn('Message received without ID:', m);
     }
     return {
@@ -200,14 +203,14 @@ export const useChatMessages = () => {
       if (candidates.length === 0) return;
 
       setMessages((prev) => {
-        if (prev.length === 0) return candidates;
+        if (prev.length === 0) return trimMessages(candidates);
         const prevIds = new Set(prev.map((m) => m.id));
         const toPrepend = candidates.filter((m) => !prevIds.has(m.id));
         if (toPrepend.length === 0) return prev;
-        return [...toPrepend, ...prev];
+        return trimMessages([...toPrepend, ...prev]);
       });
     },
-    [normalizeMessage]
+    [normalizeMessage, trimMessages]
   );
 
   // Update message status

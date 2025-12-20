@@ -22,6 +22,10 @@ export async function apiPost(path, body = {}, token, options = {}) {
       controller.abort();
     } else {
       externalSignal.addEventListener('abort', abortListener, { once: true });
+      // Check again in case the signal aborted between the check and addEventListener.
+      if (externalSignal.aborted) {
+        controller.abort();
+      }
     }
   }
 
@@ -86,6 +90,10 @@ export async function apiGet(path, token, options = {}) {
       controller.abort();
     } else {
       externalSignal.addEventListener('abort', abortListener, { once: true });
+      // Check again in case the signal aborted between the check and addEventListener.
+      if (externalSignal.aborted) {
+        controller.abort();
+      }
     }
   }
 

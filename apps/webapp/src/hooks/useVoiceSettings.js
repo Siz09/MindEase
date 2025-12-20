@@ -37,7 +37,7 @@ export const useVoiceSettings = () => {
   const update = useCallback((partial) => {
     try {
       const saved = saveVoiceSettings(partial);
-      if (saved === false) {
+      if (saved !== true) {
         console.error('Failed to save voice settings:', partial);
         return;
       }

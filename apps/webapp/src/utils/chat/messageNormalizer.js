@@ -23,7 +23,10 @@ const createFallbackMessageId = () => {
 
 export const normalizeChatMessage = (m) => {
   const rawId = m?.id;
-  const id = rawId === null || rawId === undefined ? createFallbackMessageId() : String(rawId);
+  const id =
+    rawId === null || rawId === undefined || rawId === ''
+      ? createFallbackMessageId()
+      : String(rawId);
   const content = m?.content ?? m?.message ?? m?.text ?? '';
 
   return {

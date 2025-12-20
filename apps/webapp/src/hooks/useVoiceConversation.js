@@ -25,6 +25,7 @@ export const useVoiceConversation = ({
   const lastBotMessageRef = useRef('');
   const lastSpokenBotIdRef = useRef(null);
   const autoPausedForHiddenTabRef = useRef(false);
+  const autoPausedTtsForHiddenTabRef = useRef(false);
 
   const tts = useTextToSpeech({
     language,
@@ -211,12 +212,19 @@ export const useVoiceConversation = ({
 
       if (document.hidden) {
         autoPausedForHiddenTabRef.current = true;
+        autoPausedTtsForHiddenTabRef.current = false;
         voiceRecorder.stopRecording();
-        if (tts.isPlaying && !tts.isPaused) tts.pause();
+        if (tts.isPlaying && !tts.isPaused) {
+          tts.pause();
+          autoPausedTtsForHiddenTabRef.current = true;
+        }
         toast.info(t('chat.voicePausedHidden'));
       } else if (autoPausedForHiddenTabRef.current) {
         autoPausedForHiddenTabRef.current = false;
-        if (tts.isPaused) tts.resume();
+        if (autoPausedTtsForHiddenTabRef.current && tts.isPaused) {
+          tts.resume();
+        }
+        autoPausedTtsForHiddenTabRef.current = false;
         if (!voiceRecorder.isRecording && !voiceRecorder.isTranscribing) {
           startRecordingRef.current();
         }
