@@ -8,6 +8,7 @@ const JournalHistory = ({
   totalPages,
   totalEntries,
   onPageChange,
+  showAISections = false,
 }) => {
   const { t, i18n } = useTranslation();
 
@@ -134,6 +135,37 @@ const JournalHistory = ({
               <div className="entry-content">
                 <p>{text || entry.content}</p>
               </div>
+
+              {showAISections && entry.aiSummary && (
+                <div className="ai-summary-section">
+                  <div className="ai-summary-header">
+                    <span className="ai-icon">🤖</span>
+                    <strong>{t('journal.aiSummary')}</strong>
+                  </div>
+                  <div className="ai-summary-content">
+                    <p>{entry.aiSummary}</p>
+                  </div>
+                </div>
+              )}
+
+              {showAISections && entry.moodInsight && (
+                <div className="mood-insight-section">
+                  <div className="mood-insight-header">
+                    <span className="mood-icon">💡</span>
+                    <strong>{t('journal.moodInsight')}</strong>
+                  </div>
+                  <div className="mood-insight-content">
+                    <p>{entry.moodInsight}</p>
+                  </div>
+                </div>
+              )}
+
+              {showAISections && !entry.aiSummary && !entry.moodInsight && (
+                <div className="ai-processing">
+                  <div className="processing-spinner"></div>
+                  <span>{t('journal.aiProcessing')}</span>
+                </div>
+              )}
             </div>
           );
         })}
