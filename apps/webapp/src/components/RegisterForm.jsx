@@ -7,7 +7,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const RegisterForm = () => {
   const { t } = useTranslation();
-  const { register, loginAnonymously } = useAuth();
+  const { register, loginAnonymously, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -29,6 +29,12 @@ const RegisterForm = () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const passwordRules = {
     minLength: formData.password.length >= 8,
@@ -77,19 +83,15 @@ const RegisterForm = () => {
     setLoading(true);
 
     try {
-      const SEND_VERIFICATION_EMAIL = false;
-      const AUTO_REDIRECT_AFTER_REGISTRATION = true;
+      const ANONYMOUS_MODE = false;
+      const AUTO_LOGIN_AFTER_REGISTRATION = true;
       const result = await register(
         formData.email,
         formData.password,
-        SEND_VERIFICATION_EMAIL,
-        AUTO_REDIRECT_AFTER_REGISTRATION
+        ANONYMOUS_MODE,
+        AUTO_LOGIN_AFTER_REGISTRATION
       );
-      if (result.success) {
-        navigate('/');
-      } else {
-        setError(result.error);
-      }
+      if (!result?.success) setError(result?.error || t('auth.registerError'));
     } catch (err) {
       setError(t('auth.registerError'));
     } finally {
@@ -102,8 +104,8 @@ const RegisterForm = () => {
     setLoading(true);
 
     try {
-      await loginAnonymously();
-      navigate('/');
+      const result = await loginAnonymously();
+      if (!result?.success) setError(result?.error || t('auth.anonymousError'));
     } catch (err) {
       setError(t('auth.anonymousError'));
     } finally {

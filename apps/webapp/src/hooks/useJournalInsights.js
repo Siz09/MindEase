@@ -59,8 +59,14 @@ export default function useJournalInsights({ entriesPerPage = defaultEntriesPerP
       const entries = allEntries;
       const totalEntries = entries.length;
       const today = new Date();
-      const keyFor = (d) => {
-        const dt = new Date(d);
+      const toValidDate = (value) => {
+        if (!value) return null;
+        const dt = value instanceof Date ? value : new Date(value);
+        return Number.isNaN(dt.getTime()) ? null : dt;
+      };
+      const keyFor = (value) => {
+        const dt = toValidDate(value);
+        if (!dt) return null;
         const y = dt.getFullYear();
         const m = String(dt.getMonth() + 1).padStart(2, '0');
         const day = String(dt.getDate()).padStart(2, '0');
@@ -68,20 +74,29 @@ export default function useJournalInsights({ entriesPerPage = defaultEntriesPerP
       };
       const todayKey = keyFor(today);
 
-      const todayEntriesCount = entries.filter((e) => keyFor(e.createdAt) === todayKey).length;
+      const todayEntriesCount = entries.filter((e) => keyFor(e?.createdAt) === todayKey).length;
 
-      let avgEntriesPerDay = 0;
+      let avgEntriesPerDay = '0.0';
       if (totalEntries > 0) {
-        const oldest = new Date(entries[entries.length - 1].createdAt);
-        const daysDiff = Math.max(1, Math.ceil((today - oldest) / (1000 * 60 * 60 * 24)));
-        avgEntriesPerDay = (totalEntries / daysDiff).toFixed(1);
+        const oldest = entries.reduce((minDate, entry) => {
+          const dt = toValidDate(entry?.createdAt);
+          if (!dt) return minDate;
+          if (!minDate) return dt;
+          return dt < minDate ? dt : minDate;
+        }, null);
+
+        if (oldest) {
+          const daysDiff = Math.max(1, Math.ceil((today - oldest) / (1000 * 60 * 60 * 24)));
+          avgEntriesPerDay = (totalEntries / daysDiff).toFixed(1);
+        }
       }
 
       setJournalStats({ totalEntries, todayEntries: todayEntriesCount, avgEntriesPerDay });
 
       const dayMap = new Map();
       for (const entry of entries) {
-        const k = keyFor(entry.createdAt);
+        const k = keyFor(entry?.createdAt);
+        if (!k) continue;
         if (!dayMap.has(k)) dayMap.set(k, []);
         dayMap.get(k).push(entry);
       }

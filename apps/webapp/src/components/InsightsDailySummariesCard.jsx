@@ -12,6 +12,10 @@ const formatDateKey = (dateKey, locale) => {
   const date = new Date(y, m - 1, d);
   if (Number.isNaN(date.getTime())) return 'Invalid date';
 
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
+    return 'Invalid date';
+  }
+
   return date.toLocaleDateString(locale, {
     weekday: 'long',
     month: 'short',
