@@ -1,4 +1,13 @@
 const AuditLogsTable = ({ rows, loading, error }) => {
+  const safeRows = Array.isArray(rows) ? rows : [];
+
+  const formatCreatedAt = (value) => {
+    if (!value) return 'N/A';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleString();
+  };
+
   return (
     <div className="bento-card" style={{ marginBottom: 'var(--spacing-lg)' }}>
       <div className="table-wrap">
@@ -12,15 +21,15 @@ const AuditLogsTable = ({ rows, loading, error }) => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {safeRows.map((r) => (
               <tr key={r.id}>
                 <td>{r.userId}</td>
                 <td>{r.actionType}</td>
                 <td title={r.details}>{r.details}</td>
-                <td>{new Date(r.createdAt).toLocaleString()}</td>
+                <td>{formatCreatedAt(r.createdAt)}</td>
               </tr>
             ))}
-            {!loading && rows.length === 0 && (
+            {!loading && safeRows.length === 0 && (
               <tr>
                 <td
                   colSpan="4"
@@ -70,4 +79,3 @@ const AuditLogsTable = ({ rows, loading, error }) => {
 };
 
 export default AuditLogsTable;
-

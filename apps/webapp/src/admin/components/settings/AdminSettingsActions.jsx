@@ -1,17 +1,35 @@
 import { Button } from '../shared';
 
 const AdminSettingsActions = ({ onSave, onReset, isLoading }) => {
+  const handleSave = () => {
+    if (typeof onSave === 'function') {
+      onSave();
+    }
+  };
+
+  const handleReset = () => {
+    if (typeof onReset === 'function') {
+      onReset();
+    }
+  };
+
   return (
     <div className="admin-settings-actions">
       <Button
         variant="primary"
-        onClick={onSave}
+        onClick={handleSave}
         disabled={isLoading}
         className="admin-settings-save-btn"
       >
         {isLoading ? (
           <>
-            <svg className="admin-settings-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <svg
+              className="admin-settings-spinner"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
               <circle
                 cx="12"
                 cy="12"
@@ -41,7 +59,7 @@ const AdminSettingsActions = ({ onSave, onReset, isLoading }) => {
           'Save Changes'
         )}
       </Button>
-      <Button variant="ghost" onClick={onReset} className="admin-settings-reset-btn">
+      <Button variant="ghost" onClick={handleReset} className="admin-settings-reset-btn">
         Reset to Default
       </Button>
     </div>
@@ -49,4 +67,3 @@ const AdminSettingsActions = ({ onSave, onReset, isLoading }) => {
 };
 
 export default AdminSettingsActions;
-

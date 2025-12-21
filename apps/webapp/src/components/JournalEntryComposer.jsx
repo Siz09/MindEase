@@ -91,11 +91,7 @@ const JournalEntryComposer = ({ onSubmit, loading, aiAvailable, isOffline }) => 
       return;
     }
     if (newEntry.length > 1000) {
-      toast.error('Entry must be 1000 characters or less');
-      return;
-    }
-    if (!navigator.onLine) {
-      toast.info('Offline: AI summary disabled.');
+      toast.error(t('journal.errors.maxLength', 'Entry must be 1000 characters or less'));
       return;
     }
 
@@ -122,7 +118,7 @@ const JournalEntryComposer = ({ onSubmit, loading, aiAvailable, isOffline }) => 
 
           {isOffline && (
             <div className="offline-banner">
-              {t('journal.aiUnavailableOffline') || 'AI summaries are disabled while offline.'}
+              {t('journal.aiUnavailableOffline', 'AI summaries are disabled while offline.')}
             </div>
           )}
 
@@ -157,7 +153,11 @@ const JournalEntryComposer = ({ onSubmit, loading, aiAvailable, isOffline }) => 
 
           <div className="form-actions">
             <div className="char-count">{newEntry.length} / 1000</div>
-            <button type="submit" className="btn btn-primary" disabled={loading || !newEntry.trim()}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading || !newEntry.trim() || isOffline}
+            >
               {loading ? t('journal.saving') : t('journal.saveEntry')}
             </button>
           </div>
@@ -186,4 +186,3 @@ const JournalEntryComposer = ({ onSubmit, loading, aiAvailable, isOffline }) => 
 };
 
 export default JournalEntryComposer;
-

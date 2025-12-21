@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { Badge, Button, Input, Modal, Select } from '../shared';
 
 const getBadgeType = (status) => {
@@ -43,6 +43,7 @@ const UserModals = ({
   onCancelDelete,
   onConfirmDelete,
 }) => {
+  const editFormId = useId();
   const subscriptionPlanBadgeType = useMemo(() => {
     if (!selectedUser?.subscriptionPlan) return 'secondary';
     return selectedUser.subscriptionPlan === 'PREMIUM' ? 'info' : 'secondary';
@@ -181,16 +182,19 @@ const UserModals = ({
             <Button variant="ghost" onClick={onCloseEditModal}>
               Cancel
             </Button>
-            <Button variant="primary" onClick={onSubmitForm} disabled={formLoading}>
+            <Button variant="primary" type="submit" form={editFormId} disabled={formLoading}>
               {formLoading ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         }
       >
         <form
+          id={editFormId}
           onSubmit={(e) => {
             e.preventDefault();
-            onSubmitForm(e);
+            if (typeof onSubmitForm === 'function') {
+              onSubmitForm(e);
+            }
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
@@ -211,7 +215,9 @@ const UserModals = ({
               helper="Leave blank to keep current password"
             />
             <div>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: 'var(--spacing-sm)' }}>
+              <label
+                style={{ display: 'block', fontWeight: 600, marginBottom: 'var(--spacing-sm)' }}
+              >
                 Role
               </label>
               <Select
@@ -327,4 +333,3 @@ const UserModals = ({
 };
 
 export default UserModals;
-

@@ -7,7 +7,7 @@ const RegisterWelcome = () => {
     <div className="auth-welcome">
       <div className="welcome-content">
         <div className="welcome-icon">
-          <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true" role="img">
             <circle cx="40" cy="40" r="35" fill="var(--accent-lime)" opacity="0.2" />
             <path
               d="M25 40l10 10 20-20"
@@ -23,7 +23,14 @@ const RegisterWelcome = () => {
         <div className="benefits-list">
           <div className="benefit-item">
             <div className="benefit-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-label={t('auth.benefit1IconLabel', 'Home icon')}
+                role="img"
+              >
                 <path d="M12 2L3 9v9h6v-6h6v6h6V9l-9-7z" fill="var(--primary-green)" />
               </svg>
             </div>
@@ -34,7 +41,14 @@ const RegisterWelcome = () => {
           </div>
           <div className="benefit-item">
             <div className="benefit-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-label={t('auth.benefit2IconLabel', 'Journal icon')}
+                role="img"
+              >
                 <path
                   d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"
                   stroke="var(--primary-green)"
@@ -51,7 +65,14 @@ const RegisterWelcome = () => {
           </div>
           <div className="benefit-item">
             <div className="benefit-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-label={t('auth.benefit3IconLabel', 'Star icon')}
+                role="img"
+              >
                 <circle cx="12" cy="12" r="3" fill="var(--primary-green)" />
                 <path
                   d="M12 1l3 6 6-3-3 6 3 6-6-3-3 6-3-6-6 3 3-6-3-6 6 3 3-6z"
@@ -73,4 +94,3 @@ const RegisterWelcome = () => {
 };
 
 export default RegisterWelcome;
-

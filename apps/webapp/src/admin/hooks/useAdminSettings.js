@@ -38,7 +38,7 @@ export default function useAdminSettings() {
         setAutoArchiveDays(Math.max(1, Math.min(365, data.autoArchiveDays)));
       }
       if (typeof data.dailyReportTime === 'string') {
-        if (/^([0-1]\\d|2[0-3]):[0-5]\\d$/.test(data.dailyReportTime)) {
+        if (/^([0-1]\d|2[0-3]):[0-5]\d$/.test(data.dailyReportTime)) {
           setDailyReportTime(data.dailyReportTime);
         }
       }
@@ -113,4 +113,3 @@ export default function useAdminSettings() {
     reset,
   };
 }
-

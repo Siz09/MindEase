@@ -19,6 +19,12 @@ const MeditationSection = () => {
             });
           } catch (error) {
             console.error('Error tracking meditation:', error);
+            toast.error(
+              t(
+                'mindfulness.meditation.trackingError',
+                'Failed to track session. Please try again.'
+              )
+            );
           }
         }}
         onMoodCheckIn={(phase, payload, callback) => {
@@ -36,4 +42,3 @@ const MeditationSection = () => {
 };
 
 export default MeditationSection;
-

@@ -35,7 +35,7 @@ const RegisterForm = () => {
     hasUpperCase: /[A-Z]/.test(formData.password),
     hasLowerCase: /[a-z]/.test(formData.password),
     hasNumber: /\d/.test(formData.password),
-    hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':\"\\|,.<>/?]/.test(formData.password),
+    hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password),
   };
 
   const isPasswordValid = Object.values(passwordRules).every(Boolean);
@@ -349,7 +349,12 @@ const RegisterForm = () => {
           <button
             type="submit"
             className={`btn btn-primary w-full ${loading ? 'loading' : ''}`}
-            disabled={loading || !isEmailValid || !isPasswordValid}
+            disabled={
+              loading ||
+              !isEmailValid ||
+              !isPasswordValid ||
+              formData.password !== formData.confirmPassword
+            }
           >
             {loading ? (
               <>
@@ -395,4 +400,3 @@ const RegisterForm = () => {
 };
 
 export default RegisterForm;
-

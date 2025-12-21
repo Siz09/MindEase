@@ -15,6 +15,9 @@ export default function useMoodInsights({ pageSize = 100 } = {}) {
 
       if (response.data.success || response.data.status === 'success') {
         setMoodHistory(response.data.data || []);
+      } else {
+        console.warn('Mood history API returned unsuccessful response:', response.data);
+        setMoodHistory([]);
       }
     } catch (error) {
       console.error('Failed to fetch mood history:', error);
@@ -47,4 +50,3 @@ export default function useMoodInsights({ pageSize = 100 } = {}) {
 
   return { moodHistory, isLoading, stats, refresh: fetchMoodHistory };
 }
-

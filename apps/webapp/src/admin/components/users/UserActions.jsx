@@ -1,28 +1,26 @@
 import { Button } from '../shared';
 
 const UserActions = ({ user, onEdit, onDelete }) => {
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    if (typeof onEdit === 'function') {
+      onEdit(user);
+    }
+  };
+
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    if (typeof onDelete === 'function') {
+      onDelete(user);
+    }
+  };
+
   return (
     <div className="admin-user-actions">
-      <Button
-        variant="ghost"
-        size="small"
-        onClick={(e) => {
-          e.stopPropagation();
-          onEdit(user);
-        }}
-        className="admin-user-action-btn"
-      >
+      <Button variant="ghost" size="small" onClick={handleEdit} className="admin-user-action-btn">
         Edit
       </Button>
-      <Button
-        variant="ghost"
-        size="small"
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(user);
-        }}
-        className="admin-user-action-btn"
-      >
+      <Button variant="ghost" size="small" onClick={handleDelete} className="admin-user-action-btn">
         Delete
       </Button>
     </div>
@@ -30,4 +28,3 @@ const UserActions = ({ user, onEdit, onDelete }) => {
 };
 
 export default UserActions;
-

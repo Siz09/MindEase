@@ -138,7 +138,7 @@ const JournalForm = ({ onSubmit, loading, aiAvailable, isOffline, currentMood, o
 
           {isOffline && (
             <div className="offline-banner">
-              {t('journal.aiUnavailableOffline') || 'AI summaries are disabled while offline.'}
+              {t('journal.aiUnavailableOffline', 'AI summaries are disabled while offline.')}
             </div>
           )}
 
