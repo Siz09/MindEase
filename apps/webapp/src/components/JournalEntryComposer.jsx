@@ -86,6 +86,11 @@ const JournalEntryComposer = ({ onSubmit, loading, aiAvailable, isOffline }) => 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isOffline) {
+      toast.error(t('journal.errors.offline', 'Cannot save while offline'));
+      return;
+    }
+
     if (!newEntry.trim()) {
       toast.info(t('journal.contentRequired'));
       return;
@@ -96,16 +101,21 @@ const JournalEntryComposer = ({ onSubmit, loading, aiAvailable, isOffline }) => 
     }
 
     const moodValue = selectedMoodValue || emojiToMoodValue(selectedEmoji);
-    await onSubmit({
-      title: null,
-      content: newEntry.trim(),
-      moodValue,
-    });
+    try {
+      await onSubmit({
+        title: null,
+        content: newEntry.trim(),
+        moodValue,
+      });
 
-    setNewEntry('');
-    setSelectedEmoji('😊');
-    setSelectedMoodValue(null);
-    if (textareaRef.current) textareaRef.current.focus();
+      setNewEntry('');
+      setSelectedEmoji('😊');
+      setSelectedMoodValue(null);
+      if (textareaRef.current) textareaRef.current.focus();
+    } catch (error) {
+      toast.error(t('journal.errors.saveFailed', 'Failed to save entry'));
+      console.error('Failed to save journal entry:', error);
+    }
   };
 
   return (

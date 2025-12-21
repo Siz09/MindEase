@@ -11,12 +11,15 @@ const MeditationSection = () => {
       <h3>{t('mindfulness.tools.meditation', 'Meditation Timer')}</h3>
       <MeditationTimer
         onComplete={async (data) => {
-          toast.success(t('mindfulness.meditation.completed', 'Meditation completed!'));
           try {
+            if (!data?.presetDuration) {
+              throw new Error('Invalid duration data');
+            }
             await api.post('/mindfulness/sessions/virtual/complete', {
               durationMinutes: data.presetDuration,
               type: 'meditation',
             });
+            toast.success(t('mindfulness.meditation.completed', 'Meditation completed!'));
           } catch (error) {
             console.error('Error tracking meditation:', error);
             toast.error(

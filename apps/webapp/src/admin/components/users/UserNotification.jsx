@@ -3,12 +3,18 @@ const UserNotification = ({ notification, onDismiss }) => {
 
   return (
     <div
-      className={`admin-settings-notification admin-settings-notification-${notification.type}`}
+      className={`admin-settings-notification admin-settings-notification-${notification.type || 'info'}`}
       style={{ marginBottom: 'var(--spacing-xl)' }}
+      role="alert"
     >
       <span>{notification.message}</span>
       <button
-        onClick={onDismiss}
+        type="button"
+        onClick={() => {
+          if (typeof onDismiss === 'function') {
+            onDismiss();
+          }
+        }}
         aria-label="Dismiss notification"
         className="admin-settings-notification-close"
       >
@@ -19,4 +25,3 @@ const UserNotification = ({ notification, onDismiss }) => {
 };
 
 export default UserNotification;
-

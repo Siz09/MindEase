@@ -11,13 +11,14 @@ const AuditLogsTable = ({ rows, loading, error }) => {
   return (
     <div className="bento-card" style={{ marginBottom: 'var(--spacing-lg)' }}>
       <div className="table-wrap">
-        <table className="table" style={{ width: '100%' }}>
+        <table className="table" style={{ width: '100%' }} aria-label="Audit logs">
+          <caption className="sr-only">Audit log entries</caption>
           <thead>
             <tr>
-              <th>User</th>
-              <th>Action</th>
-              <th>Details</th>
-              <th>When</th>
+              <th scope="col">User</th>
+              <th scope="col">Action</th>
+              <th scope="col">Details</th>
+              <th scope="col">When</th>
             </tr>
           </thead>
           <tbody>
@@ -67,7 +68,7 @@ const AuditLogsTable = ({ rows, loading, error }) => {
                     padding: 'var(--spacing-lg)',
                   }}
                 >
-                  {error}
+                  {typeof error === 'string' ? error : error?.message || 'An error occurred'}
                 </td>
               </tr>
             )}

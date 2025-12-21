@@ -11,12 +11,12 @@ const MindfulnessQuickStats = ({ sessions }) => {
         <div className="stat-label">{t('mindfulness.totalSessions')}</div>
       </div>
       <div className="stat-card">
-        <div className="stat-number">{safeSessions.filter((s) => s.type === 'audio').length}</div>
+        <div className="stat-number">{safeSessions.filter((s) => s?.type === 'audio').length}</div>
         <div className="stat-label">{t('mindfulness.audioSessions')}</div>
       </div>
       <div className="stat-card">
         <div className="stat-number">
-          {safeSessions.filter((s) => s.type === 'animation').length}
+          {safeSessions.filter((s) => s?.type === 'animation').length}
         </div>
         <div className="stat-label">{t('mindfulness.animationSessions')}</div>
       </div>
@@ -25,4 +25,3 @@ const MindfulnessQuickStats = ({ sessions }) => {
 };
 
 export default MindfulnessQuickStats;
-

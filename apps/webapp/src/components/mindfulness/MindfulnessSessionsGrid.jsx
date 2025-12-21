@@ -15,8 +15,12 @@ const MindfulnessSessionsGrid = ({
 }) => {
   const { t } = useTranslation();
   const safeSessions = Array.isArray(sessions) ? sessions : [];
-  const favoritesSet = favorites instanceof Set ? favorites : new Set();
-  const completionsSet = sessionCompletions instanceof Set ? sessionCompletions : new Set();
+  const favoritesSet =
+    favorites instanceof Set ? favorites : new Set(Array.isArray(favorites) ? favorites : []);
+  const completionsSet =
+    sessionCompletions instanceof Set
+      ? sessionCompletions
+      : new Set(Array.isArray(sessionCompletions) ? sessionCompletions : []);
 
   return (
     <div className="sessions-grid">
@@ -50,4 +54,3 @@ const MindfulnessSessionsGrid = ({
 };
 
 export default MindfulnessSessionsGrid;
-

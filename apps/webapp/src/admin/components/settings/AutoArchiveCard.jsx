@@ -5,7 +5,14 @@ const AutoArchiveCard = ({ autoArchive, autoArchiveDays, onToggle, onDaysChange,
     <Card className="admin-settings-card">
       <div className="admin-settings-card-header">
         <div className="admin-settings-card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <rect x="3" y="4" width="18" height="18" rx="2" />
             <line x1="8" y1="4" x2="8" y2="22" />
             <line x1="16" y1="4" x2="16" y2="22" />
@@ -47,7 +54,12 @@ const AutoArchiveCard = ({ autoArchive, autoArchiveDays, onToggle, onDaysChange,
                   min="1"
                   max="365"
                   value={autoArchiveDays}
-                  onChange={(e) => onDaysChange(Number(e.target.value))}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    if (!isNaN(value) && value >= 1 && value <= 365) {
+                      onDaysChange(value);
+                    }
+                  }}
                   onBlur={onDaysBlur}
                   className="admin-settings-input"
                 />
@@ -62,4 +74,3 @@ const AutoArchiveCard = ({ autoArchive, autoArchiveDays, onToggle, onDaysChange,
 };
 
 export default AutoArchiveCard;
-

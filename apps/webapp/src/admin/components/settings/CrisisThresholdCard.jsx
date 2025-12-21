@@ -5,7 +5,14 @@ const CrisisThresholdCard = ({ crisisThreshold, onChange }) => {
     <Card className="admin-settings-card">
       <div className="admin-settings-card-header">
         <div className="admin-settings-card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <path d="M12 3 21 19H3z" />
             <line x1="12" y1="8" x2="12" y2="13" />
             <circle cx="12" cy="17" r="1" />
@@ -21,18 +28,28 @@ const CrisisThresholdCard = ({ crisisThreshold, onChange }) => {
       <div className="admin-settings-card-body">
         <div className="admin-settings-range-group">
           <div className="admin-settings-range-header">
-            <label className="admin-settings-label">Sensitivity Level: {crisisThreshold}/10</label>
+            <label htmlFor="crisis-threshold-slider" className="admin-settings-label">
+              Sensitivity Level: {crisisThreshold}/10
+            </label>
             <span className="admin-settings-range-badge">
               {crisisThreshold > 7 ? 'High' : crisisThreshold > 4 ? 'Medium' : 'Low'}
             </span>
           </div>
           <input
+            id="crisis-threshold-slider"
             type="range"
             min="1"
             max="10"
             value={crisisThreshold}
             onChange={(e) => onChange(Number(e.target.value))}
             className="admin-settings-range"
+            aria-label="Crisis alert sensitivity level"
+            aria-valuemin="1"
+            aria-valuemax="10"
+            aria-valuenow={crisisThreshold}
+            aria-valuetext={`${crisisThreshold} out of 10, ${
+              crisisThreshold > 7 ? 'High' : crisisThreshold > 4 ? 'Medium' : 'Low'
+            } sensitivity`}
           />
           <div className="admin-settings-range-labels">
             <span>Low</span>
@@ -46,4 +63,3 @@ const CrisisThresholdCard = ({ crisisThreshold, onChange }) => {
 };
 
 export default CrisisThresholdCard;
-

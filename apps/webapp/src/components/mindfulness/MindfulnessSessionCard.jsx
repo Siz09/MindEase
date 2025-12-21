@@ -18,7 +18,7 @@ const MindfulnessSessionCard = ({
   const isPlayingAudio = playingAudioId === session.id;
   const isPlayingAnimation = currentAnimationId === session.id;
 
-  const formatDuration = (minutes) => `${minutes} ${t('mindfulness.minutes')}`;
+  const formatDuration = (minutes) => t('mindfulness.minutesCount', { count: minutes });
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
@@ -52,6 +52,7 @@ const MindfulnessSessionCard = ({
           {isCompleted && <span className="completion-badge">✓</span>}
           <button
             className="favorite-btn-header"
+            aria-label={isFavorited ? t('mindfulness.unfavorite') : t('mindfulness.favorite')}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite(session.id);
@@ -87,14 +88,18 @@ const MindfulnessSessionCard = ({
           <button
             onClick={() => onPlayAudio(session)}
             className={`btn ${isPlayingAudio ? 'btn-secondary' : 'btn-primary'} play-btn`}
+            aria-label={isPlayingAudio ? t('mindfulness.stopAudio') : t('mindfulness.playAudio')}
           >
-            {isPlayingAudio ? '⏸️' : '▶️'}
+            {isPlayingAudio ? '⏹️' : '▶️'}
             {isPlayingAudio ? t('mindfulness.stopAudio') : t('mindfulness.playAudio')}
           </button>
         ) : (
           <button
             onClick={() => onPlayAnimation(session)}
             className={`btn ${isPlayingAnimation ? 'btn-secondary' : 'btn-primary'} play-btn`}
+            aria-label={
+              isPlayingAnimation ? t('mindfulness.stopAnimation') : t('mindfulness.playAnimation')
+            }
           >
             {isPlayingAnimation ? '⏹️' : '🎬'}
             {isPlayingAnimation ? t('mindfulness.stopAnimation') : t('mindfulness.playAnimation')}
@@ -137,4 +142,3 @@ const MindfulnessSessionCard = ({
 };
 
 export default MindfulnessSessionCard;
-

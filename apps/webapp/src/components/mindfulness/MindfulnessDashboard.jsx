@@ -61,15 +61,14 @@ const MindfulnessDashboard = () => {
 
       const response = await fetch(url, {
         headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
           'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
       if (!response.ok) throw new Error('Failed to fetch mindfulness sessions');
-
       const data = await response.json();
-      const sessionsPayload = data.sessions ?? (data.success ? data.sessions : data);
+      const sessionsPayload = data.sessions ?? data;
       setSessions(sessionsPayload);
       setFilteredSessions(sessionsPayload);
       setCategories(data.categories || []);
@@ -97,8 +96,8 @@ const MindfulnessDashboard = () => {
 
         const response = await fetch(fullUrl, {
           headers: {
-            Authorization: token ? `Bearer ${token}` : undefined,
             'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         });
 
@@ -344,7 +343,9 @@ const MindfulnessDashboard = () => {
       <StreakWidget />
       <Recommendations
         onSessionSelect={(session) => {
-          const sessionElement = document.querySelector(`[data-session-id="${session.id}"]`);
+          const sessionElement = document.querySelector(
+            `[data-session-id="${CSS.escape(session.id)}"]`
+          );
           if (sessionElement) {
             sessionElement.scrollIntoView({ behavior: 'smooth' });
           }

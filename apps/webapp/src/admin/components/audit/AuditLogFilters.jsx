@@ -1,4 +1,6 @@
 const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
+  const safeFilters = filters || {};
+
   return (
     <div
       className="bento-card"
@@ -13,12 +15,16 @@ const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
         }}
       >
         <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}>
+          <label
+            htmlFor="email-filter"
+            style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
+          >
             Email
           </label>
           <input
+            id="email-filter"
             placeholder="Filter by email"
-            value={filters.email}
+            value={safeFilters.email || ''}
             onChange={(e) => onChange({ email: e.target.value })}
             style={{
               width: '100%',
@@ -32,11 +38,15 @@ const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
         </div>
 
         <div style={{ flex: 1, minWidth: '150px' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}>
+          <label
+            htmlFor="action-filter"
+            style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
+          >
             Action
           </label>
           <select
-            value={filters.action}
+            id="action-filter"
+            value={safeFilters.action || ''}
             onChange={(e) => onChange({ action: e.target.value })}
             style={{
               width: '100%',
@@ -56,12 +66,16 @@ const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
         </div>
 
         <div style={{ flex: 1, minWidth: '150px' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}>
+          <label
+            htmlFor="from-filter"
+            style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
+          >
             From
           </label>
           <input
+            id="from-filter"
             type="date"
-            value={filters.from}
+            value={safeFilters.from || ''}
             onChange={(e) => onChange({ from: e.target.value })}
             style={{
               width: '100%',
@@ -75,12 +89,16 @@ const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
         </div>
 
         <div style={{ flex: 1, minWidth: '150px' }}>
-          <label style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}>
+          <label
+            htmlFor="to-filter"
+            style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
+          >
             To
           </label>
           <input
+            id="to-filter"
             type="date"
-            value={filters.to}
+            value={safeFilters.to || ''}
             onChange={(e) => onChange({ to: e.target.value })}
             style={{
               width: '100%',
@@ -95,6 +113,7 @@ const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
 
         <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
           <button
+            type="button"
             style={{
               padding: '8px 16px',
               background: 'none',
@@ -110,6 +129,7 @@ const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
             Clear
           </button>
           <button
+            type="button"
             style={{
               padding: '8px 16px',
               background: 'var(--primary)',
@@ -131,4 +151,3 @@ const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
 };
 
 export default AuditLogFilters;
-

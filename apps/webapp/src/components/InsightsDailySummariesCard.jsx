@@ -1,5 +1,24 @@
 import { useTranslation } from 'react-i18next';
 
+const formatDateKey = (dateKey, locale) => {
+  if (!dateKey || typeof dateKey !== 'string') return 'Invalid date';
+
+  const parts = dateKey.split('-');
+  if (parts.length !== 3) return 'Invalid date';
+
+  const [y, m, d] = parts.map(Number);
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return 'Invalid date';
+
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return 'Invalid date';
+
+  return date.toLocaleDateString(locale, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
 const InsightsDailySummariesCard = ({ dailySummaries, summaryLoading, language }) => {
   const { t, i18n } = useTranslation();
   const resolvedLanguage = language || i18n.language || 'en-US';
@@ -10,20 +29,26 @@ const InsightsDailySummariesCard = ({ dailySummaries, summaryLoading, language }
         <div className="section-header-wrapper">
           <div className="section-icon-badge">📅</div>
           <div>
-            <h3 className="card-title">{t('insights.yesterdaysSummary') || "Yesterday's Summary"}</h3>
+            <h3 className="card-title">
+              {t('insights.yesterdaysSummary') || "Yesterday's Summary"}
+            </h3>
           </div>
         </div>
       </div>
 
       {summaryLoading ? (
-        <div className="loading-spinner">
+        <div className="loading-spinner" role="status" aria-live="polite">
           <div className="spinner"></div>
           <p>{t('insights.generatingSummary') || 'Generating summary...'}</p>
         </div>
       ) : !dailySummaries || dailySummaries.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">📝</div>
-          <h3 className="empty-title">{t('insights.noDailySummaries') || 'No daily summaries yet'}</h3>
+          <div className="empty-icon" aria-hidden="true">
+            📝
+          </div>
+          <h3 className="empty-title">
+            {t('insights.noDailySummaries') || 'No daily summaries yet'}
+          </h3>
           <p className="empty-description">
             {t('insights.summaryProcessing') ||
               'Add journal entries yesterday to see AI summaries here.'}
@@ -35,16 +60,7 @@ const InsightsDailySummariesCard = ({ dailySummaries, summaryLoading, language }
             <div key={day.dateKey} className="daily-summary-card">
               <div className="daily-summary-header">
                 <div className="date-info">
-                  <span className="date-label">
-                    {(() => {
-                      const [y, m, d] = day.dateKey.split('-').map(Number);
-                      return new Date(y, m - 1, d).toLocaleDateString(resolvedLanguage, {
-                        weekday: 'long',
-                        month: 'short',
-                        day: 'numeric',
-                      });
-                    })()}
-                  </span>
+                  <span className="date-label">{formatDateKey(day.dateKey, resolvedLanguage)}</span>
                   {day.count && (
                     <span className="entry-count-badge">
                       {t('insights.entryCount', { count: day.count })}
@@ -65,4 +81,3 @@ const InsightsDailySummariesCard = ({ dailySummaries, summaryLoading, language }
 };
 
 export default InsightsDailySummariesCard;
-

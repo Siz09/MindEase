@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../utils/api';
 
 export default function useJournalAIStatus({ enabled = true } = {}) {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [aiStatus, setAiStatus] = useState({ available: false, loading: true });
+
+  const isMountedRef = useRef(true);
+  const controllerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      controllerRef.current?.abort?.();
+    };
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -18,17 +28,28 @@ export default function useJournalAIStatus({ enabled = true } = {}) {
 
   const checkAIStatus = useCallback(async () => {
     try {
-      if (!enabled) return;
-      if (isOffline) {
-        setAiStatus({ available: false, loading: false });
+      controllerRef.current?.abort?.();
+      const controller = new AbortController();
+      controllerRef.current = controller;
+
+      if (!enabled) {
+        if (isMountedRef.current) setAiStatus({ available: false, loading: false });
         return;
       }
-      const res = await api.get('/journal/ai-status');
+      if (isOffline) {
+        if (isMountedRef.current) setAiStatus({ available: false, loading: false });
+        return;
+      }
+
+      setAiStatus((prev) => ({ ...prev, loading: true }));
+      const res = await api.get('/journal/ai-status', { signal: controller.signal });
       const data = res.data || {};
+      if (!isMountedRef.current || controller.signal.aborted) return;
       setAiStatus({ available: !!data.aiAvailable, loading: false });
     } catch (error) {
+      if (error?.name === 'AbortError' || error?.name === 'CanceledError') return;
       console.error('Error checking AI status:', error);
-      setAiStatus({ available: false, loading: false });
+      if (isMountedRef.current) setAiStatus({ available: false, loading: false });
     }
   }, [enabled, isOffline]);
 
@@ -38,4 +59,3 @@ export default function useJournalAIStatus({ enabled = true } = {}) {
 
   return { isOffline, aiStatus, refresh: checkAIStatus };
 }
-

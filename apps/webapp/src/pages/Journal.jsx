@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
@@ -17,45 +17,54 @@ const Journal = () => {
   const { token } = useAuth();
 
   const enabled = Boolean(token);
-  const { entries, isLoading, currentPage, totalPages, totalEntries, goToPage, prependEntry, upsertEntry } =
-    useJournalEntries({ pageSize: 10, enabled });
-  const { aiStatus, isOffline } = useJournalAIStatus({ enabled });
-
   const [submitting, setSubmitting] = useState(false);
 
-  const pollForAICompletion = useAICompletionPolling((updatedEntry) => {
-    upsertEntry(updatedEntry);
-  });
+  const { isOffline, aiStatus } = useJournalAIStatus({ enabled });
+  const {
+    entries,
+    isLoading,
+    currentPage,
+    totalPages,
+    totalEntries,
+    goToPage,
+    prependEntry,
+    upsertEntry,
+  } = useJournalEntries({ pageSize: 10, enabled });
 
-  const handleSubmitEntry = async ({ title, content, moodValue }) => {
-    if (!enabled) return;
+  const pollForAICompletion = useAICompletionPolling(upsertEntry);
 
-    setSubmitting(true);
-    try {
-      const res = await api.post('/journal/add', {
-        title: title ?? null,
-        content,
-        moodValue: moodValue ?? null,
-      });
-      const data = res.data || {};
-      const returnedEntry = data.entry || null;
+  const handleSubmitEntry = useCallback(
+    async ({ title, content, moodValue }) => {
+      if (!enabled) return;
 
-      toast.success('Journal entry added!');
+      setSubmitting(true);
+      try {
+        const res = await api.post('/journal/add', {
+          title: title ?? null,
+          content,
+          moodValue: moodValue ?? null,
+        });
+        const data = res.data || {};
+        const returnedEntry = data.entry || null;
 
-      if (returnedEntry) {
-        prependEntry(returnedEntry);
+        if (returnedEntry) {
+          toast.success(t('journal.entryAdded', 'Journal entry added!'));
+          prependEntry(returnedEntry);
+          if (returnedEntry.id) pollForAICompletion(returnedEntry.id);
+        } else {
+          toast.warning(
+            t('journal.entrySavedNotReturned', 'Entry saved but not returned from server')
+          );
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error(t('journal.errors.saveFailed', 'Error saving journal entry'));
+      } finally {
+        setSubmitting(false);
       }
-
-      if (returnedEntry?.id) {
-        pollForAICompletion(returnedEntry.id);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error('Error saving journal entry');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    },
+    [enabled, pollForAICompletion, prependEntry, t]
+  );
 
   if (isLoading) {
     return (
@@ -68,14 +77,23 @@ const Journal = () => {
     );
   }
 
+  const aiStatusText = aiStatus.loading
+    ? t('journal.aiChecking', 'Checking AI…')
+    : aiStatus.available
+      ? t('journal.aiAvailable')
+      : t('journal.aiUnavailable');
+
   return (
     <div className="journal-container">
       <div className="journal-header">
         <h1>{t('journal.title')}</h1>
         <p className="journal-subtitle">{t('journal.subtitle')}</p>
-        <div className={`ai-status ${aiStatus.available ? 'available' : 'unavailable'}`}>
+        <div
+          className={`ai-status ${aiStatus.available && !aiStatus.loading ? 'available' : 'unavailable'}`}
+          aria-live="polite"
+        >
           <span className="ai-dot"></span>
-          {aiStatus.available ? t('journal.aiAvailable') : t('journal.aiUnavailable')}
+          {aiStatusText}
         </div>
       </div>
 
@@ -92,7 +110,7 @@ const Journal = () => {
           isLoading={isLoading}
           currentPage={currentPage}
           totalPages={totalPages}
-          totalEntries={totalEntries || entries.length}
+          totalEntries={totalEntries ?? entries.length}
           onPageChange={goToPage}
           showAISections={true}
         />

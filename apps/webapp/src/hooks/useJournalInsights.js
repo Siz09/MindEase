@@ -22,60 +22,86 @@ export default function useJournalInsights({ entriesPerPage = defaultEntriesPerP
   const fetchJournalHistory = useCallback(async () => {
     try {
       setSummaryLoading(true);
-      const response = await api.get('/journal/history', {
-        params: { page: 0, size: 100 },
-      });
+      const pageSize = 100;
+      const allEntries = [];
+      let page = 0;
+      let totalPages = null;
 
-      if (response.data.success || response.data.status === 'success') {
-        const entries = response.data.entries || [];
-        setJournalEntries(entries);
+      while (true) {
+        const response = await api.get('/journal/history', {
+          params: { page, size: pageSize },
+        });
 
-        const totalEntries = entries.length;
-        const today = new Date();
-        const keyFor = (d) => {
-          const dt = new Date(d);
-          const y = dt.getFullYear();
-          const m = String(dt.getMonth() + 1).padStart(2, '0');
-          const day = String(dt.getDate()).padStart(2, '0');
-          return `${y}-${m}-${day}`;
-        };
-        const todayKey = keyFor(today);
+        if (!(response.data.success || response.data.status === 'success')) break;
 
-        const todayEntriesCount = entries.filter((e) => keyFor(e.createdAt) === todayKey).length;
+        const pageEntries = response.data.entries || response.data.content || [];
+        if (!Array.isArray(pageEntries) || pageEntries.length === 0) break;
 
-        let avgEntriesPerDay = 0;
-        if (totalEntries > 0) {
-          const oldest = new Date(entries[entries.length - 1].createdAt);
-          const daysDiff = Math.max(1, Math.ceil((today - oldest) / (1000 * 60 * 60 * 24)));
-          avgEntriesPerDay = (totalEntries / daysDiff).toFixed(1);
+        allEntries.push(...pageEntries);
+
+        if (typeof response.data.totalPages === 'number') {
+          totalPages = response.data.totalPages;
         }
 
-        setJournalStats({ totalEntries, todayEntries: todayEntriesCount, avgEntriesPerDay });
+        page += 1;
 
-        const dayMap = new Map();
-        for (const entry of entries) {
-          const k = keyFor(entry.createdAt);
-          if (!dayMap.has(k)) dayMap.set(k, []);
-          dayMap.get(k).push(entry);
+        if (typeof totalPages === 'number') {
+          if (page >= totalPages) break;
+        } else if (pageEntries.length < pageSize) {
+          break;
         }
 
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayKey = keyFor(yesterday);
-        const yList = dayMap.get(yesterdayKey) || [];
-        const ySummaries = yList.map((e) => e.aiSummary).filter(Boolean);
+        if (page > 1000) break;
+      }
 
-        if (ySummaries.length > 0) {
-          setDailySummaries([
-            {
-              dateKey: yesterdayKey,
-              summary: ySummaries.join(' \u2022 '),
-              count: ySummaries.length,
-            },
-          ]);
-        } else {
-          setDailySummaries([]);
-        }
+      setJournalEntries(allEntries);
+
+      const entries = allEntries;
+      const totalEntries = entries.length;
+      const today = new Date();
+      const keyFor = (d) => {
+        const dt = new Date(d);
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth() + 1).padStart(2, '0');
+        const day = String(dt.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      const todayKey = keyFor(today);
+
+      const todayEntriesCount = entries.filter((e) => keyFor(e.createdAt) === todayKey).length;
+
+      let avgEntriesPerDay = 0;
+      if (totalEntries > 0) {
+        const oldest = new Date(entries[entries.length - 1].createdAt);
+        const daysDiff = Math.max(1, Math.ceil((today - oldest) / (1000 * 60 * 60 * 24)));
+        avgEntriesPerDay = (totalEntries / daysDiff).toFixed(1);
+      }
+
+      setJournalStats({ totalEntries, todayEntries: todayEntriesCount, avgEntriesPerDay });
+
+      const dayMap = new Map();
+      for (const entry of entries) {
+        const k = keyFor(entry.createdAt);
+        if (!dayMap.has(k)) dayMap.set(k, []);
+        dayMap.get(k).push(entry);
+      }
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = keyFor(yesterday);
+      const yList = dayMap.get(yesterdayKey) || [];
+      const ySummaries = yList.map((e) => e.aiSummary).filter(Boolean);
+
+      if (ySummaries.length > 0) {
+        setDailySummaries([
+          {
+            dateKey: yesterdayKey,
+            summary: ySummaries.join(' \u2022 '),
+            count: ySummaries.length,
+          },
+        ]);
+      } else {
+        setDailySummaries([]);
       }
     } catch (error) {
       console.error('Failed to fetch journal entries:', error);
@@ -111,4 +137,3 @@ export default function useJournalInsights({ entriesPerPage = defaultEntriesPerP
     refresh: fetchJournalHistory,
   };
 }
-

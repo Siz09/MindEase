@@ -30,7 +30,10 @@ const UserTable = ({
   const displayData = (users || []).map((user) => ({
     ...user,
     email: user.email || user.userId || 'Unknown',
-    createdAt: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A',
+    createdAt:
+      user.createdAt && !isNaN(new Date(user.createdAt))
+        ? new Date(user.createdAt).toLocaleDateString()
+        : 'N/A',
     status: user.status || 'active',
     subscriptionPlan: user.subscriptionPlan || 'Free',
     subscriptionStatus: user.subscriptionStatus || 'none',
@@ -50,7 +53,7 @@ const UserTable = ({
               marginTop: 'var(--spacing-xs)',
             }}
           >
-            Showing {users.length} of {totalUsers}
+            Showing {users?.length || 0} of {totalUsers}
           </div>
         </div>
 
@@ -81,4 +84,3 @@ const UserTable = ({
 };
 
 export default UserTable;
-

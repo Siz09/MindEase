@@ -26,13 +26,21 @@ const UserFilters = ({ filters, onSearch, onStatusChange, onClear }) => {
 
   return (
     <div className="admin-user-filters">
+      <label htmlFor="user-search-input" className="sr-only">
+        Search by email
+      </label>
       <Input
+        id="user-search-input"
         placeholder="Search by email..."
         value={safeFilters.search}
         onChange={(e) => handleSearch(e.target.value)}
         style={{ flex: 1, minWidth: '200px', maxWidth: '300px' }}
       />
+      <label htmlFor="user-status-select" className="sr-only">
+        User status
+      </label>
       <Select
+        id="user-status-select"
         value={safeFilters.status}
         onChange={(e) => handleStatusChange(e.target.value)}
         options={[

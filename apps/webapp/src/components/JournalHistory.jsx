@@ -160,12 +160,16 @@ const JournalHistory = ({
                 </div>
               )}
 
-              {showAISections && !entry.aiSummary && !entry.moodInsight && (
-                <div className="ai-processing">
-                  <div className="processing-spinner"></div>
-                  <span>{t('journal.aiProcessing')}</span>
-                </div>
-              )}
+              {showAISections &&
+                !entry.aiSummary &&
+                !entry.moodInsight &&
+                entry.createdAt &&
+                new Date() - new Date(entry.createdAt) < 5 * 60 * 1000 && (
+                  <div className="ai-processing">
+                    <div className="processing-spinner"></div>
+                    <span>{t('journal.aiProcessing')}</span>
+                  </div>
+                )}
             </div>
           );
         })}

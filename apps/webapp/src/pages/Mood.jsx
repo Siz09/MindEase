@@ -113,7 +113,9 @@ const Mood = () => {
     };
 
     const display = moodLookup[stats.latest];
-    return display ? { value: stats.latest, ...display } : { value: stats.latest, emoji: '🙂' };
+    return display
+      ? { value: stats.latest, ...display }
+      : { value: stats.latest, emoji: '🙂', label: t('mood.neutral') };
   }, [stats?.latest, t]);
 
   return (

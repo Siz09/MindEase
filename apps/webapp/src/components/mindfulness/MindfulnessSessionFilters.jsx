@@ -21,7 +21,9 @@ const MindfulnessSessionFilters = ({
           <option value="all">{t('mindfulness.allCategories')}</option>
           {safeCategories.map((category) => (
             <option key={category} value={category}>
-              {category.charAt(0).toUpperCase() + category.slice(1)}
+              {typeof category === 'string'
+                ? category.charAt(0).toUpperCase() + category.slice(1)
+                : String(category)}
             </option>
           ))}
         </select>
@@ -38,11 +40,7 @@ const MindfulnessSessionFilters = ({
 
       <div className="filter-group">
         <label className="filter-label">{t('mindfulness.filterByDifficulty')}</label>
-        <select
-          value={selectedDifficulty}
-          onChange={onDifficultyChange}
-          className="filter-select"
-        >
+        <select value={selectedDifficulty} onChange={onDifficultyChange} className="filter-select">
           <option value="all">{t('mindfulness.allDifficulties')}</option>
           <option value="beginner">🟢 {t('mindfulness.beginner')}</option>
           <option value="intermediate">🟡 {t('mindfulness.intermediate')}</option>
@@ -58,4 +56,3 @@ const MindfulnessSessionFilters = ({
 };
 
 export default MindfulnessSessionFilters;
-

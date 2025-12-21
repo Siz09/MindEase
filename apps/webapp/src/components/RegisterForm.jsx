@@ -77,7 +77,14 @@ const RegisterForm = () => {
     setLoading(true);
 
     try {
-      const result = await register(formData.email, formData.password, false, true);
+      const SEND_VERIFICATION_EMAIL = false;
+      const AUTO_REDIRECT_AFTER_REGISTRATION = true;
+      const result = await register(
+        formData.email,
+        formData.password,
+        SEND_VERIFICATION_EMAIL,
+        AUTO_REDIRECT_AFTER_REGISTRATION
+      );
       if (result.success) {
         navigate('/');
       } else {

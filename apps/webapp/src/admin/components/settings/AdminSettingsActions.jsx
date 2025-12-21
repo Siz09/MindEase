@@ -29,6 +29,8 @@ const AdminSettingsActions = ({ onSave, onReset, isLoading }) => {
               height="16"
               viewBox="0 0 24 24"
               fill="none"
+              role="status"
+              aria-label="Saving"
             >
               <circle
                 cx="12"
@@ -59,7 +61,12 @@ const AdminSettingsActions = ({ onSave, onReset, isLoading }) => {
           'Save Changes'
         )}
       </Button>
-      <Button variant="ghost" onClick={handleReset} className="admin-settings-reset-btn">
+      <Button
+        variant="ghost"
+        onClick={handleReset}
+        disabled={isLoading}
+        className="admin-settings-reset-btn"
+      >
         Reset to Default
       </Button>
     </div>

@@ -44,7 +44,7 @@ const InsightsStatsCard = ({ journalStats, moodStats }) => {
               </div>
               <div className="stat-item">
                 <div
-                  className={`stat-value trend-${moodStats.trend}`}
+                  className={`stat-value ${moodStats.trend ? `trend-${moodStats.trend}` : ''}`}
                   aria-label={
                     moodStats.trend === 'up'
                       ? t('mood.trendUp')
@@ -66,4 +66,3 @@ const InsightsStatsCard = ({ journalStats, moodStats }) => {
 };
 
 export default InsightsStatsCard;
-

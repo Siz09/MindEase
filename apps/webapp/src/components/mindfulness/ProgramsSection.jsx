@@ -10,11 +10,14 @@ const ProgramsSection = () => {
   const fetchGuidedPrograms = useCallback(async () => {
     try {
       const res = await api.get('/guided-programs');
-      if (res.data.success) {
+      if (res.data.success && Array.isArray(res.data.programs)) {
         setGuidedPrograms(res.data.programs);
+      } else {
+        setGuidedPrograms([]);
       }
     } catch (error) {
       console.error('Error fetching guided programs:', error);
+      setGuidedPrograms([]);
     }
   }, []);
 
@@ -31,4 +34,3 @@ const ProgramsSection = () => {
 };
 
 export default ProgramsSection;
-

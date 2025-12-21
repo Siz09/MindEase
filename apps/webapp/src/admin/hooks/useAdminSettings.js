@@ -36,6 +36,8 @@ export default function useAdminSettings() {
       if (typeof data.autoArchive === 'boolean') setAutoArchive(data.autoArchive);
       if (typeof data.autoArchiveDays === 'number') {
         setAutoArchiveDays(Math.max(1, Math.min(365, data.autoArchiveDays)));
+      } else if (data.autoArchiveDays === null && data.autoArchive === false) {
+        setAutoArchiveDays(defaults.autoArchiveDays);
       }
       if (typeof data.dailyReportTime === 'string') {
         if (/^([0-1]\d|2[0-3]):[0-5]\d$/.test(data.dailyReportTime)) {

@@ -59,8 +59,13 @@ export default function useAuditLogs({ initialPageSize = 25 } = {}) {
           email: filters.email,
           actionType: filters.action || undefined,
           from:
-            filters.from && !isNaN(new Date(filters.from)) ? new Date(filters.from).toISOString() : undefined,
-          to: filters.to && !isNaN(new Date(filters.to)) ? new Date(filters.to).toISOString() : undefined,
+            filters.from && !isNaN(new Date(filters.from).getTime())
+              ? new Date(filters.from).toISOString()
+              : undefined,
+          to:
+            filters.to && !isNaN(new Date(filters.to).getTime())
+              ? new Date(filters.to).toISOString()
+              : undefined,
         };
         try {
           ({ data } = await api.post('/admin/audit-logs/search', body));
@@ -96,7 +101,7 @@ export default function useAuditLogs({ initialPageSize = 25 } = {}) {
   }, [filters, page, qs, qsNoEmail, size]);
 
   useEffect(() => {
-    load().catch(() => {});
+    void load();
   }, [load]);
 
   const updateFilters = useCallback((partial) => {
@@ -139,4 +144,3 @@ export default function useAuditLogs({ initialPageSize = 25 } = {}) {
     exportCSV,
   };
 }
-
