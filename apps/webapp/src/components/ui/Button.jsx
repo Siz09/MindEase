@@ -19,16 +19,16 @@ const Button = forwardRef(
 
     const variants = {
       primary:
-        'bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 focus:ring-primary-500',
+        'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 focus:ring-green-600 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-700',
       secondary:
         'bg-calm-100 text-calm-900 hover:bg-calm-200 active:bg-calm-300 focus:ring-calm-500',
       ghost:
         'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700 focus:ring-gray-500',
       danger: 'bg-red-500 text-white hover:bg-red-600 active:bg-red-700 focus:ring-red-500',
       success:
-        'bg-green-500 text-white hover:bg-green-600 active:bg-green-700 focus:ring-green-500',
+        'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 focus:ring-green-600 dark:bg-green-600 dark:hover:bg-green-500',
       outline:
-        'border-2 border-primary-500 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 focus:ring-primary-500',
+        'border-2 border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 focus:ring-green-600 dark:border-green-500 dark:text-green-500',
     };
 
     const sizes = {

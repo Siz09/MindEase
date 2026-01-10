@@ -4,8 +4,7 @@ import java.time.LocalDate;
 
 public record MoodCorrelationPoint(
         LocalDate day,
-        double avgMood,
+        Double avgMood,
         long chatCount
 ) {
 }
-

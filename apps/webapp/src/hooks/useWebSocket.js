@@ -97,7 +97,7 @@ export const useWebSocket = ({
         connectHeaders: {
           Authorization: `Bearer ${token}`,
         },
-        reconnectDelay: 0, // Disable built-in reconnection; use custom exponential backoff
+        reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
         onConnect: (frame) => {
@@ -105,12 +105,12 @@ export const useWebSocket = ({
           setIsConnected(true);
           isConnectingRef.current = false;
           isIntentionallyDisconnectingRef.current = false; // Reset flag on successful connection
-          const wasReconnecting = reconnectAttempts.current > 0;
           resetReconnectState(); // Reset backoff on successful connection
 
-          if (wasReconnecting) {
-            toast.success('Reconnected successfully!');
-          }
+          // Toast notification removed - connection status is shown in UI
+          // if (reconnectAttempts.current > 0) {
+          //   toast.success('Reconnected successfully!');
+          // }
 
           // Process offline queue when reconnected
           if (isOnline && getOfflineQueueCount() > 0 && processOfflineQueue) {
@@ -181,7 +181,8 @@ export const useWebSocket = ({
           const errorMessage = frame?.headers?.message || frame?.body || '';
           if (errorMessage.includes('expired') || errorMessage.includes('JWT token has expired')) {
             console.log('Token expired, attempting to refresh and reconnect...');
-            toast.info('Reconnecting with fresh session...');
+            // Toast notification removed - connection status is shown in UI
+            // toast.info('Reconnecting with fresh session...');
 
             // Disconnect current client
             if (stompClientRef.current) {
@@ -206,15 +207,16 @@ export const useWebSocket = ({
           } else {
             toast.error('Chat connection error');
             // Schedule reconnection with backoff for other errors
-            if (connectWebSocketRef.current && !reconnectTimeoutRef.current) {
+            if (connectWebSocketRef.current) {
               const delay = getReconnectDelay();
               reconnectAttempts.current += 1;
               console.log(
                 `Scheduling reconnection attempt ${reconnectAttempts.current} in ${delay}ms`
               );
-              toast.info(
-                `Reconnecting in ${Math.round(delay / 1000)}s... (attempt ${reconnectAttempts.current})`
-              );
+              // Toast notification removed - connection status is shown in UI
+              // toast.info(
+              //   `Reconnecting in ${Math.round(delay / 1000)}s... (attempt ${reconnectAttempts.current})`
+              // );
               reconnectTimeoutRef.current = setTimeout(() => {
                 reconnectTimeoutRef.current = null;
                 if (connectWebSocketRef.current) {
@@ -230,7 +232,8 @@ export const useWebSocket = ({
           isConnectingRef.current = false;
           // Don't show toast during intentional disconnection (cleanup/unmount)
           if (!isIntentionallyDisconnectingRef.current) {
-            toast.info('Disconnected from chat');
+            // Toast notification removed - connection status is shown in UI
+            // toast.info('Disconnected from chat');
             // Schedule reconnection with backoff
             if (connectWebSocketRef.current && !reconnectTimeoutRef.current) {
               const delay = getReconnectDelay();
@@ -238,9 +241,10 @@ export const useWebSocket = ({
               console.log(
                 `Scheduling reconnection attempt ${reconnectAttempts.current} in ${delay}ms`
               );
-              toast.info(
-                `Reconnecting in ${Math.round(delay / 1000)}s... (attempt ${reconnectAttempts.current})`
-              );
+              // Toast notification removed - connection status is shown in UI
+              // toast.info(
+              //   `Reconnecting in ${Math.round(delay / 1000)}s... (attempt ${reconnectAttempts.current})`
+              // );
               reconnectTimeoutRef.current = setTimeout(() => {
                 reconnectTimeoutRef.current = null;
                 if (connectWebSocketRef.current) {
@@ -268,9 +272,10 @@ export const useWebSocket = ({
               console.log(
                 `Scheduling reconnection attempt ${reconnectAttempts.current} in ${delay}ms`
               );
-              toast.info(
-                `Reconnecting in ${Math.round(delay / 1000)}s... (attempt ${reconnectAttempts.current})`
-              );
+              // Toast notification removed - connection status is shown in UI
+              // toast.info(
+              //   `Reconnecting in ${Math.round(delay / 1000)}s... (attempt ${reconnectAttempts.current})`
+              // );
               reconnectTimeoutRef.current = setTimeout(() => {
                 reconnectTimeoutRef.current = null;
                 if (connectWebSocketRef.current) {
@@ -407,5 +412,6 @@ export const useWebSocket = ({
     disconnect: disconnectWebSocket,
     sendMessage,
     client: stompClientRef.current,
+    reconnectAttempts,
   };
 };

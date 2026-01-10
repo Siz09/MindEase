@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import useUserFilters from '../hooks/useUserFilters';
 import useUsers from '../hooks/useUsers';
@@ -7,7 +5,6 @@ import UserModals from '../components/users/UserModals';
 import UserNotification from '../components/users/UserNotification';
 import UserStats from '../components/users/UserStats';
 import UserTable from '../components/users/UserTable';
-import '../../styles/admin-user-management.css';
 
 export default function UserManagement() {
   const { page, setPage, pageSize, filters, handleSearch, handleStatusFilter, clearFilters } =
@@ -18,10 +15,10 @@ export default function UserManagement() {
     totalPages,
     totalUsers,
     stats,
-    refreshAll,
-    getUserDetails,
     updateUser,
     deleteUser,
+    refreshAll,
+    getUserDetails,
   } = useUsers({ page, pageSize, filters });
 
   const [selectedUser, setSelectedUser] = useState(null);
@@ -78,7 +75,6 @@ export default function UserManagement() {
       setShowBanConfirm(false);
       setUserToBan(null);
     } catch (err) {
-      console.error('Failed to ban user:', err?.message || err);
       setBanError(err?.message || 'Failed to update user status. Please try again.');
     }
   };
@@ -109,7 +105,6 @@ export default function UserManagement() {
       setShowDeleteConfirm(false);
       setUserToDelete(null);
     } catch (err) {
-      console.error('Failed to delete user:', err?.message || err);
       setDeleteError(err?.message || 'Failed to delete user. Please try again.');
     }
   };
@@ -134,8 +129,7 @@ export default function UserManagement() {
       setSelectedUser(data);
       setShowEditModal(true);
       setShowDetailsModal(false);
-    } catch (err) {
-      console.error('Failed to load user details:', err);
+    } catch {
       setNotification({
         type: 'error',
         message: 'Failed to load user details.',
@@ -187,7 +181,6 @@ export default function UserManagement() {
         });
       }
     } catch (err) {
-      console.error('Failed to save user:', err?.message || err);
       setNotification({
         type: 'error',
         message:
@@ -199,11 +192,11 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="admin-user-management-page">
-      <div className="admin-user-management-header">
-        <h1 className="admin-user-management-title">User Management</h1>
-        <p className="admin-user-management-subtitle">Manage and monitor all platform users</p>
-      </div>
+    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <header className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">User management</h1>
+        <p className="mt-1 text-sm text-gray-600">Manage and monitor all platform users.</p>
+      </header>
 
       <UserNotification notification={notification} onDismiss={() => setNotification(null)} />
 
@@ -211,21 +204,23 @@ export default function UserManagement() {
       <UserStats stats={stats} />
 
       {/* Users Table */}
-      <UserTable
-        users={users}
-        loading={loading}
-        totalUsers={totalUsers}
-        page={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        filters={filters}
-        onSearch={handleSearch}
-        onStatusChange={handleStatusFilter}
-        onClearFilters={clearFilters}
-        onUserClick={handleUserClick}
-        onEditUser={handleEditUser}
-        onDeleteUser={handleDeleteUser}
-      />
+      <div className="mt-6">
+        <UserTable
+          users={users}
+          loading={loading}
+          totalUsers={totalUsers}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          filters={filters}
+          onSearch={handleSearch}
+          onStatusChange={handleStatusFilter}
+          onClearFilters={clearFilters}
+          onUserClick={handleUserClick}
+          onEditUser={handleEditUser}
+          onDeleteUser={handleDeleteUser}
+        />
+      </div>
 
       <UserModals
         selectedUser={selectedUser}

@@ -9,6 +9,7 @@ import adminApi from '../adminApi';
 export default function ContentLibrary() {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
 
   const [filters, setFilters] = useState({
@@ -24,13 +25,15 @@ export default function ContentLibrary() {
 
   useEffect(() => {
     loadContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, filters]);
 
   const loadContent = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
-        type: activeTab === 'all' ? '' : activeTab,
+        type: activeTab === 'all' ? '' : activeTab.replace(/s$/, ''),
       });
       if (filters.search) params.append('search', filters.search);
       if (filters.category !== 'all') params.append('category', filters.category);
@@ -39,10 +42,8 @@ export default function ContentLibrary() {
 
       setContent(Array.isArray(data) ? data : data.content || []);
     } catch (err) {
-      console.error(
-        'Failed to load content:',
-        err.response?.data?.message || err.message || String(err)
-      );
+      const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
+      setError('Unable to load content. ' + errorMessage);
       setToast({
         type: 'error',
         message: 'Unable to load content. Please try again.',
@@ -58,11 +59,7 @@ export default function ContentLibrary() {
       await adminApi.delete(`/admin/content/${contentId}`);
       loadContent();
       setShowModal(false);
-    } catch (err) {
-      console.error(
-        'Failed to delete content:',
-        err.response?.data?.message || err.message || String(err)
-      );
+    } catch {
       setToast({
         type: 'error',
         message: 'Failed to delete content. Please try again.',
@@ -93,7 +90,6 @@ export default function ContentLibrary() {
       setShowForm(false);
       loadContent();
     } catch (err) {
-      console.error('Failed to save content:', err);
       setToast({
         type: 'error',
         message: 'Failed to save content. Please try again.',
@@ -124,6 +120,21 @@ export default function ContentLibrary() {
           </Button>
         </div>
       </div>
+
+      {error && (
+        <div
+          style={{
+            backgroundColor: '#fee2e2',
+            border: '1px solid #ef4444',
+            color: '#b91c1c',
+            padding: '1rem',
+            borderRadius: '0.5rem',
+            marginBottom: '1rem',
+          }}
+        >
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       <div
         className="bento-card"

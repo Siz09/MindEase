@@ -7,11 +7,12 @@ public record ContentItemDto(
     UUID id,
     String title,
     String description,
+    String body,
     String category,
     String type,
     String imageUrl,
     Double rating,
     Integer reviewCount,
-    OffsetDateTime createdAt
+    OffsetDateTime createdAt,
+    OffsetDateTime updatedAt
 ) {}
-

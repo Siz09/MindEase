@@ -61,7 +61,7 @@ async def daily_active_users(request: AnalyticsRequest):
         for _, row in df.iterrows():
             results.append(ActiveUsersPoint(
                 day=row['day'] if isinstance(row['day'], date) else row['day'].date(),
-                active_users=int(row['active_users'])
+                activeUsers=int(row['active_users'])
             ))
 
         return results
@@ -158,8 +158,8 @@ async def mood_correlation(request: AnalyticsRequest):
         for _, row in df.iterrows():
             results.append(MoodCorrelationPoint(
                 day=row['day'] if isinstance(row['day'], date) else row['day'].date(),
-                avg_mood=float(row['avg_mood']) if pd.notna(row['avg_mood']) else None,
-                chat_count=int(row['chat_count'])
+                avgMood=float(row['avg_mood']) if pd.notna(row['avg_mood']) else None,
+                chatCount=int(row['chat_count'])
             ))
 
         return results
@@ -180,7 +180,7 @@ def mood_correlation_fallback(from_date: datetime, to_date: datetime) -> List[Mo
     """)
 
     chats_sql = text("""
-        SELECT DATE(created_at) AS day, COUNT(*)
+        SELECT DATE(created_at) AS day, COUNT(*) AS chat_count
         FROM audit_logs
         WHERE created_at BETWEEN :from_date AND :to_date
           AND action_type = 'CHAT_SENT'
@@ -196,14 +196,14 @@ def mood_correlation_fallback(from_date: datetime, to_date: datetime) -> List[Mo
     results = []
 
     moods_dict = dict(zip(moods_df['day'], moods_df['avg_mood'])) if not moods_df.empty else {}
-    chats_dict = dict(zip(chats_df['day'], chats_df['count'])) if not chats_df.empty else {}
+    chats_dict = dict(zip(chats_df['day'], chats_df['chat_count'])) if not chats_df.empty else {}
 
     for day in all_days:
         day_date = day.date()
         results.append(MoodCorrelationPoint(
             day=day_date,
-            avg_mood=float(moods_dict.get(day_date)) if day_date in moods_dict else None,
-            chat_count=int(chats_dict.get(day_date, 0))
+            avgMood=float(moods_dict.get(day_date)) if day_date in moods_dict else None,
+            chatCount=int(chats_dict.get(day_date, 0))
         ))
 
     return results
@@ -224,8 +224,9 @@ async def user_growth(request: AnalyticsRequest):
             WHERE created_at BETWEEN :from_date AND :to_date
         """)
 
-        result = engine.execute(sql, {"from_date": request.from_date, "to_date": request.to_date})
-        count = result.scalar()
+        with engine.connect() as conn:
+            result = conn.execute(sql, {"from_date": request.from_date, "to_date": request.to_date})
+            count = result.scalar()
 
         return {"count": int(count) if count else 0}
 
@@ -249,8 +250,9 @@ async def distinct_active_users(request: AnalyticsRequest):
             WHERE created_at BETWEEN :from_date AND :to_date
         """)
 
-        result = engine.execute(sql, {"from_date": request.from_date, "to_date": request.to_date})
-        count = result.scalar()
+        with engine.connect() as conn:
+            result = conn.execute(sql, {"from_date": request.from_date, "to_date": request.to_date})
+            count = result.scalar()
 
         return {"count": int(count) if count else 0}
 

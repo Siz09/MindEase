@@ -8,6 +8,12 @@ import {
   isSpeechSynthesisSupported,
   mapI18nToSpeechLang,
 } from '../../utils/speechUtils';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Switch } from '../ui/Switch';
+import { Slider } from '../ui/Slider';
+import { Separator } from '../ui/Separator';
+import Button from '../ui/Button';
+import { Mic, Volume2, Gauge, MessageCircle } from 'lucide-react';
 
 const VoiceSettingsSection = () => {
   const { t, i18n } = useTranslation();
@@ -68,12 +74,14 @@ const VoiceSettingsSection = () => {
     setSelectedVoiceName(voice.name);
   };
 
-  const handleRateChange = (newRate) => {
+  const handleRateChange = (values) => {
+    const newRate = values[0];
     setRate(newRate);
     setSpeechRate(newRate);
   };
 
-  const handleVolumeChange = (newVolume) => {
+  const handleVolumeChange = (values) => {
+    const newVolume = values[0];
     setTtsVolume(newVolume);
     setVolume(newVolume);
   };
@@ -85,124 +93,160 @@ const VoiceSettingsSection = () => {
   if (!isVoiceInputSupported && !isVoiceOutputSupported) return null;
 
   return (
-    <div className="card">
-      <div className="card-header">
-        <h2 className="card-title">{t('settings.voiceSettings')}</h2>
-      </div>
-
-      {isVoiceInputSupported && (
-        <div className="form-group">
-          <label className="form-label toggle-label">
-            <div className="toggle-info">
-              <span className="toggle-title">{t('chat.enableVoiceInput')}</span>
-              <p className="setting-description">{t('settings.voice.inputDescription')}</p>
-            </div>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={voiceInputEnabled}
-                onChange={(e) => handleVoiceInputToggle(e.target.checked)}
-              />
-              <span className="toggle-slider"></span>
-            </div>
-          </label>
-        </div>
-      )}
-
-      {isVoiceOutputSupported && (
-        <div className="form-group">
-          <label className="form-label toggle-label">
-            <div className="toggle-info">
-              <span className="toggle-title">{t('chat.enableVoiceOutput')}</span>
-              <p className="setting-description">{t('settings.voice.outputDescription')}</p>
-            </div>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={voiceOutputEnabled}
-                onChange={(e) => handleVoiceOutputToggle(e.target.checked)}
-              />
-              <span className="toggle-slider"></span>
-            </div>
-          </label>
-
-          {voiceOutputEnabled && (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.voiceSettings')}</CardTitle>
+          <CardDescription>Configure voice input and output preferences</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Voice Input */}
+          {isVoiceInputSupported && (
             <>
-              <div className="form-group">
-                <label className="form-label">{t('chat.selectVoice')}</label>
-                <select
-                  className="form-input"
-                  value={selectedVoice?.name || ''}
-                  onChange={(e) => {
-                    const voice = availableVoices.find((v) => v.name === e.target.value);
-                    if (voice) handleVoiceChange(voice);
-                  }}
-                >
-                  {availableVoices.map((voice) => (
-                    <option key={voice.name} value={voice.name}>
-                      {voice.name} ({voice.lang})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  {t('chat.speechRate')}: {rate.toFixed(1)}x
-                </label>
-                <input
-                  type="range"
-                  className="form-range"
-                  min="0.5"
-                  max="2"
-                  step="0.1"
-                  value={rate}
-                  onChange={(e) => handleRateChange(parseFloat(e.target.value))}
-                />
-                <div className="range-labels">
-                  <span>0.5x</span>
-                  <span>2.0x</span>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Mic className="h-4 w-4 text-orange-600" />
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                      {t('chat.enableVoiceInput')}
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('settings.voice.inputDescription')}
+                  </p>
                 </div>
+                <Switch checked={voiceInputEnabled} onCheckedChange={handleVoiceInputToggle} />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  {t('chat.volume')}: {Math.round(volume * 100)}%
-                </label>
-                <input
-                  type="range"
-                  className="form-range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={volume}
-                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                />
-                <div className="range-labels">
-                  <span>0%</span>
-                  <span>100%</span>
-                </div>
-              </div>
-
-              <button className="btn btn-secondary" onClick={handleTestVoice}>
-                {t('chat.testVoice')}
-              </button>
+              <Separator />
             </>
           )}
-        </div>
-      )}
 
-      {voiceInputEnabled && voiceOutputEnabled && (
-        <div className="voice-conversation-info">
-          <p className="setting-description">
-            <strong>{t('settings.voice.conversationModeTitle')}:</strong>{' '}
-            {t('settings.voice.conversationModeDescription')}
-          </p>
-        </div>
-      )}
+          {/* Voice Output */}
+          {isVoiceOutputSupported && (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Volume2 className="h-4 w-4 text-blue-600" />
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                      {t('chat.enableVoiceOutput')}
+                    </h4>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t('settings.voice.outputDescription')}
+                  </p>
+                </div>
+                <Switch checked={voiceOutputEnabled} onCheckedChange={handleVoiceOutputToggle} />
+              </div>
+
+              {voiceOutputEnabled && (
+                <>
+                  <Separator />
+
+                  {/* Voice Selection */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t('chat.selectVoice')}
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition-all"
+                      value={selectedVoice?.name || ''}
+                      onChange={(e) => {
+                        const voice = availableVoices.find((v) => v.name === e.target.value);
+                        if (voice) handleVoiceChange(voice);
+                      }}
+                    >
+                      {availableVoices.map((voice) => (
+                        <option key={voice.name} value={voice.name}>
+                          {voice.name} ({voice.lang})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Speech Rate */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Gauge className="h-4 w-4 text-purple-600" />
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('chat.speechRate')}
+                        </label>
+                      </div>
+                      <span className="text-sm font-semibold text-green-600">
+                        {rate.toFixed(1)}x
+                      </span>
+                    </div>
+                    <Slider
+                      min={0.5}
+                      max={2}
+                      step={0.1}
+                      value={rate}
+                      onValueChange={handleRateChange}
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>0.5x</span>
+                      <span>2.0x</span>
+                    </div>
+                  </div>
+
+                  {/* Volume */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Volume2 className="h-4 w-4 text-blue-600" />
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {t('chat.volume')}
+                        </label>
+                      </div>
+                      <span className="text-sm font-semibold text-green-600">
+                        {Math.round(volume * 100)}%
+                      </span>
+                    </div>
+                    <Slider
+                      min={0}
+                      max={1}
+                      step={0.1}
+                      value={volume}
+                      onValueChange={handleVolumeChange}
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>0%</span>
+                      <span>100%</span>
+                    </div>
+                  </div>
+
+                  {/* Test Voice Button */}
+                  <Button variant="outline" onClick={handleTestVoice} className="w-full gap-2">
+                    <Volume2 className="h-4 w-4" />
+                    {t('chat.testVoice')}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Voice Conversation Mode Info */}
+          {voiceInputEnabled && voiceOutputEnabled && (
+            <>
+              <Separator />
+              <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <MessageCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-green-900 dark:text-green-100 mb-1">
+                    {t('settings.voice.conversationModeTitle')}
+                  </h4>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    {t('settings.voice.conversationModeDescription')}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
 export default VoiceSettingsSection;
-

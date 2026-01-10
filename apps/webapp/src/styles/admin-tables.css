@@ -1,21 +1,21 @@
 /* Table Styles */
-.table-container {
+.admin-shell .table-container {
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background-color: var(--color-bg-primary);
 }
 
-.data-table,
-.table {
+.admin-shell .data-table,
+.admin-shell .table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
 }
 
-.data-table thead,
-.table thead {
+.admin-shell .data-table thead,
+.admin-shell .table thead {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -24,18 +24,18 @@
 }
 
 /* Rounded header corners */
-.data-table thead th:first-child,
-.table thead th:first-child {
+.admin-shell .data-table thead th:first-child,
+.admin-shell .table thead th:first-child {
   border-top-left-radius: var(--radius-lg);
 }
 
-.data-table thead th:last-child,
-.table thead th:last-child {
+.admin-shell .data-table thead th:last-child,
+.admin-shell .table thead th:last-child {
   border-top-right-radius: var(--radius-lg);
 }
 
-.data-table th,
-.table th {
+.admin-shell .data-table th,
+.admin-shell .table th {
   padding: var(--spacing-md) var(--spacing-lg);
   text-align: left;
   font-weight: 600;
@@ -45,40 +45,40 @@
   letter-spacing: 0.04em;
 }
 
-.data-table tbody tr,
-.table tbody tr {
+.admin-shell .data-table tbody tr,
+.admin-shell .table tbody tr {
   border-bottom: 1px solid var(--color-border);
   transition: background-color var(--transition);
 }
 
-.data-table tbody tr:hover,
-.table tbody tr:hover {
+.admin-shell .data-table tbody tr:hover,
+.admin-shell .table tbody tr:hover {
   background-color: var(--color-bg-tertiary);
 }
 
-.data-table td,
-.table td {
+.admin-shell .data-table td,
+.admin-shell .table td {
   padding: var(--spacing-md) var(--spacing-lg);
   color: var(--color-text-primary);
 }
 
-.data-table tbody tr:last-child td,
-.table tbody tr:last-child td {
+.admin-shell .data-table tbody tr:last-child td,
+.admin-shell .table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.data-table .text-secondary,
-.table .text-secondary {
+.admin-shell .data-table .text-secondary,
+.admin-shell .table .text-secondary {
   color: var(--color-text-secondary);
 }
 
-.data-table .text-tertiary,
-.table .text-tertiary {
+.admin-shell .data-table .text-tertiary,
+.admin-shell .table .text-tertiary {
   color: var(--color-text-tertiary);
 }
 
 /* Pagination */
-.pagination {
+.admin-shell .pagination {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -91,13 +91,13 @@
   font-size: 13px;
 }
 
-.pagination-buttons {
+.admin-shell .pagination-buttons {
   display: flex;
   gap: var(--spacing-sm);
 }
 
 /* If you use these directly instead of .btn */
-.pagination-btn {
+.admin-shell .pagination-btn {
   padding: var(--spacing-sm) var(--spacing-md);
   border: 1px solid var(--color-border);
   background-color: var(--color-bg-primary);
@@ -109,17 +109,17 @@
   font-weight: 500;
 }
 
-.pagination-btn:hover:not(:disabled) {
+.admin-shell .pagination-btn:hover:not(:disabled) {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-.pagination-btn:disabled {
+.admin-shell .pagination-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.pagination-btn.active {
+.admin-shell .pagination-btn.active {
   background-color: var(--color-primary);
   color: white;
   border-color: var(--color-primary);

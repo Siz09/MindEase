@@ -241,6 +241,10 @@
     "title": "Check-in",
     "subtitle": "How are you feeling today? Share your mood and thoughts."
   },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Your personal wellness space."
+  },
   "insights": {
     "title": "Insights",
     "subtitle": "Understand your mood patterns and track your progress.",
@@ -305,6 +309,7 @@
   "chat": {
     "title": "AI Chat Support",
     "subtitle": "Talk with our mental health assistant",
+    "newChat": "New Chat",
     "connected": "Connected",
     "disconnected": "Disconnected",
     "offlineQueueTooltip": "Messages will be sent when reconnected",

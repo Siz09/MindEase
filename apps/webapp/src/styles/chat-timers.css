@@ -1,0 +1,300 @@
+/**
+ * Chat Timers Styles
+ * Styles for inline breathing and meditation timer components in chat
+ */
+
+/* Interactive message container */
+.chat-interactive-message {
+  max-width: 100%;
+  margin: 0.5rem 0;
+}
+
+/* Breathing pattern selector styles */
+.breathing-pattern-card {
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-card, #ffffff);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dark .breathing-pattern-card {
+  background: var(--bg-card-dark, #1f2937);
+  border-color: var(--border-color-dark, #374151);
+}
+
+/* Pattern button in selector */
+.breathing-pattern-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 2px solid var(--border-color, #e5e7eb);
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.breathing-pattern-btn:hover {
+  border-color: var(--primary-green, #10b981);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.dark .breathing-pattern-btn {
+  border-color: var(--border-color-dark, #374151);
+}
+
+.dark .breathing-pattern-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* Timer card styles for chat */
+.chat-timer-card {
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-card, #ffffff);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.dark .chat-timer-card {
+  background: var(--bg-card-dark, #1f2937);
+  border-color: var(--border-color-dark, #374151);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Breathing circle animation */
+.chat-breathing-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.chat-breathing-circle.expanded {
+  transform: scale(1);
+}
+
+.chat-breathing-circle.contracted {
+  transform: scale(0.6);
+}
+
+.chat-breathing-phase {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.chat-breathing-countdown {
+  color: white;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* Meditation timer ring */
+.chat-meditation-ring {
+  position: relative;
+  width: 112px;
+  height: 112px;
+}
+
+.chat-meditation-ring svg {
+  transform: rotate(-90deg);
+}
+
+.chat-meditation-ring-bg {
+  fill: none;
+  stroke: var(--bg-secondary, #f3f4f6);
+  stroke-width: 6;
+}
+
+.dark .chat-meditation-ring-bg {
+  stroke: var(--bg-secondary-dark, #374151);
+}
+
+.chat-meditation-ring-progress {
+  fill: none;
+  stroke: var(--primary-green, #10b981);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.chat-meditation-time {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-meditation-time-display {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #111827);
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .chat-meditation-time-display {
+  color: var(--text-primary-dark, #f9fafb);
+}
+
+/* Duration selector */
+.chat-duration-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  justify-content: center;
+}
+
+.chat-duration-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 9999px;
+  border: 2px solid var(--border-color, #e5e7eb);
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-duration-btn:hover:not(:disabled) {
+  border-color: var(--primary-green, #10b981);
+  color: var(--primary-green, #10b981);
+}
+
+.chat-duration-btn.active {
+  border-color: var(--primary-green, #10b981);
+  background: var(--primary-green, #10b981);
+  color: white;
+}
+
+.chat-duration-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dark .chat-duration-btn {
+  border-color: var(--border-color-dark, #374151);
+  color: var(--text-secondary-dark, #9ca3af);
+}
+
+/* Timer controls */
+.chat-timer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.chat-timer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.chat-timer-btn-primary {
+  background: var(--primary-green, #10b981);
+  color: white;
+}
+
+.chat-timer-btn-primary:hover {
+  background: var(--primary-green-dark, #059669);
+}
+
+.chat-timer-btn-icon {
+  padding: 0.5rem;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  border: none;
+  cursor: pointer;
+}
+
+.chat-timer-btn-icon:hover:not(:disabled) {
+  background: var(--bg-secondary, #f3f4f6);
+  color: var(--text-primary, #111827);
+}
+
+.chat-timer-btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dark .chat-timer-btn-icon {
+  color: var(--text-secondary-dark, #9ca3af);
+}
+
+.dark .chat-timer-btn-icon:hover:not(:disabled) {
+  background: var(--bg-secondary-dark, #374151);
+  color: var(--text-primary-dark, #f9fafb);
+}
+
+/* Session info badge */
+.chat-session-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--primary-green, #10b981);
+}
+
+.dark .chat-session-badge {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+/* Timer instructions */
+.chat-timer-instructions {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #6b7280);
+  margin-top: 1rem;
+}
+
+.dark .chat-timer-instructions {
+  color: var(--text-secondary-dark, #9ca3af);
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 480px) {
+  .chat-breathing-circle {
+    width: 100px;
+    height: 100px;
+  }
+
+  .chat-breathing-countdown {
+    font-size: 1.75rem;
+  }
+
+  .chat-meditation-ring {
+    width: 96px;
+    height: 96px;
+  }
+
+  .chat-meditation-time-display {
+    font-size: 1.25rem;
+  }
+
+  .chat-duration-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}

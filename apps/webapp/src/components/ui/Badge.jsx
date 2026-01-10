@@ -1,40 +1,35 @@
-import { forwardRef } from 'react';
+import * as React from 'react';
 import { cn } from '../../lib/utils';
 
-const Badge = forwardRef(
-  ({ className, variant = 'default', size = 'md', children, ...props }, ref) => {
-    const variants = {
-      default: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
-      primary: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-200',
-      success: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200',
-      warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200',
-      danger: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200',
-      calm: 'bg-calm-100 text-calm-800 dark:bg-calm-900/30 dark:text-calm-200',
-    };
+const badgeVariants = (variant) => {
+  const variants = {
+    default:
+      'border-transparent bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500',
+    secondary:
+      'border-transparent bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700',
+    destructive: 'border-transparent bg-red-500 text-white hover:bg-red-600',
+    outline: 'text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700',
+    success:
+      'border-transparent bg-green-600 text-white hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-500',
+    warning: 'border-transparent bg-yellow-500 text-white hover:bg-yellow-600',
+  };
+  return variants[variant] || variants.default;
+};
 
-    const sizes = {
-      sm: 'text-xs px-2 py-0.5',
-      md: 'text-sm px-2.5 py-0.5',
-      lg: 'text-base px-3 py-1',
-    };
-
-    return (
-      <span
-        ref={ref}
-        className={cn(
-          'inline-flex items-center rounded-full font-medium',
-          variants[variant],
-          sizes[size],
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </span>
-    );
-  }
-);
-
+const Badge = React.forwardRef(({ className, variant = 'default', ...props }, ref) => {
+  return (
+    <span
+      ref={ref}
+      className={cn(
+        'inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2',
+        badgeVariants(variant),
+        className
+      )}
+      {...props}
+    />
+  );
+});
 Badge.displayName = 'Badge';
 
+export { Badge };
 export default Badge;

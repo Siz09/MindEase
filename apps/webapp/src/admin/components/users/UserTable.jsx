@@ -42,21 +42,8 @@ const UserTable = ({
   }));
 
   return (
-    <div className="admin-user-table-card">
-      <div className="admin-user-table-header">
-        <div>
-          <h2 className="admin-user-table-title">Users</h2>
-          <div
-            style={{
-              fontSize: '14px',
-              color: 'var(--color-text-secondary)',
-              marginTop: 'var(--spacing-xs)',
-            }}
-          >
-            Showing {users?.length || 0} of {totalUsers}
-          </div>
-        </div>
-
+    <div className="overflow-hidden rounded-2xl bg-white shadow-soft ring-1 ring-gray-200">
+      <div className="border-b border-gray-200 p-6">
         <UserFilters
           filters={filters}
           onSearch={onSearch}
@@ -65,7 +52,7 @@ const UserTable = ({
         />
       </div>
 
-      <div style={{ padding: 'var(--spacing-lg)' }}>
+      <div className="p-6">
         <Table
           columns={tableColumns}
           data={displayData}
@@ -76,8 +63,13 @@ const UserTable = ({
         />
       </div>
 
-      <div style={{ padding: 'var(--spacing-lg)', borderTop: '1px solid var(--color-border)' }}>
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={onPageChange} />
+      <div className="border-t border-gray-200 p-6">
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          totalItems={totalUsers}
+        />
       </div>
     </div>
   );

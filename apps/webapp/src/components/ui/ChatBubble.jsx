@@ -1,9 +1,12 @@
 'use client';
 
-import { User, Bot, Send } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { User, Bot } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import SafetyBanner from './SafetyBanner';
 import VoicePlayer from '../VoicePlayer';
+import BreathingPatternSelector from '../chat/BreathingPatternSelector';
+import ChatBreathingTimer from '../chat/ChatBreathingTimer';
+import ChatMeditationTimer from '../chat/ChatMeditationTimer';
 
 const ChatBubble = ({
   message,
@@ -19,11 +22,90 @@ const ChatBubble = ({
   getStatusColor,
   getStatusText,
   MESSAGE_STATUS,
-  renderRiskLabel,
-  renderModerationNote,
-  renderCrisisResources,
+  // Interactive content props
+  onSelectBreathingPattern,
+  onTimerComplete,
+  onDismissInteractive,
+  interactiveState,
 }) => {
+  const { t } = useTranslation();
   const isUser = message?.isUserMessage;
+  const hasInteractiveContent = message?.interactiveType && !isUser;
+
+  const renderRiskLabel = (message) => {
+    if (!message || !message.riskLevel || message.riskLevel === 'NONE') return null;
+    const label = `Risk: ${message.riskLevel.toUpperCase()}`;
+    const color =
+      message.riskLevel === 'CRITICAL'
+        ? '#b91c1c'
+        : message.riskLevel === 'HIGH'
+          ? '#dc2626'
+          : message.riskLevel === 'MEDIUM'
+            ? '#d97706'
+            : '#2563eb';
+    return (
+      <div style={{ marginTop: 4, fontSize: '0.75rem', fontWeight: 500, color }}>
+        {label}
+        {message.moderationAction && message.moderationAction !== 'NONE'
+          ? ` • Action: ${message.moderationAction.toLowerCase()}`
+          : null}
+      </div>
+    );
+  };
+
+  const renderModerationNote = (message) => {
+    if (!message || !message.moderationReason) return null;
+    return (
+      <div style={{ marginTop: 2, fontSize: '0.7rem', color: '#6b7280' }}>
+        {message.moderationReason}
+      </div>
+    );
+  };
+
+  const renderCrisisResources = (message) => {
+    if (
+      !message ||
+      !Array.isArray(message.crisisResources) ||
+      message.crisisResources.length === 0
+    ) {
+      return null;
+    }
+    return (
+      <div
+        style={{
+          marginTop: 6,
+          padding: '0.5rem 0.75rem',
+          borderRadius: 6,
+          backgroundColor: 'rgba(254, 226, 226, 0.6)',
+          border: '1px solid #fecaca',
+        }}
+      >
+        <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: 2 }}>
+          {t('chat.crisisResourcesTitle') || 'Crisis support contacts near you:'}
+        </div>
+        <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0, fontSize: '0.75rem' }}>
+          {message.crisisResources.map((r) => (
+            <li
+              key={`${r.region || ''}-${r.name || ''}-${r.phoneNumber || ''}`}
+              style={{ marginTop: 2 }}
+            >
+              {r.name && <span style={{ fontWeight: 500 }}>{r.name}</span>}
+              {r.phoneNumber && <span> • {r.phoneNumber}</span>}
+              {r.website && (
+                <span>
+                  {' '}
+                  •{' '}
+                  <a href={r.website} target="_blank" rel="noreferrer">
+                    {new URL(r.website).hostname.replace(/^www\./, '')}
+                  </a>
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
 
   const formatTime = (timestamp, locale = 'en-US') => {
     if (!timestamp) return '';
@@ -33,6 +115,63 @@ const ChatBubble = ({
       minute: '2-digit',
       hour12: true,
     });
+  };
+
+  /**
+   * Render interactive content based on message type
+   */
+  const renderInteractiveContent = () => {
+    if (!message?.interactiveType) return null;
+
+    switch (message.interactiveType) {
+      case 'breathing-selector':
+        return (
+          <BreathingPatternSelector
+            onSelect={(patternKey, pattern) => {
+              if (onSelectBreathingPattern) {
+                onSelectBreathingPattern(message.id, patternKey, pattern);
+              }
+            }}
+          />
+        );
+
+      case 'breathing-timer':
+        return (
+          <ChatBreathingTimer
+            patternKey={interactiveState?.selectedPattern || '478'}
+            pattern={interactiveState?.patternData}
+            onComplete={(data) => {
+              if (onTimerComplete) {
+                onTimerComplete(message.id, 'breathing', data);
+              }
+            }}
+            onClose={() => {
+              if (onDismissInteractive) {
+                onDismissInteractive(message.id);
+              }
+            }}
+          />
+        );
+
+      case 'meditation-timer':
+        return (
+          <ChatMeditationTimer
+            onComplete={(data) => {
+              if (onTimerComplete) {
+                onTimerComplete(message.id, 'meditation', data);
+              }
+            }}
+            onClose={() => {
+              if (onDismissInteractive) {
+                onDismissInteractive(message.id);
+              }
+            }}
+          />
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -47,7 +186,7 @@ const ChatBubble = ({
       <div
         style={{
           display: 'flex',
-          maxWidth: '75%',
+          maxWidth: hasInteractiveContent ? '90%' : '75%',
           alignItems: 'flex-start',
           gap: '0.5rem',
           flexDirection: isUser ? 'row-reverse' : 'row',
@@ -91,41 +230,51 @@ const ChatBubble = ({
             </div>
           )}
 
-          <div
-            style={{
-              borderRadius: isUser
-                ? '1.125rem 1.125rem 0.25rem 1.125rem'
-                : '1.125rem 1.125rem 1.125rem 0.25rem',
-              padding: '0.5rem 0.75rem',
-              ...(isUser
-                ? {
-                    backgroundColor: 'var(--primary-green-dark)',
-                    color: 'white',
-                  }
-                : {
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                  }),
-            }}
-          >
-            <p
+          {/* Text content bubble */}
+          {message.content && (
+            <div
               style={{
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                margin: 0,
-                fontSize: '0.9375rem',
-                lineHeight: '1.4',
-                color: isUser ? 'white' : 'var(--text-primary)',
+                borderRadius: isUser
+                  ? '1.125rem 1.125rem 0.25rem 1.125rem'
+                  : '1.125rem 1.125rem 1.125rem 0.25rem',
+                padding: '0.5rem 0.75rem',
+                ...(isUser
+                  ? {
+                      backgroundColor: 'var(--primary-green-dark)',
+                      color: 'white',
+                    }
+                  : {
+                      backgroundColor: 'var(--bg-secondary)',
+                      color: 'var(--text-primary)',
+                    }),
               }}
             >
-              {message.content}
-            </p>
+              <p
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  margin: 0,
+                  fontSize: '0.9375rem',
+                  lineHeight: '1.4',
+                  color: isUser ? 'white' : 'var(--text-primary)',
+                }}
+              >
+                {message.content}
+              </p>
 
-            {/* Risk label and moderation note inside bubble */}
-            {renderRiskLabel && renderRiskLabel(message)}
-            {renderModerationNote && renderModerationNote(message)}
-            {renderCrisisResources && renderCrisisResources(message)}
-          </div>
+              {/* Risk label and moderation note inside bubble */}
+              {renderRiskLabel && renderRiskLabel(message)}
+              {renderModerationNote && renderModerationNote(message)}
+              {renderCrisisResources && renderCrisisResources(message)}
+            </div>
+          )}
+
+          {/* Interactive content (breathing/meditation timers) */}
+          {hasInteractiveContent && (
+            <div style={{ marginTop: message.content ? '0.5rem' : 0 }}>
+              {renderInteractiveContent()}
+            </div>
+          )}
 
           <div
             style={{

@@ -34,6 +34,10 @@
   --text-secondary: #6b7280;
   --text-muted: #9ca3af;
 
+  /* Border Colors */
+  --border-color: #e5e7eb;
+  --border-color-light: #f3f4f6;
+
   /* Feedback Colors */
   --color-error: #dc2626;
   --color-error-bg: #fef2f2;
@@ -108,6 +112,10 @@
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
   --text-muted: #9ca3af;
+
+  /* Border Colors */
+  --border-color: #4b5563;
+  --border-color-light: #374151;
 
   /* Feedback Colors */
   --color-error: #ef4444;

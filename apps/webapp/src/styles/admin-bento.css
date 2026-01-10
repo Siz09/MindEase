@@ -1,6 +1,6 @@
 /* Bento Grid Components */
 
-.bento-grid {
+.admin-shell .bento-grid {
   display: grid;
   gap: var(--spacing-lg);
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -8,23 +8,23 @@
 }
 
 /* Force exactly three columns on wide screens */
-.bento-grid-3 {
+.admin-shell .bento-grid-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 @media (max-width: 1024px) {
-  .bento-grid-3 {
+  .admin-shell .bento-grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
-  .bento-grid-3 {
+  .admin-shell .bento-grid-3 {
     grid-template-columns: 1fr;
   }
 }
 
-.bento-card {
+.admin-shell .bento-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -35,11 +35,11 @@
 }
 
 /* Tighter cards inside 3-col KPI rows */
-.bento-grid-3 .bento-card {
+.admin-shell .bento-grid-3 .bento-card {
   padding: var(--spacing-md);
 }
 
-.bento-card::before {
+.admin-shell .bento-card::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -48,23 +48,23 @@
   transition: opacity var(--transition-base);
 }
 
-.bento-card:hover {
+.admin-shell .bento-card:hover {
   border-color: var(--color-accent);
   background-color: var(--color-surface-light);
   box-shadow: var(--shadow-card);
   transform: translateY(-2px);
 }
 
-.bento-card:hover::before {
+.admin-shell .bento-card:hover::before {
   opacity: 1;
 }
 
-.bento-card-content {
+.admin-shell .bento-card-content {
   position: relative;
   z-index: 10;
 }
 
-.bento-card-icon {
+.admin-shell .bento-card-icon {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-md);
@@ -76,7 +76,7 @@
   color: var(--color-white);
 }
 
-.bento-card-label {
+.admin-shell .bento-card-label {
   font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
@@ -85,30 +85,30 @@
   margin-bottom: var(--spacing-sm);
 }
 
-.bento-card-value {
+.admin-shell .bento-card-value {
   font-size: var(--font-size-2xl);
   font-weight: 700;
-  color: var(--color-white);
+  color: var(--color-text-primary);
   margin-bottom: var(--spacing-sm);
 }
 
-.bento-card-trend {
+.admin-shell .bento-card-trend {
   font-size: var(--font-size-sm);
   color: var(--color-success);
 }
 
-.bento-card-trend.negative {
+.admin-shell .bento-card-trend.negative {
   color: var(--color-warning);
 }
 
-.bento-grid-2 {
+.admin-shell .bento-grid-2 {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-2xl);
 }
 
-.chart-card {
+.admin-shell .chart-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -116,29 +116,29 @@
   transition: all var(--transition-base);
 }
 
-.chart-card:hover {
+.admin-shell .chart-card:hover {
   border-color: var(--color-accent);
   background-color: var(--color-surface-light);
   box-shadow: var(--shadow-card);
 }
 
-.chart-card-header {
+.admin-shell .chart-card-header {
   margin-bottom: var(--spacing-lg);
 }
 
-.chart-card-title {
+.admin-shell .chart-card-title {
   font-size: var(--font-size-lg);
   font-weight: 600;
-  color: var(--color-white);
+  color: var(--color-text-primary);
   margin-bottom: var(--spacing-sm);
 }
 
-.chart-card-subtitle {
+.admin-shell .chart-card-subtitle {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
 
-.chart-placeholder {
+.admin-shell .chart-placeholder {
   width: 100%;
   height: 200px;
   background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), transparent);

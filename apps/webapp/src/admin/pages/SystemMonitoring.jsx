@@ -7,9 +7,9 @@ import adminApi from '../adminApi';
 
 export default function SystemMonitoring() {
   const [systemStatus, setSystemStatus] = useState({
-    apiStatus: 'operational',
-    database: 'healthy',
-    aiEngine: 'running',
+    apiStatus: 'checking...',
+    database: 'checking...',
+    aiEngine: 'checking...',
   });
 
   const [health, setHealth] = useState({
@@ -34,11 +34,22 @@ export default function SystemMonitoring() {
         adminApi.get('/admin/system/errors').catch(() => ({ data: [] })),
       ]);
 
-      setSystemStatus(statusRes.data);
-      setHealth(healthRes.data);
+      setSystemStatus(
+        statusRes.data || {
+          apiStatus: 'down',
+          database: 'unknown',
+          aiEngine: 'unknown',
+        }
+      );
+      setHealth(healthRes.data || {});
       setErrors(Array.isArray(errorsRes.data) ? errorsRes.data : []);
-    } catch (err) {
-      console.error('Failed to load system status:', err);
+    } catch {
+      // Explicitly set status to down on error
+      setSystemStatus({
+        apiStatus: 'down',
+        database: 'unreachable',
+        aiEngine: 'unreachable',
+      });
     } finally {
       setLoading(false);
     }
@@ -50,11 +61,10 @@ export default function SystemMonitoring() {
 
     setSending(true);
     try {
-      await adminApi.post('/admin/notifications', { message: announcement });
+      await adminApi.post('/admin/system/notifications', { message: announcement });
       setToast({ type: 'success', message: 'Announcement sent successfully' });
       setAnnouncement('');
-    } catch (err) {
-      console.error('Failed to send announcement:', err);
+    } catch {
       setToast({ type: 'error', message: 'Failed to send announcement' });
     } finally {
       setSending(false);

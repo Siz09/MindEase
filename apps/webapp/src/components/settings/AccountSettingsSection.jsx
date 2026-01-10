@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Switch } from '../ui/Switch';
+import { Separator } from '../ui/Separator';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
+import { Shield, LogOut, Download, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFull, logout }) => {
   const { t } = useTranslation();
@@ -18,24 +24,23 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
     if (currentUser) setAnonymousMode(currentUser.anonymousMode || false);
   }, [currentUser]);
 
-  const handleToggleAnonymousMode = async () => {
+  const handleToggleAnonymousMode = async (checked) => {
     if (!currentUser) return;
 
     setLoading(true);
     try {
-      const result = await updateUser({ anonymousMode: !anonymousMode });
+      const result = await updateUser({ anonymousMode: checked });
       if (result.success) {
-        setAnonymousMode(!anonymousMode);
+        setAnonymousMode(checked);
         toast.success(
-          anonymousMode
-            ? t('settings.notifications.anonymousModeDisabled')
-            : t('settings.notifications.anonymousModeEnabled')
+          checked
+            ? t('settings.notifications.anonymousModeEnabled')
+            : t('settings.notifications.anonymousModeDisabled')
         );
       } else {
         toast.error(t('settings.notifications.updateFailed'));
       }
-    } catch (error) {
-      console.error('Error updating anonymous mode:', error);
+    } catch {
       toast.error(t('settings.notifications.updateFailed'));
     } finally {
       setLoading(false);
@@ -88,7 +93,6 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
         setConvertError(result.error || t('auth.convertAccountFailed'));
       }
     } catch (error) {
-      console.error('Error converting anonymous account:', error);
       setConvertError(error?.message || t('auth.unexpectedError'));
     } finally {
       setConvertLoading(false);
@@ -96,86 +100,118 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
   };
 
   return (
-    <>
+    <div className="space-y-4">
+      {/* Convert Anonymous Account Card */}
       {currentUser &&
         currentUser.anonymousMode === true &&
         (!currentUser.email || currentUser.email.startsWith('anonymous_')) && (
-          <div className="card">
-            <div className="card-header">
-              <h2 className="card-title">{t('settings.convert.title')}</h2>
-            </div>
-
-            <div className="convert-anonymous-info">
-              <p className="setting-description">{t('settings.convert.description')}</p>
-              <ul className="benefits-list">
-                <li>{t('settings.convert.benefits.keepData')}</li>
-                <li>{t('settings.convert.benefits.accessAnywhere')}</li>
-                <li>{t('settings.convert.benefits.recommendations')}</li>
-                <li>{t('settings.convert.benefits.notifications')}</li>
+          <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-gray-900">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <CardTitle>{t('settings.convert.title')}</CardTitle>
+              </div>
+              <CardDescription>{t('settings.convert.description')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2 mb-6">
+                {[
+                  t('settings.convert.benefits.keepData'),
+                  t('settings.convert.benefits.accessAnywhere'),
+                  t('settings.convert.benefits.recommendations'),
+                  t('settings.convert.benefits.notifications'),
+                ].map((benefit, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>{benefit}</span>
+                  </li>
+                ))}
               </ul>
 
               {!showConvertForm ? (
-                <button className="btn btn-primary" onClick={() => setShowConvertForm(true)}>
+                <Button
+                  variant="primary"
+                  onClick={() => setShowConvertForm(true)}
+                  className="w-full"
+                >
                   {t('settings.convert.cta')}
-                </button>
+                </Button>
               ) : (
-                <div className="convert-form">
-                  {convertError && <div className="error-message">{convertError}</div>}
+                <div className="space-y-4">
+                  {convertError && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>{convertError}</span>
+                    </div>
+                  )}
 
-                  <div className="form-group">
-                    <label htmlFor="convert-email" className="form-label">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="convert-email"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
                       {t('auth.email')}
                     </label>
-                    <input
+                    <Input
                       id="convert-email"
-                      className="form-input"
                       type="email"
                       value={convertEmail}
                       onChange={(e) => setConvertEmail(e.target.value)}
                       disabled={convertLoading}
+                      placeholder="your@email.com"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="convert-password" className="form-label">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="convert-password"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
                       {t('auth.password')}
                     </label>
-                    <input
+                    <Input
                       id="convert-password"
-                      className="form-input"
                       type="password"
                       value={convertPassword}
                       onChange={(e) => setConvertPassword(e.target.value)}
                       disabled={convertLoading}
+                      placeholder="••••••••"
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="convert-confirm-password" className="form-label">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="convert-confirm-password"
+                      className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
                       {t('auth.confirmPassword')}
                     </label>
-                    <input
+                    <Input
                       id="convert-confirm-password"
-                      className="form-input"
                       type="password"
                       value={convertConfirmPassword}
                       onChange={(e) => setConvertConfirmPassword(e.target.value)}
                       disabled={convertLoading}
+                      placeholder="••••••••"
                     />
                   </div>
 
-                  <div className="form-actions">
-                    <button
-                      className="btn btn-primary"
+                  <div className="flex gap-2">
+                    <Button
+                      variant="primary"
                       onClick={handleConvertAnonymous}
                       disabled={convertLoading}
+                      className="flex-1"
                     >
                       {convertLoading
                         ? t('settings.convert.converting')
                         : t('settings.convert.submit')}
-                    </button>
-                    <button
-                      className="btn btn-secondary"
+                    </Button>
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         setShowConvertForm(false);
                         setConvertError('');
@@ -184,88 +220,85 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
                         setConvertConfirmPassword('');
                       }}
                       disabled={convertLoading}
+                      className="flex-1"
                     >
                       {t('common.cancel')}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
-      <div className="card">
-        <div className="card-header">
-          <h2 className="card-title">{t('settings.privacy.title')}</h2>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label toggle-label">
-            <div className="toggle-info">
-              <span className="toggle-title">{t('settings.privacy.anonymousMode')}</span>
-              <p className="setting-description">
+      {/* Privacy Settings Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-blue-600" />
+            <CardTitle>{t('settings.privacy.title')}</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                {t('settings.privacy.anonymousMode')}
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {t('settings.privacy.anonymousModeDescription')}
               </p>
             </div>
-            <div className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={anonymousMode}
-                onChange={handleToggleAnonymousMode}
-                disabled={loading}
-              />
-              <span className="toggle-slider"></span>
-            </div>
-          </label>
-        </div>
+            <Switch
+              checked={anonymousMode}
+              onCheckedChange={handleToggleAnonymousMode}
+              disabled={loading}
+            />
+          </div>
 
-        <div className="privacy-info">
-          <h4>{t('settings.privacy.dataRetention')}</h4>
-          <p className="setting-description">{t('settings.privacy.dataRetentionDescription')}</p>
-        </div>
-      </div>
+          <Separator className="my-6" />
 
-      <div className="card">
-        <div className="card-header">
-          <h2 className="card-title">{t('settings.actions.title')}</h2>
-        </div>
+          <div>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+              {t('settings.privacy.dataRetention')}
+            </h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {t('settings.privacy.dataRetentionDescription')}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="action-buttons">
-          <button onClick={logout} className="btn btn-outline w-full">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M3 3a2 2 0 012-2h1a1 1 0 000 2H5v12h1a1 1 0 100 2H5a2 2 0 01-2-2V3zM13.293 12.707a1 1 0 010-1.414L15.586 9H8a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414z"
-                fill="currentColor"
-              />
-            </svg>
-            {t('settings.actions.logout')}
-          </button>
+      {/* Account Actions Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.actions.title')}</CardTitle>
+          <CardDescription>Manage your account and data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <Button variant="outline" onClick={logout} className="w-full justify-start gap-2">
+              <LogOut className="h-4 w-4" />
+              {t('settings.actions.logout')}
+            </Button>
 
-          <button className="btn btn-secondary w-full" disabled>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" fill="currentColor" />
-              <path
-                fillRule="evenodd"
-                d="M4 5a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 2a1 1 0 000 2h6a1 1 0 100-2H7z"
-                fill="currentColor"
-              />
-            </svg>
-            {t('settings.actions.exportData')}
-          </button>
+            <Button variant="outline" disabled className="w-full justify-start gap-2 opacity-50">
+              <Download className="h-4 w-4" />
+              {t('settings.actions.exportData')}
+            </Button>
 
-          <button className="btn btn-outline danger w-full" disabled>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path
-                fillRule="evenodd"
-                d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm5 3a1 1 0 000 2h2a1 1 0 100-2H9z"
-                fill="currentColor"
-              />
-            </svg>
-            {t('settings.actions.deleteAccount')}
-          </button>
-        </div>
-      </div>
-    </>
+            <Button
+              variant="outline"
+              disabled
+              className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              {t('settings.actions.deleteAccount')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

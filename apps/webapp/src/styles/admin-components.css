@@ -1,5 +1,5 @@
 /* Button Styles */
-.btn {
+.admin-shell .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -14,67 +14,67 @@
   font-family: var(--font-sans);
 }
 
-.btn-primary {
+.admin-shell .btn-primary {
   background-color: var(--color-primary);
   color: white;
   border-color: var(--color-primary);
 }
 
-.btn-primary:hover {
+.admin-shell .btn-primary:hover {
   background-color: var(--color-primary-hover);
   border-color: var(--color-primary-hover);
 }
 
-.btn-secondary {
+.admin-shell .btn-secondary {
   background-color: transparent;
   color: var(--color-primary);
   border-color: var(--color-border);
 }
 
-.btn-secondary:hover {
+.admin-shell .btn-secondary:hover {
   background-color: var(--color-primary-light);
   border-color: var(--color-primary);
 }
 
-.btn-danger {
+.admin-shell .btn-danger {
   background-color: var(--color-danger);
   color: white;
   border-color: var(--color-danger);
 }
 
-.btn-danger:hover {
+.admin-shell .btn-danger:hover {
   background-color: var(--color-danger-hover);
   border-color: var(--color-danger-hover);
 }
 
-.btn-ghost {
+.admin-shell .btn-ghost {
   background-color: transparent;
   color: var(--color-text-secondary);
   border-color: transparent;
 }
 
-.btn-ghost:hover {
+.admin-shell .btn-ghost:hover {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
 }
 
-.btn-sm {
+.admin-shell .btn-sm {
   padding: 4px 12px;
   font-size: 12px;
 }
 
-.btn-lg {
+.admin-shell .btn-lg {
   padding: var(--spacing-md) var(--spacing-xl);
   font-size: 15px;
 }
 
-.btn:disabled {
+.admin-shell .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 /* Card Styles */
-.card {
+.admin-shell .card {
   background-color: var(--color-bg-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -82,12 +82,12 @@
   transition: all var(--transition);
 }
 
-.card:hover {
-  border-color: var(--color-border-light);
+.admin-shell .card:hover {
+  border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
 }
 
-.card-header {
+.admin-shell .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -96,20 +96,20 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.card-title {
+.admin-shell .card-title {
   font-size: 16px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
-.card-subtitle {
+.admin-shell .card-subtitle {
   font-size: 12px;
   color: var(--color-text-tertiary);
   margin-top: var(--spacing-xs);
 }
 
 /* Badge Styles */
-.badge {
+.admin-shell .badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
@@ -119,29 +119,29 @@
   white-space: nowrap;
 }
 
-.badge-primary {
+.admin-shell .badge-primary {
   background-color: var(--color-primary-light);
   color: var(--color-primary);
 }
 
-.badge-success {
+.admin-shell .badge-success {
   background-color: var(--color-success-light);
   color: var(--color-success);
 }
 
-.badge-warning {
+.admin-shell .badge-warning {
   background-color: var(--color-warning-light);
   color: var(--color-warning);
 }
 
-.badge-danger {
+.admin-shell .badge-danger {
   background-color: var(--color-danger-light);
   color: var(--color-danger);
 }
 
 /* Input Styles */
-.input-field,
-.form-input {
+.admin-shell .input-field,
+.admin-shell .form-input {
   width: 100%;
   padding: var(--spacing-sm) calc(var(--spacing-lg) + 2px);
   font-size: 14px;
@@ -153,26 +153,26 @@
   font-family: var(--font-sans);
 }
 
-.input-field:hover,
-.form-input:hover {
+.admin-shell .input-field:hover,
+.admin-shell .form-input:hover {
   border-color: var(--color-border-hover);
 }
 
-.input-field:focus,
-.form-input:focus {
+.admin-shell .input-field:focus,
+.admin-shell .form-input:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
-.input-field::placeholder,
-.form-input::placeholder {
+.admin-shell .input-field::placeholder,
+.admin-shell .form-input::placeholder {
   color: var(--color-text-tertiary);
 }
 
 /* Select Styles (redesign) */
-.select-field,
-.form-select {
+.admin-shell .select-field,
+.admin-shell .form-select {
   width: 100%;
   padding: var(--spacing-sm) calc(var(--spacing-lg) + 28px) var(--spacing-sm) var(--spacing-lg);
   font-size: 14px;
@@ -191,19 +191,19 @@
   background-position: right 10px center;
 }
 
-.select-field:hover,
-.form-select:hover {
+.admin-shell .select-field:hover,
+.admin-shell .form-select:hover {
   border-color: var(--color-border);
 }
 
-.select-field:focus,
-.form-select:focus {
+.admin-shell .select-field:focus,
+.admin-shell .form-select:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
-.form-textarea {
+.admin-shell .form-textarea {
   width: 100%;
   min-height: 100px;
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -217,21 +217,86 @@
   resize: vertical;
 }
 
-.form-textarea:focus {
+.admin-shell .form-textarea:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 /* Filter bar for admin lists */
-.filter-bar {
+/* Google-like Filter Bar */
+.admin-shell .filter-bar {
   display: flex;
-  gap: var(--spacing-md);
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  padding: var(--spacing-md);
-  background-color: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  align-items: center;
+  background-color: white;
+  border: 1px solid transparent;
+  border-radius: 24px;
+  box-shadow: 0 1px 6px 0 rgba(32, 33, 36, 0.28);
+  padding: 4px 8px;
+  width: 100%;
+  max-width: 650px;
+  margin: 0 auto;
+  transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-shell .filter-bar:hover,
+.admin-shell .filter-bar:focus-within {
+  box-shadow:
+    0 1px 6px 0 rgba(32, 33, 36, 0.28),
+    0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  background-color: white;
+}
+
+/* Seamless inputs inside filter bar */
+.admin-shell .filter-bar input,
+.admin-shell .filter-bar select,
+.admin-shell .filter-bar .form-input,
+.admin-shell .filter-bar .form-select,
+.admin-shell .filter-bar .form-group input,
+.admin-shell .filter-bar .form-group select {
+  border: none;
+  box-shadow: none;
+  background-color: transparent;
+  padding: 8px 12px;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+
+/* Fix dropdown arrow for selects in filter bar */
+.admin-shell .filter-bar select,
+.admin-shell .filter-bar .form-select,
+.admin-shell .filter-bar .form-group select {
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 8l4 4 4-4' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.admin-shell .filter-bar .form-group {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-shell .filter-bar input:focus,
+.admin-shell .filter-bar select:focus,
+.admin-shell .filter-bar .form-input:focus,
+.admin-shell .filter-bar .form-select:focus,
+.admin-shell .filter-bar .form-group input:focus,
+.admin-shell .filter-bar .form-group select:focus {
+  box-shadow: none;
+  outline: none;
+  background-color: transparent;
+}
+
+/* Add a separator line between items if needed, or keep it clean */
+.admin-shell .filter-bar > input:not(:last-child),
+.admin-shell .filter-bar > .form-group:not(:last-child) {
+  border-right: 1px solid var(--color-border-light);
+  border-radius: 0;
 }

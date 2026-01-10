@@ -1,92 +1,99 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import {
-  addToOfflineQueue,
-  clearOfflineQueue,
+  addToOfflineQueue as addToQueueUtil,
   getOfflineQueue,
-  getOfflineQueueCount,
-  incrementRetryCount,
-  removeFromOfflineQueue,
+  removeFromOfflineQueue as removeFromQueueUtil,
+  clearOfflineQueue as clearQueueUtil,
+  getOfflineQueueCount as getQueueCountUtil,
 } from '../utils/offlineQueue';
 
-const MAX_RETRIES = 3;
+/**
+ * Custom hook for managing offline message queue
+ *
+ * Features:
+ * - Queue count state management
+ * - Add/remove messages from queue
+ * - Process queue when connection is restored
+ * - Sync with online/offline status
+ * - Auto-update count when queue changes
+ *
+ * @param {Object} options - Configuration options
+ * @param {boolean} options.isOnline - Online/offline status
+ * @param {boolean} options.isConnected - WebSocket connection status
+ * @param {Function} options.sendMessage - Function to send messages (from sendMessageToServer)
+ * @returns {Object} Offline queue state and operations
+ */
+export const useOfflineQueue = ({ isOnline, isConnected, sendMessage }) => {
+  const [offlineQueueCount, setOfflineQueueCount] = useState(() => getQueueCountUtil());
 
-export const useOfflineQueue = () => {
-  const [offlineQueueCount, setOfflineQueueCount] = useState(() => getOfflineQueueCount());
+  // Update queue count when online/offline status changes
+  useEffect(() => {
+    setOfflineQueueCount(getQueueCountUtil());
+  }, [isOnline, isConnected]);
 
-  const refreshCount = useCallback(() => {
-    setOfflineQueueCount(getOfflineQueueCount());
+  // Add message to offline queue
+  const addToQueue = useCallback((messageText) => {
+    const queueId = addToQueueUtil(messageText);
+    setOfflineQueueCount(getQueueCountUtil());
+    return queueId;
   }, []);
 
-  const addToQueue = useCallback(
-    (message) => {
-      const id = addToOfflineQueue(message);
-      refreshCount();
-      return id;
-    },
-    [refreshCount]
-  );
+  // Remove message from offline queue
+  const removeFromQueue = useCallback((queueId) => {
+    removeFromQueueUtil(queueId);
+    setOfflineQueueCount(getQueueCountUtil());
+  }, []);
 
-  const removeFromQueue = useCallback(
-    (id) => {
-      removeFromOfflineQueue(id);
-      refreshCount();
-    },
-    [refreshCount]
-  );
-
+  // Clear all messages from offline queue
   const clearQueue = useCallback(() => {
-    clearOfflineQueue();
-    refreshCount();
-  }, [refreshCount]);
+    clearQueueUtil();
+    setOfflineQueueCount(0);
+  }, []);
 
-  const processQueue = useCallback(
-    async (processItem) => {
-      const queue = getOfflineQueue();
-      if (queue.length === 0) return;
+  // Process offline message queue
+  const processQueue = useCallback(async () => {
+    const queue = getOfflineQueue();
+    if (queue.length === 0) return;
 
-      for (const item of queue) {
-        try {
-          await processItem(item.message, item);
-          removeFromOfflineQueue(item.id);
-          refreshCount();
-        } catch (err) {
-          incrementRetryCount(item.id);
-          refreshCount();
+    console.log(`Processing ${queue.length} queued messages...`);
+    toast.info(`Sending ${queue.length} queued message${queue.length > 1 ? 's' : ''}...`);
 
-          const nextRetry = (item.retryCount || 0) + 1;
-          if (nextRetry >= MAX_RETRIES) {
-            toast.error('Failed to send queued message after multiple attempts.');
-            removeFromOfflineQueue(item.id);
-            refreshCount();
-          } else {
-            toast.info(
-              `Queued message failed. Will retry later (attempt ${nextRetry}/${MAX_RETRIES}).`
-            );
-          }
+    for (const item of queue) {
+      try {
+        const success = await sendMessage(item.message);
+        if (success) {
+          removeFromQueueUtil(item.id);
+          setOfflineQueueCount(getQueueCountUtil());
         }
+      } catch (error) {
+        console.error('Error sending queued message:', error);
       }
-    },
-    [refreshCount]
-  );
+    }
 
-  useEffect(() => {
-    // Sync across tabs (storage event only fires in other tabs).
-    const onStorage = (e) => {
-      if (e.key === 'mindease_offline_message_queue') {
-        refreshCount();
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, [refreshCount]);
+    const remainingCount = getQueueCountUtil();
+    if (remainingCount === 0) {
+      toast.success('All queued messages sent!');
+    } else {
+      toast.warning(`${remainingCount} message${remainingCount > 1 ? 's' : ''} could not be sent`);
+    }
+  }, [sendMessage]);
+
+  // Note: Auto-processing is handled by the WebSocket hook when connection is restored
+  // This prevents duplicate processing
 
   return {
+    // State
     offlineQueueCount,
-    refreshCount,
+
+    // Operations
     addToQueue,
     removeFromQueue,
     clearQueue,
     processQueue,
+
+    // Direct access to utilities (for advanced usage)
+    getQueueCount: getQueueCountUtil,
+    getQueue: getOfflineQueue,
   };
 };

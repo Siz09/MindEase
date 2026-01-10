@@ -7,28 +7,22 @@ const UserStats = ({ stats }) => {
   };
 
   return (
-    <div className="admin-user-stats">
-      <div className="admin-user-stat-card">
-        <div className="admin-user-stat-label">Total Users</div>
-        <div className="admin-user-stat-value">{safeStats.total}</div>
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-gray-200">
+        <div className="text-sm font-medium text-gray-600">Total users</div>
+        <div className="mt-2 text-2xl font-semibold text-gray-900">{safeStats.total}</div>
       </div>
-      <div className="admin-user-stat-card">
-        <div className="admin-user-stat-label">Active</div>
-        <div className="admin-user-stat-value" style={{ color: 'var(--color-success)' }}>
-          {safeStats.active}
-        </div>
+      <div className="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-gray-200">
+        <div className="text-sm font-medium text-gray-600">Active</div>
+        <div className="mt-2 text-2xl font-semibold text-green-700">{safeStats.active}</div>
       </div>
-      <div className="admin-user-stat-card">
-        <div className="admin-user-stat-label">Banned</div>
-        <div className="admin-user-stat-value" style={{ color: 'var(--color-danger)' }}>
-          {safeStats.banned}
-        </div>
+      <div className="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-gray-200">
+        <div className="text-sm font-medium text-gray-600">Banned</div>
+        <div className="mt-2 text-2xl font-semibold text-red-700">{safeStats.banned}</div>
       </div>
-      <div className="admin-user-stat-card">
-        <div className="admin-user-stat-label">Inactive</div>
-        <div className="admin-user-stat-value" style={{ color: 'var(--color-warning)' }}>
-          {safeStats.inactive}
-        </div>
+      <div className="rounded-2xl bg-white p-5 shadow-soft ring-1 ring-gray-200">
+        <div className="text-sm font-medium text-gray-600">Inactive</div>
+        <div className="mt-2 text-2xl font-semibold text-amber-700">{safeStats.inactive}</div>
       </div>
     </div>
   );

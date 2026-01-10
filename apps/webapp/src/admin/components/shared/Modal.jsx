@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useRef, useId } from 'react';
 
 export default function Modal({ isOpen, title, children, onClose, footer }) {
@@ -9,6 +7,9 @@ export default function Modal({ isOpen, title, children, onClose, footer }) {
 
   useEffect(() => {
     if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
 
     previouslyFocusedRef.current = document.activeElement;
     modalRef.current?.focus();
@@ -49,6 +50,7 @@ export default function Modal({ isOpen, title, children, onClose, footer }) {
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.removeEventListener('keydown', handleTabTrap);
+      document.body.style.overflow = previousOverflow;
       previouslyFocusedRef.current?.focus();
     };
   }, [isOpen, onClose]);
@@ -56,9 +58,12 @@ export default function Modal({ isOpen, title, children, onClose, footer }) {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={() => onClose?.()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+      onClick={() => onClose?.()}
+    >
       <div
-        className="modal-content"
+        className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -66,14 +71,21 @@ export default function Modal({ isOpen, title, children, onClose, footer }) {
         tabIndex={-1}
         ref={modalRef}
       >
-        <div className="modal-header">
-          <h2 id={titleId}>{title}</h2>
-          <button className="modal-close" onClick={() => onClose?.()} aria-label="Close modal">
+        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4">
+          <h2 id={titleId} className="text-base font-semibold text-gray-900">
+            {title}
+          </h2>
+          <button
+            type="button"
+            className="rounded-md p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            onClick={() => onClose?.()}
+            aria-label="Close modal"
+          >
             ✕
           </button>
         </div>
-        <div className="modal-body">{children}</div>
-        {footer && <div className="modal-footer">{footer}</div>}
+        <div className="px-6 py-4">{children}</div>
+        {footer && <div className="border-t border-gray-200 px-6 py-4">{footer}</div>}
       </div>
     </div>
   );

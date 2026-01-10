@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import api from '../../utils/api';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Zap, Lock, Target, Check } from 'lucide-react';
 
 const AIProviderSection = ({ currentUser }) => {
   const { t } = useTranslation();
@@ -23,8 +26,7 @@ const AIProviderSection = ({ currentUser }) => {
         if (isMountedRef.current) {
           setAiProvider(response.data.currentProvider || 'OPENAI');
         }
-      } catch (error) {
-        console.error('Failed to fetch AI provider:', error);
+      } catch {
         if (isMountedRef.current) {
           setAiProvider(null);
           toast.error(t('settings.notifications.aiProviderLoadFailed'));
@@ -43,8 +45,7 @@ const AIProviderSection = ({ currentUser }) => {
         setAiProvider(newProvider);
         toast.success(t('settings.notifications.aiProviderUpdated'));
       }
-    } catch (error) {
-      console.error('Failed to update AI provider:', error);
+    } catch {
       if (isMountedRef.current) {
         toast.error(t('settings.notifications.aiProviderUpdateFailed'));
       }
@@ -55,102 +56,100 @@ const AIProviderSection = ({ currentUser }) => {
     }
   };
 
+  const providers = [
+    {
+      id: 'OPENAI',
+      icon: Zap,
+      iconColor: 'text-yellow-600',
+      bgColor: 'bg-yellow-50 dark:bg-yellow-950/20',
+      borderColor: 'border-yellow-200 dark:border-yellow-800',
+      name: 'OpenAI (Cloud)',
+      description: 'Fast, cloud-based responses (1-3s)',
+      badge: 'Recommended',
+      badgeVariant: 'success',
+    },
+    {
+      id: 'LOCAL',
+      icon: Lock,
+      iconColor: 'text-blue-600',
+      bgColor: 'bg-blue-50 dark:bg-blue-950/20',
+      borderColor: 'border-blue-200 dark:border-blue-800',
+      name: 'MindEase AI (Local)',
+      description: 'Private, with evidence-based citations (3-7s)',
+      badge: 'Privacy Focused',
+      badgeVariant: 'secondary',
+    },
+    {
+      id: 'AUTO',
+      icon: Target,
+      iconColor: 'text-purple-600',
+      bgColor: 'bg-purple-50 dark:bg-purple-950/20',
+      borderColor: 'border-purple-200 dark:border-purple-800',
+      name: 'Auto Selection',
+      description: 'System chooses the best option for you',
+      badge: 'Smart',
+      badgeVariant: 'outline',
+    },
+  ];
+
   return (
-    <div className="card">
-      <div className="card-header">
-        <h2 className="card-title">🤖 AI Assistant Provider</h2>
-      </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>🤖 AI Assistant Provider</CardTitle>
+          <CardDescription>
+            Choose which AI powers your mental health conversations. You can switch between
+            providers at any time.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-3">
+            {providers.map((provider) => {
+              const isSelected = aiProvider === provider.id;
+              const Icon = provider.icon;
 
-      <div className="ai-provider-settings">
-        <p className="setting-description">
-          Choose which AI powers your mental health conversations. You can switch between providers
-          at any time.
-        </p>
-
-        <div className="provider-options">
-          <div
-            className={`provider-card ${aiProvider === 'OPENAI' ? 'selected' : ''}`}
-            onClick={() => !aiProviderLoading && handleAIProviderChange('OPENAI')}
-            onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && !aiProviderLoading) {
-                e.preventDefault();
-                handleAIProviderChange('OPENAI');
-              }
-            }}
-            role="button"
-            tabIndex={aiProviderLoading ? -1 : 0}
-            aria-pressed={aiProvider === 'OPENAI'}
-            aria-disabled={aiProviderLoading}
-            style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
-          >
-            <div className="provider-icon">⚡</div>
-            <div className="provider-info">
-              <h3>OpenAI (Cloud)</h3>
-              <p>Fast, cloud-based responses (1-3s)</p>
-              <span className="provider-badge">Recommended</span>
-            </div>
-            {aiProvider === 'OPENAI' && <div className="selected-indicator">✓</div>}
+              return (
+                <button
+                  key={provider.id}
+                  onClick={() => !aiProviderLoading && handleAIProviderChange(provider.id)}
+                  disabled={aiProviderLoading || isSelected}
+                  className={`
+                    relative flex items-start gap-4 p-4 rounded-lg border-2 transition-all text-left
+                    ${
+                      isSelected
+                        ? `${provider.borderColor} ${provider.bgColor}`
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
+                    }
+                    ${aiProviderLoading ? 'cursor-not-allowed opacity-50' : isSelected ? 'cursor-default' : 'cursor-pointer'}
+                  `}
+                >
+                  <div
+                    className={`flex-shrink-0 p-2 rounded-lg ${isSelected ? provider.bgColor : 'bg-gray-100 dark:bg-gray-700'}`}
+                  >
+                    <Icon
+                      className={`h-6 w-6 ${isSelected ? provider.iconColor : 'text-gray-600 dark:text-gray-400'}`}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                        {provider.name}
+                      </h3>
+                      {isSelected && <Check className="h-4 w-4 text-green-600 flex-shrink-0" />}
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      {provider.description}
+                    </p>
+                    <Badge variant={provider.badgeVariant} className="text-xs">
+                      {provider.badge}
+                    </Badge>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-
-          <div
-            className={`provider-card ${aiProvider === 'LOCAL' ? 'selected' : ''}`}
-            onClick={() => !aiProviderLoading && handleAIProviderChange('LOCAL')}
-            onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && !aiProviderLoading) {
-                e.preventDefault();
-                handleAIProviderChange('LOCAL');
-              }
-            }}
-            role="button"
-            tabIndex={aiProviderLoading ? -1 : 0}
-            aria-pressed={aiProvider === 'LOCAL'}
-            aria-disabled={aiProviderLoading}
-            style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
-          >
-            <div className="provider-icon">🔒</div>
-            <div className="provider-info">
-              <h3>MindEase AI (Local)</h3>
-              <p>Private, with evidence-based citations (3-7s)</p>
-              <span className="provider-badge">Privacy Focused</span>
-            </div>
-            {aiProvider === 'LOCAL' && <div className="selected-indicator">✓</div>}
-          </div>
-
-          <div
-            className={`provider-card ${aiProvider === 'AUTO' ? 'selected' : ''}`}
-            onClick={() => !aiProviderLoading && handleAIProviderChange('AUTO')}
-            onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && !aiProviderLoading) {
-                e.preventDefault();
-                handleAIProviderChange('AUTO');
-              }
-            }}
-            role="button"
-            tabIndex={aiProviderLoading ? -1 : 0}
-            aria-pressed={aiProvider === 'AUTO'}
-            aria-disabled={aiProviderLoading}
-            style={{ cursor: aiProviderLoading ? 'not-allowed' : 'pointer' }}
-          >
-            <div className="provider-icon">🎯</div>
-            <div className="provider-info">
-              <h3>Auto Selection</h3>
-              <p>System chooses the best option for you</p>
-              <span className="provider-badge">Smart</span>
-            </div>
-            {aiProvider === 'AUTO' && <div className="selected-indicator">✓</div>}
-          </div>
-        </div>
-
-        <div className="current-provider-info">
-          <span className="info-label">Current Provider:</span>
-          <span className="info-value">
-            {aiProvider === 'OPENAI' && '⚡ OpenAI (Fast & Reliable)'}
-            {aiProvider === 'LOCAL' && '🔒 MindEase AI (Private)'}
-            {aiProvider === 'AUTO' && '🎯 Auto Selection (Smart)'}
-            {aiProvider === null && '⚠️ Unable to load provider'}
-          </span>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

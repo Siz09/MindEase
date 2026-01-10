@@ -4,11 +4,17 @@ export default function Pagination({
   currentPage,
   totalPages,
   pageSize,
+  totalItems,
   onPageChange,
   onPageSizeChange,
 }) {
   return (
     <div className="pagination">
+      {totalItems !== undefined && (
+        <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
+          Total: {totalItems}
+        </div>
+      )}
       <div className="pagination-buttons">
         <button
           className="btn btn-secondary btn-sm"

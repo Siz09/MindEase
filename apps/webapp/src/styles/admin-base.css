@@ -2,15 +2,15 @@
 :root {
   /* Color Palette - Clean and Modern */
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f9fafb;
+  --color-bg-secondary: #e0e0e0;
   --color-bg-tertiary: #f3f4f6;
 
   --color-text-primary: #1f2937;
   --color-text-secondary: #6b7280;
   --color-text-tertiary: #9ca3af;
 
-  --color-border: #e5e7eb;
-  --color-border-light: #f3f4f6;
+  --color-border: #d1d5db;
+  --color-border-light: #e5e7eb;
 
   --color-primary: #6366f1;
   --color-primary-hover: #4f46e5;
@@ -63,27 +63,40 @@
 
   /* Transitions */
   --transition: 0.15s ease;
+  --transition-base: 0.15s;
+
+  /* Admin component tokens (aliases for legacy admin pages/styles) */
+  --primary: var(--color-primary);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --danger: var(--color-danger);
+  --gray: var(--color-text-secondary);
+  --gray-light: var(--color-border);
+  --dark: var(--color-text-primary);
+
+  /* Bento/grid tokens used by admin-bento.css */
+  --color-accent: var(--color-primary);
+  --color-accent-dark: var(--color-primary-hover);
+  --color-white: #ffffff;
+  --color-surface: var(--color-bg-primary);
+  --color-surface-light: var(--color-bg-secondary);
+  --shadow-card: var(--shadow-md);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  height: 100%;
-  width: 100%;
-}
-
-body {
+/* Scoped to Admin Shell to prevent global conflicts */
+.admin-shell {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  min-height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  overflow: hidden;
 }
 
 /* Scrollbar styling */

@@ -6,6 +6,7 @@ import { useSession } from '../hooks/useSession';
 import { useTokenRefresh } from '../hooks/useTokenRefresh';
 import { authApiMe } from '../utils/auth/authApi';
 import { useAuthActions } from '../hooks/useAuthActions';
+import { decodeJwtPayload } from '../utils/auth/tokenUtils';
 
 const AuthContext = createContext();
 
@@ -26,6 +27,16 @@ export const AuthProvider = ({ children }) => {
   const location = useLocation();
   const { markAuthenticated, resetSessionFlags, showWelcomeBackOnce, showSessionExpiredOnce } =
     useSession({ pathname: location.pathname });
+
+  const tokenLooksLikeAdmin = useCallback((candidateToken) => {
+    const payload = decodeJwtPayload(candidateToken);
+    const roles = []
+      .concat(payload?.role || [])
+      .concat(payload?.authority || [])
+      .concat(payload?.authorities || [])
+      .concat(payload?.roles || []);
+    return roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+  }, []);
 
   // Helper to get translated error message
   const getErrorMessage = useCallback(
@@ -106,6 +117,13 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
+        // If an admin JWT was previously persisted into user storage, clear it so we don't
+        // authenticate into the user UI with an admin session on browser reopen.
+        if (tokenLooksLikeAdmin(storedToken)) {
+          clearSessionState();
+          setLoading(false);
+          return;
+        }
         try {
           const userData = await authApiMe({ token: storedToken });
           setCurrentUser(userData);
@@ -127,6 +145,7 @@ export const AuthProvider = ({ children }) => {
     showWelcomeBackOnce,
     markAuthenticated,
     showSessionExpiredOnce,
+    tokenLooksLikeAdmin,
   ]);
 
   const value = {

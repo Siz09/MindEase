@@ -6,8 +6,9 @@ const Card = forwardRef(({ className, hover = false, children, ...props }, ref) 
     <div
       ref={ref}
       className={cn(
-        'rounded-2xl bg-white dark:bg-gray-800 shadow-soft p-6',
-        hover && 'transition-smooth hover:shadow-lg hover:scale-[1.02] cursor-pointer',
+        'rounded-xl border bg-white dark:bg-gray-800 shadow-sm',
+        'flex flex-col',
+        hover && 'transition-all hover:shadow-lg hover:scale-[1.02] cursor-pointer',
         className
       )}
       {...props}
@@ -21,7 +22,7 @@ Card.displayName = 'Card';
 
 const CardHeader = forwardRef(({ className, children, ...props }, ref) => {
   return (
-    <div ref={ref} className={cn('mb-4', className)} {...props}>
+    <div ref={ref} className={cn('flex flex-col gap-2 px-6 pt-6', className)} {...props}>
       {children}
     </div>
   );
@@ -33,7 +34,10 @@ const CardTitle = forwardRef(({ className, children, ...props }, ref) => {
   return (
     <h3
       ref={ref}
-      className={cn('text-xl font-semibold text-gray-900 dark:text-gray-100', className)}
+      className={cn(
+        'text-xl font-semibold leading-none text-gray-900 dark:text-gray-100',
+        className
+      )}
       {...props}
     >
       {children}
@@ -55,7 +59,7 @@ CardDescription.displayName = 'CardDescription';
 
 const CardContent = forwardRef(({ className, children, ...props }, ref) => {
   return (
-    <div ref={ref} className={cn('', className)} {...props}>
+    <div ref={ref} className={cn('px-6 py-4', className)} {...props}>
       {children}
     </div>
   );
@@ -65,7 +69,7 @@ CardContent.displayName = 'CardContent';
 
 const CardFooter = forwardRef(({ className, children, ...props }, ref) => {
   return (
-    <div ref={ref} className={cn('mt-4 flex items-center gap-2', className)} {...props}>
+    <div ref={ref} className={cn('flex items-center px-6 pb-6 pt-4', className)} {...props}>
       {children}
     </div>
   );
@@ -73,4 +77,14 @@ const CardFooter = forwardRef(({ className, children, ...props }, ref) => {
 
 CardFooter.displayName = 'CardFooter';
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
+const CardAction = forwardRef(({ className, children, ...props }, ref) => {
+  return (
+    <div ref={ref} className={cn('self-start justify-self-end', className)} {...props}>
+      {children}
+    </div>
+  );
+});
+
+CardAction.displayName = 'CardAction';
+
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction };

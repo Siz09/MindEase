@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Badge } from '../ui/Badge';
+import { Check } from 'lucide-react';
 
 const LanguageSettingsSection = () => {
   const { t, i18n } = useTranslation();
@@ -15,66 +18,65 @@ const LanguageSettingsSection = () => {
       await i18n.changeLanguage(newLanguage);
       localStorage.setItem('i18nextLng', newLanguage);
       toast.success(t('settings.notifications.languageChanged'));
-    } catch (error) {
-      console.error('Failed to change language:', error);
+    } catch {
       toast.error(t('settings.notifications.languageChangeFailed'));
     }
   };
 
+  const languages = [
+    { code: 'en', name: t('settings.language.english'), flag: '🇺🇸', nativeName: 'English' },
+    { code: 'ne', name: t('settings.language.nepali'), flag: '🇳🇵', nativeName: 'नेपाली' },
+  ];
+
   return (
-    <div className="card">
-      <div className="card-header">
-        <h2 className="card-title">{t('settings.language.title')}</h2>
-      </div>
-
-      <div className="language-settings">
-        <div className="current-language">
-          <span className="info-label">{t('settings.language.currentLanguage')}:</span>
-          <span className="info-value">
-            {currentLanguage === 'en' && t('settings.language.english')}
-            {currentLanguage === 'ne' && t('settings.language.nepali')}
-            {currentLanguage !== 'en' && currentLanguage !== 'ne' && currentLanguage}
-          </span>
-        </div>
-
-        <div className="language-options">
-          <button
-            className={`language-option ${currentLanguage === 'en' ? 'active' : ''}`}
-            onClick={() => handleLanguageChange('en')}
-            disabled={currentLanguage === 'en'}
-            aria-label={t('settings.language.selectEnglish')}
-            aria-pressed={currentLanguage === 'en'}
-          >
-            <span className="language-flag" aria-hidden="true">
-              🇺🇸
-            </span>
-            <span className="language-name">{t('settings.language.english')}</span>
-            {currentLanguage === 'en' && (
-              <span className="current-indicator" aria-hidden="true">
-                ✓
-              </span>
-            )}
-          </button>
-
-          <button
-            className={`language-option ${currentLanguage === 'ne' ? 'active' : ''}`}
-            onClick={() => handleLanguageChange('ne')}
-            disabled={currentLanguage === 'ne'}
-            aria-label={t('settings.language.selectNepali')}
-            aria-pressed={currentLanguage === 'ne'}
-          >
-            <span className="language-flag" aria-hidden="true">
-              🇳🇵
-            </span>
-            <span className="language-name">{t('settings.language.nepali')}</span>
-            {currentLanguage === 'ne' && (
-              <span className="current-indicator" aria-hidden="true">
-                ✓
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('settings.language.title')}</CardTitle>
+          <CardDescription>Choose your preferred language for the app</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {languages.map((lang) => {
+              const isActive = currentLanguage === lang.code;
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => handleLanguageChange(lang.code)}
+                  disabled={isActive}
+                  className={`
+                    relative flex items-center gap-3 p-4 rounded-lg border-2 transition-all
+                    ${
+                      isActive
+                        ? 'border-green-600 bg-green-50 dark:bg-green-950/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-700 bg-white dark:bg-gray-800'
+                    }
+                    ${isActive ? 'cursor-default' : 'cursor-pointer'}
+                  `}
+                >
+                  <span className="text-3xl" aria-hidden="true">
+                    {lang.flag}
+                  </span>
+                  <div className="flex-1 text-left">
+                    <div className="font-medium text-gray-900 dark:text-gray-100">{lang.name}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {lang.nativeName}
+                    </div>
+                  </div>
+                  {isActive && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="success" className="gap-1">
+                        <Check className="h-3 w-3" />
+                        Active
+                      </Badge>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

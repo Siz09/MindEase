@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin")
 @Tag(name = "Admin Dashboard")
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:5174" })
 public class AdminDashboardController {
 
     private final AnalyticsRepository analyticsRepository;

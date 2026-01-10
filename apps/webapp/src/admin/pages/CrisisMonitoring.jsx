@@ -29,6 +29,7 @@ export default function CrisisMonitoring() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [filters, setFilters] = useState({
     riskLevel: 'all',
@@ -44,6 +45,8 @@ export default function CrisisMonitoring() {
   const [selectedFlag, setSelectedFlag] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  const [error, setError] = useState(null);
+
   const esRef = useRef(null);
   const inFlightRef = useRef(false);
   const pageRef = useRef(page);
@@ -56,6 +59,7 @@ export default function CrisisMonitoring() {
   // Load crisis flags
   useEffect(() => {
     loadFlags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, filters]);
 
   // Real-time SSE connection
@@ -88,7 +92,6 @@ export default function CrisisMonitoring() {
             flag.riskScore < 0 ||
             flag.riskScore > 1
           ) {
-            console.warn('Invalid flag received from SSE:', flag);
             return;
           }
           const flagLevel = getRiskLevel(flag.riskScore * 100).toLowerCase();
@@ -97,8 +100,7 @@ export default function CrisisMonitoring() {
           if (pageRef.current === 0 && matchesFilter) {
             setFlags((prev) => [flag, ...prev].slice(0, pageSize));
           }
-        } catch (error) {
-          console.error('Failed to process SSE flag:', error);
+        } catch {
           return;
         }
       };
@@ -111,7 +113,7 @@ export default function CrisisMonitoring() {
 
       esRef.current = es;
     } catch {
-      console.log('SSE not available, using polling');
+      // SSE not available, using polling
     }
 
     return () => {
@@ -125,6 +127,7 @@ export default function CrisisMonitoring() {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
     setLoading(true);
+    setError(null);
 
     try {
       const params = new URLSearchParams({
@@ -156,11 +159,14 @@ export default function CrisisMonitoring() {
       const data = listRes.data || {};
       setFlags(data.content || []);
       setTotalPages(data.totalPages || 0);
+      setTotalItems(data.totalElements || 0);
       setStats(statsRes.data || { high: 0, medium: 0, low: 0 });
     } catch (err) {
-      console.error('Failed to load crisis flags:', err.message);
+      const errorMessage = err.message || 'Failed to load data';
+      setError(errorMessage);
       setFlags([]);
       setTotalPages(0);
+      setTotalItems(0);
       setStats({ high: 0, medium: 0, low: 0 });
     } finally {
       setLoading(false);
@@ -189,8 +195,8 @@ export default function CrisisMonitoring() {
       await adminApi.post(`/admin/crisis-flags/${flagId}/resolve`);
       loadFlags();
       setShowModal(false);
-    } catch (err) {
-      console.error('Failed to resolve flag:', err);
+    } catch {
+      // Failed to resolve flag
     }
   };
 
@@ -200,8 +206,8 @@ export default function CrisisMonitoring() {
       await adminApi.post(`/admin/crisis-flags/${flagId}/escalate`);
       loadFlags();
       setShowModal(false);
-    } catch (err) {
-      console.error('Failed to escalate flag:', err);
+    } catch {
+      // Failed to escalate flag
     }
   };
 
@@ -225,6 +231,21 @@ export default function CrisisMonitoring() {
         <h1 className="page-title">Crisis Monitoring</h1>
         <p className="page-subtitle">Real-time detection and response for at-risk users</p>
       </div>
+
+      {error && (
+        <div
+          style={{
+            backgroundColor: '#fee2e2',
+            border: '1px solid #ef4444',
+            color: '#b91c1c',
+            padding: '1rem',
+            borderRadius: '0.5rem',
+            marginBottom: '1rem',
+          }}
+        >
+          <strong>Error loading crisis flags:</strong> {error}
+        </div>
+      )}
 
       <div className="bento-grid bento-grid-3" style={{ marginBottom: 'var(--spacing-xl)' }}>
         <Card className="bento-card" header={<div className="card-header-title">High Risk</div>}>
@@ -324,6 +345,7 @@ export default function CrisisMonitoring() {
             setPageSize(newSize);
             setPage(0);
           }}
+          totalItems={totalItems}
         />
       </div>
 

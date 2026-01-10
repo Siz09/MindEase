@@ -1,4 +1,4 @@
-import { Card } from '../shared';
+import AdminCard from '../AdminCard';
 
 const DailyReportTimeCard = ({ dailyReportTime, onChange }) => {
   const handleChange = (e) => {
@@ -8,9 +8,9 @@ const DailyReportTimeCard = ({ dailyReportTime, onChange }) => {
   };
 
   return (
-    <Card className="admin-settings-card">
-      <div className="admin-settings-card-header">
-        <div className="admin-settings-card-icon">
+    <AdminCard className="border border-gray-200 shadow-sm">
+      <div className="flex items-start gap-4">
+        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600">
           <svg
             width="20"
             height="20"
@@ -18,33 +18,32 @@ const DailyReportTimeCard = ({ dailyReportTime, onChange }) => {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
+            aria-hidden="true"
           >
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
         </div>
-        <div>
-          <h2 className="admin-settings-card-title">Daily Report Time</h2>
-          <p className="admin-settings-card-description">
-            Set the time when daily reports are generated and sent
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-gray-900">Daily report time</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Set the time when daily reports are generated and sent.
           </p>
         </div>
       </div>
-      <div className="admin-settings-card-body">
-        <div className="admin-settings-time-group">
-          <label htmlFor="daily-report-time" className="admin-settings-label">
-            Report Time
-          </label>
-          <input
-            id="daily-report-time"
-            type="time"
-            value={dailyReportTime ?? ''}
-            onChange={handleChange}
-            className="admin-settings-time-input"
-          />
-        </div>
+      <div className="mt-6 flex flex-col gap-2">
+        <label htmlFor="daily-report-time" className="text-sm font-medium text-gray-900">
+          Report time
+        </label>
+        <input
+          id="daily-report-time"
+          type="time"
+          value={dailyReportTime ?? ''}
+          onChange={handleChange}
+          className="input-field w-48"
+        />
       </div>
-    </Card>
+    </AdminCard>
   );
 };
 

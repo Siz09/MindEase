@@ -1,4 +1,4 @@
-import { Button, Input, Select } from '../shared';
+import { Button, FilterBar } from '../shared';
 
 const UserFilters = ({ filters, onSearch, onStatusChange, onClear }) => {
   const safeFilters = {
@@ -25,36 +25,37 @@ const UserFilters = ({ filters, onSearch, onStatusChange, onClear }) => {
   };
 
   return (
-    <div className="admin-user-filters">
+    <FilterBar>
       <label htmlFor="user-search-input" className="sr-only">
         Search by email
       </label>
-      <Input
+      <input
         id="user-search-input"
         placeholder="Search by email..."
         value={safeFilters.search}
         onChange={(e) => handleSearch(e.target.value)}
-        style={{ flex: 1, minWidth: '200px', maxWidth: '300px' }}
+        className="form-input"
+        style={{ maxWidth: '320px' }}
       />
       <label htmlFor="user-status-select" className="sr-only">
         User status
       </label>
-      <Select
+      <select
         id="user-status-select"
         value={safeFilters.status}
         onChange={(e) => handleStatusChange(e.target.value)}
-        options={[
-          { value: 'all', label: 'All Status' },
-          { value: 'active', label: 'Active' },
-          { value: 'inactive', label: 'Inactive' },
-          { value: 'banned', label: 'Banned' },
-        ]}
-        style={{ minWidth: '150px' }}
-      />
-      <Button variant="ghost" onClick={handleClear}>
+        className="form-select"
+        style={{ maxWidth: '220px' }}
+      >
+        <option value="all">All status</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+        <option value="banned">Banned</option>
+      </select>
+      <Button variant="secondary" onClick={handleClear}>
         Clear
       </Button>
-    </div>
+    </FilterBar>
   );
 };
 

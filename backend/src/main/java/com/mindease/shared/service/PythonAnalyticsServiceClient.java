@@ -67,7 +67,9 @@ public class PythonAnalyticsServiceClient {
 
         } catch (RestClientException e) {
             log.error("Failed to call Python analytics service for daily active users: {}", e.getMessage(), e);
-            throw new RuntimeException("Python analytics service unavailable: " + e.getMessage(), e);
+            // Degrade gracefully so the admin dashboard (and other consumers) can still load.
+            // Callers should treat empty results as "no analytics available" instead of a hard failure.
+            return List.of();
         }
     }
 
@@ -96,7 +98,8 @@ public class PythonAnalyticsServiceClient {
 
         } catch (RestClientException e) {
             log.error("Failed to call Python analytics service for AI usage: {}", e.getMessage(), e);
-            throw new RuntimeException("Python analytics service unavailable: " + e.getMessage(), e);
+            // Degrade gracefully so the admin dashboard (and other consumers) can still load.
+            return List.of();
         }
     }
 
@@ -125,7 +128,7 @@ public class PythonAnalyticsServiceClient {
 
         } catch (RestClientException e) {
             log.error("Failed to call Python analytics service for mood correlation: {}", e.getMessage(), e);
-            throw new RuntimeException("Python analytics service unavailable: " + e.getMessage(), e);
+            return List.of();
         }
     }
 

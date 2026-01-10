@@ -29,6 +29,20 @@ Chart.register(
 
 const fmt = (d) => new Date(d).toLocaleDateString();
 
+function normalizeOverview(raw) {
+  const data = raw && typeof raw === 'object' ? raw : {};
+  return {
+    activeUsers: Number(data.activeUsers ?? data.active_users ?? 0) || 0,
+    dailySignups: Number(data.dailySignups ?? data.signupsToday ?? data.signups_today ?? 0) || 0,
+    crisisFlags: Number(data.crisisFlags ?? data.crisisLast24h ?? data.crisis_last_24h ?? 0) || 0,
+    aiUsage: Number(data.aiUsage ?? data.aiCallsLast24h ?? data.ai_calls_last_24h ?? 0) || 0,
+    activeUsersTrend: data.activeUsersTrend ?? data.active_users_trend ?? null,
+    dailySignupsTrend: data.dailySignupsTrend ?? data.signupsTrend ?? data.signups_trend ?? null,
+    crisisFlagsTrend: data.crisisFlagsTrend ?? data.crisisTrend ?? data.crisis_trend ?? null,
+    aiUsageTrend: data.aiUsageTrend ?? data.ai_usage_trend ?? null,
+  };
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState({
     activeUsers: 0,
@@ -76,7 +90,7 @@ export default function Dashboard() {
           }
 
           if (statsRes.status === 'fulfilled') {
-            setStats(statsRes.value.data || {});
+            setStats(normalizeOverview(statsRes.value.data));
           }
 
           const activityPayload =
@@ -102,24 +116,11 @@ export default function Dashboard() {
           }
           setRecentAlerts(alertsPayload);
           setLastUpdated(new Date());
-          // Log any API failures for debugging
-          if (statsRes.status === 'rejected') {
-            console.error('Stats API failed:', statsRes.reason);
-          }
-          if (activityRes.status === 'rejected') {
-            console.error('Activity API failed:', activityRes.reason);
-          }
-          if (alertsRes.status === 'rejected') {
-            console.error('Alerts API failed:', alertsRes.reason);
-          }
-          if (crisisStatsRes.status === 'rejected') {
-            console.error('Crisis stats API failed:', crisisStatsRes.reason);
-          }
+          // API failures handled gracefully
         }
-      } catch (err) {
+      } catch {
         if (mounted) {
           setError('Failed to load dashboard data');
-          console.error('Dashboard error:', err);
         }
       } finally {
         if (mounted) setLoading(false);
@@ -146,7 +147,9 @@ export default function Dashboard() {
     if (activityChartRef.current) {
       const canvas = activityChartRef.current;
       const labels = (activityData || []).map((pt) => fmt(pt.day));
-      const values = (activityData || []).map((pt) => pt.activeUsers ?? pt.count ?? 0);
+      const values = (activityData || []).map(
+        (pt) => pt.activeUsers ?? pt.active_users ?? pt.count ?? 0
+      );
 
       if (!charts.current.activity && isCanvasLive(canvas) && activityData.length > 0) {
         try {
@@ -213,8 +216,8 @@ export default function Dashboard() {
               scales: { y: { beginAtZero: true } },
             },
           });
-        } catch (err) {
-          console.error('Failed to create crisis chart:', err);
+        } catch {
+          // Failed to create crisis chart
         }
       } else if (
         charts.current.crisis &&

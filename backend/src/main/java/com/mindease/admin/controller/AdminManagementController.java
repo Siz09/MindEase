@@ -3,6 +3,7 @@ package com.mindease.admin.controller;
 import com.mindease.admin.dto.AdminSettingsPayload;
 import com.mindease.admin.dto.ContentItemDto;
 import com.mindease.admin.dto.UserAdminSummary;
+import com.mindease.admin.model.Content;
 import com.mindease.auth.model.User;
 import com.mindease.auth.repository.UserRepository;
 import com.mindease.admin.model.AdminSettings;
@@ -26,15 +27,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/api/admin")
 @Tag(name = "Admin Management")
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:5174" })
 public class AdminManagementController {
 
     private static final Logger logger = LoggerFactory.getLogger(AdminManagementController.class);
@@ -261,19 +265,73 @@ public class AdminManagementController {
     @GetMapping("/content")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "List content", description = "Fetch all content records for admin management")
-    public Iterable<ContentItemDto> listContent() {
-        return contentRepository.findAll().stream()
-                .map(c -> new ContentItemDto(
-                        c.getId(),
-                        c.getTitle(),
-                        c.getDescription(),
-                        c.getCategory(),
-                        c.getType(),
-                        c.getImageUrl(),
-                        c.getRating(),
-                        c.getReviewCount(),
-                        c.getCreatedAt()))
+    public List<ContentItemDto> listContent(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String search) {
+        Stream<Content> stream = contentRepository.findAll().stream();
+
+        if (type != null && !type.isBlank()) {
+            String normalized = type.trim().toLowerCase(Locale.ROOT);
+            if (normalized.endsWith("s")) {
+                normalized = normalized.substring(0, normalized.length() - 1);
+            }
+            String finalType = normalized;
+            stream = stream.filter(c -> c.getType() != null && c.getType().equalsIgnoreCase(finalType));
+        }
+
+        if (category != null && !category.isBlank()) {
+            String normalized = category.trim().toLowerCase(Locale.ROOT);
+            stream = stream.filter(
+                    c -> c.getCategory() != null && c.getCategory().trim().toLowerCase(Locale.ROOT).equals(normalized));
+        }
+
+        if (search != null && !search.isBlank()) {
+            String q = search.trim().toLowerCase(Locale.ROOT);
+            stream = stream.filter(c -> {
+                String title = c.getTitle() == null ? "" : c.getTitle();
+                String desc = c.getDescription() == null ? "" : c.getDescription();
+                return title.toLowerCase(Locale.ROOT).contains(q) || desc.toLowerCase(Locale.ROOT).contains(q);
+            });
+        }
+
+        return stream
+                .sorted(Comparator.comparing(Content::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(AdminManagementController::toContentDto)
                 .toList();
+    }
+
+    @PostMapping("/content")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Create content", description = "Create a new content item")
+    public ContentItemDto createContent(@RequestBody Map<String, Object> body) {
+        Content content = new Content();
+        applyContentPayload(content, body, true);
+        Content saved = contentRepository.save(content);
+        return toContentDto(saved);
+    }
+
+    @PutMapping("/content/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Update content", description = "Update an existing content item")
+    public ContentItemDto updateContent(@PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        Content content = contentRepository.findById(id)
+                .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Content not found"));
+        applyContentPayload(content, body, false);
+        Content saved = contentRepository.save(content);
+        return toContentDto(saved);
+    }
+
+    @DeleteMapping("/content/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete content", description = "Delete a content item")
+    public ResponseEntity<Map<String, Object>> deleteContent(@PathVariable UUID id) {
+        if (!contentRepository.existsById(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("status", "error", "message", "Not found"));
+        }
+        contentRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("status", "ok"));
     }
 
     @GetMapping("/settings")
@@ -312,6 +370,61 @@ public class AdminManagementController {
                 saved.isAutoArchive(),
                 saved.getAutoArchiveDays(),
                 saved.getDailyReportTime() != null ? saved.getDailyReportTime().toString() : null);
+    }
+
+    private static ContentItemDto toContentDto(Content c) {
+        return new ContentItemDto(
+                c.getId(),
+                c.getTitle(),
+                c.getDescription(),
+                c.getBody(),
+                c.getCategory(),
+                c.getType(),
+                c.getImageUrl(),
+                c.getRating(),
+                c.getReviewCount(),
+                c.getCreatedAt(),
+                c.getUpdatedAt());
+    }
+
+    private static void applyContentPayload(Content content, Map<String, Object> body, boolean requireFields) {
+        if (body == null) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing payload");
+        }
+        String title = body.get("title") instanceof String s ? s.trim() : null;
+        String description = body.get("description") instanceof String s ? s.trim() : null;
+        String bodyText = body.get("body") instanceof String s ? s : null;
+        String category = body.get("category") instanceof String s ? s.trim() : null;
+        String type = body.get("type") instanceof String s ? s.trim() : null;
+        String imageUrl = body.get("imageUrl") instanceof String s ? s.trim() : null;
+
+        if (requireFields) {
+            if (title == null || title.isBlank()) {
+                throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Title required");
+            }
+            if (description == null || description.isBlank()) {
+                throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Description required");
+            }
+            if (bodyText == null || bodyText.isBlank()) {
+                throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Body required");
+            }
+        }
+
+        if (title != null)
+            content.setTitle(title);
+        if (description != null)
+            content.setDescription(description);
+        if (bodyText != null)
+            content.setBody(bodyText);
+        if (category != null)
+            content.setCategory(category);
+        if (type != null)
+            content.setType(type);
+        if (imageUrl != null)
+            content.setImageUrl(imageUrl);
     }
 
     // === Helper methods reused from AdminUserController ===

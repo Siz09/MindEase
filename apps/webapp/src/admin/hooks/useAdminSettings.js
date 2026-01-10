@@ -44,8 +44,8 @@ export default function useAdminSettings() {
           setDailyReportTime(data.dailyReportTime);
         }
       }
-    } catch (err) {
-      console.error('Failed to load admin settings:', err?.message || err);
+    } catch {
+      // Failed to load admin settings
     }
   }, []);
 
@@ -61,18 +61,27 @@ export default function useAdminSettings() {
     setIsLoading(true);
     setNotification(null);
     try {
-      await adminApi.post('/admin/settings', {
+      const payload = {
         crisisThreshold,
         emailNotifications,
         autoArchive,
         autoArchiveDays: autoArchive ? autoArchiveDays : null,
         dailyReportTime,
-      });
+      };
+      try {
+        await adminApi.put('/admin/settings', payload);
+      } catch (err) {
+        // Backwards compatibility for older servers that used POST
+        if (err?.response?.status === 404 || err?.response?.status === 405) {
+          await adminApi.post('/admin/settings', payload);
+        } else {
+          throw err;
+        }
+      }
       if (isMountedRef.current) {
         setNotification({ type: 'success', message: 'Settings saved successfully.' });
       }
-    } catch (error) {
-      console.error('Failed to save settings:', error?.message || error);
+    } catch {
       if (isMountedRef.current) {
         setNotification({ type: 'error', message: 'Unable to save settings.' });
       }

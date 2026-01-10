@@ -3,14 +3,14 @@ import adminApi from '../adminApi';
 
 export default function useUsers({ page, pageSize, filters }) {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [totalPages, setTotalPages] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    banned: 0,
-    inactive: 0,
+    totalUsers: 0,
+    activeUsers: 0,
+    newUsers: 0,
   });
 
   const isMountedRef = useRef(true);
@@ -30,6 +30,7 @@ export default function useUsers({ page, pageSize, filters }) {
     const controller = new AbortController();
     controllerRef.current = controller;
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         page,
@@ -48,8 +49,8 @@ export default function useUsers({ page, pageSize, filters }) {
       setTotalUsers(data.totalElements || data.total || 0);
     } catch (err) {
       if (err?.name === 'AbortError' || err?.name === 'CanceledError') return;
-      console.error('Failed to load users:', err?.message || err);
       if (!isMountedRef.current) return;
+      setError(err?.message || 'Failed to load users');
       setUsers([]);
       setTotalPages(0);
       setTotalUsers(0);
@@ -78,7 +79,7 @@ export default function useUsers({ page, pageSize, filters }) {
       });
     } catch (err) {
       if (err?.name === 'AbortError' || err?.name === 'CanceledError') return;
-      console.error('Failed to load stats:', err);
+      // Failed to load stats
     }
   }, []);
 
@@ -95,37 +96,22 @@ export default function useUsers({ page, pageSize, filters }) {
   }, [loadStats, loadUsers]);
 
   const getUserDetails = useCallback(async (userId) => {
-    try {
-      const { data } = await adminApi.get(`/admin/users/${userId}`);
-      return data;
-    } catch (err) {
-      console.error('Failed to get user details:', err?.message || err);
-      throw err;
-    }
+    const { data } = await adminApi.get(`/admin/users/${userId}`);
+    return data;
   }, []);
 
   const updateUser = useCallback(
     async (userId, payload) => {
-      try {
-        await adminApi.put(`/admin/users/${userId}`, payload);
-        await refreshAll();
-      } catch (err) {
-        console.error('Failed to update user:', err?.message || err);
-        throw err;
-      }
+      await adminApi.put(`/admin/users/${userId}`, payload);
+      await refreshAll();
     },
     [refreshAll]
   );
 
   const deleteUser = useCallback(
     async (userId) => {
-      try {
-        await adminApi.delete(`/admin/users/${userId}`);
-        await refreshAll();
-      } catch (err) {
-        console.error('Failed to delete user:', err?.message || err);
-        throw err;
-      }
+      await adminApi.delete(`/admin/users/${userId}`);
+      await refreshAll();
     },
     [refreshAll]
   );
@@ -136,11 +122,11 @@ export default function useUsers({ page, pageSize, filters }) {
     totalPages,
     totalUsers,
     stats,
-    loadUsers,
-    loadStats,
-    refreshAll,
-    getUserDetails,
     updateUser,
     deleteUser,
+    refresh: loadUsers,
+    refreshAll,
+    getUserDetails,
+    error,
   };
 }

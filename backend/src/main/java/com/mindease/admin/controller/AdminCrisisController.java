@@ -38,9 +38,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
 @RequestMapping("/api/admin/crisis-flags")
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:5174" })
 public class AdminCrisisController {
 
     private final CrisisFlagRepository repo;

@@ -3,9 +3,9 @@
 import React from 'react';
 
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
-import Sidebar from './Sidebar';
+import ChatSidebar from './ChatSidebar';
 import ConnectionStatus from './ConnectionStatus';
 import '../styles/UserLayout.css';
 import { useTheme } from '../contexts/ThemeContext';
@@ -18,12 +18,26 @@ export const SidebarContext = React.createContext({
 export default function UserLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { theme } = useTheme();
+  const location = useLocation();
+
+  // Only chat routes have a sidebar (ChatSidebar with chat history)
+  // All other pages have NO sidebar - navigation is through navbar only
+  const isChatRoute = location.pathname.startsWith('/chat');
+
+  // Determine layout class based on route and sidebar state
+  const getLayoutClass = () => {
+    if (!isChatRoute) {
+      return 'no-sidebar'; // No sidebar on non-chat pages
+    }
+    return sidebarOpen ? 'sidebar-open' : 'sidebar-closed';
+  };
 
   return (
     <SidebarContext.Provider value={{ sidebarOpen, setSidebarOpen }}>
       <div className="app-layout" data-theme={theme}>
-        <Sidebar />
-        <div className={`layout-container ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        {/* ChatSidebar with chat history ONLY on chat routes */}
+        {isChatRoute && <ChatSidebar />}
+        <div className={`layout-container ${getLayoutClass()}`}>
           <Navbar />
           <ConnectionStatus />
           <main className="main-content">

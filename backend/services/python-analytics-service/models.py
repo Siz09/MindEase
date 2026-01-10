@@ -1,13 +1,13 @@
 # backend/services/python-analytics-service/models.py
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import Optional, Dict
 from datetime import date, datetime
 
 
 class ActiveUsersPoint(BaseModel):
     """Matches Java ActiveUsersPoint record"""
     day: date
-    active_users: int
+    activeUsers: int
 
 
 class AiUsagePoint(BaseModel):
@@ -19,8 +19,8 @@ class AiUsagePoint(BaseModel):
 class MoodCorrelationPoint(BaseModel):
     """Matches Java MoodCorrelationPoint record"""
     day: date
-    avg_mood: Optional[float]
-    chat_count: int
+    avgMood: Optional[float]
+    chatCount: int
 
 
 class AnalyticsRequest(BaseModel):

@@ -1,4 +1,4 @@
-import { Button } from '../shared';
+import Button from '../../../components/ui/Button';
 
 const UserActions = ({ user, onEdit, onDelete }) => {
   const handleEdit = (e) => {
@@ -16,11 +16,11 @@ const UserActions = ({ user, onEdit, onDelete }) => {
   };
 
   return (
-    <div className="admin-user-actions">
-      <Button variant="ghost" size="small" onClick={handleEdit} className="admin-user-action-btn">
+    <div className="flex items-center justify-end gap-2">
+      <Button variant="ghost" size="sm" onClick={handleEdit}>
         Edit
       </Button>
-      <Button variant="ghost" size="small" onClick={handleDelete} className="admin-user-action-btn">
+      <Button variant="ghost" size="sm" onClick={handleDelete}>
         Delete
       </Button>
     </div>

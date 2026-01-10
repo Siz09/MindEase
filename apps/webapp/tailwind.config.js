@@ -1,5 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  // Scope Tailwind `dark:` variants to the user app container only.
+  // Admin and auth pages should always render in light mode regardless of OS preference.
+  darkMode: ['class', '[data-theme="dark"]'],
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {

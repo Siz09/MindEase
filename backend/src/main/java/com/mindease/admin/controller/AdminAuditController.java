@@ -11,12 +11,14 @@ import org.springframework.data.domain.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/audit-logs")
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:5174" })
 public class AdminAuditController {
 
     private static final Logger log = LoggerFactory.getLogger(AdminAuditController.class);

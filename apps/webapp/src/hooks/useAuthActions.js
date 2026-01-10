@@ -62,14 +62,27 @@ export const useAuthActions = ({
 
         const role = userData?.role || userData?.authority;
         if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
-          const result = handleAuthSuccess(
-            jwtToken,
-            userData,
-            refreshTokenValue,
-            toastId,
-            'Signed in as admin'
-          );
-          return { ...result, isAdmin: true };
+          // Admin sessions should not be persisted into the user `token`/`refreshToken` keys.
+          // Otherwise, reopening the app at `/` will authenticate into the user UI using an admin JWT.
+          clearSessionState();
+          resetSessionFlags();
+
+          if (toastId) {
+            toast.update(toastId, {
+              render: 'Signed in as admin',
+              type: 'success',
+              isLoading: false,
+              autoClose: 3000,
+            });
+          }
+
+          return {
+            success: true,
+            user: userData,
+            token: jwtToken,
+            refreshToken: refreshTokenValue,
+            isAdmin: true,
+          };
         }
 
         return handleAuthSuccess(
@@ -104,7 +117,7 @@ export const useAuthActions = ({
         return { success: false, error: errorMessage, code: errorCode };
       }
     },
-    [t, getErrorMessage, handleAuthSuccess]
+    [t, getErrorMessage, handleAuthSuccess, clearSessionState, resetSessionFlags]
   );
 
   const loginAnonymously = useCallback(async () => {

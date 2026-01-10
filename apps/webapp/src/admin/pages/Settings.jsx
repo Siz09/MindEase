@@ -1,6 +1,3 @@
-'use client';
-
-import '../../styles/admin-settings.css';
 import useAdminSettings from '../hooks/useAdminSettings';
 import AdminSettingsActions from '../components/settings/AdminSettingsActions';
 import AdminSettingsNotification from '../components/settings/AdminSettingsNotification';
@@ -29,19 +26,20 @@ export default function Settings() {
   } = useAdminSettings();
 
   return (
-    <div className="admin-settings-page">
-      <div className="admin-settings-header">
-        <div>
-          <h1 className="admin-settings-title">Settings</h1>
-          <p className="admin-settings-subtitle">
-            Manage your admin preferences and system configuration
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <header className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Settings</h1>
+        <p className="mt-1 text-sm text-gray-600">
+          Manage your admin preferences and system configuration.
+        </p>
+      </header>
 
-      <AdminSettingsNotification notification={notification} onDismiss={() => setNotification(null)} />
+      <AdminSettingsNotification
+        notification={notification}
+        onDismiss={() => setNotification(null)}
+      />
 
-      <div className="admin-settings-content">
+      <div className="space-y-6">
         <CrisisThresholdCard crisisThreshold={crisisThreshold} onChange={setCrisisThreshold} />
 
         <AutoArchiveCard
@@ -65,7 +63,9 @@ export default function Settings() {
         />
 
         <DailyReportTimeCard dailyReportTime={dailyReportTime} onChange={setDailyReportTime} />
+      </div>
 
+      <div className="mt-8">
         <AdminSettingsActions onSave={save} onReset={reset} isLoading={isLoading} />
       </div>
     </div>

@@ -45,6 +45,47 @@
   color: var(--text-primary);
 }
 
+/* Desktop Navigation Links */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.navbar-nav-link {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: none;
+  border: none;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.navbar-nav-link:hover {
+  color: var(--primary-green);
+  background-color: var(--bg-secondary);
+}
+
+.navbar-nav-link.active {
+  color: var(--primary-green);
+  font-weight: 600;
+}
+
+.navbar-nav-link.active::after {
+  content: '';
+  position: absolute;
+  left: var(--spacing-md);
+  right: var(--spacing-md);
+  bottom: 0;
+  height: 2px;
+  background-color: var(--primary-green);
+  border-radius: var(--radius-sm);
+}
+
 /* Profile Section */
 .navbar-profile {
   position: relative;
