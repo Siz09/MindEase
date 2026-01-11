@@ -34,6 +34,7 @@ export default function SystemMonitoring() {
   const [loading, setLoading] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const [sending, setSending] = useState(false);
+  const [announcementError, setAnnouncementError] = useState(null);
 
   const loadSystemStatus = useCallback(async () => {
     setLoading(true);
@@ -69,11 +70,14 @@ export default function SystemMonitoring() {
     if (!announcement.trim()) return;
 
     setSending(true);
+    setAnnouncementError(null);
     try {
       await adminApi.post('/admin/system/notifications', { message: announcement });
       setAnnouncement('');
-    } catch {
-      // Ignore send notification errors
+    } catch (err) {
+      const errorMessage = err?.message || String(err) || 'Failed to send announcement';
+      setAnnouncementError(errorMessage);
+      console.error('Failed to send announcement:', err);
     } finally {
       setSending(false);
     }
@@ -136,17 +140,14 @@ export default function SystemMonitoring() {
     {
       label: 'CPU Usage',
       value: health.cpu || 0,
-      color: health.cpu > 80 ? 'destructive' : health.cpu > 60 ? 'default' : 'default',
     },
     {
       label: 'Memory Usage',
       value: health.memory || 0,
-      color: health.memory > 80 ? 'destructive' : health.memory > 60 ? 'default' : 'default',
     },
     {
       label: 'Disk Usage',
       value: health.disk || 0,
-      color: health.disk > 80 ? 'destructive' : health.disk > 60 ? 'default' : 'default',
     },
   ];
 
@@ -242,6 +243,12 @@ export default function SystemMonitoring() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSendAnnouncement} className="space-y-4">
+            {announcementError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{announcementError}</AlertDescription>
+              </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="announcement">Message</Label>
               <Input

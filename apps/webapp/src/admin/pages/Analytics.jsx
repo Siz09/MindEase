@@ -153,7 +153,6 @@ export default function Analytics() {
                     <Card
                       key={metric.label}
                       className="transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
-                      style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">

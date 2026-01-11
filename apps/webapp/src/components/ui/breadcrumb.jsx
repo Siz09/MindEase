@@ -47,7 +47,6 @@ function BreadcrumbPage({ className, ...props }) {
   return (
     <span
       data-slot="breadcrumb-page"
-      role="link"
       aria-disabled="true"
       aria-current="page"
       className={cn('text-foreground font-normal', className)}
@@ -79,8 +78,7 @@ function BreadcrumbEllipsis({ className, ...props }) {
       className={cn('flex size-9 items-center justify-center', className)}
       {...props}
     >
-      <MoreHorizontal className="size-4" />
-      <span className="sr-only">More</span>
+      <MoreHorizontal className="size-4" aria-hidden="true" />
     </span>
   );
 }

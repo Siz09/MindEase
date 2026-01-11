@@ -9,9 +9,12 @@ import { Label } from '../../../components/ui/Label';
 import { Badge } from '../../../components/ui/Badge';
 import { Slider } from '../../../components/ui/slider';
 import { AlertTriangle } from 'lucide-react';
+import PropTypes from 'prop-types';
 
 const CrisisThresholdCard = ({ crisisThreshold, onChange }) => {
-  const level = crisisThreshold > 7 ? 'High' : crisisThreshold > 4 ? 'Medium' : 'Low';
+  // Clamp and default crisisThreshold to valid range (1-10)
+  const safeThreshold = Math.max(1, Math.min(10, Number(crisisThreshold) || 1));
+  const level = safeThreshold > 7 ? 'High' : safeThreshold > 4 ? 'Medium' : 'Low';
   const levelStyles = {
     High: 'bg-red-100 text-red-800 hover:bg-red-100',
     Medium: 'bg-amber-100 text-amber-800 hover:bg-amber-100',
@@ -36,7 +39,7 @@ const CrisisThresholdCard = ({ crisisThreshold, onChange }) => {
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <Label htmlFor="crisis-threshold-slider" className="text-sm font-medium">
-            Sensitivity: {crisisThreshold}/10
+            Sensitivity: {safeThreshold}/10
           </Label>
           <Badge className={levelStyles[level]}>{level}</Badge>
         </div>
@@ -44,7 +47,7 @@ const CrisisThresholdCard = ({ crisisThreshold, onChange }) => {
           id="crisis-threshold-slider"
           min={1}
           max={10}
-          value={[crisisThreshold]}
+          value={[safeThreshold]}
           onValueChange={([value]) => onChange(value)}
           step={1}
           className="w-full"
@@ -57,6 +60,11 @@ const CrisisThresholdCard = ({ crisisThreshold, onChange }) => {
       </CardContent>
     </Card>
   );
+};
+
+CrisisThresholdCard.propTypes = {
+  crisisThreshold: PropTypes.number.isRequired,
+  onChange: PropTypes.func.isRequired,
 };
 
 export default CrisisThresholdCard;

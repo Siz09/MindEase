@@ -8,7 +8,6 @@ import {
 } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import {
   Table,
   TableBody,
@@ -108,7 +107,14 @@ export default function CrisisMonitoring() {
       const onFlag = (ev) => {
         try {
           const flag = JSON.parse(ev.data);
-          if (!flag || !flag.userId || typeof flag.riskScore !== 'number') return;
+          if (
+            !flag ||
+            !flag.userId ||
+            typeof flag.riskScore !== 'number' ||
+            !flag.id ||
+            (typeof flag.id === 'string' && !flag.id.trim())
+          )
+            return;
           const flagLevel = getRiskLevel(flag.riskScore * 100).toLowerCase();
           const matchesFilter = filters.riskLevel === 'all' || filters.riskLevel === flagLevel;
           if (pageRef.current === 0 && matchesFilter) {
@@ -211,7 +217,6 @@ export default function CrisisMonitoring() {
           <Card
             key={stat.label}
             className={`${stat.bg} transition-all duration-300 hover:shadow-md hover:scale-[1.02]`}
-            style={{ animationDelay: `${index * 0.1}s` }}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -303,11 +308,10 @@ export default function CrisisMonitoring() {
                     </TableRow>
                   ))
                 ) : flags.length > 0 ? (
-                  flags.map((flag, index) => (
+                  flags.map((flag) => (
                     <TableRow
                       key={flag.id}
                       className="cursor-pointer transition-all duration-200 hover:bg-muted/50"
-                      style={{ animationDelay: `${index * 0.05}s` }}
                       onClick={() => {
                         setSelectedFlag(flag);
                         setShowModal(true);
@@ -408,7 +412,7 @@ export default function CrisisMonitoring() {
               <div>
                 <Label className="text-xs text-muted-foreground">Risk Score</Label>
                 <p className="mt-1 text-sm font-medium">
-                  {(selectedFlag.riskScore * 100).toFixed(1)} / 10
+                  {(selectedFlag.riskScore * 10).toFixed(1)} / 10
                 </p>
               </div>
               <div>

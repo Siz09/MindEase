@@ -30,22 +30,25 @@ function PaginationItem({ ...props }) {
   return <li data-slot="pagination-item" {...props} />;
 }
 
-function PaginationLink({ className, isActive, size = 'icon', ...props }) {
-  return (
-    <a
-      aria-current={isActive ? 'page' : undefined}
-      data-slot="pagination-link"
-      data-active={isActive}
-      className={cn(
-        buttonVariants({
-          variant: isActive ? 'outline' : 'ghost',
-          size,
-        }),
-        className
-      )}
-      {...props}
-    />
-  );
+function PaginationLink({ className, isActive, size = 'icon', href, ...props }) {
+  const baseProps = {
+    'aria-current': isActive ? 'page' : undefined,
+    'data-slot': 'pagination-link',
+    'data-active': isActive,
+    className: cn(
+      buttonVariants({
+        variant: isActive ? 'outline' : 'ghost',
+        size,
+      }),
+      className
+    ),
+  };
+
+  if (href) {
+    return <a href={href} {...baseProps} {...props} />;
+  }
+
+  return <button type="button" {...baseProps} {...props} />;
 }
 
 function PaginationPrevious({ className, ...props }) {
@@ -79,12 +82,11 @@ function PaginationNext({ className, ...props }) {
 function PaginationEllipsis({ className, ...props }) {
   return (
     <span
-      aria-hidden
       data-slot="pagination-ellipsis"
       className={cn('flex size-9 items-center justify-center', className)}
       {...props}
     >
-      <MoreHorizontalIcon className="size-4" />
+      <MoreHorizontalIcon className="size-4" aria-hidden="true" />
       <span className="sr-only">More pages</span>
     </span>
   );

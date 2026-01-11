@@ -24,7 +24,7 @@
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
     --radius: 0.625rem;
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: oklch(98% 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
     --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -173,11 +173,8 @@
     letter-spacing: var(--tracking-normal);
   }
 
-  /* Admin UI specific theme variables - Always light theme - Industry Standard Design */
-  .admin-ui,
-  .admin-ui[data-theme='dark'],
-  .admin-ui.dark {
-    /* Force light theme for admin UI - ignore dark mode */
+  /* Admin UI specific theme variables - Industry Standard Design */
+  .admin-ui[data-theme='light'] {
     color-scheme: light;
     /* Clean, professional color palette */
     --background: 0 0% 100%;
@@ -311,23 +308,10 @@
   /* Admin UI - Professional, clean design */
   .admin-ui {
     color: hsl(var(--foreground));
-    color-scheme: light;
     background: hsl(var(--background));
     font-family:
       -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
       'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  }
-
-  /* Clean link styling */
-  .admin-ui a {
-    color: hsl(var(--primary));
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  .admin-ui a:hover {
-    color: hsl(var(--primary) / 0.8);
-    text-decoration: underline;
   }
 
   /* Professional card design with subtle shadow and visible border */
@@ -396,63 +380,65 @@
     backdrop-filter: blur(8px);
   }
 
-  /* Page transition animations */
-  .admin-ui main > * {
-    animation: fadeIn 0.3s ease-in-out;
-  }
+  @media (prefers-reduced-motion: no-preference) {
+    /* Page transition animations */
+    .admin-ui main > * {
+      animation: fadeIn 0.3s ease-in-out;
+    }
 
-  /* Card entrance animations */
-  .admin-ui [data-slot='card'] {
-    animation: slideUp 0.4s ease-out backwards;
-  }
+    /* Card entrance animations */
+    .admin-ui [data-slot='card'] {
+      animation: slideUp 0.4s ease-out backwards;
+    }
 
-  .admin-ui [data-slot='card']:nth-child(1) {
-    animation-delay: 0.05s;
-  }
-  .admin-ui [data-slot='card']:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-  .admin-ui [data-slot='card']:nth-child(3) {
-    animation-delay: 0.15s;
-  }
-  .admin-ui [data-slot='card']:nth-child(4) {
-    animation-delay: 0.2s;
-  }
-  .admin-ui [data-slot='card']:nth-child(5) {
-    animation-delay: 0.25s;
-  }
-  .admin-ui [data-slot='card']:nth-child(6) {
-    animation-delay: 0.3s;
-  }
+    .admin-ui [data-slot='card']:nth-child(1) {
+      animation-delay: 0.05s;
+    }
+    .admin-ui [data-slot='card']:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+    .admin-ui [data-slot='card']:nth-child(3) {
+      animation-delay: 0.15s;
+    }
+    .admin-ui [data-slot='card']:nth-child(4) {
+      animation-delay: 0.2s;
+    }
+    .admin-ui [data-slot='card']:nth-child(5) {
+      animation-delay: 0.25s;
+    }
+    .admin-ui [data-slot='card']:nth-child(6) {
+      animation-delay: 0.3s;
+    }
 
-  /* Table row animations */
-  .admin-ui [data-slot='table-row'] {
-    animation: fadeInRow 0.3s ease-out backwards;
-  }
+    /* Table row animations */
+    .admin-ui [data-slot='table-row'] {
+      animation: fadeInRow 0.3s ease-out backwards;
+    }
 
-  .admin-ui [data-slot='table-row']:nth-child(1) {
-    animation-delay: 0.05s;
-  }
-  .admin-ui [data-slot='table-row']:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-  .admin-ui [data-slot='table-row']:nth-child(3) {
-    animation-delay: 0.15s;
-  }
-  .admin-ui [data-slot='table-row']:nth-child(4) {
-    animation-delay: 0.2s;
-  }
-  .admin-ui [data-slot='table-row']:nth-child(5) {
-    animation-delay: 0.25s;
-  }
-  .admin-ui [data-slot='table-row']:nth-child(6) {
-    animation-delay: 0.3s;
-  }
-  .admin-ui [data-slot='table-row']:nth-child(7) {
-    animation-delay: 0.35s;
-  }
-  .admin-ui [data-slot='table-row']:nth-child(8) {
-    animation-delay: 0.4s;
+    .admin-ui [data-slot='table-row']:nth-child(1) {
+      animation-delay: 0.05s;
+    }
+    .admin-ui [data-slot='table-row']:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+    .admin-ui [data-slot='table-row']:nth-child(3) {
+      animation-delay: 0.15s;
+    }
+    .admin-ui [data-slot='table-row']:nth-child(4) {
+      animation-delay: 0.2s;
+    }
+    .admin-ui [data-slot='table-row']:nth-child(5) {
+      animation-delay: 0.25s;
+    }
+    .admin-ui [data-slot='table-row']:nth-child(6) {
+      animation-delay: 0.3s;
+    }
+    .admin-ui [data-slot='table-row']:nth-child(7) {
+      animation-delay: 0.35s;
+    }
+    .admin-ui [data-slot='table-row']:nth-child(8) {
+      animation-delay: 0.4s;
+    }
   }
 
   /* Smooth button interactions */

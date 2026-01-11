@@ -71,13 +71,20 @@ const AuditLogsTable = ({ rows, loading, error }) => {
                   </TableCell>
                 </TableRow>
               ) : (
-                safeRows.map((r) => (
-                  <TableRow key={r.id}>
+                safeRows.map((r, index) => (
+                  <TableRow key={r.id || `audit-${index}-${r.userId || 'unknown'}`}>
                     <TableCell className="font-medium">{r.userId || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{r.actionType || 'N/A'}</Badge>
                     </TableCell>
-                    <TableCell className="max-w-md truncate" title={r.details}>
+                    <TableCell
+                      className="max-w-md truncate"
+                      title={
+                        r.details && typeof r.details === 'string' && r.details.trim()
+                          ? r.details
+                          : undefined
+                      }
+                    >
                       {r.details || 'N/A'}
                     </TableCell>
                     <TableCell>{formatCreatedAt(r.createdAt)}</TableCell>

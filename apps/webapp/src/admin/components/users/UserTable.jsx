@@ -125,10 +125,9 @@ const UserTable = ({
               ) : users && users.length > 0 ? (
                 users.map((user, index) => (
                   <TableRow
-                    key={user.id || user.userId}
+                    key={user.id || user.userId || user.email || `user-${index}`}
                     className="cursor-pointer transition-all duration-200 hover:bg-muted/50"
                     onClick={() => onUserClick?.(user)}
-                    style={{ animationDelay: `${index * 0.05}s` }}
                   >
                     <TableCell className="font-medium">
                       {user.email || user.userId || 'Unknown'}

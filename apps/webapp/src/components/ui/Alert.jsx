@@ -61,7 +61,6 @@ function AlertIndicator({ variant = 'default', isPulsing = false, className, ...
     destructive: 'rgb(239 68 68)',
     warning: 'rgb(217 119 6)',
     success: 'rgb(34 197 94)',
-    error: 'rgb(239 68 68)',
   };
 
   const color = colorMap[variant] || colorMap.default;

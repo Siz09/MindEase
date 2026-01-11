@@ -19,6 +19,17 @@ export function useAnimatedCounter(target, duration = 1000, enabled = true) {
       return;
     }
 
+    // Validate duration - if invalid, immediately set count and return
+    if (duration <= 0) {
+      setCount(target);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      return;
+    }
+
+    const safeDuration = Math.max(duration, 1);
+
     // Cancel any ongoing animation
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -33,7 +44,7 @@ export function useAnimatedCounter(target, duration = 1000, enabled = true) {
       }
 
       const elapsed = currentTime - startTimeRef.current;
-      const progress = Math.min(elapsed / duration, 1);
+      const progress = Math.min(elapsed / safeDuration, 1);
 
       // Easing function (ease-out)
       const easeOut = 1 - Math.pow(1 - progress, 3);

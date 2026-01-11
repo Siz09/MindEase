@@ -1,5 +1,3 @@
-'use client';
-
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from './AdminAuthContext';
 import {
@@ -40,6 +38,7 @@ import {
 import { Avatar, AvatarFallback } from '../components/ui/Avatar';
 import { cn } from '../lib/utils';
 import { useSidebar } from '../components/ui/sidebar';
+import { toast } from 'react-toastify';
 
 const navIcons = {
   dashboard: LayoutDashboard,
@@ -124,13 +123,15 @@ function NavUser({ user, onLogout, onSettings }) {
                 <BadgeCheck className="mr-2 h-4 w-4" />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
                 <CreditCard className="mr-2 h-4 w-4" />
                 Billing
+                <span className="ml-auto text-xs text-muted-foreground">Coming Soon</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
                 <Bell className="mr-2 h-4 w-4" />
                 Notifications
+                <span className="ml-auto text-xs text-muted-foreground">Coming Soon</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -168,8 +169,9 @@ export default function AdminSidebar() {
     try {
       await logout();
       navigate('/login');
-    } catch {
-      // Logout failed, user will stay on current page
+    } catch (err) {
+      toast.error(err?.message || 'Failed to log out. Please try again.');
+      console.error('Logout error:', err);
     }
   };
 

@@ -225,7 +225,10 @@ const UserModals = ({
             <Button variant="ghost" onClick={onCancelBan}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={onConfirmBan}>
+            <Button
+              variant={userToBan?.status === 'banned' ? 'default' : 'destructive'}
+              onClick={onConfirmBan}
+            >
               {userToBan?.status === 'banned' ? 'Unban' : 'Ban'} User
             </Button>
           </DialogFooter>

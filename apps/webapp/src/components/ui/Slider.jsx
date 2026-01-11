@@ -5,17 +5,16 @@ import * as SliderPrimitive from '@radix-ui/react-slider';
 
 import { cn } from '../../lib/utils';
 
-function Slider({ className, defaultValue, value, min = 0, max = 100, ...props }) {
+function Slider({ className, defaultValue, value, onValueChange, min = 0, max = 100, ...props }) {
   const _values = React.useMemo(
-    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
+    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min]),
     [value, defaultValue, min, max]
   );
 
   return (
     <SliderPrimitive.Root
       data-slot="slider"
-      defaultValue={defaultValue}
-      value={value}
+      {...(value !== undefined && onValueChange ? { value, onValueChange } : { defaultValue })}
       min={min}
       max={max}
       className={cn(
@@ -37,7 +36,7 @@ function Slider({ className, defaultValue, value, min = 0, max = 100, ...props }
           )}
         />
       </SliderPrimitive.Track>
-      {Array.from({ length: _values.length }, (_, index) => (
+      {_values.map((_, index) => (
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}

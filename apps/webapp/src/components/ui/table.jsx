@@ -4,14 +4,16 @@ import * as React from 'react';
 
 import { cn } from '../../lib/utils';
 
-function Table({ className, ...props }) {
+function Table({ className, children, ...props }) {
   return (
     <div data-slot="table-container" className="relative w-full overflow-x-auto">
       <table
         data-slot="table"
         className={cn('w-full caption-bottom text-sm', className)}
         {...props}
-      />
+      >
+        {children}
+      </table>
     </div>
   );
 }
@@ -30,16 +32,18 @@ function TableBody({ className, ...props }) {
   );
 }
 
-function TableFooter({ className, ...props }) {
+function TableFooter({ className, children, ...props }) {
   return (
     <tfoot
       data-slot="table-footer"
       className={cn(
-        'bg-muted/50 border-t border-border font-medium [&>tr]:last:border-b-0',
+        'bg-muted/50 border-t border-border font-medium [&>tr:last-child]:border-b-0',
         className
       )}
       {...props}
-    />
+    >
+      {children}
+    </tfoot>
   );
 }
 

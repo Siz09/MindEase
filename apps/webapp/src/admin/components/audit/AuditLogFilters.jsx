@@ -76,7 +76,7 @@ const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={onClear}>
+            <Button variant="outline" size="icon" onClick={onClear} aria-label="Clear filters">
               <X className="h-4 w-4" />
             </Button>
             <Button variant="outline" onClick={onExport}>

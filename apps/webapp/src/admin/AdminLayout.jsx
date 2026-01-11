@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '../components/ui/sidebar';
 import { Separator } from '../components/ui/Separator';
@@ -85,7 +85,7 @@ export default function AdminLayout() {
                         <BreadcrumbPage className="font-medium">{crumb.label}</BreadcrumbPage>
                       ) : (
                         <BreadcrumbLink asChild>
-                          <a href={crumb.path}>{crumb.label}</a>
+                          <Link to={crumb.path}>{crumb.label}</Link>
                         </BreadcrumbLink>
                       )}
                     </BreadcrumbItem>
