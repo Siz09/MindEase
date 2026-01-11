@@ -123,64 +123,72 @@ const UserTable = ({
                   </TableRow>
                 ))
               ) : users && users.length > 0 ? (
-                users.map((user, index) => (
-                  <TableRow
-                    key={user.id || user.userId || user.email || `user-${index}`}
-                    className="cursor-pointer transition-all duration-200 hover:bg-muted/50"
-                    onClick={() => onUserClick?.(user)}
-                  >
-                    <TableCell className="font-medium">
-                      {user.email || user.userId || 'Unknown'}
-                    </TableCell>
-                    <TableCell>
-                      {user.createdAt && !isNaN(new Date(user.createdAt))
-                        ? new Date(user.createdAt).toLocaleDateString()
-                        : 'N/A'}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(user.status)}</TableCell>
-                    <TableCell>{getPlanBadge(user.subscriptionPlan)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{user.subscriptionStatus || 'none'}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.crisisFlags > 0 ? (
-                        <Badge variant="destructive">{user.crisisFlags}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">0</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onEditUser?.(user);
-                            }}
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteUser?.(user);
-                            }}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                users
+                  .filter((user) => {
+                    if (!user.id && !user.userId) {
+                      console.warn('User missing stable ID (id or userId), filtering out:', user);
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((user) => (
+                    <TableRow
+                      key={user.id || user.userId}
+                      className="cursor-pointer transition-all duration-200 hover:bg-muted/50"
+                      onClick={() => onUserClick?.(user)}
+                    >
+                      <TableCell className="font-medium">
+                        {user.email || user.userId || 'Unknown'}
+                      </TableCell>
+                      <TableCell>
+                        {user.createdAt && !isNaN(new Date(user.createdAt))
+                          ? new Date(user.createdAt).toLocaleDateString()
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(user.status)}</TableCell>
+                      <TableCell>{getPlanBadge(user.subscriptionPlan)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{user.subscriptionStatus || 'none'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {user.crisisFlags > 0 ? (
+                          <Badge variant="destructive">{user.crisisFlags}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEditUser?.(user);
+                              }}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteUser?.(user);
+                              }}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-8">

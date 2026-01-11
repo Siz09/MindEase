@@ -6,10 +6,12 @@ import * as SliderPrimitive from '@radix-ui/react-slider';
 import { cn } from '../../lib/utils';
 
 function Slider({ className, defaultValue, value, onValueChange, min = 0, max = 100, ...props }) {
-  const _values = React.useMemo(
-    () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min]),
-    [value, defaultValue, min, max]
-  );
+  const _values = React.useMemo(() => {
+    if (value !== undefined) {
+      return Array.isArray(value) ? value : [min];
+    }
+    return Array.isArray(defaultValue) ? defaultValue : [min];
+  }, [value, defaultValue, min]);
 
   return (
     <SliderPrimitive.Root

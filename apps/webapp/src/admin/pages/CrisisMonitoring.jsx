@@ -412,7 +412,7 @@ export default function CrisisMonitoring() {
               <div>
                 <Label className="text-xs text-muted-foreground">Risk Score</Label>
                 <p className="mt-1 text-sm font-medium">
-                  {(selectedFlag.riskScore * 10).toFixed(1)} / 10
+                  {(selectedFlag.riskScore * 100).toFixed(1)} / 100
                 </p>
               </div>
               <div>
