@@ -8,9 +8,12 @@ import { cn } from '../../lib/utils';
 function Slider({ className, defaultValue, value, onValueChange, min = 0, max = 100, ...props }) {
   const _values = React.useMemo(() => {
     if (value !== undefined) {
-      return Array.isArray(value) ? value : [min];
+      return Array.isArray(value) ? value : [value];
     }
-    return Array.isArray(defaultValue) ? defaultValue : [min];
+    if (defaultValue !== undefined) {
+      return Array.isArray(defaultValue) ? defaultValue : [defaultValue];
+    }
+    return [min];
   }, [value, defaultValue, min]);
 
   return (

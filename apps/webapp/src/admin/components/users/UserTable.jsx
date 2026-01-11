@@ -126,7 +126,10 @@ const UserTable = ({
                 users
                   .filter((user) => {
                     if (!user.id && !user.userId) {
-                      console.warn('User missing stable ID (id or userId), filtering out:', user);
+                      console.warn(
+                        'User missing stable ID (id or userId), filtering out:',
+                        user.id || user.userId || 'unknown'
+                      );
                       return false;
                     }
                     return true;

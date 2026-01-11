@@ -54,7 +54,11 @@ const UserFilters = ({ filters, onSearch, onStatusChange, onClear }) => {
           Filter by status
         </label>
         <Select value={safeFilters.status} onValueChange={handleStatusChange}>
-          <SelectTrigger id="user-status-select" className="w-[180px]">
+          <SelectTrigger
+            id="user-status-select"
+            className="w-[180px]"
+            aria-label="Filter by status"
+          >
             <SelectValue placeholder="All status" />
           </SelectTrigger>
           <SelectContent>
