@@ -1,8 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button, Badge, FilterBar, Select, Input, Modal, Card } from '../components/shared';
-import Toast from '../components/shared/Toast';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { Input } from '../../components/ui/Input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import { Alert, AlertDescription } from '../../components/ui/Alert';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Label } from '../../components/ui/Label';
+import { AlertTriangle, Plus, Search, X, Edit, Trash2, Star } from 'lucide-react';
 import ContentForm from '../components/ContentForm';
 import adminApi from '../adminApi';
 
@@ -11,24 +39,17 @@ export default function ContentLibrary() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
-
   const [filters, setFilters] = useState({
     search: '',
     category: 'all',
   });
-
   const [selectedContent, setSelectedContent] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => {
-    loadContent();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, filters]);
-
-  const loadContent = async () => {
+  const loadContent = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -39,11 +60,9 @@ export default function ContentLibrary() {
       if (filters.category !== 'all') params.append('category', filters.category);
 
       const { data } = await adminApi.get(`/admin/content?${params.toString()}`);
-
       setContent(Array.isArray(data) ? data : data.content || []);
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
-      setError('Unable to load content. ' + errorMessage);
+    } catch {
+      setError('Unable to load content');
       setToast({
         type: 'error',
         message: 'Unable to load content. Please try again.',
@@ -51,7 +70,11 @@ export default function ContentLibrary() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, filters]);
+
+  useEffect(() => {
+    loadContent();
+  }, [loadContent]);
 
   const handleDeleteContent = async (contentId) => {
     if (!window.confirm('Are you sure you want to delete this content?')) return;
@@ -75,7 +98,7 @@ export default function ContentLibrary() {
   const handleEditClick = (item) => {
     setEditingItem(item);
     setShowForm(true);
-    setShowModal(false); // Close details modal if open
+    setShowModal(false);
   };
 
   const handleFormSubmit = async (formData) => {
@@ -97,314 +120,229 @@ export default function ContentLibrary() {
     }
   };
 
-  const handleContentClick = (item) => {
-    setSelectedContent(item);
-    setShowModal(true);
-  };
-
-  const tabs = [
-    { id: 'all', label: 'All Content' },
-    { id: 'articles', label: 'Articles' },
-    { id: 'exercises', label: 'Exercises' },
-    { id: 'tools', label: 'Tools' },
-  ];
-
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Content Library</h1>
-        <p className="page-subtitle">Manage wellness resources, articles, and exercises</p>
-        <div className="page-actions">
-          <Button variant="primary" onClick={handleCreateClick}>
-            + Create New Content
-          </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Content Library</h1>
+          <p className="text-muted-foreground">
+            Manage wellness resources, articles, and exercises
+          </p>
         </div>
+        <Button onClick={handleCreateClick}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create New Content
+        </Button>
       </div>
 
       {error && (
-        <div
-          style={{
-            backgroundColor: '#fee2e2',
-            border: '1px solid #ef4444',
-            color: '#b91c1c',
-            padding: '1rem',
-            borderRadius: '0.5rem',
-            marginBottom: '1rem',
-          }}
-        >
-          <strong>Error:</strong> {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <div
-        className="bento-card"
-        style={{
-          marginBottom: 'var(--spacing-lg)',
-          display: 'flex',
-          borderBottom: '1px solid var(--gray-light)',
-          padding: 0,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--gray-light)',
-            gap: 'var(--spacing-lg)',
-            width: '100%',
-            padding: '0 var(--spacing-lg)',
-          }}
-        >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: 'var(--spacing-md) 0',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                fontWeight: activeTab === tab.id ? '600' : '400',
-                color: activeTab === tab.id ? 'var(--primary)' : 'var(--gray)',
-                borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : 'none',
-                transition: 'var(--transition-fast)',
-              }}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">All Content</TabsTrigger>
+          <TabsTrigger value="articles">Articles</TabsTrigger>
+          <TabsTrigger value="exercises">Exercises</TabsTrigger>
+          <TabsTrigger value="tools">Tools</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by title or description..."
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                className="pl-9"
+              />
+            </div>
+            <Select
+              value={filters.category}
+              onValueChange={(value) => setFilters({ ...filters, category: value })}
             >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-        <FilterBar>
-          <Input
-            placeholder="Search by title or description..."
-            value={filters.search}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            style={{ flex: 1, maxWidth: '300px' }}
-          />
-          <Select
-            value={filters.category}
-            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-            options={[
-              { value: 'all', label: 'All Categories' },
-              { value: 'mental-health', label: 'Mental Health' },
-              { value: 'meditation', label: 'Meditation' },
-              { value: 'anxiety', label: 'Anxiety' },
-              { value: 'stress', label: 'Stress' },
-              { value: 'sleep', label: 'Sleep' },
-            ]}
-            style={{ width: '180px' }}
-          />
-          <Button variant="ghost" onClick={() => setFilters({ search: '', category: 'all' })}>
-            Clear
-          </Button>
-        </FilterBar>
-      </div>
-
-      <div className="bento-card">
-        {loading ? (
-          <div style={{ textAlign: 'center', color: 'var(--gray)', padding: 'var(--spacing-2xl)' }}>
-            Loading content...
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="mental-health">Mental Health</SelectItem>
+                <SelectItem value="meditation">Meditation</SelectItem>
+                <SelectItem value="anxiety">Anxiety</SelectItem>
+                <SelectItem value="stress">Stress</SelectItem>
+                <SelectItem value="sleep">Sleep</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setFilters({ search: '', category: 'all' })}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-        ) : content.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--gray)', padding: 'var(--spacing-2xl)' }}>
-            No content found
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: 'var(--spacing-lg)',
-              padding: 'var(--spacing-lg)',
-            }}
-          >
-            {content.map((item) => (
-              <Card
-                key={item.id}
-                header={
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div className="card-header-title" style={{ fontSize: '14px' }}>
-                      {item.title}
+
+          {loading ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-4 w-full" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-32 w-full mb-2" />
+                    <Skeleton className="h-3 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : content.length === 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <p className="text-muted-foreground">No content found</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {content.map((item) => (
+                <Card
+                  key={item.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => {
+                    setSelectedContent(item);
+                    setShowModal(true);
+                  }}
+                >
+                  {item.imageUrl && (
+                    <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title || 'Content image'}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
-                  </div>
-                }
-                className="card"
-                style={{ cursor: 'pointer' }}
-                onClick={() => handleContentClick(item)}
-              >
-                {item.imageUrl && (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title || 'Content image'}
-                    style={{
-                      width: '100%',
-                      height: '150px',
-                      backgroundColor: 'var(--gray-lighter)',
-                      borderRadius: 'var(--radius-md)',
-                      marginBottom: 'var(--spacing-md)',
-                      objectFit: 'cover',
-                    }}
-                  />
-                )}
+                  )}
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-base">{item.title}</CardTitle>
+                      <Badge variant="outline">{item.type || 'Content'}</Badge>
+                    </div>
+                    <CardDescription className="line-clamp-2">
+                      {item.description || 'No description'}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1 text-amber-600">
+                        <Star className="h-3 w-3 fill-current" />
+                        <span>{item.rating || 0}</span>
+                        <span className="text-muted-foreground">({item.reviewCount || 0})</span>
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {item.category || 'Uncategorized'}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(item);
+                        }}
+                      >
+                        <Edit className="mr-2 h-3 w-3" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteContent(item.id);
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-3 w-3" />
+                        Delete
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
-                <p
-                  style={{
-                    fontSize: '12px',
-                    color: 'var(--gray)',
-                    margin: '0 0 var(--spacing-sm) 0',
-                  }}
-                >
-                  {item.category || 'Uncategorized'}
-                </p>
-
-                <p
-                  style={{
-                    fontSize: '13px',
-                    color: 'var(--dark)',
-                    lineHeight: '1.5',
-                    margin: '0 0 var(--spacing-md) 0',
-                    display: '-webkit-box',
-                    WebkitLineClamp: '2',
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {item.description || 'No description'}
-                </p>
-
-                <div
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                >
-                  <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
-                    <span style={{ fontSize: '12px', color: '#fbbf24' }}>★</span>
-                    <span style={{ fontSize: '12px', color: 'var(--gray)' }}>
-                      {item.rating || 0} ({item.reviewCount || 0})
-                    </span>
-                  </div>
-                  <Badge type="info" style={{ fontSize: '10px' }}>
-                    {item.type || 'Content'}
-                  </Badge>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedContent?.title || 'Content Details'}</DialogTitle>
+            <DialogDescription>View and manage content information</DialogDescription>
+          </DialogHeader>
+          {selectedContent && (
+            <div className="space-y-4">
+              {selectedContent.imageUrl && (
+                <img
+                  src={selectedContent.imageUrl}
+                  alt={selectedContent.title}
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+              )}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Type</Label>
+                  <p className="mt-1">
+                    <Badge>{selectedContent.type || 'Content'}</Badge>
+                  </p>
                 </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 'var(--spacing-sm)',
-                    marginTop: 'var(--spacing-md)',
-                    paddingTop: 'var(--spacing-md)',
-                    borderTop: '1px solid var(--gray-light)',
-                  }}
-                >
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    style={{ flex: 1 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditClick(item);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteContent(item.id);
-                    }}
-                    style={{ flex: 1 }}
-                  >
-                    Delete
-                  </Button>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Category</Label>
+                  <p className="mt-1 text-sm">{selectedContent.category || 'Uncategorized'}</p>
                 </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Content Detail Modal */}
-      <Modal
-        isOpen={showModal}
-        title={selectedContent?.title || 'Content Details'}
-        onClose={() => setShowModal(false)}
-        footer={
-          <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end' }}>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Rating</Label>
+                  <p className="mt-1 text-sm flex items-center gap-1">
+                    <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                    {selectedContent.rating || 0} ({selectedContent.reviewCount || 0} reviews)
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Created</Label>
+                  <p className="mt-1 text-sm">
+                    {selectedContent.createdAt
+                      ? new Date(selectedContent.createdAt).toLocaleString()
+                      : 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Description</Label>
+                <p className="mt-1 text-sm leading-relaxed">
+                  {selectedContent.description || 'No description provided'}
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
             <Button variant="ghost" onClick={() => setShowModal(false)}>
               Close
             </Button>
-            <Button variant="secondary" onClick={() => handleEditClick(selectedContent)}>
+            <Button variant="outline" onClick={() => handleEditClick(selectedContent)}>
               Edit
             </Button>
-            <Button variant="danger" onClick={() => handleDeleteContent(selectedContent?.id)}>
+            <Button variant="destructive" onClick={() => handleDeleteContent(selectedContent?.id)}>
               Delete
             </Button>
-          </div>
-        }
-      >
-        {selectedContent && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-            {selectedContent.imageUrl && (
-              <img
-                src={selectedContent.imageUrl || '/placeholder.svg'}
-                alt={selectedContent.title}
-                style={{
-                  width: '100%',
-                  height: '200px',
-                  objectFit: 'cover',
-                  borderRadius: 'var(--radius-md)',
-                }}
-              />
-            )}
-
-            <div>
-              <label style={{ fontWeight: 600, color: 'var(--gray)' }}>Type</label>
-              <p style={{ margin: '4px 0 0 0' }}>
-                <Badge type="info">{selectedContent.type || 'Content'}</Badge>
-              </p>
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: 'var(--gray)' }}>Category</label>
-              <p style={{ margin: '4px 0 0 0', color: 'var(--dark)' }}>
-                {selectedContent.category || 'Uncategorized'}
-              </p>
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: 'var(--gray)' }}>Rating</label>
-              <p style={{ margin: '4px 0 0 0', color: 'var(--dark)' }}>
-                ★ {selectedContent.rating || 0} ({selectedContent.reviewCount || 0} reviews)
-              </p>
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: 'var(--gray)' }}>Description</label>
-              <p style={{ margin: '4px 0 0 0', color: 'var(--dark)', lineHeight: '1.6' }}>
-                {selectedContent.description || 'No description provided'}
-              </p>
-            </div>
-
-            <div>
-              <label style={{ fontWeight: 600, color: 'var(--gray)' }}>Created</label>
-              <p style={{ margin: '4px 0 0 0', color: 'var(--dark)', fontSize: '12px' }}>
-                {selectedContent.createdAt
-                  ? new Date(selectedContent.createdAt).toLocaleString()
-                  : 'N/A'}
-              </p>
-            </div>
-          </div>
-        )}
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ContentForm
         isOpen={showForm}
@@ -413,7 +351,13 @@ export default function ContentLibrary() {
         initialData={editingItem}
       />
 
-      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Alert variant={toast.type === 'error' ? 'destructive' : 'default'}>
+            <AlertDescription>{toast.message}</AlertDescription>
+          </Alert>
+        </div>
+      )}
     </div>
   );
 }

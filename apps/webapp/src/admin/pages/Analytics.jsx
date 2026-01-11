@@ -1,7 +1,25 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card, ChartCard, Button, Select } from '../components/shared';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Alert, AlertDescription } from '../../components/ui/Alert';
+import { Skeleton } from '../../components/ui/skeleton';
+import { AlertTriangle, Download, TrendingUp, Users, Activity } from 'lucide-react';
 import adminApi from '../adminApi';
 
 export default function Analytics() {
@@ -26,7 +44,6 @@ export default function Analytics() {
       const errorMessage =
         err?.response?.data?.message || err?.message || 'Failed to load analytics';
       setError(errorMessage);
-      console.error('Failed to load analytics:', err);
     } finally {
       setLoading(false);
     }
@@ -36,281 +53,210 @@ export default function Analytics() {
     loadAnalytics();
   }, [loadAnalytics]);
 
-  const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'users', label: 'Users' },
-    { id: 'usage', label: 'Usage' },
-    { id: 'crisis', label: 'Crisis Trends' },
+  const metricCards = [
+    {
+      label: 'DAU',
+      value: metrics.dau,
+      description: 'Daily Active Users',
+      icon: Users,
+      iconColor: 'text-blue-600',
+    },
+    {
+      label: 'MAU',
+      value: metrics.mau,
+      description: 'Monthly Active Users',
+      icon: Activity,
+      iconColor: 'text-purple-600',
+    },
+    {
+      label: 'Retention',
+      value: `${(metrics.retention || 0).toFixed(1)}%`,
+      description: 'Month-over-Month',
+      icon: TrendingUp,
+      iconColor: 'text-green-600',
+    },
+    {
+      label: 'Churn',
+      value: `${(metrics.churn || 0).toFixed(1)}%`,
+      description: 'Monthly Churn Rate',
+      icon: AlertTriangle,
+      iconColor: 'text-red-600',
+    },
   ];
 
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Analytics & Insights</h1>
-        <p className="page-subtitle">Deep-dive analytics and usage patterns</p>
-        <div className="page-actions">
-          <Select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            options={[
-              { value: '7d', label: 'Last 7 Days' },
-              { value: '30d', label: 'Last 30 Days' },
-              { value: '90d', label: 'Last 90 Days' },
-              { value: '1y', label: 'Last Year' },
-            ]}
-            style={{ width: '150px' }}
-          />
-          <Button variant="secondary">Export Report</Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Analytics & Insights</h1>
+          <p className="text-muted-foreground">Deep-dive analytics and usage patterns</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Last 7 Days</SelectItem>
+              <SelectItem value="30d">Last 30 Days</SelectItem>
+              <SelectItem value="90d">Last 90 Days</SelectItem>
+              <SelectItem value="1y">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export Report
+          </Button>
         </div>
       </div>
 
       {error && (
-        <div
-          style={{
-            backgroundColor: '#fee2e2',
-            border: '1px solid #ef4444',
-            color: '#b91c1c',
-            padding: '1rem',
-            borderRadius: '0.5rem',
-            marginBottom: '1rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div>
-            <strong>Error:</strong> {error}
-          </div>
-          <Button variant="ghost" onClick={loadAnalytics} size="sm">
-            Retry
-          </Button>
-        </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+            <Button variant="ghost" size="sm" onClick={loadAnalytics} className="ml-2">
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
-      {loading && (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '2rem',
-            color: 'var(--gray)',
-            fontSize: '14px',
-          }}
-        >
-          <div style={{ marginBottom: '0.5rem' }}>Loading analytics...</div>
-        </div>
-      )}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="usage">Usage</TabsTrigger>
+          <TabsTrigger value="crisis">Crisis Trends</TabsTrigger>
+        </TabsList>
 
-      <div
-        className="bento-card"
-        style={{
-          marginBottom: 'var(--spacing-lg)',
-          display: 'flex',
-          padding: 0,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            borderBottom: '1px solid var(--gray-light)',
-            gap: 'var(--spacing-lg)',
-            width: '100%',
-            padding: '0 var(--spacing-lg)',
-          }}
-        >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: 'var(--spacing-md) 0',
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                fontWeight: activeTab === tab.id ? '600' : '400',
-                color: activeTab === tab.id ? 'var(--primary)' : 'var(--gray)',
-                borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : 'none',
-                transition: 'var(--transition-fast)',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Overview Tab */}
-      {activeTab === 'overview' && (
-        <div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 'var(--spacing-lg)',
-              marginBottom: 'var(--spacing-xl)',
-            }}
-          >
-            <Card className="bento-card" header={<div className="card-header-title">DAU</div>}>
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>
-                <div style={{ fontSize: '32px', fontWeight: '700', color: 'var(--primary)' }}>
-                  {(metrics.dau || 0).toLocaleString()}
-                </div>
-                <p
-                  style={{
-                    color: 'var(--gray)',
-                    fontSize: '12px',
-                    margin: 'var(--spacing-sm) 0 0 0',
-                  }}
-                >
-                  Daily Active Users
-                </p>
-              </div>
-            </Card>
-
-            <Card className="bento-card" header={<div className="card-header-title">MAU</div>}>
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>
-                <div style={{ fontSize: '32px', fontWeight: '700', color: 'var(--accent)' }}>
-                  {(metrics.mau || 0).toLocaleString()}
-                </div>
-                <p
-                  style={{
-                    color: 'var(--gray)',
-                    fontSize: '12px',
-                    margin: 'var(--spacing-sm) 0 0 0',
-                  }}
-                >
-                  Monthly Active Users
-                </p>
-              </div>
-            </Card>
-
-            <Card
-              className="bento-card"
-              header={<div className="card-header-title">Retention</div>}
-            >
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>
-                <div style={{ fontSize: '32px', fontWeight: '700', color: 'var(--success)' }}>
-                  {(metrics.retention || 0).toFixed(1)}%
-                </div>
-                <p
-                  style={{
-                    color: 'var(--gray)',
-                    fontSize: '12px',
-                    margin: 'var(--spacing-sm) 0 0 0',
-                  }}
-                >
-                  Month-over-Month
-                </p>
-              </div>
-            </Card>
-
-            <Card className="bento-card" header={<div className="card-header-title">Churn</div>}>
-              <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>
-                <div style={{ fontSize: '32px', fontWeight: '700', color: 'var(--warning)' }}>
-                  {(metrics.churn || 0).toFixed(1)}%
-                </div>
-                <p
-                  style={{
-                    color: 'var(--gray)',
-                    fontSize: '12px',
-                    margin: 'var(--spacing-sm) 0 0 0',
-                  }}
-                >
-                  Monthly Churn Rate
-                </p>
-              </div>
-            </Card>
-          </div>
-
-          {/* Charts */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-              gap: 'var(--spacing-lg)',
-            }}
-          >
-            <ChartCard title="User Growth" subtitle="Last 6 months">
-              <div style={{ color: 'var(--gray)' }}>[User Growth Chart]</div>
-            </ChartCard>
-
-            <ChartCard title="Feature Usage" subtitle="Platform engagement">
-              <div style={{ color: 'var(--gray)' }}>[Feature Usage Chart]</div>
-            </ChartCard>
-          </div>
-        </div>
-      )}
-
-      {/* Users Tab */}
-      {activeTab === 'users' && (
-        <div>
-          <Card
-            className="bento-card"
-            header={<div className="card-header-title">User Segments</div>}
-          >
-            <div style={{ padding: 'var(--spacing-lg)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingBottom: 'var(--spacing-lg)',
-                    borderBottom: '1px solid var(--gray-light)',
-                  }}
-                >
-                  <span>Premium Subscribers</span>
-                  <span style={{ fontWeight: '700', color: 'var(--primary)' }}>1,234</span>
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingBottom: 'var(--spacing-lg)',
-                    borderBottom: '1px solid var(--gray-light)',
-                  }}
-                >
-                  <span>Free Users</span>
-                  <span style={{ fontWeight: '700', color: 'var(--dark)' }}>5,678</span>
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    paddingBottom: 'var(--spacing-lg)',
-                  }}
-                >
-                  <span>Inactive (30+ days)</span>
-                  <span style={{ fontWeight: '700', color: 'var(--gray)' }}>2,345</span>
-                </div>
-              </div>
+        <TabsContent value="overview" className="space-y-6">
+          {loading ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <Skeleton className="h-4 w-24" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-8 w-32" />
+                  </CardContent>
+                </Card>
+              ))}
             </div>
+          ) : (
+            <>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {metricCards.map((metric, index) => {
+                  const Icon = metric.icon;
+                  return (
+                    <Card
+                      key={metric.label}
+                      className="transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          {metric.label}
+                        </CardTitle>
+                        <div
+                          className={`rounded-lg p-2 bg-${metric.iconColor.replace('text-', '')}/10`}
+                        >
+                          <Icon className={`h-4 w-4 ${metric.iconColor}`} />
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-3xl font-bold transition-all duration-300">
+                          {metric.value}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">{metric.description}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Growth</CardTitle>
+                    <CardDescription>Last 6 months</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                      [User Growth Chart]
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Feature Usage</CardTitle>
+                    <CardDescription>Platform engagement</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                      [Feature Usage Chart]
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="users">
+          <Card>
+            <CardHeader>
+              <CardTitle>User Segments</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b pb-4">
+                  <span>Premium Subscribers</span>
+                  <span className="font-bold text-primary">1,234</span>
+                </div>
+                <div className="flex items-center justify-between border-b pb-4">
+                  <span>Free Users</span>
+                  <span className="font-bold">5,678</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Inactive (30+ days)</span>
+                  <span className="font-bold text-muted-foreground">2,345</span>
+                </div>
+              </div>
+            </CardContent>
           </Card>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* Usage Tab */}
-      {activeTab === 'usage' && (
-        <div>
-          <ChartCard title="API Usage" subtitle="Daily requests" className="bento-card">
-            <div style={{ color: 'var(--gray)' }}>[API Usage Chart]</div>
-          </ChartCard>
-        </div>
-      )}
+        <TabsContent value="usage">
+          <Card>
+            <CardHeader>
+              <CardTitle>API Usage</CardTitle>
+              <CardDescription>Daily requests</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                [API Usage Chart]
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Crisis Trends Tab */}
-      {activeTab === 'crisis' && (
-        <div>
-          <ChartCard
-            title="Crisis Flags Over Time"
-            subtitle="Historical trends"
-            className="bento-card"
-          >
-            <div style={{ color: 'var(--gray)' }}>[Crisis Trends Chart]</div>
-          </ChartCard>
-        </div>
-      )}
+        <TabsContent value="crisis">
+          <Card>
+            <CardHeader>
+              <CardTitle>Crisis Flags Over Time</CardTitle>
+              <CardDescription>Historical trends</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                [Crisis Trends Chart]
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

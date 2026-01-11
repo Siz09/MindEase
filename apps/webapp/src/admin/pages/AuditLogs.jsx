@@ -4,6 +4,8 @@ import AuditLogFilters from '../components/audit/AuditLogFilters';
 import AuditLogsPagination from '../components/audit/AuditLogsPagination';
 import AuditLogsTable from '../components/audit/AuditLogsTable';
 import useAuditLogs from '../hooks/useAuditLogs';
+import { Alert, AlertDescription } from '../../components/ui/Alert';
+import { AlertCircle } from 'lucide-react';
 
 export default function AuditLogs() {
   const {
@@ -23,10 +25,10 @@ export default function AuditLogs() {
   } = useAuditLogs({ initialPageSize: 25 });
 
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">Audit Logs</h1>
-        <p className="page-subtitle">Track all user actions and system events</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Audit Logs</h1>
+        <p className="text-muted-foreground">Track all user actions and system events</p>
       </div>
 
       <AuditLogFilters
@@ -37,18 +39,10 @@ export default function AuditLogs() {
       />
 
       {notice && !loading && !error && (
-        <div
-          style={{
-            marginBottom: 'var(--spacing-lg)',
-            padding: 'var(--spacing-md)',
-            backgroundColor: '#fef3c7',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--dark)',
-            fontSize: '14px',
-          }}
-        >
-          {notice}
-        </div>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{notice}</AlertDescription>
+        </Alert>
       )}
 
       <AuditLogsTable rows={rows} loading={loading} error={error} />

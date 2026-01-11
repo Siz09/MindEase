@@ -4,7 +4,45 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../adminApi';
 import { useAdminAuth } from '../AdminAuthContext';
 import { toCSV } from '../../utils/export';
-import { Modal, Button, Badge } from '../components/shared';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Badge } from '../../components/ui/Badge';
+import { Input } from '../../components/ui/Input';
+import { Label } from '../../components/ui/Label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '../../components/ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Alert, AlertDescription } from '../../components/ui/Alert';
+import { Download, X, Eye, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const pct = (n) => `${Math.round((n || 0) * 100)}%`;
@@ -26,32 +64,28 @@ export default function CrisisFlags() {
   const inFlightRef = useRef(false);
   const debounceRef = useRef(null);
 
-  const query = () => {
-    const params = new URLSearchParams();
-    params.set('page', page);
-    params.set('size', size);
-    if (from) {
-      const d = new Date(from);
-      if (!isNaN(d.getTime())) params.set('from', d.toISOString());
-    }
-    if (to) {
-      const d = new Date(to);
-      if (!isNaN(d.getTime())) params.set('to', d.toISOString());
-    }
-    return params.toString();
-  };
-
   const load = useCallback(async () => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
     setLoading(true);
     try {
-      const { data } = await api.get(`/admin/crisis-flags?${query()}`);
+      const params = new URLSearchParams();
+      params.set('page', page);
+      params.set('size', size);
+      if (from) {
+        const d = new Date(from);
+        if (!isNaN(d.getTime())) params.set('from', d.toISOString());
+      }
+      if (to) {
+        const d = new Date(to);
+        if (!isNaN(d.getTime())) params.set('to', d.toISOString());
+      }
+      const { data } = await api.get(`/admin/crisis-flags?${params.toString()}`);
       setRows(data.content || []);
       setTotalPages(data.totalPages ?? (data.last ? page + 1 : page + 2));
     } catch (err) {
       if (!(err && err.response && err.response.status === 404)) {
-        console.error('Failed to load crisis flags:', err);
+        // Failed to load crisis flags - error handled silently
       }
     } finally {
       setLoading(false);
@@ -64,7 +98,6 @@ export default function CrisisFlags() {
   }, [load]);
 
   useEffect(() => {
-    // Close previous stream/poller
     if (esRef.current && typeof esRef.current.close === 'function') {
       esRef.current.close();
     }
@@ -99,7 +132,6 @@ export default function CrisisFlags() {
           if (page === 0 && !from && !to) {
             setRows((prev) => [flag, ...prev].slice(0, size));
           } else {
-            // Debounce reloads to avoid spamming requests when many events arrive
             if (debounceRef.current) clearTimeout(debounceRef.current);
             debounceRef.current = setTimeout(() => {
               if (!inFlightRef.current) {
@@ -108,14 +140,12 @@ export default function CrisisFlags() {
             }, 500);
           }
         } catch {
-          return;
+          // Ignore errors in event handler
         }
       };
-      // Support both default and named events ('flag') from server
       es.onmessage = onFlag;
       es.addEventListener('flag', onFlag);
       es.onerror = () => {
-        // network/server issue: fallback to polling
         es.close();
         startPolling();
       };
@@ -131,7 +161,6 @@ export default function CrisisFlags() {
     };
   }, [size, page, from, to, load, adminToken]);
 
-  // Maintain a cookie with the admin JWT for SSE authentication (server only accepts this on dev)
   useEffect(() => {
     const name = 'ADMIN_JWT';
     if (adminToken) {
@@ -140,7 +169,6 @@ export default function CrisisFlags() {
       document.cookie = `${name}=; Path=/api/admin/crisis-flags; Max-Age=0; SameSite=Lax`;
     }
     return () => {
-      // Clean up on unmount
       document.cookie = `${name}=; Path=/api/admin/crisis-flags; Max-Age=0; SameSite=Lax`;
     };
   }, [adminToken]);
@@ -163,8 +191,7 @@ export default function CrisisFlags() {
     try {
       const { data } = await api.get(`/admin/crisis-flags/${flag.id}/transcript`);
       setTranscript(data);
-    } catch (err) {
-      console.error('Failed to load transcript:', err);
+    } catch {
       toast.error('Failed to load transcript');
     } finally {
       setTranscriptLoading(false);
@@ -175,19 +202,16 @@ export default function CrisisFlags() {
     try {
       await api.post(`/admin/crisis-flags/${flag.id}/resolve`);
       toast.success('Flag resolved');
-      load(); // Reload list
+      load();
       if (selectedFlag?.id === flag.id) {
-        // Re-fetch flag to ensure consistent state
         try {
           const { data } = await api.get(`/admin/crisis-flags/${flag.id}`);
           setSelectedFlag(data);
-        } catch (fetchErr) {
-          console.error('Failed to refetch flag:', fetchErr);
+        } catch {
           setSelectedFlag({ ...selectedFlag, status: 'RESOLVED' });
         }
       }
-    } catch (err) {
-      console.error('Failed to resolve flag:', err);
+    } catch {
       toast.error('Failed to resolve flag');
     }
   };
@@ -196,209 +220,284 @@ export default function CrisisFlags() {
     try {
       await api.post(`/admin/crisis-flags/${flag.id}/escalate`);
       toast.success('Flag escalated');
-      load(); // Reload list
+      load();
       if (selectedFlag?.id === flag.id) {
         setSelectedFlag({ ...selectedFlag, escalated: true });
       }
-    } catch (err) {
-      console.error('Failed to escalate flag:', err);
+    } catch {
       toast.error('Failed to escalate flag');
     }
   };
 
+  const getStatusBadge = (flag) => {
+    if (flag.status === 'RESOLVED') {
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Resolved</Badge>;
+    }
+    if (flag.escalated) {
+      return <Badge variant="destructive">Escalated</Badge>;
+    }
+    return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Open</Badge>;
+  };
+
   return (
-    <div>
-      <div className="filters">
-        <label>
-          From <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-        </label>
-        <label>
-          To <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-        </label>
-        <button
-          className="admin-btn"
-          onClick={() => {
-            setFrom('');
-            setTo('');
-            setPage(0);
-          }}
-        >
-          Clear
-        </button>
-        <button className="admin-btn" onClick={exportCSV}>
-          Export CSV
-        </button>
-      </div>
-
-      <div className="table-wrap">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Keyword</th>
-              <th>Risk</th>
-              <th>Status</th>
-              <th>When</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <div style={{ fontSize: '12px', fontFamily: 'monospace' }}>
-                    {r.userId.substring(0, 8)}...
-                  </div>
-                </td>
-                <td>{r.keywordDetected ?? r.keyword}</td>
-                <td>{r.riskScore != null ? pct(r.riskScore) : '—'}</td>
-                <td>
-                  <Badge
-                    type={r.status === 'RESOLVED' ? 'success' : r.escalated ? 'danger' : 'warning'}
-                  >
-                    {r.status === 'RESOLVED' ? 'Resolved' : r.escalated ? 'Escalated' : 'Open'}
-                  </Badge>
-                </td>
-                <td>{new Date(r.createdAt).toLocaleString()}</td>
-                <td>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button size="sm" variant="ghost" onClick={() => handleViewTranscript(r)}>
-                      View
-                    </Button>
-                    {r.status !== 'RESOLVED' && (
-                      <Button size="sm" variant="success" onClick={() => handleResolve(r)}>
-                        Resolve
-                      </Button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && rows.length === 0 && (
-              <tr>
-                <td colSpan="6">No results</td>
-              </tr>
-            )}
-            {loading && (
-              <tr>
-                <td colSpan="6">Loading...</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="filters" style={{ justifyContent: 'space-between' }}>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <button
-            className="admin-btn"
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            Prev
-          </button>
-          <span style={{ margin: '0 8px' }}>
-            Page {page + 1} / {Math.max(1, totalPages)}
-          </span>
-          <button
-            className="admin-btn"
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </button>
+          <h1 className="text-3xl font-bold tracking-tight">Crisis Flags</h1>
+          <p className="text-muted-foreground">Monitor and manage crisis detection flags</p>
         </div>
-        <div>
-          <label>
-            Page size
-            <select
-              value={size}
-              onChange={(e) => {
+        <Button variant="outline" onClick={exportCSV}>
+          <Download className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[150px]">
+              <Label htmlFor="from-date">From</Label>
+              <Input
+                id="from-date"
+                type="date"
+                value={from}
+                onChange={(e) => {
+                  setFrom(e.target.value);
+                  setPage(0);
+                }}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex-1 min-w-[150px]">
+              <Label htmlFor="to-date">To</Label>
+              <Input
+                id="to-date"
+                type="date"
+                value={to}
+                onChange={(e) => {
+                  setTo(e.target.value);
+                  setPage(0);
+                }}
+                className="mt-1"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFrom('');
+                setTo('');
                 setPage(0);
-                setSize(Number(e.target.value));
               }}
             >
-              <option>10</option>
-              <option>25</option>
-              <option>50</option>
-              <option>100</option>
-            </select>
-          </label>
-        </div>
-      </div>
+              <X className="mr-2 h-4 w-4" />
+              Clear
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-      <Modal
-        isOpen={showTranscriptModal}
-        title="Crisis Context & Transcript"
-        onClose={() => setShowTranscriptModal(false)}
-        footer={
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+      <Card>
+        <CardContent className="p-0">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Keyword</TableHead>
+                  <TableHead>Risk</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>When</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      No results
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  rows.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-mono text-xs">
+                        {r.userId ? `${r.userId.substring(0, 8)}...` : 'N/A'}
+                      </TableCell>
+                      <TableCell>{r.keywordDetected ?? r.keyword ?? 'N/A'}</TableCell>
+                      <TableCell>{r.riskScore != null ? pct(r.riskScore) : '—'}</TableCell>
+                      <TableCell>{getStatusBadge(r)}</TableCell>
+                      <TableCell>
+                        {r.createdAt ? new Date(r.createdAt).toLocaleString() : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleViewTranscript(r)}>
+                            <Eye className="mr-2 h-3 w-3" />
+                            View
+                          </Button>
+                          {r.status !== 'RESOLVED' && (
+                            <Button variant="outline" size="sm" onClick={() => handleResolve(r)}>
+                              <CheckCircle2 className="mr-2 h-3 w-3" />
+                              Resolve
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="flex items-center justify-between py-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    className={page === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page + 1} / {Math.max(1, totalPages)}
+                  </span>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage((p) => p + 1)}
+                    className={
+                      page + 1 >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="page-size" className="text-sm">
+                Page size
+              </Label>
+              <Select
+                value={size.toString()}
+                onValueChange={(value) => {
+                  setPage(0);
+                  setSize(Number(value));
+                }}
+              >
+                <SelectTrigger id="page-size" className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={showTranscriptModal} onOpenChange={setShowTranscriptModal}>
+        <DialogContent className="max-w-3xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Crisis Context & Transcript</DialogTitle>
+            <DialogDescription>Review the conversation that triggered this flag</DialogDescription>
+          </DialogHeader>
+          {selectedFlag && (
+            <Alert className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-1">
+                  <div>
+                    <strong>Trigger:</strong> {selectedFlag.keywordDetected}
+                  </div>
+                  <div>
+                    <strong>Risk Score:</strong> {pct(selectedFlag.riskScore)}
+                  </div>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+          <div className="max-h-[400px] overflow-y-auto space-y-3">
+            {transcriptLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading transcript...</div>
+            ) : transcript.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">No transcript available</div>
+            ) : (
+              transcript.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg p-3 ${
+                      msg.sender === 'user'
+                        ? 'bg-blue-100 text-blue-900'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    <div className="text-xs opacity-70 mb-1">
+                      {msg.sender === 'user' ? 'User' : 'AI'} •{' '}
+                      {new Date(msg.createdAt).toLocaleTimeString()}
+                    </div>
+                    <div>{msg.content}</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
             <Button variant="ghost" onClick={() => setShowTranscriptModal(false)}>
               Close
             </Button>
             {selectedFlag && selectedFlag.status !== 'RESOLVED' && (
-              <Button variant="success" onClick={() => handleResolve(selectedFlag)}>
+              <Button variant="default" onClick={() => handleResolve(selectedFlag)}>
+                <CheckCircle2 className="mr-2 h-4 w-4" />
                 Resolve Flag
               </Button>
             )}
             {selectedFlag && !selectedFlag.escalated && (
-              <Button variant="danger" onClick={() => handleEscalate(selectedFlag)}>
+              <Button variant="destructive" onClick={() => handleEscalate(selectedFlag)}>
+                <AlertTriangle className="mr-2 h-4 w-4" />
                 Escalate
               </Button>
             )}
-          </div>
-        }
-      >
-        {selectedFlag && (
-          <div
-            style={{
-              marginBottom: '16px',
-              padding: '12px',
-              background: '#fef2f2',
-              borderRadius: '8px',
-            }}
-          >
-            <strong>Trigger:</strong> {selectedFlag.keywordDetected} <br />
-            <strong>Risk Score:</strong> {pct(selectedFlag.riskScore)}
-          </div>
-        )}
-
-        <div
-          style={{
-            maxHeight: '400px',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-          }}
-        >
-          {transcriptLoading ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>Loading transcript...</div>
-          ) : transcript.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>No transcript available</div>
-          ) : (
-            transcript.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                  maxWidth: '80%',
-                  padding: '8px 12px',
-                  borderRadius: '12px',
-                  backgroundColor: msg.sender === 'user' ? '#e0f2fe' : '#f3f4f6',
-                  color: '#1f2937',
-                }}
-              >
-                <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '4px' }}>
-                  {msg.sender === 'user' ? 'User' : 'AI'} •{' '}
-                  {new Date(msg.createdAt).toLocaleTimeString()}
-                </div>
-                <div>{msg.content}</div>
-              </div>
-            ))
-          )}
-        </div>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

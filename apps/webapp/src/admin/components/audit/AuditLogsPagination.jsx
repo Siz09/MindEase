@@ -1,94 +1,70 @@
+import { Card, CardContent } from '../../../components/ui/Card';
+import { Button } from '../../../components/ui/Button';
+import { Label } from '../../../components/ui/Label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../components/ui/select';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '../../../components/ui/pagination';
+
 const AuditLogsPagination = ({ page, totalPages, size, onPrev, onNext, onSetSize }) => {
   const currentPage = page + 1;
   const maxPages = Math.max(1, totalPages);
+
   return (
-    <div className="bento-card" style={{ padding: 'var(--spacing-lg)' }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 'var(--spacing-lg)',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 'var(--spacing-sm)', alignItems: 'center' }}>
-          <button
-            type="button"
-            style={{
-              padding: '8px 16px',
-              background: 'none',
-              border: '1px solid var(--gray-light)',
-              borderRadius: 'var(--radius-md)',
-              cursor: page === 0 ? 'not-allowed' : 'pointer',
-              fontWeight: '500',
-              color: 'var(--gray)',
-              transition: 'var(--transition-fast)',
-              opacity: page === 0 ? 0.5 : 1,
-            }}
-            disabled={page === 0}
-            onClick={onPrev}
-            aria-label="Previous page"
-          >
-            Prev
-          </button>
-          <span style={{ fontSize: '14px', color: 'var(--dark)', fontWeight: '500' }}>
-            Page {currentPage} / {maxPages}
-          </span>
-          <span className="sr-only" role="status" aria-live="polite">
-            Page {currentPage} of {maxPages}
-          </span>
-          <button
-            type="button"
-            style={{
-              padding: '8px 16px',
-              background: 'none',
-              border: '1px solid var(--gray-light)',
-              borderRadius: 'var(--radius-md)',
-              cursor: page + 1 >= totalPages ? 'not-allowed' : 'pointer',
-              fontWeight: '500',
-              color: 'var(--gray)',
-              transition: 'var(--transition-fast)',
-              opacity: page + 1 >= totalPages ? 0.5 : 1,
-            }}
-            disabled={page + 1 >= totalPages}
-            onClick={onNext}
-            aria-label="Next page"
-          >
-            Next
-          </button>
-        </div>
-        <div>
-          <label
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--spacing-sm)',
-              fontWeight: '500',
-            }}
-            htmlFor="page-size-select"
-          >
+    <Card>
+      <CardContent className="flex items-center justify-between py-4">
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={onPrev}
+                className={page === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+            <PaginationItem>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} / {maxPages}
+              </span>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationNext
+                onClick={onNext}
+                className={
+                  page + 1 >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                }
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="page-size-select" className="text-sm">
             Page size
-            <select
-              id="page-size-select"
-              value={size}
-              onChange={(e) => onSetSize(Number(e.target.value))}
-              style={{
-                padding: '6px 10px',
-                border: '1px solid var(--gray-light)',
-                borderRadius: 'var(--radius-md)',
-                fontFamily: 'inherit',
-                fontSize: '14px',
-              }}
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </label>
+          </Label>
+          <Select value={size.toString()} onValueChange={(value) => onSetSize(Number(value))}>
+            <SelectTrigger id="page-size-select" className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

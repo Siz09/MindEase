@@ -1,4 +1,13 @@
-import { Button, FilterBar } from '../shared';
+import { Input } from '../../../components/ui/Input';
+import { Button } from '../../../components/ui/Button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../components/ui/select';
+import { Search, X } from 'lucide-react';
 
 const UserFilters = ({ filters, onSearch, onStatusChange, onClear }) => {
   const safeFilters = {
@@ -25,37 +34,32 @@ const UserFilters = ({ filters, onSearch, onStatusChange, onClear }) => {
   };
 
   return (
-    <FilterBar>
-      <label htmlFor="user-search-input" className="sr-only">
-        Search by email
-      </label>
-      <input
-        id="user-search-input"
-        placeholder="Search by email..."
-        value={safeFilters.search}
-        onChange={(e) => handleSearch(e.target.value)}
-        className="form-input"
-        style={{ maxWidth: '320px' }}
-      />
-      <label htmlFor="user-status-select" className="sr-only">
-        User status
-      </label>
-      <select
-        id="user-status-select"
-        value={safeFilters.status}
-        onChange={(e) => handleStatusChange(e.target.value)}
-        className="form-select"
-        style={{ maxWidth: '220px' }}
-      >
-        <option value="all">All status</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-        <option value="banned">Banned</option>
-      </select>
-      <Button variant="secondary" onClick={handleClear}>
-        Clear
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="relative flex-1 min-w-[200px]">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id="user-search-input"
+          placeholder="Search by email..."
+          value={safeFilters.search}
+          onChange={(e) => handleSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+      <Select value={safeFilters.status} onValueChange={handleStatusChange}>
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="All status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All status</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="banned">Banned</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button variant="outline" onClick={handleClear} size="icon">
+        <X className="h-4 w-4" />
       </Button>
-    </FilterBar>
+    </div>
   );
 };
 

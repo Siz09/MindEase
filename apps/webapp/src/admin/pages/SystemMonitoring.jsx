@@ -1,8 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Card, Button, Input } from '../components/shared';
-import Toast from '../components/shared/Toast';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Label } from '../../components/ui/Label';
+import { Alert, AlertDescription } from '../../components/ui/Alert';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Progress } from '../../components/ui/progress';
+import { Badge } from '../../components/ui/Badge';
+import { Activity, Database, Bot, CheckCircle2, XCircle, AlertCircle, Send } from 'lucide-react';
 import adminApi from '../adminApi';
 
 export default function SystemMonitoring() {
@@ -11,19 +24,16 @@ export default function SystemMonitoring() {
     database: 'checking...',
     aiEngine: 'checking...',
   });
-
   const [health, setHealth] = useState({
     cpu: 0,
     memory: 0,
     disk: 0,
     connectedUsers: 0,
   });
-
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const [sending, setSending] = useState(false);
-  const [toast, setToast] = useState(null);
 
   const loadSystemStatus = useCallback(async () => {
     setLoading(true);
@@ -44,7 +54,6 @@ export default function SystemMonitoring() {
       setHealth(healthRes.data || {});
       setErrors(Array.isArray(errorsRes.data) ? errorsRes.data : []);
     } catch {
-      // Explicitly set status to down on error
       setSystemStatus({
         apiStatus: 'down',
         database: 'unreachable',
@@ -62,10 +71,9 @@ export default function SystemMonitoring() {
     setSending(true);
     try {
       await adminApi.post('/admin/system/notifications', { message: announcement });
-      setToast({ type: 'success', message: 'Announcement sent successfully' });
       setAnnouncement('');
     } catch {
-      setToast({ type: 'error', message: 'Failed to send announcement' });
+      // Ignore send notification errors
     } finally {
       setSending(false);
     }
@@ -73,340 +81,184 @@ export default function SystemMonitoring() {
 
   useEffect(() => {
     loadSystemStatus();
-    const interval = setInterval(loadSystemStatus, 30000); // Update every 30s
+    const interval = setInterval(loadSystemStatus, 30000);
     return () => clearInterval(interval);
   }, [loadSystemStatus]);
 
-  const HealthBar = ({ label, value }) => {
-    const isUnavailable = value < 0;
-    const displayValue = isUnavailable ? 0 : value;
-    const clampedValue = Math.max(0, Math.min(100, displayValue));
+  const getStatusIcon = (status) => {
+    const statusLower = (status || '').toLowerCase();
+    if (statusLower.includes('up') || statusLower.includes('ok') || statusLower === 'operational') {
+      return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+    }
+    if (statusLower.includes('down') || statusLower.includes('error')) {
+      return <XCircle className="h-5 w-5 text-red-600" />;
+    }
+    return <AlertCircle className="h-5 w-5 text-amber-600" />;
+  };
 
+  const getStatusBadge = (status) => {
+    const statusLower = (status || '').toLowerCase();
+    if (statusLower.includes('up') || statusLower.includes('ok') || statusLower === 'operational') {
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Operational</Badge>;
+    }
+    if (statusLower.includes('down') || statusLower.includes('error')) {
+      return <Badge variant="destructive">Down</Badge>;
+    }
     return (
-      <div style={{ marginBottom: 'var(--spacing-lg)' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: 'var(--spacing-sm)',
-          }}
-        >
-          <span style={{ fontWeight: '500' }}>{label}</span>
-          <span style={{ fontWeight: '700' }}>{isUnavailable ? 'N/A' : `${clampedValue}%`}</span>
-        </div>
-        <div
-          style={{
-            width: '100%',
-            height: '8px',
-            backgroundColor: 'var(--gray-light)',
-            borderRadius: 'var(--radius-sm)',
-            overflow: 'hidden',
-          }}
-        >
-          {!isUnavailable && (
-            <div
-              style={{
-                width: `${clampedValue}%`,
-                height: '100%',
-                backgroundColor:
-                  clampedValue > 80
-                    ? 'var(--danger)'
-                    : clampedValue > 60
-                      ? 'var(--warning)'
-                      : 'var(--success)',
-                transition: 'background-color 0.3s ease',
-              }}
-            />
-          )}
-        </div>
-      </div>
+      <Badge variant="outline" className="bg-amber-50 text-amber-800">
+        Unknown
+      </Badge>
     );
   };
 
+  const statusCards = [
+    {
+      label: 'API Status',
+      value: systemStatus.apiStatus,
+      icon: Activity,
+      iconColor: 'text-blue-600',
+    },
+    {
+      label: 'Database',
+      value: systemStatus.database,
+      icon: Database,
+      iconColor: 'text-purple-600',
+    },
+    {
+      label: 'AI Engine',
+      value: systemStatus.aiEngine,
+      icon: Bot,
+      iconColor: 'text-green-600',
+    },
+  ];
+
+  const healthMetrics = [
+    {
+      label: 'CPU Usage',
+      value: health.cpu || 0,
+      color: health.cpu > 80 ? 'destructive' : health.cpu > 60 ? 'default' : 'default',
+    },
+    {
+      label: 'Memory Usage',
+      value: health.memory || 0,
+      color: health.memory > 80 ? 'destructive' : health.memory > 60 ? 'default' : 'default',
+    },
+    {
+      label: 'Disk Usage',
+      value: health.disk || 0,
+      color: health.disk > 80 ? 'destructive' : health.disk > 60 ? 'default' : 'default',
+    },
+  ];
+
   return (
-    <div>
-      <div className="page-header">
-        <h1 className="page-title">System Health & Monitoring</h1>
-        <p className="page-subtitle">Real-time system performance and diagnostics</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">System Health & Monitoring</h1>
+        <p className="text-muted-foreground">Real-time system performance and diagnostics</p>
       </div>
 
       {loading && (
-        <div
-          style={{
-            marginBottom: 'var(--spacing-lg)',
-            padding: 'var(--spacing-sm) var(--spacing-md)',
-            backgroundColor: 'var(--color-bg-tertiary)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--color-text-secondary)',
-          }}
-        >
-          Loading system status…
-        </div>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>Loading system status…</AlertDescription>
+        </Alert>
       )}
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 'var(--spacing-lg)',
-          marginBottom: 'var(--spacing-xl)',
-        }}
-      >
-        <Card className="bento-card" header={<div className="card-header-title">API Status</div>}>
-          <div style={{ textAlign: 'center', padding: 'var(--spacing-lg)' }}>
-            <div
-              style={{
-                fontSize: '24px',
-                fontWeight: '700',
-                color:
-                  systemStatus.apiStatus === 'operational' ? 'var(--success)' : 'var(--danger)',
-              }}
-            >
-              {systemStatus.apiStatus === 'operational' ? '✓' : '✗'}
+      <div className="grid gap-4 md:grid-cols-3">
+        {statusCards.map((status) => {
+          const Icon = status.icon;
+          return (
+            <Card key={status.label}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{status.label}</CardTitle>
+                <Icon className={`h-4 w-4 ${status.iconColor}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>{getStatusIcon(status.value)}</div>
+                  <div>{getStatusBadge(status.value)}</div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>System Health</CardTitle>
+            <CardDescription>Resource utilization metrics</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {healthMetrics.map((metric) => (
+              <div key={metric.label}>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-sm">{metric.label}</Label>
+                  <span className="text-sm font-medium">{metric.value}%</span>
+                </div>
+                <Progress value={metric.value} className="h-2" />
+              </div>
+            ))}
+            <div className="pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Connected Users</Label>
+                <span className="text-sm font-medium">{health.connectedUsers || 0}</span>
+              </div>
             </div>
-            <p
-              style={{ color: 'var(--gray)', fontSize: '12px', margin: 'var(--spacing-sm) 0 0 0' }}
-            >
-              {systemStatus.apiStatus === 'operational' ? 'Operational' : 'Down'}
-            </p>
-            <p
-              style={{ fontSize: '11px', color: 'var(--gray)', margin: 'var(--spacing-sm) 0 0 0' }}
-            >
-              99.9% uptime
-            </p>
-          </div>
+          </CardContent>
         </Card>
 
-        <Card className="bento-card" header={<div className="card-header-title">Database</div>}>
-          <div style={{ textAlign: 'center', padding: 'var(--spacing-lg)' }}>
-            <div
-              style={{
-                fontSize: '24px',
-                fontWeight: '700',
-                color: systemStatus.database === 'healthy' ? 'var(--success)' : 'var(--warning)',
-              }}
-            >
-              {systemStatus.database === 'healthy' ? '✓' : '⚠'}
-            </div>
-            <p
-              style={{ color: 'var(--gray)', fontSize: '12px', margin: 'var(--spacing-sm) 0 0 0' }}
-            >
-              {systemStatus.database}
-            </p>
-            <p
-              style={{ fontSize: '11px', color: 'var(--gray)', margin: 'var(--spacing-sm) 0 0 0' }}
-            >
-              45ms avg query
-            </p>
-          </div>
-        </Card>
-
-        <Card className="bento-card" header={<div className="card-header-title">AI Engine</div>}>
-          <div style={{ textAlign: 'center', padding: 'var(--spacing-lg)' }}>
-            <div
-              style={{
-                fontSize: '24px',
-                fontWeight: '700',
-                color: systemStatus.aiEngine === 'running' ? 'var(--success)' : 'var(--danger)',
-              }}
-            >
-              {systemStatus.aiEngine === 'running' ? '✓' : '✗'}
-            </div>
-            <p
-              style={{ color: 'var(--gray)', fontSize: '12px', margin: 'var(--spacing-sm) 0 0 0' }}
-            >
-              {systemStatus.aiEngine}
-            </p>
-            <p
-              style={{ fontSize: '11px', color: 'var(--gray)', margin: 'var(--spacing-sm) 0 0 0' }}
-            >
-              2.3 req/sec
-            </p>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Errors</CardTitle>
+            <CardDescription>System error log</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {errors.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No recent errors</p>
+            ) : (
+              <div className="space-y-2">
+                {errors.slice(0, 5).map((error, idx) => (
+                  <div key={idx} className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm">
+                    <p className="font-medium text-red-900">{error.message || 'Error'}</p>
+                    {error.timestamp && (
+                      <p className="text-xs text-red-700 mt-1">
+                        {new Date(error.timestamp).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
         </Card>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1fr',
-          gap: 'var(--spacing-lg)',
-          marginBottom: 'var(--spacing-lg)',
-        }}
-      >
-        <Card
-          className="bento-card"
-          header={<div className="card-header-title">Server Resources</div>}
-        >
-          <div style={{ padding: 'var(--spacing-lg)' }}>
-            <HealthBar label="CPU Usage" value={health.cpu >= 0 ? health.cpu : 0} />
-            <HealthBar label="Memory Usage" value={health.memory >= 0 ? health.memory : 0} />
-            <HealthBar label="Disk Usage" value={health.disk >= 0 ? health.disk : 0} />
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gap: 'var(--spacing-md)',
-                marginTop: 'var(--spacing-lg)',
-                paddingTop: 'var(--spacing-lg)',
-                borderTop: '1px solid var(--color-border)',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                  UPTIME
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  {(() => {
-                    if (!health.uptime) return '00:00:00';
-                    const totalSeconds = Math.floor(health.uptime / 1000);
-                    const hours = Math.floor(totalSeconds / 3600);
-                    const minutes = Math.floor((totalSeconds % 3600) / 60);
-                    const seconds = totalSeconds % 60;
-                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                  })()}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                  ACTIVE THREADS
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                  {health.activeThreads || 0}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
-                  CONNECTED USERS
-                </div>
-                <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)' }}>
-                  {health.connectedUsers || 0}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card
-          className="bento-card"
-          header={<div className="card-header-title">System Announcement</div>}
-        >
-          <div
-            style={{
-              padding: 'var(--spacing-lg)',
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-            }}
-          >
-            <p
-              style={{ fontSize: '13px', color: 'var(--gray)', marginBottom: 'var(--spacing-md)' }}
-            >
-              Broadcast a message to all currently connected users.
-            </p>
-            <form
-              onSubmit={handleSendAnnouncement}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 'var(--spacing-md)',
-                flex: 1,
-              }}
-            >
+      <Card>
+        <CardHeader>
+          <CardTitle>Send System Announcement</CardTitle>
+          <CardDescription>Broadcast a message to all users</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSendAnnouncement} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="announcement">Message</Label>
               <Input
-                as="textarea"
-                placeholder="Type your announcement here..."
+                id="announcement"
                 value={announcement}
                 onChange={(e) => setAnnouncement(e.target.value)}
-                style={{ flex: 1, minHeight: '100px', resize: 'none' }}
+                placeholder="Enter announcement message..."
+                disabled={sending}
               />
-              <Button variant="primary" type="submit" disabled={sending || !announcement.trim()}>
-                {sending ? 'Sending...' : 'Send Announcement'}
-              </Button>
-            </form>
-          </div>
-        </Card>
-      </div>
-
-      <Card
-        className="bento-card"
-        header={<div className="card-header-title">Recent Errors (Last 24h)</div>}
-      >
-        {errors.length === 0 ? (
-          <div style={{ padding: 'var(--spacing-lg)', textAlign: 'center', color: 'var(--gray)' }}>
-            No errors detected
-          </div>
-        ) : (
-          <div style={{ overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ backgroundColor: 'var(--gray-lighter)' }}>
-                  <th
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      fontSize: '12px',
-                    }}
-                  >
-                    Error Code
-                  </th>
-                  <th
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      fontSize: '12px',
-                    }}
-                  >
-                    Count
-                  </th>
-                  <th
-                    style={{
-                      padding: 'var(--spacing-md)',
-                      textAlign: 'left',
-                      fontWeight: '600',
-                      fontSize: '12px',
-                    }}
-                  >
-                    Last Occurred
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {errors.map((err, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--gray-light)' }}>
-                    <td
-                      style={{
-                        padding: 'var(--spacing-md)',
-                        color: 'var(--danger)',
-                        fontWeight: '600',
-                      }}
-                    >
-                      {err.code || 'Unknown'}
-                    </td>
-                    <td style={{ padding: 'var(--spacing-md)', color: 'var(--dark)' }}>
-                      {err.count || 0}
-                    </td>
-                    <td
-                      style={{
-                        padding: 'var(--spacing-md)',
-                        color: 'var(--gray)',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {err.lastOccurred ? new Date(err.lastOccurred).toLocaleTimeString() : 'N/A'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+            </div>
+            <Button type="submit" disabled={sending || !announcement.trim()}>
+              <Send className="mr-2 h-4 w-4" />
+              {sending ? 'Sending...' : 'Send Announcement'}
+            </Button>
+          </form>
+        </CardContent>
       </Card>
-      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
     </div>
   );
 }

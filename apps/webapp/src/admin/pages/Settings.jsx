@@ -26,13 +26,13 @@ export default function Settings() {
   } = useAdminSettings();
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-600">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground">
           Manage your admin preferences and system configuration.
         </p>
-      </header>
+      </div>
 
       <AdminSettingsNotification
         notification={notification}
@@ -65,9 +65,7 @@ export default function Settings() {
         <DailyReportTimeCard dailyReportTime={dailyReportTime} onChange={setDailyReportTime} />
       </div>
 
-      <div className="mt-8">
-        <AdminSettingsActions onSave={save} onReset={reset} isLoading={isLoading} />
-      </div>
+      <AdminSettingsActions onSave={save} onReset={reset} isLoading={isLoading} />
     </div>
   );
 }

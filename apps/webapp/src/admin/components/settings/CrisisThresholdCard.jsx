@@ -1,75 +1,61 @@
-import AdminCard from '../AdminCard';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../../components/ui/Card';
+import { Label } from '../../../components/ui/Label';
+import { Badge } from '../../../components/ui/Badge';
+import { Slider } from '../../../components/ui/slider';
+import { AlertTriangle } from 'lucide-react';
 
 const CrisisThresholdCard = ({ crisisThreshold, onChange }) => {
   const level = crisisThreshold > 7 ? 'High' : crisisThreshold > 4 ? 'Medium' : 'Low';
   const levelStyles = {
-    High: 'bg-red-50 text-red-700 ring-red-200',
-    Medium: 'bg-amber-50 text-amber-700 ring-amber-200',
-    Low: 'bg-green-50 text-green-700 ring-green-200',
+    High: 'bg-red-100 text-red-800 hover:bg-red-100',
+    Medium: 'bg-amber-100 text-amber-800 hover:bg-amber-100',
+    Low: 'bg-green-100 text-green-800 hover:bg-green-100',
   };
 
   return (
-    <AdminCard className="border border-gray-200 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <path d="M12 3 21 19H3z" />
-            <line x1="12" y1="8" x2="12" y2="13" />
-            <circle cx="12" cy="17" r="1" />
-          </svg>
+    <Card>
+      <CardHeader>
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <CardTitle>Crisis Alert Threshold</CardTitle>
+            <CardDescription>
+              Adjust the sensitivity level for crisis detection alerts.
+            </CardDescription>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold text-gray-900">Crisis alert threshold</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Adjust the sensitivity level for crisis detection alerts.
-          </p>
-        </div>
-      </div>
-      <div className="mt-6 space-y-3">
-        <div className="flex items-center justify-between gap-4">
-          <label htmlFor="crisis-threshold-slider" className="text-sm font-medium text-gray-900">
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="crisis-threshold-slider" className="text-sm font-medium">
             Sensitivity: {crisisThreshold}/10
-          </label>
-          <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
-              levelStyles[level]
-            }`}
-            aria-label={`${level} sensitivity`}
-          >
-            {level}
-          </span>
+          </Label>
+          <Badge className={levelStyles[level]}>{level}</Badge>
         </div>
-
-        <input
+        <Slider
           id="crisis-threshold-slider"
-          type="range"
-          min="1"
-          max="10"
-          value={crisisThreshold}
-          onChange={(e) => onChange(Number(e.target.value))}
+          min={1}
+          max={10}
+          value={[crisisThreshold]}
+          onValueChange={([value]) => onChange(value)}
+          step={1}
           className="w-full"
-          aria-label="Crisis alert sensitivity level"
-          aria-valuemin="1"
-          aria-valuemax="10"
-          aria-valuenow={crisisThreshold}
-          aria-valuetext={`${crisisThreshold} out of 10, ${level} sensitivity`}
         />
-
-        <div className="flex justify-between text-xs text-gray-500">
+        <div className="flex justify-between text-xs text-muted-foreground">
           <span>Low</span>
           <span>Medium</span>
           <span>High</span>
         </div>
-      </div>
-    </AdminCard>
+      </CardContent>
+    </Card>
   );
 };
 

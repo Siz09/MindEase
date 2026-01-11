@@ -19,7 +19,6 @@ export default function UserManagement() {
     deleteUser,
     refreshAll,
     getUserDetails,
-    error,
   } = useUsers({ page, pageSize, filters });
 
   const [selectedUser, setSelectedUser] = useState(null);
@@ -193,35 +192,31 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-gray-900">User management</h1>
-        <p className="mt-1 text-sm text-gray-600">Manage and monitor all platform users.</p>
-      </header>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+        <p className="text-muted-foreground">Manage and monitor all platform users.</p>
+      </div>
 
       <UserNotification notification={notification} onDismiss={() => setNotification(null)} />
 
-      {/* Stats Cards */}
       <UserStats stats={stats} />
 
-      {/* Users Table */}
-      <div className="mt-6">
-        <UserTable
-          users={users}
-          loading={loading}
-          totalUsers={totalUsers}
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          filters={filters}
-          onSearch={handleSearch}
-          onStatusChange={handleStatusFilter}
-          onClearFilters={clearFilters}
-          onUserClick={handleUserClick}
-          onEditUser={handleEditUser}
-          onDeleteUser={handleDeleteUser}
-        />
-      </div>
+      <UserTable
+        users={users}
+        loading={loading}
+        totalUsers={totalUsers}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        filters={filters}
+        onSearch={handleSearch}
+        onStatusChange={handleStatusFilter}
+        onClearFilters={clearFilters}
+        onUserClick={handleUserClick}
+        onEditUser={handleEditUser}
+        onDeleteUser={handleDeleteUser}
+      />
 
       <UserModals
         selectedUser={selectedUser}

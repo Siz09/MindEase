@@ -1,152 +1,92 @@
+import { Input } from '../../../components/ui/Input';
+import { Button } from '../../../components/ui/Button';
+import { Label } from '../../../components/ui/Label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../../components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
+import { Download, X } from 'lucide-react';
+
 const AuditLogFilters = ({ filters, onChange, onClear, onExport }) => {
   const safeFilters = filters || {};
 
   return (
-    <div
-      className="bento-card"
-      style={{ marginBottom: 'var(--spacing-lg)', padding: 'var(--spacing-lg)' }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 'var(--spacing-md)',
-          alignItems: 'flex-end',
-        }}
-      >
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label
-            htmlFor="email-filter"
-            style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
-          >
-            Email
-          </label>
-          <input
-            id="email-filter"
-            placeholder="Filter by email"
-            value={safeFilters.email || ''}
-            onChange={(e) => onChange({ email: e.target.value })}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid var(--gray-light)',
-              borderRadius: 'var(--radius-md)',
-              fontFamily: 'inherit',
-              fontSize: '14px',
-            }}
-          />
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Filters</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <Label htmlFor="email-filter">Email</Label>
+            <Input
+              id="email-filter"
+              placeholder="Filter by email"
+              value={safeFilters.email || ''}
+              onChange={(e) => onChange({ ...safeFilters, email: e.target.value })}
+              className="mt-1"
+            />
+          </div>
 
-        <div style={{ flex: 1, minWidth: '150px' }}>
-          <label
-            htmlFor="action-filter"
-            style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
-          >
-            Action
-          </label>
-          <select
-            id="action-filter"
-            value={safeFilters.action || ''}
-            onChange={(e) => onChange({ action: e.target.value })}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid var(--gray-light)',
-              borderRadius: 'var(--radius-md)',
-              fontFamily: 'inherit',
-              fontSize: '14px',
-            }}
-          >
-            <option value="">All</option>
-            <option value="LOGIN">LOGIN</option>
-            <option value="CHAT_SENT">CHAT_SENT</option>
-            <option value="MOOD_ADDED">MOOD_ADDED</option>
-            <option value="JOURNAL_ADDED">JOURNAL_ADDED</option>
-          </select>
-        </div>
+          <div className="flex-1 min-w-[150px]">
+            <Label htmlFor="action-filter">Action</Label>
+            <Select
+              value={safeFilters.action || 'all'}
+              onValueChange={(value) =>
+                onChange({ ...safeFilters, action: value === 'all' ? '' : value })
+              }
+            >
+              <SelectTrigger id="action-filter" className="mt-1">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="LOGIN">LOGIN</SelectItem>
+                <SelectItem value="CHAT_SENT">CHAT_SENT</SelectItem>
+                <SelectItem value="MOOD_ADDED">MOOD_ADDED</SelectItem>
+                <SelectItem value="JOURNAL_ADDED">JOURNAL_ADDED</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div style={{ flex: 1, minWidth: '150px' }}>
-          <label
-            htmlFor="from-filter"
-            style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
-          >
-            From
-          </label>
-          <input
-            id="from-filter"
-            type="date"
-            value={safeFilters.from || ''}
-            onChange={(e) => onChange({ from: e.target.value })}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid var(--gray-light)',
-              borderRadius: 'var(--radius-md)',
-              fontFamily: 'inherit',
-              fontSize: '14px',
-            }}
-          />
-        </div>
+          <div className="flex-1 min-w-[150px]">
+            <Label htmlFor="from-filter">From</Label>
+            <Input
+              id="from-filter"
+              type="date"
+              value={safeFilters.from || ''}
+              onChange={(e) => onChange({ ...safeFilters, from: e.target.value })}
+              className="mt-1"
+            />
+          </div>
 
-        <div style={{ flex: 1, minWidth: '150px' }}>
-          <label
-            htmlFor="to-filter"
-            style={{ display: 'block', marginBottom: 'var(--spacing-sm)', fontWeight: '500' }}
-          >
-            To
-          </label>
-          <input
-            id="to-filter"
-            type="date"
-            value={safeFilters.to || ''}
-            onChange={(e) => onChange({ to: e.target.value })}
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid var(--gray-light)',
-              borderRadius: 'var(--radius-md)',
-              fontFamily: 'inherit',
-              fontSize: '14px',
-            }}
-          />
-        </div>
+          <div className="flex-1 min-w-[150px]">
+            <Label htmlFor="to-filter">To</Label>
+            <Input
+              id="to-filter"
+              type="date"
+              value={safeFilters.to || ''}
+              onChange={(e) => onChange({ ...safeFilters, to: e.target.value })}
+              className="mt-1"
+            />
+          </div>
 
-        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-          <button
-            type="button"
-            style={{
-              padding: '8px 16px',
-              background: 'none',
-              border: '1px solid var(--gray-light)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              fontWeight: '500',
-              color: 'var(--gray)',
-              transition: 'var(--transition-fast)',
-            }}
-            onClick={onClear}
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            style={{
-              padding: '8px 16px',
-              background: 'var(--primary)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              fontWeight: '500',
-              transition: 'var(--transition-fast)',
-            }}
-            onClick={onExport}
-          >
-            Export CSV
-          </button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" onClick={onClear}>
+              <X className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={onExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,41 +1,37 @@
 import { useId } from 'react';
-import { Modal } from '../shared';
-import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../../components/ui/dialog';
+import { Button } from '../../../components/ui/Button';
+import { Input } from '../../../components/ui/Input';
+import { Label } from '../../../components/ui/Label';
+import { Badge } from '../../../components/ui/Badge';
+import { Switch } from '../../../components/ui/Switch';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
+import { AlertTriangle } from 'lucide-react';
 
-const pillStyles = {
-  success: 'bg-green-50 text-green-700 ring-green-200',
-  danger: 'bg-red-50 text-red-700 ring-red-200',
-  warning: 'bg-amber-50 text-amber-700 ring-amber-200',
-  info: 'bg-blue-50 text-blue-700 ring-blue-200',
-  neutral: 'bg-gray-50 text-gray-700 ring-gray-200',
-};
-
-function Pill({ tone = 'neutral', children }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${
-        pillStyles[tone] || pillStyles.neutral
-      }`}
-    >
-      {children}
-    </span>
-  );
-}
-
-function getStatusTone(status) {
-  const normalized = (status || 'active').toLowerCase();
-  switch (normalized) {
+const getStatusBadge = (status) => {
+  const statusLower = (status || 'active').toLowerCase();
+  switch (statusLower) {
     case 'active':
-      return 'success';
+      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>;
     case 'banned':
-      return 'danger';
+      return <Badge variant="destructive">Banned</Badge>;
     case 'inactive':
-      return 'warning';
+      return (
+        <Badge variant="outline" className="bg-amber-50 text-amber-800">
+          Inactive
+        </Badge>
+      );
     default:
-      return 'neutral';
+      return <Badge variant="outline">{status || 'Unknown'}</Badge>;
   }
-}
+};
 
 const UserModals = ({
   selectedUser,
@@ -44,7 +40,6 @@ const UserModals = ({
   onEditUser,
   onBanUser,
   onDeleteUser,
-
   showEditModal,
   onCloseEditModal,
   formData,
@@ -52,15 +47,12 @@ const UserModals = ({
   formLoading,
   onChangeFormData,
   onSubmitForm,
-
   showBanConfirm,
   userToBan,
   banError,
   onCancelBan,
   onConfirmBan,
-
   showDeleteConfirm,
-  userToDelete,
   deleteError,
   onCancelDelete,
   onConfirmDelete,
@@ -69,280 +61,202 @@ const UserModals = ({
 
   return (
     <>
-      <Modal
-        isOpen={showDetailsModal}
-        title="User Details"
-        onClose={onCloseDetailsModal}
-        footer={
-          <div className="flex flex-wrap justify-end gap-2">
+      {/* User Details Modal */}
+      <Dialog open={showDetailsModal} onOpenChange={onCloseDetailsModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>View and manage user information</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="grid gap-4 py-4 sm:grid-cols-2">
+              <div>
+                <Label className="text-xs text-muted-foreground">Email</Label>
+                <p className="mt-1 text-sm font-medium">{selectedUser.email || 'N/A'}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Status</Label>
+                <div className="mt-1">{getStatusBadge(selectedUser?.status)}</div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">User ID</Label>
+                <p className="mt-1 font-mono text-xs">
+                  {selectedUser.id || selectedUser.userId || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Joined</Label>
+                <p className="mt-1 text-sm">
+                  {selectedUser.createdAt
+                    ? new Date(selectedUser.createdAt).toLocaleString()
+                    : 'N/A'}
+                </p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Crisis Flags</Label>
+                <p className="mt-1 text-sm">{selectedUser.crisisFlags || 0}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Last Active</Label>
+                <p className="mt-1 text-sm">
+                  {selectedUser.lastActive
+                    ? new Date(selectedUser.lastActive).toLocaleString()
+                    : 'N/A'}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <div className="mt-2 border-t pt-4">
+                  <Label className="text-xs text-muted-foreground">Subscription</Label>
+                  <div className="mt-2 flex gap-2">
+                    <Badge variant="outline">{selectedUser.subscriptionPlan || 'Free'}</Badge>
+                    <Badge variant="outline">{selectedUser.subscriptionStatus || 'none'}</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
             <Button variant="ghost" onClick={onCloseDetailsModal}>
               Close
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => selectedUser?.id && onEditUser(selectedUser)}
-              disabled={!selectedUser?.id}
-            >
+            <Button variant="outline" onClick={() => selectedUser?.id && onEditUser(selectedUser)}>
               Edit
             </Button>
             <Button
-              variant={selectedUser?.status === 'banned' ? 'primary' : 'danger'}
+              variant={selectedUser?.status === 'banned' ? 'default' : 'destructive'}
               onClick={() => selectedUser?.id && onBanUser(selectedUser)}
-              disabled={!selectedUser?.id}
             >
-              {selectedUser?.status === 'banned' ? 'Unban' : 'Ban'} user
+              {selectedUser?.status === 'banned' ? 'Unban' : 'Ban'} User
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={() => selectedUser?.id && onDeleteUser(selectedUser)}
-              disabled={!selectedUser?.id}
             >
               Delete
             </Button>
-          </div>
-        }
-      >
-        {selectedUser && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <div className="text-xs font-medium text-gray-500">Email</div>
-              <div className="mt-1 text-sm text-gray-900">{selectedUser.email || 'N/A'}</div>
-            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            <div>
-              <div className="text-xs font-medium text-gray-500">Status</div>
-              <div className="mt-1">
-                <Pill tone={getStatusTone(selectedUser?.status)}>
-                  {selectedUser.status || 'active'}
-                </Pill>
-              </div>
+      {/* Edit User Modal */}
+      <Dialog open={showEditModal} onOpenChange={onCloseEditModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update user information</DialogDescription>
+          </DialogHeader>
+          <form id={editFormId} onSubmit={onSubmitForm} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => onChangeFormData({ ...formData, email: e.target.value })}
+                disabled={formLoading}
+              />
+              {formErrors.email && <p className="text-sm text-destructive">{formErrors.email}</p>}
             </div>
-
-            <div>
-              <div className="text-xs font-medium text-gray-500">User ID</div>
-              <div className="mt-1 font-mono text-xs text-gray-900">
-                {selectedUser.id || selectedUser.userId || 'N/A'}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">Password (leave blank to keep current)</Label>
+              <Input
+                id="edit-password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => onChangeFormData({ ...formData, password: e.target.value })}
+                disabled={formLoading}
+              />
+              {formErrors.password && (
+                <p className="text-sm text-destructive">{formErrors.password}</p>
+              )}
             </div>
-
-            <div>
-              <div className="text-xs font-medium text-gray-500">Joined</div>
-              <div className="mt-1 text-sm text-gray-900">
-                {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleString() : 'N/A'}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-role">Role</Label>
+              <select
+                id="edit-role"
+                value={formData.role}
+                onChange={(e) => onChangeFormData({ ...formData, role: e.target.value })}
+                disabled={formLoading}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="USER">User</option>
+                <option value="ADMIN">Admin</option>
+              </select>
             </div>
-
-            <div>
-              <div className="text-xs font-medium text-gray-500">Crisis flags</div>
-              <div className="mt-1 text-sm text-gray-900">{selectedUser.crisisFlags || 0}</div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="edit-anonymous"
+                checked={formData.anonymousMode}
+                onCheckedChange={(checked) =>
+                  onChangeFormData({ ...formData, anonymousMode: checked })
+                }
+                disabled={formLoading}
+              />
+              <Label htmlFor="edit-anonymous">Anonymous Mode</Label>
             </div>
-
-            <div>
-              <div className="text-xs font-medium text-gray-500">Last active</div>
-              <div className="mt-1 text-sm text-gray-900">
-                {selectedUser.lastActive
-                  ? new Date(selectedUser.lastActive).toLocaleString()
-                  : 'N/A'}
-              </div>
-            </div>
-
-            <div className="sm:col-span-2">
-              <div className="mt-2 border-t border-gray-200 pt-4">
-                <h3 className="text-sm font-semibold text-gray-900">Subscription & billing</h3>
-                <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <div className="text-xs font-medium text-gray-500">Current plan</div>
-                    <div className="mt-1">
-                      <Pill tone={selectedUser.subscriptionPlan === 'PREMIUM' ? 'info' : 'neutral'}>
-                        {selectedUser.subscriptionPlan || 'Free'}
-                      </Pill>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-gray-500">Billing status</div>
-                    <div className="mt-1">
-                      <Pill
-                        tone={selectedUser.subscriptionStatus === 'ACTIVE' ? 'success' : 'warning'}
-                      >
-                        {selectedUser.subscriptionStatus || 'none'}
-                      </Pill>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-gray-500">Renews / expires</div>
-                    <div className="mt-1 text-sm text-gray-900">
-                      {selectedUser.subscriptionRenewsAt
-                        ? new Date(selectedUser.subscriptionRenewsAt).toLocaleDateString()
-                        : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        isOpen={showEditModal}
-        title="Edit User"
-        onClose={onCloseEditModal}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={onCloseEditModal}>
+          </form>
+          <DialogFooter>
+            <Button variant="ghost" onClick={onCloseEditModal} disabled={formLoading}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" form={editFormId} loading={formLoading}>
-              Save changes
+            <Button form={editFormId} type="submit" disabled={formLoading}>
+              {formLoading ? 'Saving...' : 'Save Changes'}
             </Button>
-          </div>
-        }
-      >
-        <form
-          id={editFormId}
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (typeof onSubmitForm === 'function') {
-              onSubmitForm(e);
-            }
-          }}
-        >
-          <div className="space-y-4">
-            <div>
-              <label htmlFor={`${editFormId}-email`} className="text-sm font-medium text-gray-900">
-                Email
-              </label>
-              <div className="mt-1">
-                <Input
-                  id={`${editFormId}-email`}
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => onChangeFormData({ ...formData, email: e.target.value })}
-                  error={Boolean(formErrors.email)}
-                  required
-                />
-              </div>
-              {formErrors.email && (
-                <div className="mt-1 text-sm text-red-600">{formErrors.email}</div>
-              )}
-            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            <div>
-              <label
-                htmlFor={`${editFormId}-password`}
-                className="text-sm font-medium text-gray-900"
-              >
-                Password
-              </label>
-              <div className="mt-1">
-                <Input
-                  id={`${editFormId}-password`}
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => onChangeFormData({ ...formData, password: e.target.value })}
-                  error={Boolean(formErrors.password)}
-                />
-              </div>
-              {formErrors.password ? (
-                <div className="mt-1 text-sm text-red-600">{formErrors.password}</div>
-              ) : (
-                <div className="mt-1 text-sm text-gray-500">
-                  Leave blank to keep current password.
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor={`${editFormId}-role`} className="text-sm font-medium text-gray-900">
-                Role
-              </label>
-              <div className="mt-1">
-                <select
-                  id={`${editFormId}-role`}
-                  value={formData.role}
-                  onChange={(e) => onChangeFormData({ ...formData, role: e.target.value })}
-                  className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 transition-smooth focus:outline-none focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="USER">User</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
-              </div>
-            </div>
-
-            <label className="flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                checked={formData.anonymousMode}
-                onChange={(e) => onChangeFormData({ ...formData, anonymousMode: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-900">Anonymous mode</span>
-            </label>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal
-        isOpen={showBanConfirm}
-        title={userToBan?.status === 'banned' ? 'Unban User' : 'Ban User'}
-        onClose={onCancelBan}
-        footer={
-          <div className="flex justify-end gap-2">
+      {/* Ban Confirmation Modal */}
+      <Dialog open={showBanConfirm} onOpenChange={onCancelBan}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{userToBan?.status === 'banned' ? 'Unban User' : 'Ban User'}</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {userToBan?.status === 'banned' ? 'unban' : 'ban'} this user?
+            </DialogDescription>
+          </DialogHeader>
+          {banError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{banError}</AlertDescription>
+            </Alert>
+          )}
+          <DialogFooter>
             <Button variant="ghost" onClick={onCancelBan}>
               Cancel
             </Button>
-            <Button
-              variant={userToBan?.status === 'banned' ? 'primary' : 'danger'}
-              onClick={onConfirmBan}
-              disabled={!userToBan?.id}
-            >
-              Confirm {userToBan?.status === 'banned' ? 'unban' : 'ban'}
+            <Button variant="destructive" onClick={onConfirmBan}>
+              {userToBan?.status === 'banned' ? 'Unban' : 'Ban'} User
             </Button>
-          </div>
-        }
-      >
-        <div className="space-y-3">
-          {banError && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-              {banError}
-            </div>
-          )}
-          <p className="text-sm text-gray-700">
-            {userToBan?.status === 'banned'
-              ? `Are you sure you want to unban ${userToBan?.email || 'this user'}? They will regain access to the platform.`
-              : `${userToBan?.email || 'This user'} will be banned and may require review to restore access. This action can be reversed.`}
-          </p>
-        </div>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      <Modal
-        isOpen={showDeleteConfirm}
-        title="Delete User"
-        onClose={onCancelDelete}
-        footer={
-          <div className="flex justify-end gap-2">
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteConfirm} onOpenChange={onCancelDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{deleteError}</AlertDescription>
+            </Alert>
+          )}
+          <DialogFooter>
             <Button variant="ghost" onClick={onCancelDelete}>
               Cancel
             </Button>
-            <Button variant="danger" onClick={onConfirmDelete} disabled={!userToDelete?.id}>
-              Confirm Delete
+            <Button variant="destructive" onClick={onConfirmDelete}>
+              Delete User
             </Button>
-          </div>
-        }
-      >
-        <div className="space-y-3">
-          {deleteError && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-900">
-              {deleteError}
-            </div>
-          )}
-          <p className="text-sm text-gray-700">
-            Are you sure you want to delete{' '}
-            <span className="font-semibold">{userToDelete?.email || 'this user'}</span>? This action
-            will anonymize the user account and cannot be undone.
-          </p>
-        </div>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

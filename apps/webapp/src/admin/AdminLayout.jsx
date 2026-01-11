@@ -1,78 +1,106 @@
 'use client';
 
-import { Outlet } from 'react-router-dom';
+import React from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
-import '../styles/admin-base.css';
-import '../styles/admin-layout.css';
-import '../styles/admin-bento.css';
-import '../styles/admin-animations.css';
-import '../styles/admin-responsive.css';
-// Ensure core component styles are loaded for buttons, inputs, selects, and tables
-import '../styles/admin-components.css';
-import '../styles/admin-tables.css';
-import { useState, useEffect } from 'react';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '../components/ui/sidebar';
+import { Separator } from '../components/ui/Separator';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '../components/ui/breadcrumb';
+
+// Map routes to breadcrumb labels
+const routeLabels = {
+  '/admin': 'Dashboard',
+  '/admin/users': 'User Management',
+  '/admin/crisis-monitoring': 'Crisis Monitoring',
+  '/admin/content': 'Content Library',
+  '/admin/analytics': 'Analytics',
+  '/admin/system': 'System Health',
+  '/admin/audit-logs': 'Audit Logs',
+  '/admin/crisis-flags': 'Crisis Flags',
+  '/admin/settings': 'Settings',
+};
+
+function getBreadcrumbs(pathname) {
+  const paths = pathname.split('/').filter(Boolean);
+  const breadcrumbs = [];
+
+  // Always start with Admin
+  if (paths.length > 0 && paths[0] === 'admin') {
+    breadcrumbs.push({ label: 'Admin', path: '/admin' });
+
+    // Add current page
+    if (paths.length > 1) {
+      const currentPath = `/${paths.join('/')}`;
+      const currentLabel =
+        routeLabels[currentPath] ||
+        paths[paths.length - 1]
+          .split('-')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      breadcrumbs.push({ label: currentLabel, path: currentPath, isCurrent: true });
+    } else {
+      breadcrumbs[0].isCurrent = true;
+    }
+  }
+
+  return breadcrumbs;
+}
 
 export default function AdminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Force light theme for admin UI regardless of system preference
+  React.useEffect(() => {
+    const adminContainer = document.querySelector('.admin-ui');
+    if (adminContainer) {
+      adminContainer.setAttribute('data-theme', 'light');
+      // Remove dark class if present
+      adminContainer.classList.remove('dark');
+    }
+  }, []);
 
-  // Close sidebar on Escape key
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && sidebarOpen) {
-        setSidebarOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [sidebarOpen]);
+  const location = useLocation();
+  const breadcrumbs = getBreadcrumbs(location.pathname);
 
   return (
-    <div className="admin-shell">
-      {/* Mobile menu button */}
-      <button
-        className="admin-mobile-menu-btn"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        aria-label="Toggle menu"
-        aria-expanded={sidebarOpen}
-      >
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-
-      {/* Overlay for mobile */}
-      {sidebarOpen && (
-        <div
-          className="admin-sidebar-overlay"
-          onClick={() => setSidebarOpen(false)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              setSidebarOpen(false);
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label="Close menu"
-        />
-      )}
-
-      <AdminSidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
-      <main className="admin-main">
-        <div className="admin-content">
-          <Outlet />
-        </div>
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="admin-ui flex min-h-screen w-full" data-theme="light">
+        <AdminSidebar />
+        <SidebarInset className="flex-1 flex flex-col">
+          <header className="flex h-14 shrink-0 items-center gap-4 border-b bg-background px-6">
+            <SidebarTrigger />
+            <Separator orientation="vertical" className="h-6" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                {breadcrumbs.map((crumb, index) => (
+                  <React.Fragment key={crumb.path}>
+                    {index > 0 && <BreadcrumbSeparator />}
+                    <BreadcrumbItem>
+                      {crumb.isCurrent ? (
+                        <BreadcrumbPage className="font-medium">{crumb.label}</BreadcrumbPage>
+                      ) : (
+                        <BreadcrumbLink asChild>
+                          <a href={crumb.path}>{crumb.label}</a>
+                        </BreadcrumbLink>
+                      )}
+                    </BreadcrumbItem>
+                  </React.Fragment>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
+          <main className="flex-1 overflow-auto">
+            <div className="container mx-auto p-6 animate-in fade-in duration-300">
+              <Outlet />
+            </div>
+          </main>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }

@@ -23,7 +23,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../components/ui/Dialog';
+} from '../components/ui/dialog';
 import { Separator } from '../components/ui/Separator';
 import { Check } from 'lucide-react';
 import { cn } from '../lib/utils';

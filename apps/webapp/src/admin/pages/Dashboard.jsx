@@ -13,7 +13,19 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { Users, UserPlus, AlertTriangle, Bot, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import adminApi from '../adminApi';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Alert, AlertDescription } from '../../components/ui/Alert';
+import useAnimatedCounter from '../hooks/useAnimatedCounter';
 
 Chart.register(
   LineController,
@@ -70,7 +82,6 @@ export default function Dashboard() {
         setError(null);
         setLoading(true);
 
-        // Fetch all dashboard data in parallel, allowing partial failures
         const [statsRes, activityRes, alertsRes, crisisStatsRes] = await Promise.allSettled([
           adminApi.get('/admin/dashboard/overview'),
           adminApi.get('/admin/dashboard/activity-trend'),
@@ -105,7 +116,6 @@ export default function Dashboard() {
           setActivityData(activityPayload);
           if (crisisStatsRes.status === 'fulfilled') {
             const raw = crisisStatsRes.value?.data || {};
-            // Normalize to a simple POJO with numeric fields; defensive against undefined/null
             setCrisisStats({
               high: Number(raw.high) || 0,
               medium: Number(raw.medium) || 0,
@@ -116,7 +126,6 @@ export default function Dashboard() {
           }
           setRecentAlerts(alertsPayload);
           setLastUpdated(new Date());
-          // API failures handled gracefully
         }
       } catch {
         if (mounted) {
@@ -134,7 +143,6 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    // Clean up charts on unmount
     return () => {
       Object.values(charts.current).forEach((c) => c?.destroy?.());
     };
@@ -143,7 +151,6 @@ export default function Dashboard() {
   useEffect(() => {
     if (error) return;
 
-    // User Activity chart (line)
     if (activityChartRef.current) {
       const canvas = activityChartRef.current;
       const labels = (activityData || []).map((pt) => fmt(pt.day));
@@ -161,8 +168,8 @@ export default function Dashboard() {
                 {
                   label: 'Daily Active Users',
                   data: values,
-                  borderColor: '#6366f1',
-                  backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                  borderColor: 'hsl(var(--primary))',
+                  backgroundColor: 'hsl(var(--primary) / 0.1)',
                 },
               ],
             },
@@ -172,8 +179,8 @@ export default function Dashboard() {
               scales: { y: { beginAtZero: true } },
             },
           });
-        } catch (err) {
-          console.error('Failed to create activity chart:', err);
+        } catch {
+          // Failed to create activity chart - error handled silently
         }
       } else if (
         charts.current.activity &&
@@ -190,7 +197,6 @@ export default function Dashboard() {
       }
     }
 
-    // Crisis Flags Distribution chart (bar)
     if (crisisChartRef.current) {
       const canvas = crisisChartRef.current;
       const labels = ['High', 'Medium', 'Low'];
@@ -245,214 +251,195 @@ export default function Dashboard() {
     return 'No trend data';
   };
 
+  const getTrendIcon = (trendValue) => {
+    if (trendValue == null || typeof trendValue !== 'number') return null;
+    if (trendValue > 0) return <TrendingUp className="h-3 w-3 text-green-600" />;
+    if (trendValue < 0) return <TrendingDown className="h-3 w-3 text-red-600" />;
+    return <Minus className="h-3 w-3 text-muted-foreground" />;
+  };
+
+  const animatedActiveUsers = useAnimatedCounter(stats.activeUsers, 1000);
+  const animatedDailySignups = useAnimatedCounter(stats.dailySignups, 1000);
+  const animatedCrisisFlags = useAnimatedCounter(stats.crisisFlags, 1000);
+  const animatedAIUsage = useAnimatedCounter(stats.aiUsage, 1000);
+
+  const statCards = [
+    {
+      label: 'Active Users',
+      value: animatedActiveUsers,
+      trend: stats.activeUsersTrend,
+      icon: Users,
+      iconColor: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+    },
+    {
+      label: 'Daily Signups',
+      value: animatedDailySignups,
+      trend: stats.dailySignupsTrend,
+      icon: UserPlus,
+      iconColor: 'text-green-600',
+      bgColor: 'bg-green-50',
+    },
+    {
+      label: 'Crisis Flags',
+      value: animatedCrisisFlags,
+      trend: stats.crisisFlagsTrend,
+      icon: AlertTriangle,
+      iconColor: 'text-red-600',
+      bgColor: 'bg-red-50',
+    },
+    {
+      label: 'AI Usage',
+      value: animatedAIUsage,
+      trend: stats.aiUsageTrend,
+      icon: Bot,
+      iconColor: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+    },
+  ];
+
   return (
-    <div>
-      {/* Page Header */}
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Welcome back! Here's what's happening with MindEase today.</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome back! Here's what's happening with MindEase today.
+        </p>
       </div>
 
       {loading && (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '3rem',
-            color: 'var(--color-text-secondary)',
-          }}
-        >
-          <div
-            style={{
-              display: 'inline-block',
-              width: '40px',
-              height: '40px',
-              border: '4px solid #e5e7eb',
-              borderTop: '4px solid #6366f1',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              marginBottom: '1rem',
-            }}
-          />
-          <div>Loading dashboard data...</div>
-          <style>
-            {`
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}
-          </style>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4 rounded" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-32 mb-2" />
+                <Skeleton className="h-3 w-40" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
       {error && !loading && (
-        <div
-          style={{
-            marginBottom: 'var(--spacing-lg)',
-            padding: 'var(--spacing-lg)',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: 'var(--radius-lg)',
-            color: 'var(--color-danger)',
-          }}
-        >
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <div className="bento-grid">
-        <div className="bento-card">
-          <div className="bento-card-content">
-            <div className="bento-card-icon">👥</div>
-            <div className="bento-card-label">Active Users</div>
-            <div className="bento-card-value">{stats.activeUsers?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">{formatTrendText(stats.activeUsersTrend)}</div>
-          </div>
-        </div>
-
-        <div className="bento-card">
-          <div className="bento-card-content">
-            <div className="bento-card-icon">📝</div>
-            <div className="bento-card-label">Daily Signups</div>
-            <div className="bento-card-value">{stats.dailySignups?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">{formatTrendText(stats.dailySignupsTrend)}</div>
-          </div>
-        </div>
-
-        <div className="bento-card">
-          <div className="bento-card-content">
-            <div className="bento-card-icon">🚨</div>
-            <div className="bento-card-label">Crisis Flags</div>
-            <div className="bento-card-value">{stats.crisisFlags?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend negative">
-              {formatTrendText(stats.crisisFlagsTrend)}
-            </div>
-          </div>
-        </div>
-
-        <div className="bento-card">
-          <div className="bento-card-content">
-            <div className="bento-card-icon">🤖</div>
-            <div className="bento-card-label">AI Usage</div>
-            <div className="bento-card-value">{stats.aiUsage?.toLocaleString() || '0'}</div>
-            <div className="bento-card-trend">{formatTrendText(stats.aiUsageTrend)}</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bento-grid-2" style={{ marginTop: 'var(--spacing-xl)' }}>
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <div className="chart-card-title">User Activity (Last 30 Days)</div>
-            <div className="chart-card-subtitle">Daily active users trend</div>
-          </div>
-          <div className="chart-placeholder">
-            <canvas ref={activityChartRef} style={{ width: '100%', height: '260px' }} />
-          </div>
-        </div>
-
-        <div className="chart-card">
-          <div className="chart-card-header">
-            <div className="chart-card-title">Crisis Flags Distribution</div>
-            <div className="chart-card-subtitle">Risk level breakdown</div>
-          </div>
-          <div className="chart-placeholder">
-            <canvas ref={crisisChartRef} style={{ width: '100%', height: '260px' }} />
-          </div>
-        </div>
-      </div>
-
-      <div className="chart-card" style={{ marginTop: 'var(--spacing-xl)' }}>
-        <div className="chart-card-header">
-          <div className="chart-card-title">Recent Alerts & Events</div>
-          <div className="chart-card-subtitle">Latest system notifications</div>
-        </div>
-        {loading ? (
-          <p
-            style={{
-              color: 'var(--color-text-secondary)',
-              textAlign: 'center',
-              padding: 'var(--spacing-lg)',
-            }}
-          >
-            Loading alerts...
-          </p>
-        ) : recentAlerts.length === 0 ? (
-          <p
-            style={{
-              color: 'var(--color-text-secondary)',
-              textAlign: 'center',
-              padding: 'var(--spacing-lg)',
-            }}
-          >
-            No recent alerts
-          </p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
-            {recentAlerts.slice(0, 5).map((alert, idx) => (
-              <div
-                key={
-                  alert.id ||
-                  alert.createdAt ||
-                  alert.timestamp ||
-                  `${alert.userId || 'alert'}-${idx}`
-                }
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--spacing-md)',
-                  padding: 'var(--spacing-md)',
-                  backgroundColor: 'var(--color-bg-tertiary)',
-                  borderRadius: 'var(--radius-md)',
-                  borderLeft: '4px solid var(--color-warning)',
-                }}
-              >
-                <span style={{ fontSize: '20px' }}>⚠️</span>
-                <div style={{ flex: 1 }}>
-                  <p
-                    style={{
-                      fontWeight: 600,
-                      margin: '0 0 4px 0',
-                      color: 'var(--color-text-primary)',
-                    }}
-                  >
-                    {alert.title || 'Alert'}
-                  </p>
-                  <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: 0 }}>
-                    {alert.message || 'System alert'}
-                  </p>
-                </div>
-                <span
-                  style={{
-                    fontSize: '12px',
-                    color: 'var(--color-text-secondary)',
-                    whiteSpace: 'nowrap',
-                  }}
+      {!loading && (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {statCards.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card
+                  key={stat.label}
+                  className="transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'Recently'}
-                </span>
-              </div>
-            ))}
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {stat.label}
+                    </CardTitle>
+                    <div className={`rounded-lg p-2 ${stat.bgColor}`}>
+                      <Icon className={`h-4 w-4 ${stat.iconColor}`} />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold transition-all duration-300">
+                      {stat.value?.toLocaleString() || '0'}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
+                      {getTrendIcon(stat.trend)}
+                      <span>{formatTrendText(stat.trend)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
-        )}
-      </div>
 
-      {/* System Status Footer */}
-      <div
-        style={{
-          marginTop: 'var(--spacing-2xl)',
-          padding: 'var(--spacing-lg)',
-          backgroundColor: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-lg)',
-          textAlign: 'center',
-          color: 'var(--color-text-secondary)',
-          fontSize: '12px',
-        }}
-      >
-        <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>✓</span> All systems
-        operational{lastUpdated && ` • Last updated ${lastUpdated.toLocaleTimeString()}`}
-      </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Activity (Last 30 Days)</CardTitle>
+                <CardDescription>Daily active users trend</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[260px]">
+                  <canvas ref={activityChartRef} style={{ width: '100%', height: '100%' }} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Crisis Flags Distribution</CardTitle>
+                <CardDescription>Risk level breakdown</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[260px]">
+                  <canvas ref={crisisChartRef} style={{ width: '100%', height: '100%' }} />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Alerts & Events</CardTitle>
+              <CardDescription>Latest system notifications</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentAlerts.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No recent alerts</p>
+              ) : (
+                <div className="space-y-2">
+                  {recentAlerts.slice(0, 5).map((alert, idx) => (
+                    <div
+                      key={alert.id || alert.createdAt || alert.timestamp || `alert-${idx}`}
+                      className="flex items-center gap-4 rounded-lg border-l-4 border-yellow-500 bg-muted/50 p-4"
+                    >
+                      <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                      <div className="flex-1">
+                        <p className="font-semibold">{alert.title || 'Alert'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {alert.message || 'System alert'}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {alert.timestamp
+                          ? new Date(alert.timestamp).toLocaleTimeString()
+                          : 'Recently'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <span className="text-green-600 font-semibold">✓</span>
+                <span>All systems operational</span>
+                {lastUpdated && (
+                  <>
+                    <span>•</span>
+                    <span>Last updated {lastUpdated.toLocaleTimeString()}</span>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 }

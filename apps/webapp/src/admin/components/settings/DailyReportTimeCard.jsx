@@ -1,49 +1,45 @@
-import AdminCard from '../AdminCard';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../../components/ui/Card';
+import { Label } from '../../../components/ui/Label';
+import { Input } from '../../../components/ui/Input';
+import { Clock } from 'lucide-react';
 
 const DailyReportTimeCard = ({ dailyReportTime, onChange }) => {
-  const handleChange = (e) => {
-    if (typeof onChange === 'function') {
-      onChange(e.target.value);
-    }
-  };
-
   return (
-    <AdminCard className="border border-gray-200 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
+    <Card>
+      <CardHeader>
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+            <Clock className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <CardTitle>Daily Report Time</CardTitle>
+            <CardDescription>
+              Set the time when daily reports are generated and sent.
+            </CardDescription>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold text-gray-900">Daily report time</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Set the time when daily reports are generated and sent.
-          </p>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <Label htmlFor="daily-report-time" className="text-sm font-medium">
+            Report time
+          </Label>
+          <Input
+            id="daily-report-time"
+            type="time"
+            value={dailyReportTime ?? ''}
+            onChange={(e) => onChange?.(e.target.value)}
+            className="w-48"
+          />
         </div>
-      </div>
-      <div className="mt-6 flex flex-col gap-2">
-        <label htmlFor="daily-report-time" className="text-sm font-medium text-gray-900">
-          Report time
-        </label>
-        <input
-          id="daily-report-time"
-          type="time"
-          value={dailyReportTime ?? ''}
-          onChange={handleChange}
-          className="input-field w-48"
-        />
-      </div>
-    </AdminCard>
+      </CardContent>
+    </Card>
   );
 };
 

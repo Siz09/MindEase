@@ -98,6 +98,9 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       dedupe: ['react', 'react-dom'],
+      alias: {
+        '@': new URL('./src', import.meta.url).pathname,
+      },
     },
     optimizeDeps: {
       include: ['react', 'react-dom'],

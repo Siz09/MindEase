@@ -1,4 +1,13 @@
-import AdminCard from '../AdminCard';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../../components/ui/Card';
+import { Label } from '../../../components/ui/Label';
+import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
+import { Mail } from 'lucide-react';
 
 const EmailNotificationsCard = ({ emailNotifications, onChange = () => {} }) => {
   const options = [
@@ -20,59 +29,40 @@ const EmailNotificationsCard = ({ emailNotifications, onChange = () => {} }) => 
   ];
 
   return (
-    <AdminCard className="border border-gray-200 shadow-sm">
-      <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
-          </svg>
+    <Card>
+      <CardHeader>
+        <div className="flex items-start gap-4">
+          <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+            <Mail className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <CardTitle>Email Notifications</CardTitle>
+            <CardDescription>Choose which events trigger email notifications.</CardDescription>
+          </div>
         </div>
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold text-gray-900">Email notifications</h2>
-          <p className="mt-1 text-sm text-gray-600">
-            Choose which events trigger email notifications.
-          </p>
-        </div>
-      </div>
-      <fieldset className="mt-6 space-y-3">
-        <legend className="text-sm font-medium text-gray-900">Notification level</legend>
-        {options.map((opt) => {
-          const checked = emailNotifications === opt.value;
-          return (
-            <label
+      </CardHeader>
+      <CardContent>
+        <RadioGroup value={emailNotifications} onValueChange={onChange} className="space-y-3">
+          <Label className="text-sm font-medium">Notification level</Label>
+          {options.map((opt) => (
+            <div
               key={opt.value}
               className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
-                checked
+                emailNotifications === opt.value
                   ? 'border-primary-200 bg-primary-50/50'
-                  : 'border-gray-200 bg-white hover:bg-gray-50'
+                  : 'border-border bg-background hover:bg-accent'
               }`}
             >
-              <input
-                type="radio"
-                name="notifications"
-                value={opt.value}
-                checked={checked}
-                onChange={(e) => onChange(e.target.value)}
-                className="mt-1 h-4 w-4 flex-none accent-primary-500"
-              />
-              <div className="min-w-0">
-                <div className="text-sm font-medium text-gray-900">{opt.title}</div>
-                <div className="mt-1 text-sm text-gray-600">{opt.description}</div>
-              </div>
-            </label>
-          );
-        })}
-      </fieldset>
-    </AdminCard>
+              <RadioGroupItem value={opt.value} id={opt.value} className="mt-1" />
+              <Label htmlFor={opt.value} className="flex-1 cursor-pointer">
+                <div className="text-sm font-medium">{opt.title}</div>
+                <div className="mt-1 text-sm text-muted-foreground">{opt.description}</div>
+              </Label>
+            </div>
+          ))}
+        </RadioGroup>
+      </CardContent>
+    </Card>
   );
 };
 

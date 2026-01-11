@@ -1,159 +1,55 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+'use client';
+
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from './AdminAuthContext';
-import { useState, useRef, useEffect } from 'react';
+import {
+  LayoutDashboard,
+  Users,
+  AlertTriangle,
+  BookOpen,
+  BarChart3,
+  Activity,
+  FileText,
+  Settings,
+  LogOut,
+  ChevronsUpDown,
+  BadgeCheck,
+  Bell,
+  CreditCard,
+} from 'lucide-react';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '../components/ui/sidebar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '../components/ui/Avatar';
+import { cn } from '../lib/utils';
+import { useSidebar } from '../components/ui/sidebar';
 
 const navIcons = {
-  dashboard: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <rect x="3" y="12" width="5" height="9" rx="1" />
-      <rect x="10" y="7" width="5" height="14" rx="1" />
-      <rect x="17" y="3" width="4" height="18" rx="1" />
-    </svg>
-  ),
-  users: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <circle cx="8" cy="8" r="3" />
-      <circle cx="17" cy="8" r="3" />
-      <path d="M2 21c0-2.5 2.5-4 5-4s5 1.5 5 4" />
-      <path d="M12 17c0-2.2 2.2-3.6 4.5-3.6S21 14.8 21 17" />
-    </svg>
-  ),
-  crisis: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M12 3 21 19H3z" />
-      <line x1="12" y1="8" x2="12" y2="13" />
-      <circle cx="12" cy="17" r="1" />
-    </svg>
-  ),
-  content: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M4 4h7l4 3 4-3h5v16H19l-4-3-4 3H4z" />
-      <path d="M4 12h16" />
-    </svg>
-  ),
-  analytics: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <polyline points="3 17 9 11 13 15 21 6" />
-      <polyline points="3 12 6 12 8 6 12 12 16 9 21 9" />
-    </svg>
-  ),
-  system: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v3" />
-      <path d="M12 19v3" />
-      <path d="M2 12h3" />
-      <path d="M19 12h3" />
-      <path d="M5 5l2 2" />
-      <path d="M17 17l2 2" />
-      <path d="M5 19l2-2" />
-      <path d="M17 7l2-2" />
-    </svg>
-  ),
-  audit: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M9 3h6v4H9z" />
-      <rect x="4" y="7" width="16" height="14" rx="2" />
-      <path d="M8 13h8" />
-      <path d="M8 17h8" />
-    </svg>
-  ),
-  settings: (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <line x1="4" y1="7" x2="20" y2="7" />
-      <circle cx="7.5" cy="7" r="2" />
-      <line x1="4" y1="17" x2="20" y2="17" />
-      <circle cx="16.5" cy="17" r="2" />
-    </svg>
-  ),
+  dashboard: LayoutDashboard,
+  users: Users,
+  crisis: AlertTriangle,
+  content: BookOpen,
+  analytics: BarChart3,
+  system: Activity,
+  audit: FileText,
+  settings: Settings,
 };
 
 const navItems = [
@@ -181,139 +77,146 @@ const navItems = [
   },
 ];
 
-export default function AdminSidebar({ sidebarOpen, setSidebarOpen }) {
+function NavUser({ user, onLogout, onSettings }) {
+  const { isMobile } = useSidebar();
+  const userInitial = (user?.email || 'A').charAt(0).toUpperCase();
+  const userEmail = user?.email || 'Admin';
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarFallback className="rounded-lg">{userInitial}</AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{userEmail}</span>
+                <span className="truncate text-xs">Administrator</span>
+              </div>
+              <ChevronsUpDown className="ml-auto size-4" />
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            side={isMobile ? 'bottom' : 'right'}
+            align="end"
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="p-0 font-normal">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarFallback className="rounded-lg">{userInitial}</AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-medium">{userEmail}</span>
+                  <span className="truncate text-xs">Administrator</span>
+                </div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={onSettings}>
+                <BadgeCheck className="mr-2 h-4 w-4" />
+                Account
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <CreditCard className="mr-2 h-4 w-4" />
+                Billing
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Bell className="mr-2 h-4 w-4" />
+                Notifications
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
+function TeamSwitcher() {
+  return (
+    <div className="flex items-center gap-3 px-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <LayoutDashboard className="h-4 w-4" />
+      </div>
+      <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+        <span className="text-sm font-semibold">MindEase</span>
+        <span className="text-xs text-muted-foreground">Admin</span>
+      </div>
+    </div>
+  );
+}
+
+export default function AdminSidebar() {
   const { logout, adminUser } = useAdminAuth();
   const navigate = useNavigate();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const userMenuRef = useRef(null);
-
-  const handleNavClick = () => {
-    if (window.innerWidth <= 767) {
-      setSidebarOpen(false);
-    }
-  };
-
-  // Close user menu when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setUserMenuOpen(false);
-      }
-    }
-
-    if (userMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [userMenuOpen]);
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
       await logout();
       navigate('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
+    } catch {
+      // Logout failed, user will stay on current page
     }
   };
 
   const handleSettings = () => {
     navigate('/admin/settings');
-    setUserMenuOpen(false);
-    handleNavClick();
   };
 
-  const userInitial = (adminUser?.email || 'A').charAt(0).toUpperCase();
-  const userEmail = adminUser?.email || 'Admin';
-
   return (
-    <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
-      <div className="admin-sidebar-brand">MindEase Admin</div>
-
-      <nav className="admin-nav">
+    <Sidebar collapsible="icon" variant="sidebar" className="border-r">
+      <SidebarHeader className="border-b p-4">
+        <TeamSwitcher />
+      </SidebarHeader>
+      <SidebarContent className="px-2 py-4">
         {navItems.map((section) => (
-          <div key={section.section} className="admin-nav-section">
-            <div className="admin-nav-section-title">{section.section}</div>
-            {section.items.map(({ to, label, icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) => `admin-nav-link ${isActive ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <span className="admin-nav-icon" aria-hidden="true">
-                  {icon}
-                </span>
-                <span>{label}</span>
-              </NavLink>
-            ))}
-          </div>
+          <SidebarGroup key={section.section} className="mb-6">
+            <SidebarGroupLabel className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              {section.section}
+            </SidebarGroupLabel>
+            <SidebarMenu>
+              {section.items.map(({ to, label, icon: Icon, end }) => {
+                const isActive = end ? location.pathname === to : location.pathname.startsWith(to);
+                return (
+                  <SidebarMenuItem key={to}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={label}
+                      className={cn(
+                        'w-full justify-start gap-3',
+                        isActive && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                      )}
+                    >
+                      <NavLink to={to} end={end}>
+                        {Icon && <Icon className="h-4 w-4" />}
+                        <span>{label}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroup>
         ))}
-      </nav>
-
-      {/* ChatGPT-like User Profile */}
-      <div className="admin-user-profile" ref={userMenuRef}>
-        <button
-          className="admin-user-profile-button"
-          onClick={() => setUserMenuOpen(!userMenuOpen)}
-          aria-label="User menu"
-        >
-          <div className="admin-user-profile-avatar">{userInitial}</div>
-          <div className="admin-user-profile-info">
-            <div className="admin-user-profile-name">{userEmail}</div>
-            <div className="admin-user-profile-role">Administrator</div>
-          </div>
-          <svg
-            className={`admin-user-profile-chevron ${userMenuOpen ? 'open' : ''}`}
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M4 6l4 4 4-4" />
-          </svg>
-        </button>
-
-        {userMenuOpen && (
-          <div className="admin-user-menu-dropdown">
-            <button className="admin-user-menu-item" onClick={handleSettings}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="12" cy="12" r="3" />
-                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24" />
-              </svg>
-              <span>Settings</span>
-            </button>
-            <div className="admin-user-menu-divider" />
-            <button className="admin-user-menu-item" onClick={handleLogout}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              <span>Log out</span>
-            </button>
-          </div>
-        )}
-      </div>
-    </aside>
+      </SidebarContent>
+      <SidebarFooter className="border-t p-2">
+        <NavUser user={adminUser} onLogout={handleLogout} onSettings={handleSettings} />
+      </SidebarFooter>
+    </Sidebar>
   );
 }
