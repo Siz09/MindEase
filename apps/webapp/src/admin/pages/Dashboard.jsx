@@ -253,7 +253,39 @@ export default function Dashboard() {
         <p className="page-subtitle">Welcome back! Here's what's happening with MindEase today.</p>
       </div>
 
-      {error && (
+      {loading && (
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '3rem',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-block',
+              width: '40px',
+              height: '40px',
+              border: '4px solid #e5e7eb',
+              borderTop: '4px solid #6366f1',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              marginBottom: '1rem',
+            }}
+          />
+          <div>Loading dashboard data...</div>
+          <style>
+            {`
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+            `}
+          </style>
+        </div>
+      )}
+
+      {error && !loading && (
         <div
           style={{
             marginBottom: 'var(--spacing-lg)',

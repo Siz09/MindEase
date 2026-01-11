@@ -18,8 +18,18 @@ export default defineConfig(({ mode }) => {
         // Keep it OFF in dev by default; enable with `VITE_PWA_DEV=true`.
         devOptions: { enabled: enablePwaInDev },
         workbox: {
+          // Disable navigation routing - let React Router handle all navigation
+          navigateFallback: null,
           // runtimeCaching rules
           runtimeCaching: [
+            {
+              // Admin API requests - always go to network, never cache
+              urlPattern: /\/api\/admin\/.*/,
+              handler: 'NetworkOnly',
+              options: {
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
             {
               // Journal history (user entries) - network first, fallback to cache
               urlPattern: /\/api\/journal\/history/,
@@ -57,6 +67,15 @@ export default defineConfig(({ mode }) => {
               options: {
                 cacheName: 'static-assets-cache',
                 expiration: { maxEntries: 100, maxAgeSeconds: 60 * 24 * 60 * 60 }, // 60 days
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+            {
+              // All other API requests - always go to network, never cache
+              // This ensures API requests bypass service worker when no specific rule matches
+              urlPattern: /\/api\/.*/,
+              handler: 'NetworkOnly',
+              options: {
                 cacheableResponse: { statuses: [0, 200] },
               },
             },

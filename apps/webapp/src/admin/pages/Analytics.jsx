@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, ChartCard, Button, Select } from '../components/shared';
 import adminApi from '../adminApi';
 
@@ -14,22 +14,27 @@ export default function Analytics() {
     churn: 0,
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    loadAnalytics();
-  }, [dateRange]);
-
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const { data } = await adminApi.get(`/admin/analytics/overview?range=${dateRange}`);
-      setMetrics(data);
+      setMetrics(data || { dau: 0, mau: 0, retention: 0, churn: 0 });
     } catch (err) {
-      console.error('Failed to load analytics:', err.message);
+      const errorMessage =
+        err?.response?.data?.message || err?.message || 'Failed to load analytics';
+      setError(errorMessage);
+      console.error('Failed to load analytics:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
@@ -58,6 +63,42 @@ export default function Analytics() {
           <Button variant="secondary">Export Report</Button>
         </div>
       </div>
+
+      {error && (
+        <div
+          style={{
+            backgroundColor: '#fee2e2',
+            border: '1px solid #ef4444',
+            color: '#b91c1c',
+            padding: '1rem',
+            borderRadius: '0.5rem',
+            marginBottom: '1rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <strong>Error:</strong> {error}
+          </div>
+          <Button variant="ghost" onClick={loadAnalytics} size="sm">
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {loading && (
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '2rem',
+            color: 'var(--gray)',
+            fontSize: '14px',
+          }}
+        >
+          <div style={{ marginBottom: '0.5rem' }}>Loading analytics...</div>
+        </div>
+      )}
 
       <div
         className="bento-card"

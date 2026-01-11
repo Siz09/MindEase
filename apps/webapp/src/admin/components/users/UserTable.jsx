@@ -27,6 +27,15 @@ const UserTable = ({
   onEditUser,
   onDeleteUser,
 }) => {
+  // Debug: Log what UserTable receives
+  console.log('📊 UserTable received:', {
+    usersCount: users?.length || 0,
+    users: users,
+    loading,
+    totalUsers,
+    totalPages,
+  });
+
   const displayData = (users || []).map((user) => ({
     ...user,
     email: user.email || user.userId || 'Unknown',

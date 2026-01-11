@@ -80,33 +80,54 @@ public class AdminManagementController {
             @RequestParam(required = false) String search,
             @RequestParam(required = false, defaultValue = "all") String status) {
         int pageSize = Math.max(1, Math.min(size, 200));
-        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
         String effectiveStatus = status == null ? "all" : status.toLowerCase();
 
+        // For "active" and "inactive" statuses, we need to fetch all users first
+        // because status is computed from AuditLog (lastActive), which can't be filtered at DB level
+        boolean requiresFullFetch = "active".equals(effectiveStatus) || "inactive".equals(effectiveStatus);
+
         Page<User> usersPage;
-        if (search != null && !search.isBlank()) {
-            if ("banned".equals(effectiveStatus)) {
-                usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNullAndBannedTrue(
-                        search.trim(), pageable);
+        List<User> allUsers;
+        long totalElements;
+
+        if (requiresFullFetch) {
+            // Fetch all non-banned users (no pagination at DB level)
+            if (search != null && !search.isBlank()) {
+                // Fetch all matching users (use a large page size as workaround)
+                Pageable largePageable = PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "createdAt"));
+                usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(search.trim(), largePageable);
             } else {
-                usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(search.trim(), pageable);
+                Pageable largePageable = PageRequest.of(0, 10000, Sort.by(Sort.Direction.DESC, "createdAt"));
+                usersPage = userRepository.findByDeletedAtIsNull(largePageable);
             }
+            allUsers = usersPage.getContent();
         } else {
-            if ("banned".equals(effectiveStatus)) {
-                usersPage = userRepository.findByDeletedAtIsNullAndBannedTrue(pageable);
+            // For "all" and "banned" statuses, we can use DB-level pagination
+            Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+            if (search != null && !search.isBlank()) {
+                if ("banned".equals(effectiveStatus)) {
+                    usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNullAndBannedTrue(
+                            search.trim(), pageable);
+                } else {
+                    usersPage = userRepository.findByEmailContainingIgnoreCaseAndDeletedAtIsNull(search.trim(), pageable);
+                }
             } else {
-                usersPage = userRepository.findByDeletedAtIsNull(pageable);
+                if ("banned".equals(effectiveStatus)) {
+                    usersPage = userRepository.findByDeletedAtIsNullAndBannedTrue(pageable);
+                } else {
+                    usersPage = userRepository.findByDeletedAtIsNull(pageable);
+                }
             }
+            allUsers = usersPage.getContent();
         }
 
-        List<User> users = usersPage.getContent();
-        List<UUID> userIds = users.stream().map(User::getId).collect(Collectors.toList());
+        List<UUID> userIds = allUsers.stream().map(User::getId).collect(Collectors.toList());
 
         Map<UUID, OffsetDateTime> lastActiveMap = fetchLastActiveForUsers(userIds);
         Map<UUID, Long> crisisCountMap = fetchCrisisCounts(userIds);
         Map<UUID, Subscription> subscriptionMap = fetchSubscriptions(userIds);
 
-        List<UserAdminSummary> content = users.stream()
+        List<UserAdminSummary> allSummaries = allUsers.stream()
                 .map(user -> toSummary(
                         user,
                         lastActiveMap.get(user.getId()),
@@ -117,7 +138,22 @@ public class AdminManagementController {
                         (summary.status() != null && summary.status().equalsIgnoreCase(effectiveStatus)))
                 .collect(Collectors.toList());
 
-        return new PageImpl<>(content, pageable, usersPage.getTotalElements());
+        // For "active" and "inactive", manually paginate the filtered list
+        if (requiresFullFetch) {
+            totalElements = allSummaries.size();
+            int start = page * pageSize;
+            int end = Math.min(start + pageSize, allSummaries.size());
+            List<UserAdminSummary> content = start < allSummaries.size()
+                    ? allSummaries.subList(start, end)
+                    : Collections.emptyList();
+            Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+            return new PageImpl<>(content, pageable, totalElements);
+        } else {
+            // For "all" and "banned", the DB query already filtered correctly,
+            // and status filter above should not remove any items, so use original pagination
+            // However, we still need to apply the status filter for consistency
+            return new PageImpl<>(allSummaries, usersPage.getPageable(), usersPage.getTotalElements());
+        }
     }
 
     @GetMapping("/users/{id}")

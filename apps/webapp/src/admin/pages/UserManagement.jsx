@@ -19,6 +19,7 @@ export default function UserManagement() {
     deleteUser,
     refreshAll,
     getUserDetails,
+    error,
   } = useUsers({ page, pageSize, filters });
 
   const [selectedUser, setSelectedUser] = useState(null);
