@@ -57,7 +57,7 @@ function PlanCard({
       )}
       {isActive && (
         <div className="absolute -top-3 right-4">
-          <Badge variant="success" className="px-3 py-1">
+          <Badge variant="default" className="px-3 py-1 bg-green-600 text-white border-green-600">
             Current Plan
           </Badge>
         </div>
@@ -88,14 +88,13 @@ function PlanCard({
         </ul>
       </CardContent>
 
-      <CardFooter className="pt-6">
+      <CardFooter className="pt-6 px-6 pb-6">
         <Button
-          variant={isActive ? 'outline' : 'primary'}
+          variant={isActive ? 'outline' : 'default'}
           size="lg"
           className="w-full"
           disabled={loading}
           onClick={onSelect}
-          loading={loading}
         >
           {isActive ? 'Current Plan' : loading ? 'Processing...' : 'Subscribe'}
         </Button>
@@ -110,6 +109,7 @@ export default function Subscription() {
   const [status, setStatus] = useState('loading');
   const [showUpgradeView, setShowUpgradeView] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isButtonPressed, setIsButtonPressed] = useState(false);
   const prevStatusRef = useRef('loading');
   const hydratedRef = useRef(false);
   const [intensePolling, setIntensePolling] = useState(false);
@@ -280,7 +280,10 @@ export default function Subscription() {
 
           {/* Status Badge */}
           <div className="flex justify-center">
-            <Badge variant="success" className="px-4 py-2 text-sm">
+            <Badge
+              variant="default"
+              className="px-4 py-2 text-sm bg-green-600 text-white border-green-600"
+            >
               <span className="mr-2 h-2 w-2 rounded-full bg-green-500"></span>
               Premium Member
             </Badge>
@@ -312,11 +315,17 @@ export default function Subscription() {
                   ))}
                 </ul>
               </CardContent>
-              <CardFooter className="flex-col gap-3">
+              <CardFooter className="flex-col gap-3 px-6 pb-6">
                 <Button
-                  variant="primary"
+                  variant="outline"
                   size="lg"
-                  className="w-full"
+                  className={cn(
+                    'w-full transition-transform duration-150 ease-in-out',
+                    isButtonPressed && 'scale-95'
+                  )}
+                  onMouseDown={() => setIsButtonPressed(true)}
+                  onMouseUp={() => setIsButtonPressed(false)}
+                  onMouseLeave={() => setIsButtonPressed(false)}
                   onClick={() => setShowUpgradeView(!showUpgradeView)}
                 >
                   {showUpgradeView ? 'Hide Plans' : 'Upgrade or Change Plan'}
@@ -335,7 +344,7 @@ export default function Subscription() {
 
           {/* Upgrade View */}
           {showUpgradeView && (
-            <div className="space-y-6 rounded-lg border bg-gray-50/50 p-6 dark:bg-gray-900/50">
+            <div className="space-y-6 rounded-lg border bg-gray-50/50 p-6 dark:bg-gray-900/50 transition-all duration-300 ease-in-out">
               <h2 className="text-center text-2xl font-semibold">Choose Your Plan</h2>
               <div className="grid gap-6 md:grid-cols-2">
                 <PlanCard
@@ -384,11 +393,10 @@ export default function Subscription() {
                   Keep Subscription
                 </Button>
                 <Button
-                  variant="danger"
+                  variant="destructive"
                   className="w-full sm:w-auto"
                   onClick={cancelSubscription}
                   disabled={loading}
-                  loading={loading}
                 >
                   {loading ? 'Canceling...' : 'Cancel Subscription'}
                 </Button>
