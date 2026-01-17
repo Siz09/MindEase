@@ -4,6 +4,7 @@ import { Helmet } from '@dr.pogodin/react-helmet';
 import Navbar from './components/Navbar';
 import ScrollToTop from './components/ScrollToTop';
 import Footer from './components/Footer';
+import LanguageTransitionWrapper from './components/LanguageTransitionWrapper';
 import Home from './routes/Home';
 import Features from './routes/Features';
 import WhyMindease from './routes/WhyMindease';
@@ -19,19 +20,21 @@ export default function App() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Helmet>
       <Suspense fallback={<div className="me-page-loading">Loading…</div>}>
-        <div className="flex flex-col min-h-screen bg-background text-white">
-          <Navbar />
-          <main className="flex-grow pt-16">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/why-mindease" element={<WhyMindease />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <LanguageTransitionWrapper>
+          <div className="flex flex-col min-h-screen bg-background text-white">
+            <Navbar />
+            <main className="flex-grow pt-16">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/features" element={<Features />} />
+                <Route path="/why-mindease" element={<WhyMindease />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </LanguageTransitionWrapper>
       </Suspense>
     </Router>
   );

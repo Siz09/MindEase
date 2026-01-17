@@ -207,6 +207,10 @@ public class ChatApiController {
 
             // Handle crisis response first if needed
             Message crisisMessage = null;
+            Message botMessage = null;
+            Map<String, Object> botMessagePayload = null;
+            String aiProvider = null;
+            
             if (isCrisis) {
                 String crisisResponse = "I'm concerned about what you're sharing. Please consider contacting a mental health professional or a crisis helpline immediately. Your wellbeing matters, and there are people who want to help you.";
                 crisisMessage = new Message(chatSession, crisisResponse, false);
@@ -219,56 +223,63 @@ public class ChatApiController {
                 logger.info("Crisis message payload: {}", crisisMessagePayload);
 
                 messagingTemplate.convertAndSend(userTopic, crisisMessagePayload);
-            }
+                
+                // Send typing indicator - bot stopped "typing"
+                TypingEvent typingStop = new TypingEvent(user.getId(), false);
+                messagingTemplate.convertAndSend(userTopic + "/typing", typingStop);
+                logger.debug("Sent typing stop event to: {}", userTopic + "/typing");
+            } else {
+                // Only generate AI response if NOT a crisis (crisis already handled above)
+                // Prepare recent conversation history using DB pagination
+                Pageable historyPage = PageRequest.of(0, MAX_CONVERSATION_HISTORY, Sort.by("createdAt").descending());
+                List<Message> recentHistory = new java.util.ArrayList<>(
+                        messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, historyPage).getContent());
+                Collections.reverse(recentHistory); // chronological order oldest -> newest for AI context
 
-            // Prepare recent conversation history using DB pagination
-            Pageable historyPage = PageRequest.of(0, MAX_CONVERSATION_HISTORY, Sort.by("createdAt").descending());
-            List<Message> recentHistory = new java.util.ArrayList<>(
-                    messageRepository.findByChatSessionOrderByCreatedAtDesc(chatSession, historyPage).getContent());
-            Collections.reverse(recentHistory); // chronological order oldest -> newest for AI context
-
-            // Avoid duplicating the current user message in AI context
-            if (!recentHistory.isEmpty()) {
-                Message last = recentHistory.get(recentHistory.size() - 1);
-                String incoming = request.getMessage();
-                if (Boolean.TRUE.equals(last.getIsUserMessage())
-                        && last.getContent() != null
-                        && incoming != null
-                        && last.getContent().equals(incoming)) {
-                    // Remove the most-recent (current) user message; service will append it
-                    // explicitly
-                    recentHistory.remove(recentHistory.size() - 1);
+                // Avoid duplicating the current user message in AI context
+                if (!recentHistory.isEmpty()) {
+                    Message last = recentHistory.get(recentHistory.size() - 1);
+                    String incoming = request.getMessage();
+                    if (Boolean.TRUE.equals(last.getIsUserMessage())
+                            && last.getContent() != null
+                            && incoming != null
+                            && last.getContent().equals(incoming)) {
+                        // Remove the most-recent (current) user message; service will append it
+                        // explicitly
+                        recentHistory.remove(recentHistory.size() - 1);
+                    }
                 }
+
+                // Generate AI response with context using AIProviderManager
+                logger.info("Generating AI response with {} history messages...", recentHistory.size());
+                ChatResponse aiResponse = aiProviderManager.generateResponse(
+                        request.getMessage(),
+                        user.getId().toString(),
+                        recentHistory,
+                        null);
+                logger.info("Generated AI response using provider: {}", aiResponse.getProvider());
+                logger.info("Generated AI response: {}", aiResponse.getContent());
+
+                botMessage = new Message(chatSession, aiResponse.getContent(), false);
+                botMessage = messageRepository.save(botMessage);
+                logger.info("Saved bot message with ID: {}", botMessage.getId());
+
+                // Create bot message payload for WebSocket
+                botMessagePayload = createMessagePayload(botMessage, false);
+                // Add provider info to help identify which AI is being used
+                aiProvider = aiResponse.getProvider();
+                botMessagePayload.put("provider", aiProvider);
+
+                logger.info("Sending bot message to topic: {}", userTopic);
+                logger.info("Bot message payload: {}", botMessagePayload);
+
+                // Send typing indicator - bot stopped "typing"
+                TypingEvent typingStop = new TypingEvent(user.getId(), false);
+                messagingTemplate.convertAndSend(userTopic + "/typing", typingStop);
+                logger.debug("Sent typing stop event to: {}", userTopic + "/typing");
+
+                messagingTemplate.convertAndSend(userTopic, botMessagePayload);
             }
-
-            // Generate AI response with context using AIProviderManager
-            logger.info("Generating AI response with {} history messages...", recentHistory.size());
-            ChatResponse aiResponse = aiProviderManager.generateResponse(
-                    request.getMessage(),
-                    user.getId().toString(),
-                    recentHistory,
-                    null);
-            logger.info("Generated AI response using provider: {}", aiResponse.getProvider());
-            logger.info("Generated AI response: {}", aiResponse.getContent());
-
-            Message botMessage = new Message(chatSession, aiResponse.getContent(), false);
-            botMessage = messageRepository.save(botMessage);
-            logger.info("Saved bot message with ID: {}", botMessage.getId());
-
-            // Create bot message payload for WebSocket
-            Map<String, Object> botMessagePayload = createMessagePayload(botMessage, false);
-            // Add provider info to help identify which AI is being used
-            botMessagePayload.put("provider", aiResponse.getProvider());
-
-            logger.info("Sending bot message to topic: {}", userTopic);
-            logger.info("Bot message payload: {}", botMessagePayload);
-
-            // Send typing indicator - bot stopped "typing"
-            TypingEvent typingStop = new TypingEvent(user.getId(), false);
-            messagingTemplate.convertAndSend(userTopic + "/typing", typingStop);
-            logger.debug("Sent typing stop event to: {}", userTopic + "/typing");
-
-            messagingTemplate.convertAndSend(userTopic, botMessagePayload);
 
             // Create response
             Map<String, Object> response = new HashMap<>();
@@ -277,7 +288,9 @@ public class ChatApiController {
 
             Map<String, Object> data = new HashMap<>();
             data.put("userMessage", userMessagePayload);
-            data.put("botMessage", botMessagePayload);
+            if (botMessagePayload != null) {
+                data.put("botMessage", botMessagePayload);
+            }
             if (crisisMessage != null) {
                 data.put("crisisMessage", createMessagePayload(crisisMessage, false));
             }

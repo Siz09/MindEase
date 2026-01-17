@@ -342,6 +342,11 @@ const Chat = () => {
       setVoiceStatusText('');
       retryCountRef.current = 0;
 
+      // Auto-send message after 2 second delay
+      setTimeout(() => {
+        sendVoiceMessage(text);
+      }, 2000);
+
       if (inputRef.current) {
         inputRef.current.focus();
       }

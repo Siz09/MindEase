@@ -306,6 +306,22 @@ export const useVoiceConversation = ({
             setVoiceStatusText(t('chat.listening'));
           }
         }, 100);
+      } else {
+        // Auto-send message after 2 second delay when not in voice conversation mode
+        setTimeout(() => {
+          sendMessage(text)
+            .then((success) => {
+              if (!success) {
+                console.warn('Voice message sending may have failed, but continuing...');
+              }
+            })
+            .catch((err) => {
+              console.error('Failed to send voice message:', err);
+              // Keep text in input for retry
+              setInputValue(text);
+              setIsVoiceTranscribed(true);
+            });
+        }, 2000);
       }
     },
     [

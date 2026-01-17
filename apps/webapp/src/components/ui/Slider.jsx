@@ -16,10 +16,28 @@ function Slider({ className, defaultValue, value, onValueChange, min = 0, max = 
     return [min];
   }, [value, defaultValue, min]);
 
+  const _defaultValues = React.useMemo(() => {
+    if (defaultValue !== undefined) {
+      return Array.isArray(defaultValue) ? defaultValue : [defaultValue];
+    }
+    return [min];
+  }, [defaultValue, min]);
+
+  const handleValueChange = React.useCallback(
+    (values) => {
+      if (onValueChange) {
+        onValueChange(values);
+      }
+    },
+    [onValueChange]
+  );
+
   return (
     <SliderPrimitive.Root
       data-slot="slider"
-      {...(value !== undefined && onValueChange ? { value, onValueChange } : { defaultValue })}
+      {...(value !== undefined && onValueChange
+        ? { value: _values, onValueChange: handleValueChange }
+        : { defaultValue: _defaultValues })}
       min={min}
       max={max}
       className={cn(
