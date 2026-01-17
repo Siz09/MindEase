@@ -7,7 +7,7 @@ import {
 } from '../../../components/ui/Card';
 import { Label } from '../../../components/ui/label';
 import { Badge } from '../../../components/ui/Badge';
-import { Slider } from '../../../components/ui/slider';
+import { Slider } from '../../../components/ui/Slider';
 import { AlertTriangle } from 'lucide-react';
 import PropTypes from 'prop-types';
 
