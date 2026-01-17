@@ -9,7 +9,7 @@ import {
 } from '../../../components/ui/dialog';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Label } from '../../../components/ui/Label';
+import { Label } from '../../../components/ui/label';
 import { Badge } from '../../../components/ui/Badge';
 import { Switch } from '../../../components/ui/Switch';
 import { Alert, AlertDescription } from '../../../components/ui/Alert';

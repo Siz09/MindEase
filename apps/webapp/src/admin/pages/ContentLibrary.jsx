@@ -29,7 +29,7 @@ import {
 } from '../../components/ui/dialog';
 import { Alert, AlertDescription } from '../../components/ui/Alert';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Label } from '../../components/ui/Label';
+import { Label } from '../../components/ui/label';
 import { AlertTriangle, Plus, Search, X, Edit, Trash2, Star } from 'lucide-react';
 import ContentForm from '../components/ContentForm';
 import adminApi from '../adminApi';

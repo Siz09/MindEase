@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../components/ui/Card';
-import { Label } from '../../../components/ui/Label';
+import { Label } from '../../../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../../../components/ui/radio-group';
 import { Mail } from 'lucide-react';
 

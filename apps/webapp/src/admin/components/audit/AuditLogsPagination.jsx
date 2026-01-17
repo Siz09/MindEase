@@ -1,6 +1,6 @@
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Label } from '../../../components/ui/Label';
+import { Label } from '../../../components/ui/label';
 import {
   Select,
   SelectContent,

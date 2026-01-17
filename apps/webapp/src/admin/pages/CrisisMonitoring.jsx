@@ -41,7 +41,7 @@ import {
 } from '../../components/ui/pagination';
 import { Alert, AlertDescription } from '../../components/ui/Alert';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Label } from '../../components/ui/Label';
+import { Label } from '../../components/ui/label';
 import { AlertTriangle } from 'lucide-react';
 import adminApi from '../adminApi';
 

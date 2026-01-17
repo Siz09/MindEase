@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
-import { Label } from '../../components/ui/Label';
+import { Label } from '../../components/ui/label';
 import {
   Table,
   TableBody,

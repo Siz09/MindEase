@@ -10,7 +10,7 @@ import {
 } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Label } from '../../components/ui/Label';
+import { Label } from '../../components/ui/label';
 import { Alert, AlertDescription } from '../../components/ui/Alert';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Progress } from '../../components/ui/progress';

@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../components/ui/Card';
-import { Label } from '../../../components/ui/Label';
+import { Label } from '../../../components/ui/label';
 import { Input } from '../../../components/ui/Input';
 import { Clock } from 'lucide-react';
 

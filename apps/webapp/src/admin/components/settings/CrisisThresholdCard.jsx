@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../components/ui/Card';
-import { Label } from '../../../components/ui/Label';
+import { Label } from '../../../components/ui/label';
 import { Badge } from '../../../components/ui/Badge';
 import { Slider } from '../../../components/ui/slider';
 import { AlertTriangle } from 'lucide-react';
