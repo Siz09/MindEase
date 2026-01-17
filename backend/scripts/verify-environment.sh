@@ -80,7 +80,7 @@ check_env_var "EMAIL_PASSWORD" "optional" "Email password for notifications"
 # Optional Environment Variables
 echo ""
 echo "⚙️  Optional Configuration:"
-check_env_var "CHAT_FREE_DAILY_LIMIT" "optional" "Daily message limit for free users (default: 50)"
+check_env_var "CHAT_FREE_DAILY_LIMIT" "optional" "Daily message limit for free users (default: 20)"
 check_env_var "STRIPE_SUCCESS_URL" "optional" "Stripe success URL (has default)"
 check_env_var "STRIPE_CANCEL_URL" "optional" "Stripe cancel URL (has default)"
 check_env_var "CORS_ALLOWED_ORIGINS" "optional" "CORS allowed origins (has default)"

@@ -78,7 +78,7 @@ public class ChatConfig {
     }
 
     public static class Limits {
-        private Integer freeDailyMessageLimit = 50;
+        private Integer freeDailyMessageLimit = 20;
 
         public Integer getFreeDailyMessageLimit() {
             return freeDailyMessageLimit;

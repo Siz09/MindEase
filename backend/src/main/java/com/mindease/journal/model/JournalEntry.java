@@ -32,7 +32,7 @@ public class JournalEntry {
   @Column(name = "ai_summary", columnDefinition = "TEXT")
   private String aiSummary;
 
-  @Column(name = "mood_insight")
+  @Column(name = "mood_insight", columnDefinition = "TEXT")
   private String moodInsight;
 
   @JsonIgnore // Prevent lazy loading issues during JSON serialization

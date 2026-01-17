@@ -33,7 +33,7 @@ const LanguageSettingsSection = () => {
       <Card>
         <CardHeader>
           <CardTitle>{t('settings.language.title')}</CardTitle>
-          <CardDescription>Choose your preferred language for the app</CardDescription>
+          <CardDescription>{t('settings.language.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -67,7 +67,7 @@ const LanguageSettingsSection = () => {
                     <div className="flex items-center gap-2">
                       <Badge variant="success" className="gap-1">
                         <Check className="h-3 w-3" />
-                        Active
+                        {t('settings.language.active')}
                       </Badge>
                     </div>
                   )}

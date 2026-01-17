@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -37,15 +38,26 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     private static final String ME_PATH = "/api/auth/me";
     private static final String PASSWORD_RESET_PATH = "/api/auth/request-password-reset";
 
-    // Allow 5 requests per 15 minutes per IP for auth endpoints
-    private static final int MAX_ATTEMPTS = 5;
-    private static final long WINDOW_MILLIS = 15 * 60 * 1000L;
+    // Configurable rate limits (with defaults for backward compatibility)
+    @Value("${auth.rate-limit.login.max-attempts:20}")
+    private int maxLoginAttempts;
 
-    // More lenient rate limit for /me endpoint (100 requests per 15 minutes)
-    private static final int MAX_ME_ATTEMPTS = 100;
-    private static final long ME_WINDOW_MILLIS = 15 * 60 * 1000L;
+    @Value("${auth.rate-limit.login.window-minutes:15}")
+    private int loginWindowMinutes;
 
-    // Stricter rate limit for password reset (3 requests per hour)
+    @Value("${auth.rate-limit.register.max-attempts:10}")
+    private int maxRegisterAttempts;
+
+    @Value("${auth.rate-limit.register.window-minutes:15}")
+    private int registerWindowMinutes;
+
+    @Value("${auth.rate-limit.me.max-attempts:100}")
+    private int maxMeAttempts;
+
+    @Value("${auth.rate-limit.me.window-minutes:15}")
+    private int meWindowMinutes;
+
+    // Stricter rate limit for password reset (3 requests per hour) - kept as constant
     private static final int MAX_PASSWORD_RESET_ATTEMPTS = 3;
     private static final long PASSWORD_RESET_WINDOW_MILLIS = 60 * 60 * 1000L;
     private static final long CLEANUP_INTERVAL_MILLIS = 60 * 60 * 1000L; // 1 hour
@@ -74,10 +86,15 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
     @Scheduled(fixedDelay = CLEANUP_INTERVAL_MILLIS)
     void cleanupExpiredEntries() {
         long now = Instant.now().toEpochMilli();
+        // Use the longest window (login window) for cleanup threshold
+        long maxWindowMillis = Math.max(
+            loginWindowMinutes * 60 * 1000L,
+            Math.max(registerWindowMinutes * 60 * 1000L, meWindowMinutes * 60 * 1000L)
+        );
         ipCounters.entrySet().removeIf(entry -> {
             Counter counter = entry.getValue();
             synchronized (counter) {
-                return (now - counter.windowStart) > (WINDOW_MILLIS * 2);
+                return (now - counter.windowStart) > (maxWindowMillis * 2);
             }
         });
     }
@@ -100,22 +117,33 @@ public class AuthRateLimitingFilter extends OncePerRequestFilter {
         // Use different rate limits for different endpoints
         boolean isMeEndpoint = ME_PATH.equals(path);
         boolean isPasswordResetEndpoint = PASSWORD_RESET_PATH.equals(path);
+        boolean isLoginEndpoint = LOGIN_PATH.equals(path);
+        boolean isRegisterEndpoint = REGISTER_PATH.equals(path);
 
         int maxAttempts;
         long windowMillis;
         String counterKey;
 
         if (isMeEndpoint) {
-            maxAttempts = MAX_ME_ATTEMPTS;
-            windowMillis = ME_WINDOW_MILLIS;
+            maxAttempts = maxMeAttempts;
+            windowMillis = meWindowMinutes * 60 * 1000L;
             counterKey = ip + ":me";
         } else if (isPasswordResetEndpoint) {
             maxAttempts = MAX_PASSWORD_RESET_ATTEMPTS;
             windowMillis = PASSWORD_RESET_WINDOW_MILLIS;
             counterKey = ip + ":password-reset";
+        } else if (isLoginEndpoint) {
+            maxAttempts = maxLoginAttempts;
+            windowMillis = loginWindowMinutes * 60 * 1000L;
+            counterKey = ip + ":login";
+        } else if (isRegisterEndpoint) {
+            maxAttempts = maxRegisterAttempts;
+            windowMillis = registerWindowMinutes * 60 * 1000L;
+            counterKey = ip + ":register";
         } else {
-            maxAttempts = MAX_ATTEMPTS;
-            windowMillis = WINDOW_MILLIS;
+            // Fallback to login limits for any other auth endpoints
+            maxAttempts = maxLoginAttempts;
+            windowMillis = loginWindowMinutes * 60 * 1000L;
             counterKey = ip;
         }
         Counter counter = ipCounters.computeIfAbsent(counterKey, k -> new Counter());

@@ -171,12 +171,21 @@ public class UserController {
             if (updates.containsKey("socialWeakness"))
                 user.setSocialWeakness((String) updates.get("socialWeakness"));
 
+            // Update preferred language
+            if (updates.containsKey("preferredLanguage")) {
+                String preferredLanguage = (String) updates.get("preferredLanguage");
+                if (preferredLanguage != null && (preferredLanguage.equals("en") || preferredLanguage.equals("ne"))) {
+                    user.setPreferredLanguage(preferredLanguage);
+                }
+            }
+
             // Save changes if any profile fields were updated
             if (updates.keySet().stream()
                     .anyMatch(key -> key.equals("age") || key.equals("gender") || key.equals("course") ||
                             key.equals("year") || key.equals("cgpa") || key.equals("maritalStatus") ||
                             key.equals("daysIndoors") || key.equals("changesHabits") ||
-                            key.equals("workInterest") || key.equals("socialWeakness"))) {
+                            key.equals("workInterest") || key.equals("socialWeakness") ||
+                            key.equals("preferredLanguage"))) {
                 user = userRepository.save(user);
             }
 

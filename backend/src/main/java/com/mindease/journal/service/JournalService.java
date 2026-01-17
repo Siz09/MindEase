@@ -8,6 +8,7 @@ import com.mindease.chat.service.OpenAIService;
 import com.mindease.shared.service.PythonAIServiceClient;
 import com.mindease.mood.model.MoodEntry;
 import com.mindease.mood.repository.MoodEntryRepository;
+import java.time.YearMonth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,12 @@ public class JournalService {
 
     @Transactional
     public JournalEntry saveJournalEntry(UUID userId, String title, String content, Integer moodValue) {
+        return saveJournalEntry(userId, title, content, moodValue, false);
+    }
+
+    @Transactional
+    public JournalEntry saveJournalEntry(UUID userId, String title, String content, Integer moodValue,
+            boolean isPremium) {
         if (userId == null) {
             throw new IllegalArgumentException("User ID cannot be null");
         }
@@ -78,8 +85,17 @@ public class JournalService {
 
         JournalEntry savedEntry = journalEntryRepository.save(entry);
 
-        // Generate AI summary asynchronously
-        generateAndSaveAISummary(savedEntry);
+        // Generate AI summary asynchronously only if within limits or premium
+        if (isPremium || canGenerateAISummary(userId)) {
+            generateAndSaveAISummary(savedEntry);
+        } else {
+            logger.info("Skipping AI summary generation for free user (monthly limit reached): userId={}", userId);
+            savedEntry.setAiSummary(
+                    "AI summaries are limited to 1 per month for free users. Upgrade to Premium for unlimited AI summaries.");
+            savedEntry.setMoodInsight(
+                    "Mood insights are limited to 1 per month for free users. Upgrade to Premium for unlimited insights.");
+            journalEntryRepository.save(savedEntry);
+        }
 
         return savedEntry;
     }
@@ -182,6 +198,24 @@ public class JournalService {
     }
 
     public boolean isAIAvailable() {
-        return openAIService.isOpenAIConfigured();
+        return openAIService != null && openAIService.isOpenAIConfigured();
+    }
+
+    /**
+     * Check if free user can generate AI summary this month.
+     * Free users are limited to 1 AI summary per month.
+     * Premium users have unlimited summaries.
+     */
+    private boolean canGenerateAISummary(UUID userId) {
+        YearMonth currentMonth = YearMonth.now();
+        LocalDateTime startOfMonth = currentMonth.atDay(1).atStartOfDay();
+        long summariesThisMonth = journalEntryRepository.countByUserIdWithAISummaryAndCreatedAtAfter(userId,
+                startOfMonth);
+        int freeMonthlyAILimit = 1; // Free users: 1 AI summary per month
+
+        boolean canGenerate = summariesThisMonth < freeMonthlyAILimit;
+        logger.debug("AI summary limit check: userId={}, summariesThisMonth={}, limit={}, canGenerate={}",
+                userId, summariesThisMonth, freeMonthlyAILimit, canGenerate);
+        return canGenerate;
     }
 }

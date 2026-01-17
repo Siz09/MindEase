@@ -1,5 +1,6 @@
 # backend/services/python-background-jobs/main.py
 from fastapi import FastAPI, HTTPException, Header, Depends
+from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import logging
@@ -28,11 +29,13 @@ app.add_middleware(
 )
 
 
-async def verify_api_key(x_api_key: str = Header(...)):
+async def verify_api_key(x_api_key: Optional[str] = Header(None)):
     """Verify API key for authentication"""
     expected_key = os.getenv("API_KEY")
-    if not expected_key or x_api_key != expected_key:
-        raise HTTPException(status_code=401, detail="Invalid API key")
+    # If API_KEY is configured, require it. Otherwise, allow requests without it (dev mode)
+    if expected_key:
+        if not x_api_key or x_api_key != expected_key:
+            raise HTTPException(status_code=401, detail="Invalid API key")
     return x_api_key
 
 logging.basicConfig(level=logging.INFO)

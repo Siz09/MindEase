@@ -89,7 +89,7 @@ Check-EnvVar -VarName "EMAIL_PASSWORD" -Required "optional" -Description "Email 
 # Optional Environment Variables
 Write-Host ""
 Write-Host "Optional Configuration:" -ForegroundColor Gray
-Check-EnvVar -VarName "CHAT_FREE_DAILY_LIMIT" -Required "optional" -Description "Daily message limit for free users (default: 50)"
+Check-EnvVar -VarName "CHAT_FREE_DAILY_LIMIT" -Required "optional" -Description "Daily message limit for free users (default: 20)"
 Check-EnvVar -VarName "STRIPE_SUCCESS_URL" -Required "optional" -Description "Stripe success URL (has default)"
 Check-EnvVar -VarName "STRIPE_CANCEL_URL" -Required "optional" -Description "Stripe cancel URL (has default)"
 Check-EnvVar -VarName "CORS_ALLOWED_ORIGINS" -Required "optional" -Description "CORS allowed origins (has default)"

@@ -349,7 +349,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
       <Card>
         <CardHeader>
           <CardTitle>{t('settings.actions.title')}</CardTitle>
-          <CardDescription>Manage your account and data</CardDescription>
+          <CardDescription>{t('settings.actions.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">

@@ -69,7 +69,23 @@ def sanitize_context_value(value: str) -> str:
     return sanitized
 
 
-def build_system_prompt(user_context: Optional[Dict[str, str]] = None) -> str:
+def detect_language_from_text(text: str) -> str:
+    """
+    Detect language from text content.
+    Returns 'ne' if text contains Nepali/Devanagari characters, 'en' otherwise.
+    """
+    if not text:
+        return "en"
+
+    # Check for Nepali/Devanagari script characters (Unicode range: U+0900 to U+097F)
+    nepali_char_pattern = re.compile(r'[\u0900-\u097F]')
+    if nepali_char_pattern.search(text):
+        return "ne"
+
+    return "en"
+
+
+def build_system_prompt(user_context: Optional[Dict[str, str]] = None, message: Optional[str] = None) -> str:
     """
     Build system prompt with persona and context.
     Matches Java OpenAIChatBotService persona logic.
@@ -87,6 +103,26 @@ def build_system_prompt(user_context: Optional[Dict[str, str]] = None) -> str:
         "- If crisis indicators appear, acknowledge pain and encourage immediate human help.\n"
         "Response format: 1) Acknowledge emotion 2) One reflective/grounding prompt 3) Encouraging close."
     )
+
+    # Determine response language: prefer message language, then user preference, then default to English
+    detected_language = None
+    if message:
+        detected_language = detect_language_from_text(message)
+
+    preferred_language = None
+    if user_context and "preferredLanguage" in user_context:
+        preferred_language = user_context.get("preferredLanguage", "en")
+
+    # Use detected language from message if available, otherwise use preferred language
+    response_language = detected_language or preferred_language or "en"
+
+    if response_language:
+        language_map = {
+            "ne": "Nepali (नेपाली)",
+            "en": "English"
+        }
+        language_name = language_map.get(response_language.lower(), "English")
+        persona += f"\n\nIMPORTANT: You MUST respond in {language_name}. The user is communicating in {language_name}, so you must respond in {language_name} as well. Do not respond in a different language. Always match the language of the user's message."
 
     if user_context:
         context_str = "\nUser Context:\n"
@@ -158,8 +194,8 @@ async def generate_chat_response(request: ChatRequest):
         )
 
     try:
-        # Build system prompt
-        system_persona = build_system_prompt(request.user_context)
+        # Build system prompt (pass message for language detection)
+        system_persona = build_system_prompt(request.user_context, request.message)
         behavior_tag = map_behavior_tag(request.message)
         is_crisis = detect_crisis_simple(request.message)
 

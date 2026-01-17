@@ -83,6 +83,9 @@ public class ChatApiController {
     @Autowired
     private ChatService chatService;
 
+    @Autowired
+    private com.mindease.crisis.service.CrisisResponseService crisisResponseService;
+
     private static final Logger logger = LoggerFactory.getLogger(ChatApiController.class);
 
     @Operation(summary = "Send a chat message", description = "Send a message to the AI assistant and receive a response. Optionally specify sessionId to send to a specific chat session.")
@@ -210,20 +213,33 @@ public class ChatApiController {
             Message botMessage = null;
             Map<String, Object> botMessagePayload = null;
             String aiProvider = null;
-            
+
             if (isCrisis) {
-                String crisisResponse = "I'm concerned about what you're sharing. Please consider contacting a mental health professional or a crisis helpline immediately. Your wellbeing matters, and there are people who want to help you.";
+                // Get localized crisis response message
+                String userLanguage = user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "en";
+                String crisisResponse = crisisResponseService.getCrisisResponseMessage(userLanguage);
+
+                // Get crisis resources for user's language and region
+                String userRegion = user.getRegion() != null ? user.getRegion() : "global";
+                List<com.mindease.crisis.model.CrisisResource> crisisResources = crisisResponseService
+                        .getCrisisResources(userLanguage, userRegion);
+
                 crisisMessage = new Message(chatSession, crisisResponse, false);
                 crisisMessage.setIsCrisisFlagged(true);
                 crisisMessage = messageRepository.save(crisisMessage);
 
                 Map<String, Object> crisisMessagePayload = createMessagePayload(crisisMessage, false);
+                // Attach crisis resources to the payload
+                if (crisisResources != null && !crisisResources.isEmpty()) {
+                    crisisMessagePayload.put("crisisResources", convertCrisisResourcesToMap(crisisResources));
+                }
 
-                logger.info("Sending crisis message to topic: {}", userTopic);
+                logger.info("Sending crisis message to topic: {} with {} resources", userTopic,
+                        crisisResources != null ? crisisResources.size() : 0);
                 logger.info("Crisis message payload: {}", crisisMessagePayload);
 
                 messagingTemplate.convertAndSend(userTopic, crisisMessagePayload);
-                
+
                 // Send typing indicator - bot stopped "typing"
                 TypingEvent typingStop = new TypingEvent(user.getId(), false);
                 messagingTemplate.convertAndSend(userTopic + "/typing", typingStop);
@@ -252,11 +268,18 @@ public class ChatApiController {
 
                 // Generate AI response with context using AIProviderManager
                 logger.info("Generating AI response with {} history messages...", recentHistory.size());
+
+                // Build user context including preferred language
+                Map<String, String> userContext = new HashMap<>();
+                String userLanguage = user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "en";
+                userContext.put("preferredLanguage", userLanguage);
+                logger.info("User preferred language: {}", userLanguage);
+
                 ChatResponse aiResponse = aiProviderManager.generateResponse(
                         request.getMessage(),
                         user.getId().toString(),
                         recentHistory,
-                        null);
+                        userContext);
                 logger.info("Generated AI response using provider: {}", aiResponse.getProvider());
                 logger.info("Generated AI response: {}", aiResponse.getContent());
 
@@ -292,7 +315,20 @@ public class ChatApiController {
                 data.put("botMessage", botMessagePayload);
             }
             if (crisisMessage != null) {
-                data.put("crisisMessage", createMessagePayload(crisisMessage, false));
+                // Recreate crisis message payload with resources if needed
+                Map<String, Object> crisisPayload = createMessagePayload(crisisMessage, false);
+                // If we have crisis resources, attach them (they should already be in the
+                // WebSocket payload)
+                if (isCrisis) {
+                    String userLanguage = user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "en";
+                    String userRegion = user.getRegion() != null ? user.getRegion() : "global";
+                    List<com.mindease.crisis.model.CrisisResource> crisisResources = crisisResponseService
+                            .getCrisisResources(userLanguage, userRegion);
+                    if (crisisResources != null && !crisisResources.isEmpty()) {
+                        crisisPayload.put("crisisResources", convertCrisisResourcesToMap(crisisResources));
+                    }
+                }
+                data.put("crisisMessage", crisisPayload);
             }
 
             response.put("data", data);
@@ -412,6 +448,30 @@ public class ChatApiController {
         }
 
         return payload;
+    }
+
+    /**
+     * Convert CrisisResource entities to map format for JSON serialization.
+     */
+    private List<Map<String, Object>> convertCrisisResourcesToMap(
+            List<com.mindease.crisis.model.CrisisResource> resources) {
+        if (resources == null || resources.isEmpty()) {
+            return List.of();
+        }
+        return resources.stream()
+                .map(r -> {
+                    Map<String, Object> resourceMap = new HashMap<>();
+                    resourceMap.put("id", r.getId() != null ? r.getId().toString() : null);
+                    resourceMap.put("title", r.getTitle());
+                    resourceMap.put("description", r.getDescription());
+                    resourceMap.put("contactInfo", r.getContactInfo());
+                    resourceMap.put("resourceType", r.getResourceType());
+                    resourceMap.put("availability", r.getAvailability());
+                    resourceMap.put("region", r.getRegion());
+                    resourceMap.put("language", r.getLanguage());
+                    return resourceMap;
+                })
+                .collect(java.util.stream.Collectors.toList());
     }
 
     private Map<String, Object> createErrorResponse(String message) {

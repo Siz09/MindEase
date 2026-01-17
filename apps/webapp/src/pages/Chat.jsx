@@ -24,7 +24,11 @@ import Textarea from '../components/ui/Textarea';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
 import Alert, { AlertIndicator } from '../components/ui/Alert';
-import { mapI18nToSpeechLang, splitTextForTTS } from '../utils/speechUtils';
+import {
+  mapI18nToSpeechLang,
+  getSpeechRecognitionLang,
+  splitTextForTTS,
+} from '../utils/speechUtils';
 import { trackRecordingError, trackTTSStarted, trackTTSError } from '../utils/voiceAnalytics';
 import {
   MESSAGE_STATUS,
@@ -312,7 +316,7 @@ const Chat = () => {
     isTranscribing,
     interimTranscript,
   } = useVoiceRecorder({
-    language: mapI18nToSpeechLang(i18n.language),
+    language: getSpeechRecognitionLang(i18n.language),
     onStart: () => {
       // Recording has actually started - reset the flag
       if (voiceConversationCallbacksRef.current.onStart) {

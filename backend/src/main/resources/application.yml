@@ -69,6 +69,19 @@ account:
     max-attempts: 5 # Maximum failed login attempts before lockout
     duration-minutes: 30 # Lockout duration in minutes
 
+# Auth rate limiting configuration
+auth:
+  rate-limit:
+    login:
+      max-attempts: ${AUTH_RATE_LIMIT_LOGIN_MAX:20} # Max login attempts per window (default: 20 for dev)
+      window-minutes: ${AUTH_RATE_LIMIT_LOGIN_WINDOW:15} # Time window in minutes (default: 15)
+    register:
+      max-attempts: ${AUTH_RATE_LIMIT_REGISTER_MAX:10} # Max registration attempts per window
+      window-minutes: ${AUTH_RATE_LIMIT_REGISTER_WINDOW:15} # Time window in minutes
+    me:
+      max-attempts: ${AUTH_RATE_LIMIT_ME_MAX:100} # Max /me endpoint requests per window
+      window-minutes: ${AUTH_RATE_LIMIT_ME_WINDOW:15} # Time window in minutes
+
 # Application configuration
 app:
   base-url: ${APP_BASE_URL:http://localhost:5173}
@@ -145,7 +158,7 @@ chat:
       max-messages-per-minute: 10
       burst-size: 3
   limits:
-    free-daily-message-limit: ${CHAT_FREE_DAILY_LIMIT:50}
+    free-daily-message-limit: ${CHAT_FREE_DAILY_LIMIT:20}
 
 # Development specific settings
 management:
@@ -213,6 +226,20 @@ stripe:
     monthly: ${STRIPE_PRICE_ID_MONTHLY:}
     annual: ${STRIPE_PRICE_ID_ANNUAL:}
 
+# eSewa Payment Configuration
+esewa:
+  url:
+    test: ${ESEWA_URL_TEST:https://rc-epay.esewa.com.np/api/epay/main/v2/form}
+    production: ${ESEWA_URL_PRODUCTION:https://epay.esewa.com.np/api/epay/main/v2/form}
+  product-code: ${ESEWA_PRODUCT_CODE:EPAYTEST}
+  secret-key: ${ESEWA_SECRET_KEY:8gBm/:&EnhH.1/q}
+  success-url: ${ESEWA_SUCCESS_URL:http://localhost:5173/esewa/success}
+  failure-url: ${ESEWA_FAILURE_URL:http://localhost:5173/esewa/failure}
+  mode: ${ESEWA_MODE:test} # test or production
+  status-check:
+    test: ${ESEWA_STATUS_CHECK_TEST:https://rc.esewa.com.np/api/epay/transaction/status/}
+    production: ${ESEWA_STATUS_CHECK_PRODUCTION:https://esewa.com.np/api/epay/transaction/status/}
+
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
@@ -244,6 +271,16 @@ stripe:
   publishable-key: ${STRIPE_PUBLISHABLE_KEY:pk_test_xxx}
   webhook:
     secret: ${STRIPE_WEBHOOK_SECRET:whsec_xxx}
+
+esewa:
+  url:
+    test: ${ESEWA_URL_TEST:https://rc-epay.esewa.com.np/api/epay/main/v2/form}
+    production: ${ESEWA_URL_PRODUCTION:https://epay.esewa.com.np/api/epay/main/v2/form}
+  product-code: ${ESEWA_PRODUCT_CODE:EPAYTEST}
+  secret-key: ${ESEWA_SECRET_KEY:8gBm/:&EnhH.1/q}
+  success-url: ${ESEWA_SUCCESS_URL:http://localhost:5173/esewa/success}
+  failure-url: ${ESEWA_FAILURE_URL:http://localhost:5173/esewa/failure}
+  mode: ${ESEWA_MODE:test}
 
 # Password reset configuration
 password-reset:

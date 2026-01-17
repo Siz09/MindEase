@@ -184,7 +184,7 @@ export default function Profile() {
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            {t('profile.status', 'Status')}
+                            {t('profile.statusLabel', 'Status')}
                           </p>
                           <p className="text-base font-semibold text-green-600 dark:text-green-400">
                             {t(

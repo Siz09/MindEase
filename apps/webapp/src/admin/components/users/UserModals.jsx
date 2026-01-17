@@ -63,7 +63,7 @@ const UserModals = ({
     <>
       {/* User Details Modal */}
       <Dialog open={showDetailsModal} onOpenChange={onCloseDetailsModal}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl bg-white dark:bg-gray-900">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
             <DialogDescription>View and manage user information</DialogDescription>
@@ -116,21 +116,31 @@ const UserModals = ({
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={onCloseDetailsModal}>
+            <Button
+              variant="ghost"
+              onClick={onCloseDetailsModal}
+              className="border border-gray-300 text-black hover:bg-gray-100"
+            >
               Close
             </Button>
-            <Button variant="outline" onClick={() => selectedUser?.id && onEditUser(selectedUser)}>
+            <Button
+              variant="outline"
+              onClick={() => selectedUser?.id && onEditUser(selectedUser)}
+              className="border-gray-300 text-black"
+            >
               Edit
             </Button>
             <Button
               variant={selectedUser?.status === 'banned' ? 'default' : 'destructive'}
               onClick={() => selectedUser?.id && onBanUser(selectedUser)}
+              className="border border-gray-300 text-black hover:bg-gray-100"
             >
               {selectedUser?.status === 'banned' ? 'Unban' : 'Ban'} User
             </Button>
             <Button
               variant="destructive"
               onClick={() => selectedUser?.id && onDeleteUser(selectedUser)}
+              className="border border-gray-300 text-black hover:bg-gray-100"
             >
               Delete
             </Button>
@@ -140,7 +150,7 @@ const UserModals = ({
 
       {/* Edit User Modal */}
       <Dialog open={showEditModal} onOpenChange={onCloseEditModal}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-gray-900">
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>Update user information</DialogDescription>
@@ -191,6 +201,7 @@ const UserModals = ({
                   onChangeFormData({ ...formData, anonymousMode: checked })
                 }
                 disabled={formLoading}
+                className="border border-gray-300 data-[state=unchecked]:bg-gray-200 dark:data-[state=unchecked]:bg-gray-700"
               />
               <Label htmlFor="edit-anonymous">Anonymous Mode</Label>
             </div>
@@ -208,7 +219,7 @@ const UserModals = ({
 
       {/* Ban Confirmation Modal */}
       <Dialog open={showBanConfirm} onOpenChange={onCancelBan}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-gray-900">
           <DialogHeader>
             <DialogTitle>{userToBan?.status === 'banned' ? 'Unban User' : 'Ban User'}</DialogTitle>
             <DialogDescription>
@@ -222,12 +233,17 @@ const UserModals = ({
             </Alert>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={onCancelBan}>
+            <Button
+              variant="ghost"
+              onClick={onCancelBan}
+              className="border border-gray-300 text-black hover:bg-gray-100"
+            >
               Cancel
             </Button>
             <Button
               variant={userToBan?.status === 'banned' ? 'default' : 'destructive'}
               onClick={onConfirmBan}
+              className="border border-gray-300 text-black hover:bg-gray-100"
             >
               {userToBan?.status === 'banned' ? 'Unban' : 'Ban'} User
             </Button>
@@ -237,7 +253,7 @@ const UserModals = ({
 
       {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteConfirm} onOpenChange={onCancelDelete}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-gray-900">
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
             <DialogDescription>
@@ -251,10 +267,18 @@ const UserModals = ({
             </Alert>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={onCancelDelete}>
+            <Button
+              variant="ghost"
+              onClick={onCancelDelete}
+              className="border border-gray-300 text-black hover:bg-gray-100"
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={onConfirmDelete}>
+            <Button
+              variant="destructive"
+              onClick={onConfirmDelete}
+              className="border border-gray-300 text-black hover:bg-gray-100"
+            >
               Delete User
             </Button>
           </DialogFooter>

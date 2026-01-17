@@ -6,6 +6,7 @@ import { apiGet, apiPost } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import useInterval from '../hooks/useInterval';
+import { submitEsewaForm } from '../utils/esewa';
 import {
   Card,
   CardHeader,
@@ -25,7 +26,7 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { Separator } from '../components/ui/Separator';
-import { Check } from 'lucide-react';
+import { Check, CreditCard, Wallet, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 function PlanCard({
@@ -113,12 +114,17 @@ export default function Subscription() {
   const prevStatusRef = useRef('loading');
   const hydratedRef = useRef(false);
   const [intensePolling, setIntensePolling] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('stripe'); // 'stripe' or 'esewa'
+  const [showPaymentMethodDialog, setShowPaymentMethodDialog] = useState(false);
+  const [pendingBillingPeriod, setPendingBillingPeriod] = useState(null);
+  const [hasClearedIncomplete, setHasClearedIncomplete] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     try {
       const data = await apiGet('/api/subscription/status', token);
       const s = typeof data === 'string' ? data : (data?.status ?? 'inactive');
-      setStatus(s);
+      // Treat 'canceled' status as 'inactive' for display purposes
+      setStatus(s === 'canceled' ? 'inactive' : s);
     } catch (e) {
       console.error('Failed to fetch subscription status:', e);
       toast.error('Unable to load subscription status');
@@ -135,6 +141,31 @@ export default function Subscription() {
     }
   }, [refreshStatus]);
 
+  // Automatically clear incomplete subscriptions when page loads (only once per incomplete status)
+  useEffect(() => {
+    const clearIncompleteIfNeeded = async () => {
+      if (status === 'incomplete' && token && !hasClearedIncomplete) {
+        setHasClearedIncomplete(true); // Prevent multiple attempts
+        try {
+          await apiPost('/api/subscription/clear-incomplete', {}, token);
+          // Small delay before refreshing to ensure backend has processed
+          setTimeout(() => {
+            refreshStatus();
+          }, 500);
+        } catch (e) {
+          // Silently fail - user can manually clear if needed
+          console.log('Could not auto-clear incomplete subscription:', e);
+          // Don't reset flag on error - prevent infinite retry loops
+        }
+      }
+    };
+
+    // Only run when status is incomplete and we haven't cleared it yet
+    if (status === 'incomplete' && !hasClearedIncomplete && token) {
+      clearIncompleteIfNeeded();
+    }
+  }, [status, token, refreshStatus, hasClearedIncomplete]);
+
   useEffect(() => {
     if (!hydratedRef.current) {
       hydratedRef.current = true;
@@ -149,7 +180,12 @@ export default function Subscription() {
         if (intensePolling) setIntensePolling(false);
         setShowUpgradeView(false);
       } else if (status === 'canceled') {
-        toast.info('Subscription canceled');
+        // Don't show toast for canceled status - it's handled in cancelSubscription function
+        // Just refresh to show free plan view
+        if (intensePolling) setIntensePolling(false); // Stop polling for canceled status
+      } else if (status === 'inactive') {
+        // Stop polling when status becomes inactive (e.g., after clearing incomplete)
+        if (intensePolling) setIntensePolling(false);
       } else if (status === 'past_due') {
         toast.error('Payment failed');
       }
@@ -157,9 +193,13 @@ export default function Subscription() {
     }
   }, [status, intensePolling]);
 
-  const delay = intensePolling ? 1500 : 15000;
+  // Only poll when actively waiting for a status change (after checkout)
+  // Stop polling once status is stable to reduce unnecessary API calls
+  const delay = intensePolling ? 1500 : null; // Only poll during intense polling (after checkout)
   useInterval(() => {
-    refreshStatus().catch(() => {});
+    if (intensePolling) {
+      refreshStatus().catch(() => {});
+    }
   }, delay);
 
   useEffect(() => {
@@ -185,9 +225,47 @@ export default function Subscription() {
     }
   }
 
-  async function startCheckout(billingPeriod) {
+  async function startCheckout(billingPeriod, paymentMethod = 'stripe') {
     setLoading(true);
     try {
+      if (paymentMethod === 'esewa') {
+        // Calculate amounts for eSewa (in NPR)
+        // Premium Monthly: $29 ≈ NPR 3900 (approximate conversion rate 1 USD = 134 NPR)
+        // Premium Annual: $299 ≈ NPR 40,000 (approximate conversion rate 1 USD = 134 NPR)
+        const rateUsdToNpr = 134;
+        const monthlyUsd = 29;
+        const annualUsd = 299;
+
+        const amount =
+          billingPeriod === 'ANNUAL' || billingPeriod === 'annual'
+            ? Math.round(annualUsd * rateUsdToNpr)
+            : Math.round(monthlyUsd * rateUsdToNpr);
+
+        const taxAmount = Math.round(amount * 0.13); // 13% VAT (approximate for Nepal)
+
+        const request = {
+          amount: amount,
+          taxAmount: taxAmount,
+          productServiceCharge: 0,
+          productDeliveryCharge: 0,
+          billingPeriod: billingPeriod,
+        };
+
+        const resp = await apiPost('/api/esewa/create', request, token);
+        const payload = resp?.data ?? resp;
+
+        if (payload?.checkoutUrl && payload?.formData) {
+          sessionStorage.setItem('justReturnedFromCheckout', '1');
+          const formData = JSON.parse(payload.formData);
+          submitEsewaForm(payload.checkoutUrl, formData);
+          return;
+        }
+
+        toast.error('Failed to create eSewa payment request');
+        return;
+      }
+
+      // Stripe payment flow
       const resp = await apiPost('/api/subscription/create', { billingPeriod }, token);
       const payload = resp?.data ?? resp;
 
@@ -222,7 +300,33 @@ export default function Subscription() {
       refreshStatus();
     } catch (e) {
       console.error(e);
-      toast.error('Unable to start checkout');
+
+      // Parse error message to extract backend error details
+      let errorMessage = 'Unable to start checkout';
+      let errorData = null;
+
+      try {
+        // Try to parse the error message which contains JSON
+        const errorMatch = e.message?.match(/\{.*\}/);
+        if (errorMatch) {
+          errorData = JSON.parse(errorMatch[0]);
+          errorMessage = errorData.message || errorMessage;
+
+          // Handle specific error cases
+          if (errorData.error === 'subscription_exists') {
+            // User already has a subscription - refresh status to show it
+            // This could be active, incomplete, or past_due
+            toast.warning(errorMessage || 'You already have a subscription in progress or active');
+            refreshStatus();
+            return; // Exit early, don't show generic error
+          }
+        }
+      } catch (parseError) {
+        // If parsing fails, use the original error message
+        console.error('Failed to parse error response:', parseError);
+      }
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -231,13 +335,36 @@ export default function Subscription() {
   async function cancelSubscription() {
     setLoading(true);
     try {
-      await apiPost('/api/subscription/cancel', {}, token);
-      toast.success('Subscription canceled successfully');
+      // Use simpler endpoint for incomplete subscriptions
+      const endpoint =
+        status === 'incomplete' ? '/api/subscription/clear-incomplete' : '/api/subscription/cancel';
+
+      await apiPost(endpoint, {}, token);
+      const message =
+        status === 'incomplete' ? 'Subscription process canceled' : 'Subscription process canceled';
+      toast.success(message);
       setShowCancelModal(false);
       refreshStatus();
     } catch (e) {
       console.error(e);
-      toast.error('Unable to cancel subscription');
+
+      // Parse error message to extract backend error details
+      let errorMessage =
+        status === 'incomplete'
+          ? 'Unable to clear incomplete subscription'
+          : 'Unable to cancel subscription';
+
+      try {
+        const errorMatch = e.message?.match(/\{.*\}/);
+        if (errorMatch) {
+          const errorData = JSON.parse(errorMatch[0]);
+          errorMessage = errorData.message || errorMessage;
+        }
+      } catch (parseError) {
+        // Use default error message if parsing fails
+      }
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -368,7 +495,10 @@ export default function Subscription() {
                   isActive={false}
                   isRecommended={true}
                   loading={loading}
-                  onSelect={() => startCheckout('ANNUAL')}
+                  onSelect={() => {
+                    setPendingBillingPeriod('ANNUAL');
+                    setShowPaymentMethodDialog(true);
+                  }}
                 />
               </div>
             </div>
@@ -430,35 +560,69 @@ export default function Subscription() {
           </p>
         </div>
 
-        {/* Status Badge */}
-        <div className="flex justify-center">
-          <Badge
-            variant={
-              status === 'canceled'
-                ? 'destructive'
-                : status === 'past_due'
+        {/* Status Badge - Don't show for canceled status, treat as free plan */}
+        {status !== 'canceled' && (
+          <div className="flex justify-center">
+            <Badge
+              variant={
+                status === 'past_due'
                   ? 'warning'
-                  : 'secondary'
-            }
-            className="px-4 py-2 text-sm"
-          >
-            <span
-              className={cn(
-                'mr-2 h-2 w-2 rounded-full',
-                status === 'canceled'
-                  ? 'bg-red-500'
-                  : status === 'past_due'
+                  : status === 'incomplete'
+                    ? 'warning'
+                    : 'secondary'
+              }
+              className="px-4 py-2 text-sm"
+            >
+              <span
+                className={cn(
+                  'mr-2 h-2 w-2 rounded-full',
+                  status === 'past_due'
                     ? 'bg-yellow-500'
-                    : 'bg-gray-500'
-              )}
-            ></span>
-            {status === 'canceled'
-              ? 'Subscription Canceled'
-              : status === 'past_due'
+                    : status === 'incomplete'
+                      ? 'bg-yellow-500'
+                      : 'bg-gray-500'
+                )}
+              ></span>
+              {status === 'past_due'
                 ? 'Payment Issue'
-                : 'Free Plan'}
-          </Badge>
-        </div>
+                : status === 'incomplete'
+                  ? 'Incomplete Subscription'
+                  : 'Free Plan'}
+            </Badge>
+          </div>
+        )}
+
+        {/* Incomplete Subscription Alert */}
+        {status === 'incomplete' && (
+          <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+            <CardContent className="py-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                    <span className="text-yellow-600 dark:text-yellow-400 text-xl">⚠️</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    Incomplete Subscription Detected
+                  </h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                    You have an incomplete subscription from a previous checkout attempt. Please
+                    clear it to start a new subscription.
+                  </p>
+                  <Button
+                    variant="default"
+                    onClick={cancelSubscription}
+                    disabled={loading}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                  >
+                    {loading ? 'Clearing...' : 'Clear Incomplete Subscription'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Plans Grid */}
         <div className="grid gap-6 md:grid-cols-3">
@@ -469,8 +633,9 @@ export default function Subscription() {
             period="forever"
             features={[
               'Basic mood tracking',
-              'Journal entries',
-              'Limited chat access',
+              '1 journal entry per day',
+              '20 chat messages per day',
+              '1 AI summary per month',
               'Community resources',
             ]}
             isActive={status === 'inactive'}
@@ -488,7 +653,10 @@ export default function Subscription() {
             isActive={false}
             isRecommended={true}
             loading={loading}
-            onSelect={() => startCheckout('MONTHLY')}
+            onSelect={() => {
+              setPendingBillingPeriod('MONTHLY');
+              setShowPaymentMethodDialog(true);
+            }}
           />
 
           <PlanCard
@@ -500,15 +668,134 @@ export default function Subscription() {
             isActive={false}
             isRecommended={false}
             loading={loading}
-            onSelect={() => startCheckout('ANNUAL')}
+            onSelect={() => {
+              setPendingBillingPeriod('ANNUAL');
+              setShowPaymentMethodDialog(true);
+            }}
           />
         </div>
+
+        {/* Payment Method Dialog */}
+        <Dialog open={showPaymentMethodDialog} onOpenChange={setShowPaymentMethodDialog}>
+          <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-900">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold">Choose Payment Method</DialogTitle>
+              <DialogDescription className="text-base pt-2">
+                Select your preferred payment method to continue with your subscription.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 py-4">
+              {/* Stripe Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedPaymentMethod('stripe')}
+                className={cn(
+                  'relative flex items-start gap-4 p-5 rounded-xl border-2 transition-all text-left group',
+                  'hover:shadow-md hover:border-green-400',
+                  selectedPaymentMethod === 'stripe'
+                    ? 'border-green-500 bg-green-50 dark:bg-green-950/40 shadow-md'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex-shrink-0 p-3 rounded-lg transition-colors',
+                    selectedPaymentMethod === 'stripe'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-green-100 dark:group-hover:bg-green-900/20'
+                  )}
+                >
+                  <CreditCard className="h-6 w-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                      Stripe
+                    </h3>
+                    {selectedPaymentMethod === 'stripe' && (
+                      <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Credit/Debit Card</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    Pay with Visa, Mastercard, American Express, and more
+                  </p>
+                </div>
+              </button>
+
+              {/* eSewa Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedPaymentMethod('esewa')}
+                className={cn(
+                  'relative flex items-start gap-4 p-5 rounded-xl border-2 transition-all text-left group',
+                  'hover:shadow-md hover:border-orange-400',
+                  selectedPaymentMethod === 'esewa'
+                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/40 shadow-md'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800'
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex-shrink-0 p-3 rounded-lg transition-colors',
+                    selectedPaymentMethod === 'esewa'
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/20'
+                  )}
+                >
+                  <Wallet className="h-6 w-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                      eSewa
+                    </h3>
+                    {selectedPaymentMethod === 'esewa' && (
+                      <CheckCircle2 className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    Digital Wallet (Nepal)
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    Pay securely with your eSewa wallet account
+                  </p>
+                </div>
+              </button>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPaymentMethodDialog(false);
+                  setPendingBillingPeriod(null);
+                }}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (pendingBillingPeriod) {
+                    startCheckout(pendingBillingPeriod, selectedPaymentMethod);
+                    setShowPaymentMethodDialog(false);
+                    setPendingBillingPeriod(null);
+                  }
+                }}
+                disabled={loading}
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+              >
+                {loading ? 'Processing...' : 'Continue with Payment'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Footer */}
         <Card className="bg-gray-50 dark:bg-gray-900">
           <CardContent className="py-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              You'll be redirected to Stripe Checkout. After success you'll land back at this page.
+              Choose your payment method. After payment, you'll be redirected back to this page.
             </p>
           </CardContent>
         </Card>

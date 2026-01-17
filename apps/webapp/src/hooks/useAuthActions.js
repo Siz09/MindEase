@@ -52,11 +52,80 @@ export const useAuthActions = ({
   const login = useCallback(
     async (email, password) => {
       let toastId = null;
+      let firebaseUser = null;
+      let firebaseToken = null;
+
       try {
         toastId = toast.loading('Signing in...');
-        const firebaseUser = await firebaseSignInWithEmail(email, password);
-        const firebaseToken = await firebaseGetIdToken(firebaseUser);
-        const responseData = await authApiLogin({ firebaseToken });
+
+        // Step 1: Authenticate with Firebase
+        firebaseUser = await firebaseSignInWithEmail(email, password);
+        firebaseToken = await firebaseGetIdToken(firebaseUser);
+
+        // Step 2: Try to login with backend
+        let responseData;
+        try {
+          responseData = await authApiLogin({ firebaseToken });
+        } catch (loginError) {
+          // If backend says user not found, but Firebase auth succeeded,
+          // automatically register the user to sync accounts
+          const status = loginError.response?.status;
+          const errorCode = loginError.response?.data?.code;
+
+          if (errorCode === 'USER_NOT_FOUND' || status === 404) {
+            // User exists in Firebase but not in backend - auto-register to sync
+            if (toastId) {
+              toast.update(toastId, {
+                render: 'Syncing account...',
+                type: 'info',
+                isLoading: true,
+              });
+            }
+
+            try {
+              responseData = await authApiRegister({
+                email: firebaseUser.email || email,
+                firebaseToken,
+                anonymousMode: false,
+              });
+
+              if (toastId) {
+                toast.update(toastId, {
+                  render: 'Account synced! Welcome back!',
+                  type: 'success',
+                  isLoading: false,
+                  autoClose: 3000,
+                });
+              }
+            } catch (registerError) {
+              // If registration fails, check the error type
+              const registerErrorCode = registerError.response?.data?.code;
+              const registerStatus = registerError.response?.status;
+
+              if (registerErrorCode === 'USER_ALREADY_EXISTS' || registerStatus === 400) {
+                // Email exists in backend but Firebase UID doesn't match
+                // This is a data inconsistency - show helpful error
+                const errorMessage = getErrorMessage(
+                  'ACCOUNT_SYNC_FAILED',
+                  'Account exists but is not properly linked. Please contact support or try resetting your password.'
+                );
+                if (toastId) toast.dismiss(toastId);
+                toast.error(errorMessage);
+                return {
+                  success: false,
+                  error: errorMessage,
+                  code: 'ACCOUNT_SYNC_FAILED',
+                };
+              }
+
+              // For other registration errors, throw the original login error
+              throw loginError;
+            }
+          } else {
+            // For other errors, throw the login error
+            throw loginError;
+          }
+        }
 
         const { token: jwtToken, refreshToken: refreshTokenValue, user: userData } = responseData;
 

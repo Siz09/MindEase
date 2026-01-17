@@ -161,6 +161,9 @@ export const useTokenRefresh = ({
                   }
                 }
                 break;
+              case 429:
+                errorMessage = data?.message || 'Rate limit exceeded. Please try again later.';
+                break;
               case 500:
                 errorMessage = data?.message || 'Server error. Please try again later.';
                 break;

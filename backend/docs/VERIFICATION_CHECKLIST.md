@@ -41,7 +41,7 @@ Use this checklist to verify your environment is properly configured before star
   - [ ] `JWT_SECRET` set (has dev default, required for production)
 
 - [ ] **Other Optional Variables**
-  - [ ] `CHAT_FREE_DAILY_LIMIT` (default: 50)
+  - [ ] `CHAT_FREE_DAILY_LIMIT` (default: 20)
   - [ ] `CORS_ALLOWED_ORIGINS` (has default)
 
 ## 🔧 Automated Verification

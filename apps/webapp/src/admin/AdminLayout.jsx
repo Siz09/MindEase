@@ -19,7 +19,6 @@ const routeLabels = {
   '/admin': 'Dashboard',
   '/admin/users': 'User Management',
   '/admin/crisis-monitoring': 'Crisis Monitoring',
-  '/admin/content': 'Content Library',
   '/admin/analytics': 'Analytics',
   '/admin/system': 'System Health',
   '/admin/audit-logs': 'Audit Logs',

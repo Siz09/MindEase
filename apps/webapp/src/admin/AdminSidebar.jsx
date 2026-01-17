@@ -61,10 +61,7 @@ const navItems = [
   },
   {
     section: 'Operations',
-    items: [
-      { to: '/admin/crisis-monitoring', label: 'Crisis Monitoring', icon: navIcons.crisis },
-      { to: '/admin/content', label: 'Content Library', icon: navIcons.content },
-    ],
+    items: [{ to: '/admin/crisis-monitoring', label: 'Crisis Monitoring', icon: navIcons.crisis }],
   },
   {
     section: 'System',
@@ -101,41 +98,59 @@ function NavUser({ user, onLogout, onSettings }) {
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
             side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm text-black dark:text-white">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarFallback className="rounded-lg">{userInitial}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{userEmail}</span>
-                  <span className="truncate text-xs">Administrator</span>
+                  <span className="truncate text-xs text-gray-600 dark:text-gray-400">
+                    Administrator
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={onSettings}>
+              <DropdownMenuItem
+                onClick={onSettings}
+                className="text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
                 <BadgeCheck className="mr-2 h-4 w-4" />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
+              <DropdownMenuItem
+                disabled
+                className="opacity-50 cursor-not-allowed text-black dark:text-white"
+              >
                 <CreditCard className="mr-2 h-4 w-4" />
                 Billing
-                <span className="ml-auto text-xs text-muted-foreground">Coming Soon</span>
+                <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+                  Coming Soon
+                </span>
               </DropdownMenuItem>
-              <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
+              <DropdownMenuItem
+                disabled
+                className="opacity-50 cursor-not-allowed text-black dark:text-white"
+              >
                 <Bell className="mr-2 h-4 w-4" />
                 Notifications
-                <span className="ml-auto text-xs text-muted-foreground">Coming Soon</span>
+                <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+                  Coming Soon
+                </span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onLogout}>
+            <DropdownMenuItem
+              onClick={onLogout}
+              className="text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>

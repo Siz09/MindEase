@@ -27,6 +27,19 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
     // Count entries for a user (for pagination info)
     long countByUserId(UUID userId);
 
+    // Count entries for a user in current month
+    @Query("SELECT COUNT(j) FROM JournalEntry j WHERE j.userId = :userId AND j.createdAt >= :startOfMonth")
+    long countByUserIdAndCreatedAtAfter(@Param("userId") UUID userId, @Param("startOfMonth") LocalDateTime startOfMonth);
+
+    // Count entries for a user today
+    @Query("SELECT COUNT(j) FROM JournalEntry j WHERE j.userId = :userId AND j.createdAt >= :startOfDay AND j.createdAt < :endOfDay")
+    long countByUserIdAndCreatedAtBetween(@Param("userId") UUID userId, @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
+
+    // Count entries with AI summaries for a user in current month
+    // Excludes entries with placeholder messages indicating limit reached
+    @Query("SELECT COUNT(j) FROM JournalEntry j WHERE j.userId = :userId AND j.aiSummary IS NOT NULL AND j.aiSummary != '' AND j.createdAt >= :startOfMonth AND j.aiSummary NOT LIKE 'AI summaries are limited%'")
+    long countByUserIdWithAISummaryAndCreatedAtAfter(@Param("userId") UUID userId, @Param("startOfMonth") LocalDateTime startOfMonth);
+
     // Get recent entries for dashboard (limited to 5 most recent)
     @EntityGraph(attributePaths = { "moodEntry" })
     List<JournalEntry> findTop5ByUserIdOrderByCreatedAtDesc(UUID userId);

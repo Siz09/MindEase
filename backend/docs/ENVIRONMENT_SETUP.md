@@ -55,7 +55,7 @@ Default values in `application.yml`:
 | Variable                 | Description                           | Default                                          |
 | ------------------------ | ------------------------------------- | ------------------------------------------------ |
 | `JWT_SECRET`             | JWT token signing secret              | `dev-jwt-secret-key...` (dev only)               |
-| `CHAT_FREE_DAILY_LIMIT`  | Daily message limit for free users    | `50`                                             |
+| `CHAT_FREE_DAILY_LIMIT`  | Daily message limit for free users    | `20`                                             |
 | `STRIPE_SUCCESS_URL`     | Redirect URL after successful payment | `http://localhost:5173/subscription/success?...` |
 | `STRIPE_CANCEL_URL`      | Redirect URL after cancelled payment  | `http://localhost:5173/subscription/cancel`      |
 | `CORS_ALLOWED_ORIGINS`   | Allowed CORS origins                  | `http://localhost:5173`                          |

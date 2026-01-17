@@ -57,17 +57,22 @@ public class OpenAIChatBotService implements ChatBotService {
 
                 // Build context string
                 StringBuilder contextBuilder = new StringBuilder();
+                // Extract preferred language before lambda (must be effectively final)
+                String preferredLanguage = null;
                 if (userContext != null && !userContext.isEmpty()) {
+                    preferredLanguage = userContext.get("preferredLanguage");
                     contextBuilder.append("\nUser Context:\n");
                     // Sanitize userContext to prevent PII leakage to third-party OpenAI service
                     Map<String, String> sanitizedContext = sanitizeUserContext(userContext);
                     sanitizedContext.entrySet().stream()
-                            .forEach(entry -> contextBuilder.append("- ").append(entry.getKey()).append(": ")
-                                    .append(sanitizeContextValue(entry.getValue())).append("\n"));
+                            .forEach(entry -> {
+                                contextBuilder.append("- ").append(entry.getKey()).append(": ")
+                                        .append(sanitizeContextValue(entry.getValue())).append("\n");
+                            });
                 }
 
                 // Persona + safety-first system prompt derived from your spec
-                String persona = String.join("\n",
+                StringBuilder personaBuilder = new StringBuilder(String.join("\n",
                         "You are Mindease — a compassionate, emotionally intelligent mental health companion.",
                         "You are not a therapist or medical professional. Do not diagnose or give medical advice.",
                         "Goals: help users explore emotions, validate feelings, gently guide reflection and resilience, and ensure safety.",
@@ -78,8 +83,32 @@ public class OpenAIChatBotService implements ChatBotService {
                         "- Short to medium, conversational responses (avoid long monologues).",
                         "- Use grounding or reflection when overwhelmed; be hope-oriented.",
                         "- If crisis indicators appear, acknowledge pain and encourage immediate human help.",
-                        "Response format: 1) Acknowledge emotion 2) One reflective/grounding prompt 3) Encouraging close.")
-                        + contextBuilder.toString();
+                        "Response format: 1) Acknowledge emotion 2) One reflective/grounding prompt 3) Encouraging close."));
+
+                // Detect language from message content (check for Nepali/Devanagari characters)
+                String detectedLanguage = detectLanguageFromMessage(message);
+
+                // Use detected language from message if available, otherwise use preferred
+                // language
+                String responseLanguage = (detectedLanguage != null && !detectedLanguage.isEmpty())
+                        ? detectedLanguage
+                        : (preferredLanguage != null && !preferredLanguage.isEmpty() ? preferredLanguage : "en");
+
+                // Add language instruction
+                if (responseLanguage != null && !responseLanguage.isEmpty()) {
+                    String languageName;
+                    if ("ne".equalsIgnoreCase(responseLanguage)) {
+                        languageName = "Nepali (नेपाली)";
+                    } else {
+                        languageName = "English";
+                    }
+                    personaBuilder.append("\n\nIMPORTANT: You MUST respond in ").append(languageName)
+                            .append(". The user is communicating in ").append(languageName)
+                            .append(", so you must respond in ").append(languageName)
+                            .append(" as well. Do not respond in a different language. Always match the language of the user's message.");
+                }
+
+                String persona = personaBuilder.toString() + contextBuilder.toString();
 
                 String behaviorTag = mapBehaviorTag(message);
                 boolean crisis = isCrisisMessage(message);
@@ -224,6 +253,30 @@ public class OpenAIChatBotService implements ChatBotService {
                         Map.Entry::getValue,
                         (e1, e2) -> e1,
                         java.util.LinkedHashMap::new));
+    }
+
+    /**
+     * Detects language from message content by checking for Nepali/Devanagari
+     * characters.
+     *
+     * @param message the message text to analyze
+     * @return "ne" if Nepali characters detected, "en" otherwise
+     */
+    private String detectLanguageFromMessage(String message) {
+        if (message == null || message.isEmpty()) {
+            return "en";
+        }
+
+        // Check for Nepali/Devanagari script characters (Unicode range: U+0900 to
+        // U+097F)
+        for (int i = 0; i < message.length(); i++) {
+            char c = message.charAt(i);
+            if (c >= '\u0900' && c <= '\u097F') {
+                return "ne";
+            }
+        }
+
+        return "en";
     }
 
     /**

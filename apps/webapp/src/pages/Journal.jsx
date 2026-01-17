@@ -58,7 +58,25 @@ const Journal = () => {
         }
       } catch (err) {
         console.error(err);
-        toast.error(t('journal.errors.saveFailed', 'Error saving journal entry'));
+
+        // Extract error message from response if available
+        let errorMessage = t('journal.errors.saveFailed', 'Error saving journal entry');
+
+        if (err.response) {
+          const { status, data } = err.response;
+
+          // Handle 429 (Too Many Requests) with custom message
+          if (status === 429 && data?.message) {
+            errorMessage = data.message;
+          } else if (data?.message) {
+            errorMessage = data.message;
+          } else if (status === 429) {
+            errorMessage =
+              "You've reached your monthly journal entry limit. Upgrade to Premium for unlimited entries.";
+          }
+        }
+
+        toast.error(errorMessage);
       } finally {
         setSubmitting(false);
       }

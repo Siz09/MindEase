@@ -32,11 +32,25 @@ const useTextToSpeech = ({
       const langVoices = filterVoicesByLang(voices, language);
       const defaultVoice = langVoices.find((v) => v.default) || langVoices[0] || voices[0];
 
-      if (defaultVoice && !selectedVoice) {
-        setSelectedVoice(defaultVoice);
+      // If no voice is selected, or current voice doesn't match the language, select a new one
+      if (defaultVoice) {
+        setSelectedVoice((currentSelectedVoice) => {
+          if (!currentSelectedVoice) {
+            return defaultVoice;
+          }
+
+          // Check if current voice matches the new language
+          const baseLang = language.split('-')[0].toLowerCase();
+          const currentVoiceLang = currentSelectedVoice.lang.toLowerCase();
+          const voiceMatchesLang =
+            currentVoiceLang.startsWith(baseLang) || currentVoiceLang.includes(baseLang);
+
+          // If voice doesn't match language, switch to default for new language
+          return voiceMatchesLang ? currentSelectedVoice : defaultVoice;
+        });
       }
     });
-  }, [isSupported, language, selectedVoice]);
+  }, [isSupported, language]);
 
   const processQueue = useCallback(() => {
     setQueue((prevQueue) => {

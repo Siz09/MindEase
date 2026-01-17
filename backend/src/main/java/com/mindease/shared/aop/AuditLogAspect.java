@@ -38,7 +38,7 @@ public class AuditLogAspect {
 
     // As we cannot read the return value from JoinPoint, add a separate advice with
     // returning param
-    @AfterReturning(pointcut = "@annotation(com.mindease.aop.annotations.AuditLogin)", returning = "ret")
+    @AfterReturning(pointcut = "@annotation(com.mindease.shared.aop.annotations.AuditLogin)", returning = "ret")
     public void afterLoginAnnotatedReturning(Object ret) {
         try {
             if (ret instanceof ResponseEntity<?> resp) {
@@ -63,21 +63,21 @@ public class AuditLogAspect {
         }
     }
 
-    @AfterReturning("@annotation(com.mindease.aop.annotations.AuditChatSent)")
+    @AfterReturning("@annotation(com.mindease.shared.aop.annotations.AuditChatSent)")
     public void afterChatSentAnnotated() {
         UUID uid = tryGetCurrentUserId();
         if (uid != null)
             auditService.chatSent(uid);
     }
 
-    @AfterReturning("@annotation(com.mindease.aop.annotations.AuditMoodAdded)")
+    @AfterReturning("@annotation(com.mindease.shared.aop.annotations.AuditMoodAdded)")
     public void afterMoodAddedAnnotated() {
         UUID uid = tryGetCurrentUserId();
         if (uid != null)
             auditService.moodAdded(uid);
     }
 
-    @AfterReturning("@annotation(com.mindease.aop.annotations.AuditJournalAdded)")
+    @AfterReturning("@annotation(com.mindease.shared.aop.annotations.AuditJournalAdded)")
     public void afterJournalAddedAnnotated() {
         UUID uid = tryGetCurrentUserId();
         if (uid != null)

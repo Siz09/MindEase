@@ -166,7 +166,7 @@ const Navbar = () => {
                           strokeWidth="2"
                         />
                       </svg>
-                      Profile
+                      {t('profile.title', 'Profile')}
                     </button>
                     <button className="dropdown-item" onClick={() => handleNavClick('/settings')}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

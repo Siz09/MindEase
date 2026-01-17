@@ -6,6 +6,10 @@ import com.mindease.journal.model.JournalEntry;
 import com.mindease.journal.service.JournalService;
 import com.mindease.shared.exception.UnauthenticatedException;
 import com.mindease.shared.util.AuthUtil;
+import com.mindease.subscription.service.PremiumAccessService;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +43,12 @@ public class JournalController {
     @Autowired
     private AuthUtil authUtil;
 
+    @Autowired
+    private PremiumAccessService premiumAccessService;
+
+    @Autowired
+    private com.mindease.journal.repository.JournalEntryRepository journalEntryRepository;
+
     // Support both /add and root path for backwards compatibility
     @PostMapping({ "/add", "", "/" })
     @AuditJournalAdded
@@ -59,6 +69,31 @@ public class JournalController {
             // Get user ID from authentication
             UUID userId = getUserIdFromAuthentication(authentication);
 
+            // Check if user is premium
+            boolean isPremium = premiumAccessService.isPremium(userId);
+
+            // Enforce daily journal entry limit for free users
+            if (!isPremium) {
+                LocalDate today = LocalDate.now();
+                LocalDateTime startOfDay = today.atStartOfDay();
+                LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+                long entriesToday = journalEntryRepository.countByUserIdAndCreatedAtBetween(userId, startOfDay, endOfDay);
+                int freeDailyLimit = 1; // Free users: 1 entry per day
+
+                if (entriesToday >= freeDailyLimit) {
+                    response.put("success", false);
+                    response.put("message", String.format(
+                            "You've reached your daily journal entry limit (%d entry per day). You can write again tomorrow or upgrade to Premium for unlimited entries.",
+                            freeDailyLimit));
+                    response.put("errorType", "LIMIT_EXCEEDED");
+                    response.put("limit", freeDailyLimit);
+                    response.put("currentCount", entriesToday);
+                    logger.info("Free user daily journal limit reached: userId={}, entriesToday={}, limit={}",
+                            userId, entriesToday, freeDailyLimit);
+                    return ResponseEntity.status(429).body(response);
+                }
+            }
+
             // ✅ Track user activity asynchronously (fire-and-forget)
             try {
                 userService.trackUserActivityAsync(userId);
@@ -70,7 +105,7 @@ public class JournalController {
             Integer moodValue = request.getMoodValue();
 
             // Save journal entry (with optional mood linking)
-            JournalEntry savedEntry = journalService.saveJournalEntry(userId, title, content, moodValue);
+            JournalEntry savedEntry = journalService.saveJournalEntry(userId, title, content, moodValue, isPremium);
 
             response.put("success", true);
             response.put("message", "Journal entry saved successfully");

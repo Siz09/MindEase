@@ -21,7 +21,8 @@ public class CacheConfig {
                 "moodDistribution",
                 "chatSession",
                 "recentMessages",
-                "subscription_status"
+                "subscription_status",
+                "crisisResources"
         };
 
         if ("caffeine".equalsIgnoreCase(cacheType)) {

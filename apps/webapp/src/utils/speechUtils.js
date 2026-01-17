@@ -21,6 +21,15 @@ export const mapI18nToSpeechLang = (i18nLang) => {
   return langMap[baseLang] || 'en-US';
 };
 
+/**
+ * Get the language code for speech recognition.
+ * Uses the same mapping as TTS to ensure consistency.
+ */
+export const getSpeechRecognitionLang = (i18nLang) => {
+  // Use the same language code mapping as TTS
+  return mapI18nToSpeechLang(i18nLang);
+};
+
 export const mapSpeechLangToI18n = (speechLang) => {
   const langMap = {
     'en-US': 'en',

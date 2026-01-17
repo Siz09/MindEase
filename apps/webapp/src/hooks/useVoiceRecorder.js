@@ -3,6 +3,7 @@ import {
   getSpeechRecognition,
   isSpeechRecognitionSupported,
   getSpeechErrorMessage,
+  getSpeechRecognitionLang,
 } from '../utils/speechUtils';
 
 const useVoiceRecorder = ({

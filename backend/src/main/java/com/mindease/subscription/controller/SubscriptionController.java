@@ -95,22 +95,53 @@ public class SubscriptionController {
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/cancel")
-    public ResponseEntity<?> cancel() throws StripeException {
+    public ResponseEntity<?> cancel() {
         UUID userId = CurrentUserId.get();
         logger.info("User {} requested subscription cancellation", userId);
 
-        boolean canceled = subscriptionService.cancelActiveSubscription(userId);
+        try {
+            boolean canceled = subscriptionService.cancelActiveSubscription(userId);
 
-        if (!canceled) {
-            logger.info("User {} requested cancellation but has no active subscription (idempotent success)", userId);
+            if (!canceled) {
+                logger.info("User {} requested cancellation but has no active subscription (idempotent success)", userId);
+                return ResponseEntity.ok(Map.of(
+                        "status", "success",
+                        "message", "No active subscription to cancel."));
+            }
+
+            logger.info("Successfully canceled subscription for user {}", userId);
             return ResponseEntity.ok(Map.of(
                     "status", "success",
-                    "message", "No active subscription to cancel."));
+                    "message", "Subscription canceled"));
+        } catch (StripeException e) {
+            logger.error("Stripe error during cancellation for user {}", userId, e);
+            return ResponseEntity.status(500).body(Map.of(
+                    "status", "error",
+                    "message", "Failed to cancel subscription due to payment provider error. Please try again or contact support."));
+        } catch (Exception e) {
+            logger.error("Unexpected error during cancellation for user {}", userId, e);
+            return ResponseEntity.status(500).body(Map.of(
+                    "status", "error",
+                    "message", "An unexpected error occurred while canceling subscription."));
+        }
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/clear-incomplete")
+    public ResponseEntity<?> clearIncomplete() {
+        UUID userId = CurrentUserId.get();
+        logger.info("User {} requested to clear incomplete subscription", userId);
+
+        boolean cleared = subscriptionService.clearIncompleteSubscription(userId);
+
+        if (!cleared) {
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "message", "No incomplete subscription to clear."));
         }
 
-        logger.info("Successfully canceled subscription for user {}", userId);
         return ResponseEntity.ok(Map.of(
                 "status", "success",
-                "message", "Subscription canceled"));
+                "message", "Incomplete subscription cleared successfully."));
     }
 }

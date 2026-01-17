@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import useTextToSpeech from '../../hooks/useTextToSpeech';
@@ -7,6 +7,7 @@ import {
   isSpeechRecognitionSupported,
   isSpeechSynthesisSupported,
   mapI18nToSpeechLang,
+  filterVoicesByLang,
 } from '../../utils/speechUtils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
 import { Switch } from '../ui/Switch';
@@ -90,6 +91,19 @@ const VoiceSettingsSection = () => {
     speak(t('chat.testVoiceSample'));
   };
 
+  // Filter voices by current language
+  const currentSpeechLang = mapI18nToSpeechLang(i18n.language);
+  const filteredVoices = useMemo(() => {
+    if (!availableVoices || availableVoices.length === 0) return [];
+
+    // First try to get voices matching the current language
+    const langVoices = filterVoicesByLang(availableVoices, currentSpeechLang);
+
+    // If no voices found for the language, show all voices as fallback
+    // This helps when the OS doesn't have language-specific voices installed
+    return langVoices.length > 0 ? langVoices : availableVoices;
+  }, [availableVoices, currentSpeechLang]);
+
   if (!isVoiceInputSupported && !isVoiceOutputSupported) return null;
 
   return (
@@ -97,7 +111,7 @@ const VoiceSettingsSection = () => {
       <Card>
         <CardHeader>
           <CardTitle>{t('settings.voiceSettings')}</CardTitle>
-          <CardDescription>Configure voice input and output preferences</CardDescription>
+          <CardDescription>{t('settings.voice.description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Voice Input */}
@@ -114,6 +128,16 @@ const VoiceSettingsSection = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {t('settings.voice.inputDescription')}
                   </p>
+                  {i18n.language === 'ne' && (
+                    <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg text-xs text-amber-800 dark:text-amber-200">
+                      <p className="font-medium mb-1">⚠️ Nepali STT Limitation</p>
+                      <p>
+                        Nepali speech-to-text has limited browser support. Voice input may not work
+                        reliably for Nepali. You can still type in Nepali and receive responses in
+                        Nepali.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <Switch checked={voiceInputEnabled} onCheckedChange={handleVoiceInputToggle} />
               </div>
@@ -148,20 +172,50 @@ const VoiceSettingsSection = () => {
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {t('chat.selectVoice')}
                     </label>
-                    <select
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition-all"
-                      value={selectedVoice?.name || ''}
-                      onChange={(e) => {
-                        const voice = availableVoices.find((v) => v.name === e.target.value);
-                        if (voice) handleVoiceChange(voice);
-                      }}
-                    >
-                      {availableVoices.map((voice) => (
-                        <option key={voice.name} value={voice.name}>
-                          {voice.name} ({voice.lang})
-                        </option>
-                      ))}
-                    </select>
+                    {filteredVoices.length === 0 ? (
+                      <div className="px-3 py-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-800 dark:text-amber-200">
+                        {i18n.language === 'ne' ? (
+                          <div className="space-y-2">
+                            <p className="font-medium">⚠️ Nepali TTS Not Available</p>
+                            <p className="text-xs">
+                              Unfortunately, Nepali text-to-speech is not supported by your
+                              browser/OS. This is a limitation of the Web Speech API, not this
+                              application.
+                            </p>
+                            <p className="text-xs mt-2">
+                              <strong>Alternative:</strong> You can still type in Nepali and the bot
+                              will respond in Nepali. Voice output will use English until browser
+                              support improves.
+                            </p>
+                          </div>
+                        ) : (
+                          'No voices available for the selected language.'
+                        )}
+                      </div>
+                    ) : (
+                      <select
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition-all"
+                        value={selectedVoice?.name || ''}
+                        onChange={(e) => {
+                          const voice = filteredVoices.find((v) => v.name === e.target.value);
+                          if (voice) handleVoiceChange(voice);
+                        }}
+                      >
+                        {filteredVoices.map((voice) => (
+                          <option key={voice.name} value={voice.name}>
+                            {voice.name} ({voice.lang})
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {filteredVoices.length > 0 &&
+                      filteredVoices.length < availableVoices.length && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Showing {filteredVoices.length} voice
+                          {filteredVoices.length !== 1 ? 's' : ''} for{' '}
+                          {i18n.language === 'ne' ? 'Nepali' : 'English'}
+                        </p>
+                      )}
                   </div>
 
                   {/* Speech Rate */}

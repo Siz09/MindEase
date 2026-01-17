@@ -220,6 +220,7 @@ public class SubscriptionService {
                     case ACTIVE -> "active";
                     case PAST_DUE -> "past_due";
                     case CANCELED -> "canceled";
+                    case INCOMPLETE -> "incomplete";
                     default -> "inactive";
                 })
                 .orElse("inactive");
@@ -244,7 +245,8 @@ public class SubscriptionService {
         } else {
             sub.setStatus(SubscriptionStatus.ACTIVE);
             sub.setPlanType(planType);
-            if (billing != null) sub.setBillingPeriod(billing);
+            if (billing != null)
+                sub.setBillingPeriod(billing);
         }
 
         Subscription saved = subscriptionRepository.save(sub);
@@ -257,13 +259,17 @@ public class SubscriptionService {
     }
 
     /**
-     * Cancel the user's most recent active-ish subscription in Stripe and mark it CANCELED locally.
+     * Cancel the user's most recent active-ish subscription in Stripe and mark it
+     * CANCELED locally.
      * If only a pending Checkout session exists (INCOMPLETE), expire that session.
      *
      * Notes on consistency:
-     * - This operation talks to Stripe first (external) and then updates local DB in a transaction.
-     * - If the local save fails after a successful Stripe cancel, systems will temporarily diverge.
-     * - We rely on Stripe webhooks (e.g., customer.subscription.deleted) to reconcile status to CANCELED.
+     * - This operation talks to Stripe first (external) and then updates local DB
+     * in a transaction.
+     * - If the local save fails after a successful Stripe cancel, systems will
+     * temporarily diverge.
+     * - We rely on Stripe webhooks (e.g., customer.subscription.deleted) to
+     * reconcile status to CANCELED.
      * - Consider a periodic reconciliation job if stronger guarantees are required.
      */
     // Phase-1 helper container
@@ -272,6 +278,7 @@ public class SubscriptionService {
         final String stripeSubId;
         final String checkoutSessionId;
         final SubscriptionStatus previousStatus;
+
         CancelTarget(UUID subscriptionId, String stripeSubId, String checkoutSessionId, SubscriptionStatus prev) {
             this.subscriptionId = subscriptionId;
             this.stripeSubId = stripeSubId;
@@ -286,8 +293,7 @@ public class SubscriptionService {
                 SubscriptionStatus.ACTIVE,
                 SubscriptionStatus.TRIALING,
                 SubscriptionStatus.PAST_DUE,
-                SubscriptionStatus.INCOMPLETE
-        );
+                SubscriptionStatus.INCOMPLETE);
 
         var subOpt = subscriptionRepository
                 .findFirstByUser_IdAndStatusInOrderByCreatedAtDescForUpdate(userId, targetStatuses);
@@ -355,16 +361,17 @@ public class SubscriptionService {
                 throw new RuntimeException("Failed to cancel Stripe subscription", e);
             }
         } else if (target.checkoutSessionId != null && !target.checkoutSessionId.isBlank()) {
-            // Note: Checkout session expiration is non-critical; we proceed even if it fails
+            // Note: Checkout session expiration is non-critical; we proceed even if it
+            // fails
             try {
                 stripeClient.v1().checkout().sessions().expire(
                         target.checkoutSessionId,
                         SessionExpireParams.builder().build(),
-                        null
-                );
+                        null);
                 logger.info("Expired Stripe Checkout session {} for user {}", target.checkoutSessionId, userId);
             } catch (Exception e) {
-                logger.warn("Failed to expire Checkout session {} for user {} (continuing)", target.checkoutSessionId, userId, e);
+                logger.warn("Failed to expire Checkout session {} for user {} (continuing)", target.checkoutSessionId,
+                        userId, e);
             }
         }
 
@@ -376,6 +383,33 @@ public class SubscriptionService {
                     target.subscriptionId, e);
             throw new IllegalStateException("Failed to finalize cancellation locally", e);
         }
+        return true;
+    }
+
+    /**
+     * Simple method to clear incomplete subscriptions without Stripe calls.
+     * This is useful for automatically clearing stale incomplete subscriptions.
+     */
+    @Transactional
+    public boolean clearIncompleteSubscription(UUID userId) {
+        Optional<Subscription> incomplete = subscriptionRepository
+                .findByUser_IdAndStatus(userId, SubscriptionStatus.INCOMPLETE);
+
+        if (incomplete.isEmpty()) {
+            logger.info("No incomplete subscription found for user {}", userId);
+            return false;
+        }
+
+        Subscription sub = incomplete.get();
+        sub.setStatus(SubscriptionStatus.CANCELED);
+        subscriptionRepository.save(sub);
+
+        Cache cache = cacheManager.getCache("subscription_status");
+        if (cache != null) {
+            cache.evictIfPresent(userId);
+        }
+
+        logger.info("Cleared incomplete subscription {} for user {}", sub.getId(), userId);
         return true;
     }
 }

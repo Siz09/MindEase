@@ -19,7 +19,6 @@ import CrisisMonitoring from './admin/pages/CrisisMonitoring';
 import AdminSettings from './admin/pages/Settings';
 import Dashboard from './admin/pages/Dashboard';
 import UserManagement from './admin/pages/UserManagement';
-import ContentLibrary from './admin/pages/ContentLibrary';
 import Analytics from './admin/pages/Analytics';
 import SystemMonitoring from './admin/pages/SystemMonitoring';
 import { ToastContainer } from 'react-toastify';
@@ -32,6 +31,8 @@ import Notifications from './pages/Notifications';
 import Subscription from './pages/Subscription';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import SubscriptionCancel from './pages/SubscriptionCancel';
+import EsewaSuccess from './pages/EsewaSuccess';
+import EsewaFailure from './pages/EsewaFailure';
 import Profile from './pages/Profile';
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -59,7 +60,6 @@ function App() {
               <Route index element={<Dashboard />} />
               <Route path="users" element={<UserManagement />} />
               <Route path="crisis-monitoring" element={<CrisisMonitoring />} />
-              <Route path="content" element={<ContentLibrary />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="system" element={<SystemMonitoring />} />
               <Route path="audit-logs" element={<AuditLogs />} />
@@ -150,6 +150,8 @@ function App() {
               />
               <Route path="/subscription/success" element={<SubscriptionSuccess />} />
               <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
+              <Route path="/esewa/success" element={<EsewaSuccess />} />
+              <Route path="/esewa/failure" element={<EsewaFailure />} />
               <Route
                 path="/profile"
                 element={

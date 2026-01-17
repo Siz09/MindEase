@@ -13,6 +13,7 @@
   },
   "auth": {
     "welcomeBack": "Welcome Back",
+    "sessionExpired": "Session expired. Please log in again.",
     "loginSubtitle": "Continue your wellness journey with MindEase",
     "signIn": "Sign In",
     "signInSubtitle": "Enter your credentials to access your account",
@@ -89,7 +90,8 @@
       "NOT_ANONYMOUS_ACCOUNT": "This account is already a full account.",
       "WEAK_PASSWORD": "Password is too weak. Please use a stronger password.",
       "NETWORK_ERROR": "Network error. Please check your connection.",
-      "SERVER_ERROR": "Server error. Please try again later."
+      "SERVER_ERROR": "Server error. Please try again later.",
+      "ACCOUNT_SYNC_FAILED": "Account exists but is not properly linked. Please contact support or try resetting your password."
     },
     "forgotPassword": "Forgot password?",
     "forgotPasswordTitle": "Reset Your Password",
@@ -476,18 +478,42 @@
     },
     "language": {
       "title": "Language Preferences",
+      "description": "Choose your preferred language for the app",
       "currentLanguage": "Current Language",
       "english": "English",
       "nepali": "नेपाली (Nepali)",
       "selectEnglish": "Select English",
       "selectNepali": "Select Nepali",
-      "changeLanguage": "Change Language"
+      "changeLanguage": "Change Language",
+      "active": "Active"
     },
     "actions": {
       "title": "Account Actions",
+      "description": "Manage your account and data",
       "logout": "Logout",
       "deleteAccount": "Delete Account",
       "exportData": "Export My Data"
+    },
+    "aiProvider": {
+      "title": "🤖 AI Assistant Provider",
+      "description": "Choose which AI powers your mental health conversations. You can switch between providers at any time.",
+      "providers": {
+        "openai": {
+          "name": "OpenAI (Cloud)",
+          "description": "Fast, cloud-based responses (1-3s)",
+          "badge": "Recommended"
+        },
+        "local": {
+          "name": "MindEase AI (Local)",
+          "description": "Private, with evidence-based citations (3-7s)",
+          "badge": "Privacy Focused"
+        },
+        "auto": {
+          "name": "Auto Selection",
+          "description": "System chooses the best option for you",
+          "badge": "Smart"
+        }
+      }
     },
     "notifications": {
       "anonymousModeEnabled": "Anonymous mode enabled",
@@ -503,6 +529,7 @@
     },
     "voiceSettings": "Voice Settings",
     "voice": {
+      "description": "Configure voice input and output preferences",
       "inputDescription": "Enable voice input to dictate messages using your microphone",
       "outputDescription": "Enable voice output to hear bot responses spoken aloud",
       "conversationModeTitle": "Voice Conversation Mode",
@@ -588,5 +615,18 @@
     },
     "aiUnavailable": "AI summarization is unavailable offline.",
     "journalOffline": "Journal entries will be saved locally and synced when online."
+  },
+  "profile": {
+    "title": "Profile",
+    "personalInfo": "Your personal information",
+    "accountInformation": "Account Information",
+    "accountDescription": "View your account details and settings",
+    "pleaseLogin": "Please log in to view your profile",
+    "anonymousUser": "Anonymous User",
+    "memberSince": "Member since {{date}}",
+    "statusLabel": "Status",
+    "status": {
+      "active": "Active"
+    }
   }
 }

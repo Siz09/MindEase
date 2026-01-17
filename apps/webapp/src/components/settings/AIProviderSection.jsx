@@ -63,9 +63,9 @@ const AIProviderSection = ({ currentUser }) => {
       iconColor: 'text-yellow-600',
       bgColor: 'bg-yellow-50 dark:bg-yellow-950/20',
       borderColor: 'border-yellow-200 dark:border-yellow-800',
-      name: 'OpenAI (Cloud)',
-      description: 'Fast, cloud-based responses (1-3s)',
-      badge: 'Recommended',
+      name: t('settings.aiProvider.providers.openai.name'),
+      description: t('settings.aiProvider.providers.openai.description'),
+      badge: t('settings.aiProvider.providers.openai.badge'),
       badgeVariant: 'success',
     },
     {
@@ -74,9 +74,9 @@ const AIProviderSection = ({ currentUser }) => {
       iconColor: 'text-blue-600',
       bgColor: 'bg-blue-50 dark:bg-blue-950/20',
       borderColor: 'border-blue-200 dark:border-blue-800',
-      name: 'MindEase AI (Local)',
-      description: 'Private, with evidence-based citations (3-7s)',
-      badge: 'Privacy Focused',
+      name: t('settings.aiProvider.providers.local.name'),
+      description: t('settings.aiProvider.providers.local.description'),
+      badge: t('settings.aiProvider.providers.local.badge'),
       badgeVariant: 'secondary',
     },
     {
@@ -85,9 +85,9 @@ const AIProviderSection = ({ currentUser }) => {
       iconColor: 'text-purple-600',
       bgColor: 'bg-purple-50 dark:bg-purple-950/20',
       borderColor: 'border-purple-200 dark:border-purple-800',
-      name: 'Auto Selection',
-      description: 'System chooses the best option for you',
-      badge: 'Smart',
+      name: t('settings.aiProvider.providers.auto.name'),
+      description: t('settings.aiProvider.providers.auto.description'),
+      badge: t('settings.aiProvider.providers.auto.badge'),
       badgeVariant: 'outline',
     },
   ];
@@ -96,11 +96,8 @@ const AIProviderSection = ({ currentUser }) => {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>🤖 AI Assistant Provider</CardTitle>
-          <CardDescription>
-            Choose which AI powers your mental health conversations. You can switch between
-            providers at any time.
-          </CardDescription>
+          <CardTitle>{t('settings.aiProvider.title')}</CardTitle>
+          <CardDescription>{t('settings.aiProvider.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 gap-3">
