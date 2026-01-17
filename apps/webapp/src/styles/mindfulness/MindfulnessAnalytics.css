@@ -6,8 +6,9 @@
 
 .analytics-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
@@ -120,11 +121,16 @@
   }
 }
 
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .analytics-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
   }
 
   .charts-row {

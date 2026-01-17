@@ -47,23 +47,21 @@ const InsightsJournalEntriesCard = ({
                   key={entry.id || `${entry.createdAt}-${(entry.content || '').slice(0, 20)}`}
                   className="journal-entry-card"
                 >
-                  <div className="entry-header">
-                    <span className="entry-timestamp">
-                      {new Date(entry.createdAt).toLocaleDateString(resolvedLanguage, {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                    <span className="entry-badge">Entry #{journalPage * entriesPerPage + idx + 1}</span>
-                  </div>
-
                   <div className="entry-content-wrapper">
                     <div className="entry-original">
                       <div className="content-label">
-                        <span className="label-icon">📝</span>
-                        <span>{t('journal.entry') || 'Your Entry'}</span>
+                        <div className="content-label-left">
+                          <span className="label-icon">📝</span>
+                          <span>{t('journal.entry') || 'Your Entry'}</span>
+                        </div>
+                        <span className="entry-timestamp">
+                          {new Date(entry.createdAt).toLocaleDateString(resolvedLanguage, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
                       </div>
                       {entry.content ? (
                         <p className="entry-text">{stripLeadingEmoji(entry.content)}</p>
@@ -119,4 +117,3 @@ const InsightsJournalEntriesCard = ({
 };
 
 export default InsightsJournalEntriesCard;
-

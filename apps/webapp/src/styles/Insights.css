@@ -9,6 +9,9 @@
 .insights-page .page-header {
   text-align: center;
   margin-bottom: var(--spacing-2xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .insights-page .page-title {
@@ -16,6 +19,8 @@
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--spacing-md);
+  text-align: center;
+  width: 100%;
 }
 
 .insights-page .page-subtitle {
@@ -23,6 +28,7 @@
   color: var(--text-secondary);
   max-width: 600px;
   margin: 0 auto;
+  text-align: center;
 }
 
 /* ========== JOURNAL INSIGHTS & YOUR INSIGHTS (Combined) ========== */
@@ -279,21 +285,6 @@
   transform: translateY(-2px);
 }
 
-.entry-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--gray-200);
-}
-
-.entry-timestamp {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
 .entry-badge {
   font-size: 0.7rem;
   background: var(--primary-green-light);
@@ -348,10 +339,23 @@
 .content-label {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.content-label-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.entry-timestamp {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .label-icon {

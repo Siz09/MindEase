@@ -1,14 +1,11 @@
-'use client';
-
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import AccountSettingsSection from '../components/settings/AccountSettingsSection';
 import AIProviderSection from '../components/settings/AIProviderSection';
 import LanguageSettingsSection from '../components/settings/LanguageSettingsSection';
-import QuietHoursSection from '../components/settings/QuietHoursSection';
 import VoiceSettingsSection from '../components/settings/VoiceSettingsSection';
-import { Settings as SettingsIcon, User, Bell, Mic, Globe, Bot } from 'lucide-react';
+import { Settings as SettingsIcon, User, Mic, Globe, Bot } from 'lucide-react';
 import '../styles/Settings.css';
 
 const Settings = () => {
@@ -40,13 +37,13 @@ const Settings = () => {
       <div className="settings-container">
         {/* Header */}
         <div className="settings-header">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center justify-center gap-3 mb-2">
             <SettingsIcon className="h-8 w-8 text-green-600" />
             <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
               {t('settings.title')}
             </h1>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">{t('settings.subtitle')}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-center">{t('settings.subtitle')}</p>
         </div>
 
         {/* Settings Grid */}
@@ -98,17 +95,6 @@ const Settings = () => {
               </h2>
             </div>
             <VoiceSettingsSection />
-          </div>
-
-          {/* Quiet Hours */}
-          <div className="settings-section">
-            <div className="section-header">
-              <Bell className="h-5 w-5 text-indigo-600" />
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                {t('settings.notifications.quietHours.title')}
-              </h2>
-            </div>
-            <QuietHoursSection currentUser={currentUser} />
           </div>
         </div>
       </div>

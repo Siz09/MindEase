@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-toastify';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
-import { Switch } from '../ui/Switch';
 import { Separator } from '../ui/Separator';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { Shield, LogOut, Download, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Shield, LogOut, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFull, logout }) => {
   const { t } = useTranslation();
@@ -20,8 +19,16 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
   const [convertLoading, setConvertLoading] = useState(false);
   const [convertError, setConvertError] = useState('');
 
+  const [dataRetentionPeriod, setDataRetentionPeriod] = useState('unlimited');
+
   useEffect(() => {
     if (currentUser) setAnonymousMode(currentUser.anonymousMode || false);
+
+    // Load data retention period from localStorage
+    const savedRetention = localStorage.getItem('dataRetentionPeriod');
+    if (savedRetention) {
+      setDataRetentionPeriod(savedRetention);
+    }
   }, [currentUser]);
 
   const handleToggleAnonymousMode = async (checked) => {
@@ -44,6 +51,29 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
       toast.error(t('settings.notifications.updateFailed'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDataRetentionChange = (value) => {
+    setDataRetentionPeriod(value);
+    localStorage.setItem('dataRetentionPeriod', value);
+    toast.success(t('settings.notifications.settingsUpdated'));
+  };
+
+  const getDataRetentionDescription = () => {
+    switch (dataRetentionPeriod) {
+      case '7days':
+        return t('settings.privacy.dataRetentionDescription7Days');
+      case '30days':
+        return t('settings.privacy.dataRetentionDescription30Days');
+      case '90days':
+        return t('settings.privacy.dataRetentionDescription90Days');
+      case '1year':
+        return t('settings.privacy.dataRetentionDescription1Year');
+      case 'unlimited':
+        return t('settings.privacy.dataRetentionDescriptionUnlimited');
+      default:
+        return t('settings.privacy.dataRetentionDescription');
     }
   };
 
@@ -240,7 +270,7 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
               <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
                 {t('settings.privacy.anonymousMode')}
@@ -249,22 +279,68 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
                 {t('settings.privacy.anonymousModeDescription')}
               </p>
             </div>
-            <Switch
-              checked={anonymousMode}
-              onCheckedChange={handleToggleAnonymousMode}
-              disabled={loading}
-            />
+            <label
+              className="relative inline-flex items-center cursor-pointer flex-shrink-0 pt-1"
+              htmlFor="anonymous-mode-toggle"
+            >
+              <input
+                id="anonymous-mode-toggle"
+                type="checkbox"
+                checked={anonymousMode || false}
+                onChange={(e) => handleToggleAnonymousMode(e.target.checked)}
+                disabled={loading}
+                className="sr-only"
+                aria-label={t('settings.privacy.anonymousMode')}
+              />
+              <div
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  anonymousMode ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600'
+                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <span
+                  className={`absolute top-[2px] left-[2px] bg-white border rounded-full h-5 w-5 transition-all duration-200 ease-in-out ${
+                    anonymousMode
+                      ? 'translate-x-5 border-white'
+                      : 'translate-x-0 border-gray-300 dark:border-gray-600'
+                  }`}
+                ></span>
+              </div>
+            </label>
           </div>
 
           <Separator className="my-6" />
 
-          <div>
-            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-              {t('settings.privacy.dataRetention')}
-            </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('settings.privacy.dataRetentionDescription')}
-            </p>
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                  {t('settings.privacy.dataRetention')}
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  {getDataRetentionDescription()}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label
+                htmlFor="data-retention-period"
+                className="text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                {t('settings.privacy.dataRetentionPeriod')}
+              </label>
+              <select
+                id="data-retention-period"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition-all cursor-pointer"
+                value={dataRetentionPeriod}
+                onChange={(e) => handleDataRetentionChange(e.target.value)}
+              >
+                <option value="7days">{t('settings.privacy.retention7Days')}</option>
+                <option value="30days">{t('settings.privacy.retention30Days')}</option>
+                <option value="90days">{t('settings.privacy.retention90Days')}</option>
+                <option value="1year">{t('settings.privacy.retention1Year')}</option>
+                <option value="unlimited">{t('settings.privacy.retentionUnlimited')}</option>
+              </select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -280,11 +356,6 @@ const AccountSettingsSection = ({ currentUser, updateUser, convertAnonymousToFul
             <Button variant="outline" onClick={logout} className="w-full justify-start gap-2">
               <LogOut className="h-4 w-4" />
               {t('settings.actions.logout')}
-            </Button>
-
-            <Button variant="outline" disabled className="w-full justify-start gap-2 opacity-50">
-              <Download className="h-4 w-4" />
-              {t('settings.actions.exportData')}
             </Button>
 
             <Button

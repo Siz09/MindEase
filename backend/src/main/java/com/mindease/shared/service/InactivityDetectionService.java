@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,11 +31,6 @@ public class InactivityDetectionService {
 
     private com.mindease.shared.service.PythonBackgroundJobsClient pythonBackgroundJobsClient;
 
-    @Value("${inactivity.quiet-hours.start:22}")
-    private int quietHoursStart; // Default 10 PM
-
-    @Value("${inactivity.quiet-hours.end:8}")
-    private int quietHoursEnd; // Default 8 AM
 
     public InactivityDetectionService(UserActivityRepository userActivityRepository,
             NotificationService notificationService,
@@ -114,12 +108,6 @@ public class InactivityDetectionService {
                     continue;
                 }
 
-                // ✅ Respect quiet hours
-                if (isWithinQuietHours(user)) {
-                    logger.debug("Skipping quiet hours for user: {}", user.getEmail());
-                    continue;
-                }
-
                 // ✅ Prevent duplicate inactivity notifications
                 if (notifiedUserIds.contains(user.getId())) {
                     logger.debug("User {} already received inactivity notification", user.getEmail());
@@ -147,25 +135,5 @@ public class InactivityDetectionService {
      */
     public void manualTrigger() {
         detectInactiveUsers();
-    }
-
-    /**
-     * Determines if current time is within quiet hours.
-     */
-    private boolean isWithinQuietHours(User user) {
-        LocalTime now = LocalTime.now();
-        LocalTime quietStart = LocalTime.of(quietHoursStart, 0);
-        LocalTime quietEnd = LocalTime.of(quietHoursEnd, 0);
-
-        if (quietStart.equals(quietEnd)) {
-            // Quiet hours disabled
-            return false;
-        } else if (quietStart.isBefore(quietEnd)) {
-            // Quiet hours within same day: [quietStart, quietEnd)
-            return now.compareTo(quietStart) >= 0 && now.compareTo(quietEnd) < 0;
-        } else {
-            // Quiet hours cross midnight: [quietStart, 24:00) or [00:00, quietEnd)
-            return now.compareTo(quietStart) >= 0 || now.compareTo(quietEnd) < 0;
-        }
     }
 }

@@ -27,12 +27,15 @@ public class PythonBackgroundJobsClient {
 
     private final RestTemplate restTemplate;
     private final String pythonServiceUrl;
+    private final String apiKey;
 
     public PythonBackgroundJobsClient(
             RestTemplate restTemplate,
-            @Value("${python.background-jobs.service.url:http://localhost:8003}") String pythonServiceUrl) {
+            @Value("${python.background-jobs.service.url:http://localhost:8003}") String pythonServiceUrl,
+            @Value("${python.background-jobs.service.api-key:}") String apiKey) {
         this.restTemplate = restTemplate;
         this.pythonServiceUrl = pythonServiceUrl;
+        this.apiKey = apiKey;
         log.info("PythonBackgroundJobsClient initialized with URL: {}", pythonServiceUrl);
     }
 
@@ -46,6 +49,9 @@ public class PythonBackgroundJobsClient {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            if (apiKey != null && !apiKey.isEmpty()) {
+                headers.set("x-api-key", apiKey);
+            }
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
@@ -70,6 +76,9 @@ public class PythonBackgroundJobsClient {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            if (apiKey != null && !apiKey.isEmpty()) {
+                headers.set("x-api-key", apiKey);
+            }
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
@@ -94,6 +103,9 @@ public class PythonBackgroundJobsClient {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            if (apiKey != null && !apiKey.isEmpty()) {
+                headers.set("x-api-key", apiKey);
+            }
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(

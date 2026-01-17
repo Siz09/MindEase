@@ -231,10 +231,6 @@ public class NotificationController {
             response.put("status", "success");
 
             Map<String, Object> preferences = new HashMap<>();
-            preferences.put("quietHoursStart",
-                    user.getQuietHoursStart() != null ? user.getQuietHoursStart().toString() : null);
-            preferences.put("quietHoursEnd",
-                    user.getQuietHoursEnd() != null ? user.getQuietHoursEnd().toString() : null);
             preferences.put("emailNotifications", true); // Default to true, can be extended
             preferences.put("pushNotifications", true); // Default to true, can be extended
 
@@ -263,37 +259,11 @@ public class NotificationController {
             User user = userService.findByEmail(principalEmail)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-            // Update quiet hours if provided
-            if (preferences.containsKey("quietHoursStart") && preferences.containsKey("quietHoursEnd")) {
-                java.time.LocalTime startTime = null;
-                java.time.LocalTime endTime = null;
-
-                Object startObj = preferences.get("quietHoursStart");
-                Object endObj = preferences.get("quietHoursEnd");
-
-                if (startObj instanceof String) {
-                    startTime = java.time.LocalTime.parse((String) startObj);
-                }
-                if (endObj instanceof String) {
-                    endTime = java.time.LocalTime.parse((String) endObj);
-                }
-
-                if (startTime != null && endTime != null) {
-                    user.setQuietHoursStart(startTime);
-                    user.setQuietHoursEnd(endTime);
-                    userRepository.save(user);
-                }
-            }
-
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             response.put("message", "Notification preferences updated successfully");
 
             Map<String, Object> updatedPreferences = new HashMap<>();
-            updatedPreferences.put("quietHoursStart",
-                    user.getQuietHoursStart() != null ? user.getQuietHoursStart().toString() : null);
-            updatedPreferences.put("quietHoursEnd",
-                    user.getQuietHoursEnd() != null ? user.getQuietHoursEnd().toString() : null);
 
             response.put("preferences", updatedPreferences);
             return ResponseEntity.ok(response);

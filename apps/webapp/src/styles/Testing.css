@@ -17,6 +17,7 @@
 
 .tab-list {
   display: flex;
+  flex-direction: column;
   gap: var(--spacing-sm);
   background-color: var(--bg-card);
   padding: var(--spacing-sm);
@@ -27,6 +28,7 @@
 .tab-button {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
   background: none;
@@ -97,7 +99,7 @@
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--spacing-lg);
   margin-top: var(--spacing-xl);
 }
@@ -143,8 +145,9 @@
 
 .compatibility-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-items: flex-start;
   padding: var(--spacing-md);
   background-color: var(--bg-primary);
   border-radius: var(--radius-md);
@@ -189,24 +192,28 @@
   word-break: break-all;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .tab-list {
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .tab-button {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .metrics-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 
   .compatibility-item {
-    flex-direction: column;
-    gap: var(--spacing-sm);
-    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
   }
 }
 

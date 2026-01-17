@@ -16,9 +16,9 @@
   background: var(--bg-card, white);
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  width: 90%;
+  width: 95%;
   max-width: 500px;
-  max-height: 80vh;
+  max-height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -29,7 +29,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
+  padding: 16px;
   border-bottom: 1px solid var(--border-color, #e5e7eb);
 }
 
@@ -217,18 +217,22 @@
   }
 }
 
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .voice-settings-panel {
-    width: 95%;
-    max-height: 90vh;
+    width: 90%;
+    max-height: 80vh;
   }
 
   .voice-settings-header {
-    padding: 16px;
+    padding: 20px;
   }
 
   .voice-settings-content {
-    padding: 16px;
+    padding: 20px;
   }
 
   .voice-settings-section {

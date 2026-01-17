@@ -165,11 +165,17 @@ async def get_mood_trend(request: MoodTrendRequest):
             params={"user_id": request.user_id, "since": since}
         )
 
-        # Combine and process
-        all_moods = pd.concat([entries_df, checkins_df], ignore_index=True)
+        # Combine and process - handle empty DataFrames to avoid FutureWarning
+        dfs_to_concat = []
+        if not entries_df.empty:
+            dfs_to_concat.append(entries_df)
+        if not checkins_df.empty:
+            dfs_to_concat.append(checkins_df)
 
-        if all_moods.empty:
+        if not dfs_to_concat:
             return MoodTrendResponse(trend={})
+
+        all_moods = pd.concat(dfs_to_concat, ignore_index=True) if len(dfs_to_concat) > 1 else dfs_to_concat[0]
 
         all_moods['created_at'] = pd.to_datetime(all_moods['created_at'])
         all_moods['date'] = all_moods['created_at'].dt.date

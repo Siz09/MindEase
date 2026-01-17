@@ -20,6 +20,4 @@ export const getNotifications = (page = 0, size = 10) =>
 
 export const markNotificationRead = (id) => api.patch(`/notifications/mark-read/${id}`);
 
-export const patchQuietHours = (payload) => api.patch('/user/quiet-hours', payload);
-
 export default api;

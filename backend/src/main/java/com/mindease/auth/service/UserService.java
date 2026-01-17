@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import com.mindease.auth.dto.QuietHoursRequest;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -132,30 +131,6 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
-        return userRepository.save(user);
-    }
-
-    /**
-     * Update user's quiet hours by email
-     */
-    @Transactional
-    public User updateQuietHours(String email, QuietHoursRequest request) {
-        if (email == null || request == null) {
-            throw new IllegalArgumentException("Email and request must not be null");
-        }
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (request.getQuietHoursStart() == null || request.getQuietHoursEnd() == null) {
-            throw new IllegalArgumentException("Quiet hours start and end times must not be null");
-        }
-        if (request.getQuietHoursStart().equals(request.getQuietHoursEnd())) {
-            throw new IllegalArgumentException("Quiet hours start and end times must not be equal");
-        }
-
-        user.setQuietHoursStart(request.getQuietHoursStart());
-        user.setQuietHoursEnd(request.getQuietHoursEnd());
         return userRepository.save(user);
     }
 

@@ -12,7 +12,15 @@ import '../styles/Insights.css';
 
 const Insights = () => {
   const { t, i18n } = useTranslation();
-  const { moodHistory, isLoading, stats } = useMoodInsights({ pageSize: 100 });
+  const {
+    moodHistory,
+    isLoading,
+    stats,
+    error: moodError,
+    refresh: refreshMood,
+  } = useMoodInsights({
+    pageSize: 100,
+  });
   const {
     journalStats,
     journalEntries,
@@ -38,7 +46,20 @@ const Insights = () => {
           <InsightsStatsCard journalStats={journalStats} moodStats={stats} />
 
           <section className="insights-section">
-            <MoodCharts moodHistory={moodHistory} isLoading={isLoading} />
+            {moodError && !isLoading ? (
+              <div className="empty-state">
+                <div className="empty-icon">📊</div>
+                <h3 className="empty-title">
+                  {t('insights.moodChartsErrorTitle') || "Couldn't load mood charts"}
+                </h3>
+                <p className="empty-description">{moodError}</p>
+                <button onClick={refreshMood} className="btn btn-outline">
+                  {t('common.retry') || 'Retry'}
+                </button>
+              </div>
+            ) : (
+              <MoodCharts moodHistory={moodHistory} isLoading={isLoading} />
+            )}
           </section>
 
           <section className="insights-section insights-summaries-container">

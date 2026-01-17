@@ -11,7 +11,7 @@
 
 .favorites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1.5rem;
 }
 
@@ -108,8 +108,12 @@
   color: var(--text-primary);
 }
 
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .favorites-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 }

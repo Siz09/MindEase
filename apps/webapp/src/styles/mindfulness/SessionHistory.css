@@ -145,8 +145,14 @@
   }
 }
 
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .history-item-header {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
   }
 }

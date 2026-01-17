@@ -1,4 +1,4 @@
-﻿{
+{
   "navigation": {
     "mood": "Mood",
     "journal": "Journal",
@@ -285,7 +285,9 @@
     },
     "errors": {
       "loadFailed": "Failed to load insights"
-    }
+    },
+    "pageInfo": "Page {{current}} of {{total}}",
+    "moodChartsErrorTitle": "Couldn't load mood charts"
   },
   "chatbot": {
     "name": "MindEase Assistant",
@@ -445,7 +447,19 @@
       "anonymousMode": "Anonymous Mode",
       "anonymousModeDescription": "When enabled, your data will be automatically deleted after 7 days for enhanced privacy.",
       "dataRetention": "Data Retention",
-      "dataRetentionDescription": "Your data is kept secure and can be deleted at any time."
+      "dataRetentionDescription": "Your data is kept secure and can be deleted at any time.",
+      "dataRetentionPeriod": "Retention Period",
+      "selectRetentionPeriod": "Select retention period",
+      "retention7Days": "7 Days",
+      "retention30Days": "30 Days",
+      "retention90Days": "90 Days",
+      "retention1Year": "1 Year",
+      "retentionUnlimited": "Unlimited",
+      "dataRetentionDescription7Days": "Your data will be retained for 7 days and then automatically deleted for enhanced privacy.",
+      "dataRetentionDescription30Days": "Your data will be retained for 30 days and can be manually deleted at any time.",
+      "dataRetentionDescription90Days": "Your data will be retained for 90 days. You can manage or delete your data at any time.",
+      "dataRetentionDescription1Year": "Your data will be retained for 1 year. You have full control over your data and can delete it at any time.",
+      "dataRetentionDescriptionUnlimited": "Your data is kept secure indefinitely. You can delete your data at any time."
     },
     "convert": {
       "title": "Convert to Full Account",
@@ -464,7 +478,7 @@
       "title": "Language Preferences",
       "currentLanguage": "Current Language",
       "english": "English",
-      "nepali": "à¤¨à¥‡à¤ªà¤¾à¤²à¥€ (Nepali)",
+      "nepali": "नेपाली (Nepali)",
       "selectEnglish": "Select English",
       "selectNepali": "Select Nepali",
       "changeLanguage": "Change Language"
@@ -483,25 +497,11 @@
       "settingsUpdated": "Settings updated successfully",
       "accountConverted": "Account converted successfully",
       "updateFailed": "Failed to update settings",
-      "quietHours": {
-        "title": "Quiet Hours",
-        "description": "Choose when you don't want to receive notifications or emails",
-        "startTime": "Start Quiet Hours",
-        "endTime": "End Quiet Hours",
-        "save": "Save Quiet Hours",
-        "saving": "Saving...",
-        "success": "Quiet hours updated successfully!",
-        "error": "Failed to update quiet hours",
-        "validationError": "Start and end times cannot be the same!",
-        "emptyTimeError": "Please select both start and end times!",
-        "currentSettings": "Current Settings",
-        "startTimeLabel": "Start Time",
-        "endTimeLabel": "End Time"
-      },
       "aiProviderUpdated": "AI provider updated successfully",
       "aiProviderUpdateFailed": "Failed to update AI provider",
       "aiProviderLoadFailed": "Could not load AI provider preference. Please try again."
     },
+    "voiceSettings": "Voice Settings",
     "voice": {
       "inputDescription": "Enable voice input to dictate messages using your microphone",
       "outputDescription": "Enable voice output to hear bot responses spoken aloud",

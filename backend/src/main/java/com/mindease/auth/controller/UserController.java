@@ -4,7 +4,6 @@ import com.mindease.auth.model.Role;
 import com.mindease.auth.model.User;
 import com.mindease.auth.repository.UserRepository;
 import com.mindease.auth.service.UserService;
-import com.mindease.auth.dto.QuietHoursRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,33 +68,6 @@ public class UserController {
         }
     }
 
-    // ✅ Updated endpoint with validation + consistent error handling
-    @PatchMapping("/quiet-hours")
-    public ResponseEntity<?> updateQuietHours(
-            @Valid @RequestBody QuietHoursRequest request,
-            Authentication authentication) {
-        try {
-            if (request == null) {
-                return ResponseEntity.badRequest().body("Request body is required");
-            }
-
-            if (request.getQuietHoursStart() == null || request.getQuietHoursEnd() == null) {
-                return ResponseEntity.badRequest().body("Both quietHoursStart and quietHoursEnd are required");
-            }
-
-            if (authentication == null || authentication.getName() == null) {
-                return ResponseEntity.status(401).body("Authentication required");
-            }
-
-            String email = authentication.getName();
-            User updatedUser = userService.updateQuietHours(email, request);
-            return ResponseEntity.ok(updatedUser);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body(e.getMessage());
-        }
-    }
-
     // GET /api/user/profile - Get current user profile
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(Authentication authentication) {
@@ -117,12 +88,6 @@ public class UserController {
             userInfo.put("email", user.getEmail());
             userInfo.put("role", user.getRole());
             userInfo.put("anonymousMode", user.getAnonymousMode());
-
-            // Include quiet hours if available
-            if (user.getQuietHoursStart() != null && user.getQuietHoursEnd() != null) {
-                userInfo.put("quietHoursStart", user.getQuietHoursStart());
-                userInfo.put("quietHoursEnd", user.getQuietHoursEnd());
-            }
 
             // Include demographic profile fields if available
             if (user.getAge() != null)
@@ -174,37 +139,6 @@ public class UserController {
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             // Update allowed fields
-            if (updates.containsKey("quietHoursStart") && updates.containsKey("quietHoursEnd")) {
-                QuietHoursRequest quietHours = new QuietHoursRequest();
-                Object startObj = updates.get("quietHoursStart");
-                Object endObj = updates.get("quietHoursEnd");
-
-                LocalTime startTime;
-                LocalTime endTime;
-
-                if (startObj instanceof String) {
-                    startTime = LocalTime.parse((String) startObj);
-                } else if (startObj instanceof LocalTime) {
-                    startTime = (LocalTime) startObj;
-                } else {
-                    return ResponseEntity.badRequest()
-                            .body(createErrorResponse("quietHoursStart must be a string or LocalTime"));
-                }
-
-                if (endObj instanceof String) {
-                    endTime = LocalTime.parse((String) endObj);
-                } else if (endObj instanceof LocalTime) {
-                    endTime = (LocalTime) endObj;
-                } else {
-                    return ResponseEntity.badRequest()
-                            .body(createErrorResponse("quietHoursEnd must be a string or LocalTime"));
-                }
-
-                quietHours.setQuietHoursStart(startTime);
-                quietHours.setQuietHoursEnd(endTime);
-                user = userService.updateQuietHours(email, quietHours);
-            }
-
             // Anonymous mode update
             if (updates.containsKey("anonymousMode")) {
                 Object anonymousModeObj = updates.get("anonymousMode");

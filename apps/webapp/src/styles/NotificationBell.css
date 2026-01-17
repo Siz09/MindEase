@@ -1,17 +1,22 @@
 .notification-bell {
   position: relative;
   cursor: pointer;
-  padding: 8px;
+  padding: 6px;
   border-radius: 50%;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 8px;
+  margin-right: 4px;
   /* Remove default button styling */
   border: none;
   background: none;
   outline: none;
+}
+
+.bell-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .notification-bell:hover {
@@ -30,12 +35,12 @@
 
 .notification-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 1px;
+  right: 1px;
   background-color: #dc2626;
   border-radius: 50%;
-  min-width: 18px;
-  height: 18px;
+  min-width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -45,7 +50,7 @@
 
 .badge-count {
   color: white;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 1;
   text-align: center;
@@ -63,27 +68,30 @@
   }
 }
 
-/* Mobile responsiveness */
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .notification-bell {
-    padding: 6px;
-    margin-right: 4px;
+    padding: 8px;
+    margin-right: 8px;
   }
 
   .bell-icon svg {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
   }
 
   .notification-badge {
-    min-width: 16px;
-    height: 16px;
-    top: 1px;
-    right: 1px;
+    min-width: 18px;
+    height: 18px;
+    top: 2px;
+    right: 2px;
   }
 
   .badge-count {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 

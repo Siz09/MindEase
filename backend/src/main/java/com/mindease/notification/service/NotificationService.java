@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -49,7 +48,7 @@ public class NotificationService {
     }
 
     /**
-     * Attempt to send queued notifications if not in user's quiet hours.
+     * Attempt to send queued notifications.
      * Emails are sent individually with error handling to avoid transaction issues.
      */
     @Transactional
@@ -57,9 +56,6 @@ public class NotificationService {
         if (user == null || emailService == null) {
             return;
         }
-
-        if (isWithinQuietHours(user))
-            return;
 
         List<Notification> pending = notificationRepository.findByUserAndIsSentFalse(user);
         for (Notification n : pending) {
@@ -70,19 +66,6 @@ public class NotificationService {
             } catch (Exception e) {
                 logger.warn("Failed to send notification to user {}: {}", user.getEmail(), e.getMessage());
             }
-        }
-    }
-
-    private boolean isWithinQuietHours(User user) {
-        LocalTime now = LocalTime.now();
-        LocalTime start = user.getQuietHoursStart();
-        LocalTime end = user.getQuietHoursEnd();
-        if (start == null || end == null)
-            return false;
-        if (start.isBefore(end)) {
-            return now.isAfter(start) && now.isBefore(end);
-        } else {
-            return now.isAfter(start) || now.isBefore(end);
         }
     }
 

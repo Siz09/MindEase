@@ -148,7 +148,8 @@ public class MoodController {
     @GetMapping("/unified")
     public ResponseEntity<?> getUnifiedMoodHistory(
             Authentication authentication,
-            @RequestParam(defaultValue = "30") int days) {
+            @RequestParam(defaultValue = "30") int days,
+            @RequestParam(defaultValue = "true") boolean includeAnalytics) {
         try {
             String email = authentication.getName();
             Optional<User> userOptional = userRepository.findByEmail(email);
@@ -159,17 +160,20 @@ public class MoodController {
 
             User user = userOptional.get();
             List<UnifiedMoodRecord> unifiedHistory = moodService.getUnifiedMoodHistory(user, days);
-            Map<String, Double> trend = moodService.getUnifiedMoodTrend(user, days);
-            Double averageMood = moodService.getAverageUnifiedMood(user, days);
-            Map<String, Long> countBySource = moodService.getMoodCountBySource(user, days);
 
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
             response.put("data", unifiedHistory);
-            response.put("trend", trend);
-            response.put("averageMood", averageMood);
-            response.put("countBySource", countBySource);
             response.put("days", days);
+
+            if (includeAnalytics) {
+                Map<String, Double> trend = moodService.getUnifiedMoodTrend(user, days);
+                Double averageMood = moodService.getAverageUnifiedMood(user, days);
+                Map<String, Long> countBySource = moodService.getMoodCountBySource(user, days);
+                response.put("trend", trend);
+                response.put("averageMood", averageMood);
+                response.put("countBySource", countBySource);
+            }
 
             return ResponseEntity.ok(response);
 
@@ -312,4 +316,3 @@ public class MoodController {
         }
     }
 }
-

@@ -74,9 +74,6 @@ app:
   base-url: ${APP_BASE_URL:http://localhost:5173}
 
 inactivity:
-  quiet-hours:
-    start: 22 # 10 PM
-    end: 8 # 8 AM
 
 # Retention policy configuration
 retention:
@@ -204,6 +201,7 @@ python:
   background-jobs:
     service:
       url: ${PYTHON_BACKGROUND_JOBS_SERVICE_URL:http://localhost:8003}
+      api-key: ${API_KEY:}
       timeout: 300000
 
 # Stripe Configuration

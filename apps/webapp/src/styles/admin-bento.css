@@ -7,20 +7,23 @@
   margin-bottom: var(--spacing-2xl);
 }
 
-/* Force exactly three columns on wide screens */
+/* Force exactly three columns on wide screens - Mobile First */
+/* Mobile defaults */
 .admin-shell .bento-grid-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
-@media (max-width: 1024px) {
+/* Enhance for tablets and up */
+@media (min-width: 641px) {
   .admin-shell .bento-grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 640px) {
+/* Enhance for desktop */
+@media (min-width: 1025px) {
   .admin-shell .bento-grid-3 {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

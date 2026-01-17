@@ -4,7 +4,7 @@ Inactivity detection job.
 Replaces InactivityDetectionService.detectInactiveUsers()
 """
 import logging
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from sqlalchemy import create_engine, text
 import os
 
@@ -17,8 +17,6 @@ if not DATABASE_URL:
 engine = create_engine(DATABASE_URL)
 
 # Configuration
-QUIET_HOURS_START = int(os.getenv("INACTIVITY_QUIET_HOURS_START", "22"))  # 10 PM
-QUIET_HOURS_END = int(os.getenv("INACTIVITY_QUIET_HOURS_END", "8"))  # 8 AM
 
 
 def detect_inactive_users():
@@ -50,7 +48,7 @@ def detect_inactive_users():
 
         # Find inactive users (last active more than 3 days ago)
         inactive_users_sql = text("""
-            SELECT ua.user_id, u.id, u.email, u.anonymous_mode, u.quiet_hours_start, u.quiet_hours_end
+            SELECT ua.user_id, u.id, u.email, u.anonymous_mode
             FROM user_activities ua
             JOIN users u ON ua.user_id = u.id
             WHERE ua.last_active_at < :threshold
@@ -68,8 +66,6 @@ def detect_inactive_users():
                 user_id = row[0]
                 email = row[2]
                 anonymous_mode = row[3]
-                quiet_hours_start = row[4]
-                quiet_hours_end = row[5]
 
                 # Skip if already notified
                 if user_id in notified_user_ids:
@@ -79,14 +75,6 @@ def detect_inactive_users():
                 # Skip anonymous users
                 if anonymous_mode:
                     logger.debug(f"Skipping anonymous user: {user_id}")
-                    continue
-
-                # Check quiet hours
-                user_quiet_start = quiet_hours_start if quiet_hours_start is not None else QUIET_HOURS_START
-                user_quiet_end = quiet_hours_end if quiet_hours_end is not None else QUIET_HOURS_END
-
-                if is_within_quiet_hours(user_quiet_start, user_quiet_end):
-                    logger.debug(f"Skipping quiet hours for user: {user_id}")
                     continue
 
                 # Create notification
@@ -130,23 +118,3 @@ def detect_inactive_users():
             "message": f"Inactivity detection failed: {str(e)}",
             "execution_time_seconds": (datetime.now() - start_time).total_seconds()
         }
-
-
-def is_within_quiet_hours(quiet_start: int, quiet_end: int) -> bool:
-    """
-    Determines if current time is within quiet hours.
-    Matches InactivityDetectionService.isWithinQuietHours()
-    """
-    now = datetime.now().time()
-    quiet_start_time = time(quiet_start, 0)
-    quiet_end_time = time(quiet_end, 0)
-
-    if quiet_start_time == quiet_end_time:
-        # Quiet hours disabled
-        return False
-    elif quiet_start_time < quiet_end_time:
-        # Quiet hours within same day: [quietStart, quietEnd)
-        return quiet_start_time <= now < quiet_end_time
-    else:
-        # Quiet hours cross midnight: [quietStart, 24:00) or [00:00, quietEnd)
-        return now >= quiet_start_time or now < quiet_end_time

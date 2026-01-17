@@ -188,11 +188,11 @@ h6 {
 }
 
 h1 {
-  font-size: var(--font-size-6xl);
+  font-size: var(--font-size-4xl);
 }
 
 h2 {
-  font-size: var(--font-size-5xl);
+  font-size: var(--font-size-3xl);
 }
 
 h3 {
@@ -445,16 +445,20 @@ textarea {
 }
 
 .me-navbar-toggle {
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 0.35rem;
   background: none;
   padding: var(--spacing-sm);
 }
 
-@media (max-width: 767px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 768px) {
   .me-navbar-toggle {
-    display: flex;
+    display: none;
   }
 }
 
@@ -910,15 +914,18 @@ textarea {
 }
 
 /* ========================================
-   RESPONSIVE & UTILITIES
+   RESPONSIVE & UTILITIES - Mobile First
    ======================================== */
-@media (max-width: 767px) {
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 768px) {
   h1 {
-    font-size: var(--font-size-4xl);
+    font-size: var(--font-size-6xl);
   }
 
   h2 {
-    font-size: var(--font-size-3xl);
+    font-size: var(--font-size-5xl);
   }
 }
 
@@ -940,8 +947,8 @@ textarea {
 
 .me-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-2xl);
+  grid-template-columns: 1fr;
+  gap: var(--spacing-xl);
 }
 
 .me-stats-card {
@@ -967,8 +974,8 @@ textarea {
 
 .me-testimonials-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-2xl);
+  grid-template-columns: 1fr;
+  gap: var(--spacing-xl);
 }
 
 .me-testimonial-card {
@@ -1029,12 +1036,13 @@ textarea {
 
 .me-how-it-works-step {
   position: relative;
-  padding: var(--spacing-2xl);
+  padding: var(--spacing-xl);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   text-align: center;
   transition: all var(--transition-base);
+  margin-bottom: var(--spacing-xl);
 }
 
 .me-how-it-works-step:hover {
@@ -1042,13 +1050,23 @@ textarea {
   box-shadow: var(--shadow-lg);
 }
 
-@media (max-width: 767px) {
-  .me-stats-grid,
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 768px) {
+  .me-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-2xl);
+  }
+
   .me-testimonials-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-2xl);
   }
 
   .me-how-it-works-step {
-    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-2xl);
+    margin-bottom: 0;
   }
 }

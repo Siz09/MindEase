@@ -82,6 +82,10 @@ const ChatSidebar = () => {
     if (editingId) return;
     navigate(`/chat/${sessionId}`);
     setMenuOpenId(null);
+    // Close sidebar on mobile after selecting a chat
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
   };
 
   // Start editing title
@@ -297,72 +301,93 @@ const ChatSidebar = () => {
   };
 
   return (
-    <aside
-      className={`fixed left-0 top-[70px] h-[calc(100vh-70px)] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-40 transition-all duration-300 ease-in-out flex flex-col
-        ${sidebarOpen ? 'w-72' : 'w-16'}
-        max-md:hidden`}
-    >
-      {/* Header */}
-      <div className="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-gray-800">
-        <button
-          onClick={handleNewChat}
-          disabled={loading}
-          className={`flex items-center gap-2 px-3 py-2 bg-calm-500 hover:bg-calm-600 text-white rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+    <>
+      {/* Mobile Overlay - Only visible on mobile when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="chat-sidebar-overlay md:hidden"
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 49,
+            transition: 'opacity 0.3s ease-in-out',
+          }}
+        />
+      )}
+
+      <aside
+        className={`fixed left-0 top-[70px] h-[calc(100vh-70px)] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-50 transition-all duration-300 ease-in-out flex flex-col shadow-xl
+          ${sidebarOpen ? 'w-72 translate-x-0' : 'w-16 -translate-x-full'}
+          md:translate-x-0 md:shadow-none
+          ${sidebarOpen ? 'md:w-72' : 'md:w-16'}`}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-2 p-3 border-b border-gray-200 dark:border-gray-800">
+          <button
+            onClick={handleNewChat}
+            disabled={loading}
+            className={`flex items-center gap-2 px-3 py-2 bg-calm-500 hover:bg-calm-600 text-white rounded-lg font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
             ${sidebarOpen ? 'flex-1' : 'w-10 justify-center'}`}
-          title={t('chat.newChat') || 'New Chat'}
-        >
-          <Plus size={18} />
-          {sidebarOpen && <span>{t('chat.newChat') || 'New Chat'}</span>}
-        </button>
-
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-          aria-label="Toggle sidebar"
-          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-        >
-          {sidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeft size={20} />}
-        </button>
-      </div>
-
-      {/* Chat list */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-        {loading && sessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-gray-500 dark:text-gray-400">
-            <Spinner size={24} />
-            {sidebarOpen && <span className="mt-2 text-sm">Loading chats...</span>}
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center h-32 text-red-500 dark:text-red-400 px-4 text-center">
-            <span className="text-sm">{error}</span>
-          </div>
-        ) : sessions.length === 0 ? (
-          <div
-            className={`flex flex-col items-center justify-center h-40 text-gray-500 dark:text-gray-400 ${sidebarOpen ? 'px-4' : ''}`}
+            title={t('chat.newChat') || 'New Chat'}
           >
-            <MessageSquare size={32} className="mb-2 opacity-50" />
-            {sidebarOpen && (
-              <>
-                <span className="text-sm font-medium">
-                  {t('chat.noChats') || 'No conversations yet'}
-                </span>
-                <span className="text-xs mt-1 opacity-70">
-                  {t('chat.startNew') || 'Click "New Chat" to start'}
-                </span>
-              </>
-            )}
-          </div>
-        ) : (
-          <>
-            {renderGroup('Today', groupedSessions.today)}
-            {renderGroup('Yesterday', groupedSessions.yesterday)}
-            {renderGroup('Previous 7 Days', groupedSessions.lastWeek)}
-            {renderGroup('Previous 30 Days', groupedSessions.lastMonth)}
-            {renderGroup('Older', groupedSessions.older)}
-          </>
-        )}
-      </div>
-    </aside>
+            <Plus size={18} />
+            {sidebarOpen && <span>{t('chat.newChat') || 'New Chat'}</span>}
+          </button>
+
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+            aria-label="Toggle sidebar"
+            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          >
+            {sidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeft size={20} />}
+          </button>
+        </div>
+
+        {/* Chat list */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+          {loading && sessions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-32 text-gray-500 dark:text-gray-400">
+              <Spinner size={24} />
+              {sidebarOpen && <span className="mt-2 text-sm">Loading chats...</span>}
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-32 text-red-500 dark:text-red-400 px-4 text-center">
+              <span className="text-sm">{error}</span>
+            </div>
+          ) : sessions.length === 0 ? (
+            <div
+              className={`flex flex-col items-center justify-center h-40 text-gray-500 dark:text-gray-400 ${sidebarOpen ? 'px-4' : ''}`}
+            >
+              <MessageSquare size={32} className="mb-2 opacity-50" />
+              {sidebarOpen && (
+                <>
+                  <span className="text-sm font-medium">
+                    {t('chat.noChats') || 'No conversations yet'}
+                  </span>
+                  <span className="text-xs mt-1 opacity-70">
+                    {t('chat.startNew') || 'Click "New Chat" to start'}
+                  </span>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              {renderGroup('Today', groupedSessions.today)}
+              {renderGroup('Yesterday', groupedSessions.yesterday)}
+              {renderGroup('Previous 7 Days', groupedSessions.lastWeek)}
+              {renderGroup('Previous 30 Days', groupedSessions.lastMonth)}
+              {renderGroup('Older', groupedSessions.older)}
+            </>
+          )}
+        </div>
+      </aside>
+    </>
   );
 };
 

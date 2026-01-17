@@ -176,13 +176,13 @@ body {
   font-size: var(--font-size-xl);
 }
 .text-2xl {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-lg);
 }
 .text-3xl {
-  font-size: var(--font-size-3xl);
+  font-size: var(--font-size-xl);
 }
 .text-4xl {
-  font-size: var(--font-size-4xl);
+  font-size: var(--font-size-2xl);
 }
 
 .font-light {
@@ -216,9 +216,9 @@ body {
 
 /* Layout Classes */
 .container {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 var(--spacing-md);
+  padding: 0 var(--spacing-sm);
 }
 
 .flex {
@@ -441,19 +441,25 @@ body {
   min-height: 100vh;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .container {
-    padding: 0 var(--spacing-sm);
+    max-width: 1200px;
+    padding: 0 var(--spacing-md);
+  }
+
+  .text-2xl {
+    font-size: var(--font-size-2xl);
+  }
+
+  .text-3xl {
+    font-size: var(--font-size-3xl);
   }
 
   .text-4xl {
-    font-size: var(--font-size-2xl);
-  }
-  .text-3xl {
-    font-size: var(--font-size-xl);
-  }
-  .text-2xl {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-4xl);
   }
 }

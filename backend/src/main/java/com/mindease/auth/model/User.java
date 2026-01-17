@@ -39,11 +39,6 @@ public class User {
     @Column(name = "firebase_uid")
     private String firebaseUid;
 
-    @Column(name = "quiet_hours_start")
-    private LocalTime quietHoursStart;
-
-    @Column(name = "quiet_hours_end")
-    private LocalTime quietHoursEnd;
 
     @Column(name = "deleted_at", columnDefinition = "timestamptz")
     private OffsetDateTime deletedAt;
@@ -186,21 +181,6 @@ public class User {
         this.firebaseUid = firebaseUid;
     }
 
-    public LocalTime getQuietHoursStart() {
-        return quietHoursStart;
-    }
-
-    public void setQuietHoursStart(LocalTime quietHoursStart) {
-        this.quietHoursStart = quietHoursStart;
-    }
-
-    public LocalTime getQuietHoursEnd() {
-        return quietHoursEnd;
-    }
-
-    public void setQuietHoursEnd(LocalTime quietHoursEnd) {
-        this.quietHoursEnd = quietHoursEnd;
-    }
 
     public OffsetDateTime getDeletedAt() {
         return deletedAt;

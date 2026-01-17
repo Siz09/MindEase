@@ -3,7 +3,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 2rem 1rem;
+  padding: 1rem 0.75rem;
   min-height: 100vh;
   background: linear-gradient(
     135deg,
@@ -31,8 +31,12 @@
 }
 
 .profile-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   animation: fadeIn 0.8s ease-out;
+}
+
+.profile-header h1 {
+  font-size: 1.75rem;
 }
 
 @keyframes fadeIn {
@@ -47,7 +51,13 @@
 .profile-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+}
+
+/* Stack avatar and info vertically on mobile */
+.profile-card-modern .flex-col {
+  align-items: center;
+  text-align: center;
 }
 
 /* Modern Profile Card with Gradient Background */
@@ -113,14 +123,19 @@
   transform: scale(1.1);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Adjust spacing for mobile */
+.profile-content [class*='py-3'] {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Enhance for tablets and up */
+@media (min-width: 481px) {
   .profile-page {
     padding: 1.5rem 1rem;
-  }
-
-  .profile-container {
-    max-width: 100%;
   }
 
   .profile-header h1 {
@@ -130,31 +145,28 @@
   .profile-content {
     gap: 1rem;
   }
-
-  /* Stack avatar and info vertically on mobile */
-  .profile-card-modern .flex-col {
-    align-items: center;
-    text-align: center;
-  }
 }
 
-@media (max-width: 480px) {
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .profile-page {
-    padding: 1rem 0.75rem;
+    padding: 2rem 1rem;
+  }
+
+  .profile-container {
+    max-width: 900px;
   }
 
   .profile-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
 
   .profile-header h1 {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
-  /* Adjust spacing for mobile */
-  .profile-content [class*='py-3'] {
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
+  .profile-content {
+    gap: 1.5rem;
   }
 }
 

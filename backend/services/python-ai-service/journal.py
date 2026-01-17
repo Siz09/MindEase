@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 from openai import OpenAI
 import os
 import logging
+from dotenv import load_dotenv
 
 from models import (
     JournalSummaryRequest,
@@ -10,6 +11,9 @@ from models import (
     MoodInsightRequest,
     MoodInsightResponse
 )
+
+# Load environment variables first
+load_dotenv()
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -23,6 +27,15 @@ if OPENAI_API_KEY:
 
 def get_openai_client():
     """Get OpenAI client or return None if not configured"""
+    # Lazy initialization - check again in case env was loaded after module import
+    global openai_client
+    if openai_client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key:
+            openai_client = OpenAI(api_key=api_key)
+            logger.info("OpenAI client initialized successfully")
+        else:
+            logger.warn("OPENAI_API_KEY not found in environment variables")
     return openai_client
 
 

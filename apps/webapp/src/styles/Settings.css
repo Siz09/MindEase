@@ -1,7 +1,7 @@
 /* Modern Settings Page Styles with shadcn/ui */
 .settings-page {
-  min-height: 100vh;
-  padding: 2rem 1rem;
+  /* min-height: 100vh; */
+  padding: 1rem 0.75rem;
   background: linear-gradient(
     135deg,
     var(--bg-primary) 0%,
@@ -27,8 +27,16 @@
 }
 
 .settings-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   animation: slideDown 0.8s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.settings-header h1 {
+  font-size: 1.75rem;
 }
 
 @keyframes slideDown {
@@ -45,7 +53,7 @@
 .settings-grid {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1rem;
   max-width: 800px;
   margin: 0 auto;
 }
@@ -111,20 +119,13 @@
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Responsive Design */
-@media (min-width: 768px) {
-  .settings-page {
-    padding: 3rem 2rem;
-  }
-}
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
 
-@media (max-width: 767px) {
+/* Enhance for tablets and up */
+@media (min-width: 481px) {
   .settings-page {
     padding: 1.5rem 1rem;
-  }
-
-  .settings-header h1 {
-    font-size: 2rem;
   }
 
   .settings-grid {
@@ -136,21 +137,22 @@
   }
 }
 
-@media (max-width: 480px) {
+/* Enhance for desktop */
+@media (min-width: 768px) {
   .settings-page {
-    padding: 1rem 0.75rem;
+    padding: 3rem 2rem;
   }
 
   .settings-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
   }
 
   .settings-header h1 {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
   .settings-grid {
-    gap: 1rem;
+    gap: 2rem;
   }
 }
 

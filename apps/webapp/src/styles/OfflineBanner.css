@@ -6,7 +6,7 @@
   background: linear-gradient(135deg, #f59e0b, #d97706);
   color: #000;
   text-align: center;
-  padding: 12px 16px;
+  padding: 10px 12px;
   font-weight: 500;
   z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -28,8 +28,13 @@
 }
 
 .offline-text {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+}
+
+.offline-icon {
+  width: 18px;
+  height: 18px;
 }
 
 @keyframes slideDown {
@@ -58,18 +63,21 @@ body:has(.offline-banner) .main-content {
   padding-top: 60px;
 }
 
-/* Mobile adjustments */
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .offline-banner {
-    padding: 10px 12px;
+    padding: 12px 16px;
   }
 
   .offline-text {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .offline-icon {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
   }
 }

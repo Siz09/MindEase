@@ -1,5 +1,5 @@
 .check-in-page {
-  padding: 2rem 1rem;
+  padding: 1rem;
   background-color: var(--bg-primary);
   min-height: 100vh;
 }
@@ -18,14 +18,14 @@
 }
 
 .page-title {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
 }
 
 .page-subtitle {
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   margin: 0;
 }
@@ -33,7 +33,7 @@
 .check-in-content {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .check-in-section {
@@ -46,7 +46,7 @@
   background-color: var(--bg-card);
   border-radius: 12px;
   border: 1px solid var(--gray-200);
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
 }
@@ -76,25 +76,28 @@
   margin: 0;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+/* Responsive Design - Mobile First */
+/* Mobile defaults are already set above */
+
+/* Enhance for desktop */
+@media (min-width: 769px) {
   .check-in-page {
-    padding: 1rem;
+    padding: 2rem 1rem;
   }
 
   .page-title {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
   .page-subtitle {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .check-in-content {
-    gap: 1.5rem;
+    gap: 2rem;
   }
 
   .card {
-    padding: 1.25rem;
+    padding: 1.5rem;
   }
 }

@@ -2,24 +2,34 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  width: 100%;
 }
 
 .chart-card {
   margin-bottom: 0;
+  flex: 1;
+  min-width: 0; /* Prevents flex item from overflowing */
 }
 
 .chart-container {
   height: 300px;
+  width: 100%;
   position: relative;
+  min-height: 300px;
 }
 
 /* Make the line chart (first card) taller for better readability */
 .charts-container .chart-card:first-child .chart-container {
   height: 380px;
+  min-height: 380px;
 }
 
 .chart-skeleton {
   padding: 2rem;
   text-align: center;
   color: #999;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

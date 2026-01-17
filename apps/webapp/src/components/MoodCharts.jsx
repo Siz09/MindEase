@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
@@ -5,10 +6,12 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  LineController,
   Title,
   Tooltip,
   Legend,
   BarElement,
+  BarController,
   Filler,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
@@ -19,7 +22,9 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  LineController,
   BarElement,
+  BarController,
   Title,
   Tooltip,
   Legend,
@@ -44,24 +49,50 @@ const emojiByValue = Object.fromEntries(detailedMoods.map((m) => [m.value, m.emo
 const MoodCharts = ({ moodHistory, isLoading }) => {
   const { t } = useTranslation();
 
-  const getChartData = () => {
-    if (!moodHistory || moodHistory.length === 0) return null;
+  // Debug logging
+  console.log('MoodCharts - isLoading:', isLoading);
+  console.log('MoodCharts - moodHistory:', moodHistory);
+  console.log('MoodCharts - moodHistory length:', moodHistory?.length);
+
+  const chartData = useMemo(() => {
+    console.log('MoodCharts - chartData useMemo running, moodHistory:', moodHistory);
+    if (!Array.isArray(moodHistory) || moodHistory.length === 0) {
+      console.log('MoodCharts - chartData returning null (empty or not array)');
+      return null;
+    }
+
     const sortedHistory = [...moodHistory].reverse();
+    const normalized = sortedHistory
+      .map((entry) => {
+        const rawMoodValue = entry?.moodValue ?? entry?.mood_value ?? entry?.value;
+        const moodValue = typeof rawMoodValue === 'number' ? rawMoodValue : Number(rawMoodValue);
+        if (!Number.isFinite(moodValue)) return null;
+
+        const dateValue = entry?.createdAt ?? entry?.created_at ?? entry?.timestamp ?? entry?.date;
+        const date = dateValue ? new Date(dateValue) : null;
+        const label =
+          date && !Number.isNaN(date.getTime())
+            ? date.toLocaleDateString([], { month: 'short', day: 'numeric' })
+            : '';
+
+        return { moodValue, label };
+      })
+      .filter(Boolean);
+
+    if (normalized.length === 0) return null;
 
     return {
-      labels: sortedHistory.map((entry) =>
-        new Date(entry.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })
-      ),
+      labels: normalized.map((e) => e.label),
       datasets: [
         {
           label: t('charts.moodLevel'),
-          data: sortedHistory.map((entry) => entry.moodValue),
+          data: normalized.map((e) => e.moodValue),
           borderColor: 'rgb(21, 128, 61)',
           backgroundColor: 'rgba(21, 128, 61, 0.1)',
           tension: 0.4,
           fill: true,
-          pointBackgroundColor: sortedHistory.map((entry) => {
-            const mood = detailedMoods.find((m) => m.value === entry.moodValue);
+          pointBackgroundColor: normalized.map((e) => {
+            const mood = detailedMoods.find((m) => m.value === e.moodValue);
             return mood?.color || 'rgb(21, 128, 61)';
           }),
           pointBorderColor: '#fff',
@@ -70,30 +101,32 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
         },
       ],
     };
-  };
+  }, [moodHistory, t]);
 
-  const getMoodDistribution = () => {
-    if (!moodHistory || moodHistory.length === 0) return null;
+  const distributionData = useMemo(() => {
+    if (!Array.isArray(moodHistory) || moodHistory.length === 0) return null;
 
-    const distribution = detailedMoods.map((mood) => ({
-      ...mood,
-      label: t(mood.labelKey),
-      count: moodHistory.filter((entry) => entry.moodValue === mood.value).length,
-    }));
+    const counts = new Map(detailedMoods.map((m) => [m.value, 0]));
+    for (const entry of moodHistory) {
+      const rawMoodValue = entry?.moodValue ?? entry?.mood_value ?? entry?.value;
+      const moodValue = typeof rawMoodValue === 'number' ? rawMoodValue : Number(rawMoodValue);
+      if (!Number.isFinite(moodValue) || !counts.has(moodValue)) continue;
+      counts.set(moodValue, (counts.get(moodValue) ?? 0) + 1);
+    }
 
     return {
-      labels: distribution.map((d) => `${emojiByValue[d.value]} ${d.label}`),
+      labels: detailedMoods.map((mood) => `${emojiByValue[mood.value]} ${t(mood.labelKey)}`),
       datasets: [
         {
           label: t('charts.frequency'),
-          data: distribution.map((d) => d.count),
-          backgroundColor: distribution.map((d) => d.color),
-          borderColor: distribution.map((d) => d.color),
+          data: detailedMoods.map((mood) => counts.get(mood.value) ?? 0),
+          backgroundColor: detailedMoods.map((mood) => mood.color),
+          borderColor: detailedMoods.map((mood) => mood.color),
           borderWidth: 1,
         },
       ],
     };
-  };
+  }, [moodHistory, t]);
 
   const chartOptions = {
     responsive: true,
@@ -136,7 +169,13 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
     },
   };
 
-  if (isLoading) {
+  console.log('MoodCharts - chartData:', chartData ? 'has data' : 'null');
+  console.log('MoodCharts - distributionData:', distributionData ? 'has data' : 'null');
+  console.log('MoodCharts - showLoadingSkeleton:', isLoading && !chartData && !distributionData);
+
+  const showLoadingSkeleton = isLoading && !chartData && !distributionData;
+  if (showLoadingSkeleton) {
+    console.log('MoodCharts - Showing loading skeleton');
     return (
       <div className="charts-container">
         <div className="card chart-card">
@@ -146,22 +185,30 @@ const MoodCharts = ({ moodHistory, isLoading }) => {
     );
   }
 
-  const chartData = getChartData();
-  const distributionData = getMoodDistribution();
-  if (!chartData || !distributionData) return null;
+  // If no data at all, return null
+  if (!chartData && !distributionData) {
+    console.log('MoodCharts - No chart data, returning null');
+    return null;
+  }
+
+  console.log('MoodCharts - Rendering charts');
 
   return (
     <div className="charts-container">
-      <div className="card chart-card">
-        <div className="chart-container">
-          <Line data={chartData} options={chartOptions} />
+      {chartData && (
+        <div className="card chart-card">
+          <div className="chart-container">
+            <Line data={chartData} options={chartOptions} />
+          </div>
         </div>
-      </div>
-      <div className="card chart-card">
-        <div className="chart-container">
-          <Bar data={distributionData} options={barChartOptions} />
+      )}
+      {distributionData && (
+        <div className="card chart-card">
+          <div className="chart-container">
+            <Bar data={distributionData} options={barChartOptions} />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
