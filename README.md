@@ -29,9 +29,9 @@ MindEase is a comprehensive mental wellness application that provides AI-powered
 
 ## 🚀 Features
 
-### 🧠 Therapeutic Tools (Phase 4)
+### 🧠 Therapeutic Tools
 
-MindEase now includes two powerful wellbeing modules:
+MindEase includes two powerful wellbeing modules:
 
 - **CBT Journal**
   - Write daily reflections.
@@ -105,7 +105,7 @@ To test offline:
 
 ### ✅ Completed Features
 
-#### Phase 1: Foundation & Authentication
+#### Foundation & Authentication
 
 - [x] Monorepo setup with workspaces
 - [x] Firebase Authentication integration
@@ -114,7 +114,7 @@ To test offline:
 - [x] Anonymous mode support
 - [x] Responsive navigation
 
-#### Phase 2: Core Infrastructure
+#### Core Infrastructure
 
 - [x] PostgreSQL database setup
 - [x] User management system
@@ -122,7 +122,7 @@ To test offline:
 - [x] CORS setup for cross-origin requests
 - [x] Development environment configuration
 
-#### Phase 3: Chat & Mood Core Features
+#### Chat & Mood Core Features
 
 - [x] Real-time WebSocket chat
 - [x] AI-powered responses (OpenAI integration)
@@ -135,6 +135,37 @@ To test offline:
 - [x] API documentation with Swagger/OpenAPI
 - [x] Performance optimization
 - [x] Cross-browser compatibility testing
+
+#### Therapeutic Tools
+
+- [x] CBT Journal with AI-powered summaries
+- [x] Mindfulness sessions with audio and animations
+- [x] Offline support with PWA caching
+- [x] Journal history and analytics
+
+#### Subscription & Monetization
+
+- [x] Stripe integration for premium subscriptions
+- [x] Subscription management (monthly/annual plans)
+- [x] Premium feature gating
+- [x] Webhook handling for subscription events
+- [x] Payment success/cancel flows
+
+#### Notifications & User Experience
+
+- [x] Push notifications via Firebase
+- [x] Quiet hours configuration
+- [x] User preferences management
+- [x] Enhanced UI/UX improvements
+
+#### Admin & Safety
+
+- [x] Admin dashboard with analytics
+- [x] Role-based access control (RBAC)
+- [x] Audit logging with AOP
+- [x] Crisis flagging and monitoring
+- [x] Real-time crisis updates (SSE)
+- [x] Analytics endpoints (users, AI usage, mood correlation)
 
 ## 🛠️ Technology Stack
 
@@ -169,23 +200,23 @@ To test offline:
 - **Husky** - Git hooks
 - **GitHub Actions** - CI/CD
 
-## Phase 7 – Admin & Safety (Deliverables)
+## 📁 Project Structure
 
-- Admin Dashboard (separate UI shell under `/admin`)
-  - Charts: Active Users, AI Usage, Mood Correlation
-  - Tables: Audit Logs (filters, pagination), Crisis Flags (real-time, export)
-- Role-based access (frontend guard + backend `@PreAuthorize("hasRole('ADMIN')")`)
-- Audit Logging with AOP and immutable timestamps
-- Crisis Flagging (keyword detector + risk score + idempotency via DB unique)
-- Analytics Endpoints (active users, AI usage, mood correlation)
-- Real-time crisis updates (SSE or polling fallback)
-- Documentation:
-  - `apps/webapp/ADMIN_DASHBOARD_TESTING.md`
-  - Updated README
-- Verified via:
-  - Browser end-to-end
-  - Postman (RBAC, filters/pagination)
-  - Automated tests (backend + Cypress)
+```
+mindease/
+├── apps/
+│   ├── marketing/          # Marketing landing page
+│   └── webapp/             # Main web application
+├── backend/                # Spring Boot backend
+│   ├── src/                # Source code
+│   ├── docs/               # Backend documentation
+│   └── services/           # Python microservices
+├── packages/
+│   └── ui/                 # Shared UI components
+├── docs/                   # Project documentation
+├── postman/                # API testing collections
+└── scripts/                # Build and CI scripts
+```
 
 ## 📊 API Documentation
 
@@ -326,7 +357,13 @@ The application includes a comprehensive WebSocket testing suite accessible at `
 
 Use the provided Postman collection or Swagger UI for manual API testing.
 
-### QA Pass (Phases 1–7)
+**Postman Collections:**
+
+- `postman/MindEase_Full_API.postman_collection.json` - Complete API collection
+- `postman/mindease_local.postman_environment.json` - Local environment variables
+- `postman/Monetization.postman_collection.json` - Stripe subscription endpoints
+
+### QA Checklist
 
 - Walk UI: register/login → mood → journal → chat → subscription → admin.
 - Verify DB-backed entities render in UI and via APIs (history lists, counts).
@@ -437,6 +474,13 @@ Language switching is available in the settings page and persists across session
 - Write comprehensive tests for new features
 - Update documentation for API changes
 
+## 📚 Additional Documentation
+
+- **[CODEBASE_OVERVIEW.md](./CODEBASE_OVERVIEW.md)** - Comprehensive codebase structure and architecture
+- **[DEPLOYMENT_GUIDE.md](./docs/DEPLOYMENT_GUIDE.md)** - Detailed deployment instructions
+- **[TESTING_GUIDE.md](./docs/TESTING_GUIDE.md)** - Testing procedures and guidelines
+- **Backend Docs**: See `backend/docs/` for architecture, security, and integration guides
+
 ## 📝 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -451,20 +495,27 @@ For support and questions:
 
 ## 🎯 Roadmap
 
-### Phase 4: Advanced Features (Planned)
+### Advanced AI & Analytics
 
-- [ ] Advanced AI conversation context
+- [ ] Advanced AI conversation context and memory
 - [ ] Mood prediction algorithms
-- [ ] Social features and community support
-- [ ] Mobile application (React Native)
-- [ ] Advanced analytics and insights
+- [ ] Personalized insights and recommendations
+- [ ] Advanced analytics dashboard
 - [ ] Integration with wearable devices
+- [ ] Voice conversation improvements
+
+### Social & Community
+
+- [ ] Social features and community support
+- [ ] Peer support groups
 - [ ] Therapist portal and professional features
+- [ ] Community guidelines and moderation
 
-### Phase 5: Scale & Polish (Planned)
+### Mobile & Scale
 
-- [ ] Microservices architecture
-- [ ] Advanced caching strategies
+- [ ] Mobile application (React Native)
+- [ ] Microservices architecture migration
+- [ ] Advanced caching strategies (Redis)
 - [ ] CDN integration
 - [ ] Advanced monitoring and alerting
 - [ ] Load testing and optimization
